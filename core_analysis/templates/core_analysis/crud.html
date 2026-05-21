@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEPSE Core Storage &amp; Backtest Panel</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .workspace-wrap { font-family: system-ui, -apple-system, sans-serif; padding: 2rem 0; }
+    .workspace-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .workspace-title { font-size: 18px; font-weight: 600; margin: 0; color: #111827; }
+    .workspace-sub { font-size: 13px; color: #6b7280; margin: 2px 0 0; }
+
+    .nav-tabs { border-bottom: 2px solid #e5e7eb; gap: 4px; }
+    .nav-tabs .nav-link { border: none; color: #6b7280; font-size: 14px; font-weight: 500; padding: 10px 16px; border-radius: 8px 8px 0 0; }
+    .nav-tabs .nav-link:hover { background: #f3f4f6; color: #374151; }
+    .nav-tabs .nav-link.active { background: #fff; color: #2563eb; border-bottom: 2px solid #2563eb; font-weight: 600; }
+
+    .panel-outer { border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .minimal-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .minimal-table thead tr { background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+    .minimal-table thead th { padding: 12px 14px; font-weight: 600; font-size: 11px; color: #4b5563; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; }
+    .minimal-table thead th.th-num { text-align: right; }
+    .minimal-table tbody tr { border-bottom: 1px solid #f3f4f6; transition: background 0.1s; }
+    .minimal-table tbody tr:hover { background: #f9fafb; }
+    .minimal-table td { padding: 12px 14px; vertical-align: middle; color: #374151; }
+
+    .td-num { text-align: right; font-variant-numeric: tabular-nums; }
+    .td-date { font-size: 12px; color: #6b7280; font-variant-numeric: tabular-nums; }
+    .td-ticker { font-weight: 600; color: #111827; }
+    .text-success-custom { color: #166534 !important; font-weight: 600; }
+    .text-danger-custom  { color: #991b1b !important; font-weight: 600; }
+
+    .input-close { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; font-size: 12px; width: 100px; text-align: right; outline: none; font-family: monospace; }
+    .input-close:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
+    .btn-action-update { font-size: 12px; font-weight: 500; padding: 6px 14px; border-radius: 8px; border: 1px solid #d1d5db; background: #fff; color: #374151; cursor: pointer; transition: all 0.15s; }
+    .btn-action-update:hover { background: #f9fafb; border-color: #9ca3af; }
+
+    .btn-action-del { font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 8px; border: 1px solid #fee2e2; background: #fff; color: #991b1b; cursor: pointer; display: inline-block; transition: all 0.15s; }
+    .btn-action-del:hover { background: #fee2e2; }
+
+    .metrics-header-box { background: #111827; color: #fff; border-radius: 12px; padding: 1.5rem; border: none; }
+    .metrics-card-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; font-weight: 600; }
+
+    .filter-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; }
+
+    .inventory-row td { vertical-align: middle; }
+
+    /* AUTOCOMPLETE STYLES */
+    .autocomplete-wrapper { position: relative; }
+    .autocomplete-input {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 14px;
+      width: 100%;
+      outline: none;
+      text-transform: uppercase;
+    }
+    .autocomplete-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    }
+    .autocomplete-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: 300px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      z-index: 1000;
+      margin-top: 4px;
+      display: none;
+    }
+    .autocomplete-dropdown.show {
+      display: block;
+    }
+    .autocomplete-item {
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      border-bottom: 1px solid #f3f4f6;
+      transition: background 0.1s;
+    }
+    .autocomplete-item:hover,
+    .autocomplete-item.active {
+      background: #f3f4f6;
+    }
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+    .autocomplete-hint {
+      padding: 8px 14px;
+      font-size: 12px;
+      color: #9ca3af;
+      text-align: center;
+      font-style: italic;
+    }
+    .autocomplete-loading {
+      padding: 12px;
+      text-align: center;
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .volume-status {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .volume-status-green {
+      color: #166534;
+      background: #dcfce7;
+      border: 1px solid #bbf7d0;
+    }
+    .volume-status-red {
+      color: #991b1b;
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+    }
+  </style>
+</head>
+<body class="bg-light">
+<div class="container workspace-wrap">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-info border-0 rounded-3 shadow-sm text-center py-2 mb-3 small fw-medium">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="workspace-header py-2">
+    <div>
+      <p class="workspace-title">NEPSE Analytics Engine Workspace</p>
+      <p class="workspace-sub">Raw row inventory management and segregated strategy matrix experimentation</p>
+    </div>
+    <div>
+      <form method="POST" action="{% url 'trigger_daily_sync' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-dark btn-sm d-flex align-items-center gap-2 px-3 py-2 fw-medium rounded-2"
+                style="font-size: 13px; background-color: #111827; border: 1px solid #374151;"
+                onclick="this.innerHTML='Syncing Market Data Engine...'; this.classList.add('disabled');">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16">
+            <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+            <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9h1.017z"/>
+          </svg>
+          Sync Today's Price Data
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <ul class="nav nav-tabs mb-4" id="workspaceTabs" role="tablist">
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'inventory' %}active{% endif %}"
+              data-bs-toggle="tab" data-bs-target="#inventory-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'inventory' %}true{% else %}false{% endif %}">Raw Inventory Manager</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'backtest' %}active{% endif %}"
+              data-bs-toggle="tab" data-bs-target="#backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'backtest' %}true{% else %}false{% endif %}">T3MA Ribbon Simulation Desk</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'ema_backtest' %}active{% endif %}"
+              data-bs-toggle="tab" data-bs-target="#ema-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'ema_backtest' %}true{% else %}false{% endif %}">EMA 50/200 Crossover Desk</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'cci_backtest' %}active{% endif %}"
+              data-bs-toggle="tab" data-bs-target="#cci-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'cci_backtest' %}true{% else %}false{% endif %}">CCI +100 Long-Only Desk</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'rsi_backtest' %}active{% endif %}"
+              data-bs-toggle="tab" data-bs-target="#rsi-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'rsi_backtest' %}true{% else %}false{% endif %}">RSI/SMA Long-Only Desk</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'msv_backtest' %}active{% endif %}"
+              data-bs-toggle="tab" data-bs-target="#msv-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'msv_backtest' %}true{% else %}false{% endif %}">MACD+ST+VWAP+RVOL Desk</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'imm_backtest' %}active{% endif %}"
+              data-bs-toggle="tab" data-bs-target="#imm-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'imm_backtest' %}true{% else %}false{% endif %}">IMM Technical Score Desk</button>
+    </li>
+  </ul>
+
+  <div class="tab-content" id="workspaceTabsContent">
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         TAB 1 — INVENTORY
+    ══════════════════════════════════════════════════════════════════ -->
+    <div class="tab-pane fade {% if active_tab == 'inventory' %}show active{% endif %}" id="inventory-pane" role="tabpanel">
+
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-3" style="font-size: 14px; font-weight: 600; color: #374151;">Add New Stock Record Coordinates</h5>
+        <form method="POST" action="{% url 'crud_operations' %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="create">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label text-muted small">Company Ticker</label>
+              <input type="text" name="company" class="form-control form-control-sm text-uppercase" required placeholder="e.g. ADBL">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-muted small">Business Date</label>
+              <input type="date" name="business_date" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small">External ID</label>
+              <input type="number" name="external_id" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small">Security ID</label>
+              <input type="number" name="security_id" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small">Close Price (Adj)</label>
+              <input type="number" step="0.01" name="close_price_adj" class="form-control form-control-sm" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-dark btn-sm mt-3 px-4 rounded-2">Commit Transaction Row</button>
+        </form>
+      </div>
+
+      <div class="panel-outer">
+        <table class="minimal-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Ticker Symbol</th>
+              <th class="th-num">Close Price (Adjusted)</th>
+              <th>Security Reference ID</th>
+              <th style="width: 240px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in records %}
+            <tr class="inventory-row">
+              <td class="td-date">{{ record.business_date }}</td>
+              <td><span class="td-ticker">{{ record.company_id }}</span></td>
+              <td class="td-num">
+                <form method="POST" action="{% url 'crud_operations' %}" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update">
+                  <input type="hidden" name="record_id" value="{{ record.id }}">
+                  <input type="number" step="0.01" name="close_price_adj" value="{{ record.close_price_adj }}" class="input-close">
+                  <button type="submit" class="btn-action-update ms-1">Update</button>
+                </form>
+              </td>
+              <td class="text-muted">{{ record.security_id }}</td>
+              <td>
+                <form method="POST" action="{% url 'crud_delete' record.id %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-action-del"
+                          onclick="return confirm('Confirm data wipe for {{ record.company_id }} on {{ record.business_date }}?')">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-5">No dataset vectors found in local storage schema.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         TAB 2 — T3MA RIBBON
+    ══════════════════════════════════════════════════════════════════ -->
+    <div class="tab-pane fade {% if active_tab == 'backtest' %}show active{% endif %}" id="backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 600; color: #374151;">Adjust Strategy Simulation Scope</h5>
+        <form method="GET" action="." id="t3Form">
+          <input type="hidden" name="active_tab" value="backtest">
+          <input type="hidden" name="backtest_symbol" id="t3SymbolHidden" value="{{ selected_symbol }}">
+
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label text-muted small fw-medium">Select Target Asset <span style="color: #9ca3af;">(Start typing to search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" 
+                       class="autocomplete-input" 
+                       id="t3SearchInput"
+                       placeholder="Type to search symbols..."
+                       value="{{ selected_symbol }}"
+                       autocomplete="off">
+                <div class="autocomplete-dropdown" id="t3Dropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="date" name="t3_from_date" class="form-control form-control-sm" value="{{ t3_from_date }}" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="date" name="t3_to_date" class="form-control form-control-sm" value="{{ t3_to_date }}" required>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute Strategy Model</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {% if backtest_metrics %}
+        {% if backtest_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ backtest_metrics.error }}</div>
+        {% else %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="card metrics-header-box p-4 shadow-sm">
+                <span class="metrics-card-label">Initial Capital Allocation</span>
+                <h4 class="mt-2 mb-0 fw-bold">NPR {{ backtest_metrics.initial_capital|floatformat:2 }}</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Terminal Liquidity Value</span>
+                <h4 class="mt-2 mb-0 fw-bold text-dark">NPR {{ backtest_metrics.final_equity|floatformat:2 }}</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 text-white {% if backtest_metrics.total_return >= 0 %}bg-success{% else %}bg-danger{% endif %} shadow-sm rounded-3">
+                <span class="metrics-card-label text-white-50">Compounded Total Return</span>
+                <h4 class="mt-2 mb-0 fw-bold">{{ backtest_metrics.total_return|floatformat:2 }}%</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border border-light bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Sim Completed Trades | Win Rate</span>
+                <h4 class="mt-2 mb-0 fw-bold text-primary">{{ backtest_metrics.total_trades }} Trades ({{ backtest_metrics.win_rate }}% WR)</h4>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-outer">
+            <div class="p-3 bg-light border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">Simulation Performance Matrix Log: {{ selected_symbol }}</h6>
+            </div>
+            <table class="minimal-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Allocation Entry Date</th>
+                  <th>Liquidation Exit Date</th>
+                  <th class="th-num">Entry Price</th>
+                  <th class="th-num">Exit Price</th>
+                  <th class="th-num">Shares Held</th>
+                  <th class="th-num">Net Capital Profit/Loss</th>
+                  <th class="th-num">P&amp;L %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for trade in completed_trades %}
+                <tr>
+                  <td class="td-date">{{ trade.entry_date }}</td>
+                  <td class="td-date">{{ trade.exit_date }}</td>
+                  <td class="td-num text-muted">{{ trade.entry_price|floatformat:2 }}</td>
+                  <td class="td-num text-muted">{{ trade.exit_price|floatformat:2 }}</td>
+                  <td class="td-num text-muted">{{ trade.shares }}</td>
+                  <td class="td-num {% if trade.pnl >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">
+                    NPR {{ trade.pnl|floatformat:2 }}
+                  </td>
+                  <td class="td-num {% if trade.pnl_pct >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">
+                    {{ trade.pnl_pct|floatformat:2 }}%
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="7" class="text-center text-muted py-4">The structural model indicators generated zero signals over this date parameter frame.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         TAB 3 — EMA 50/200
+    ══════════════════════════════════════════════════════════════════ -->
+    <div class="tab-pane fade {% if active_tab == 'ema_backtest' %}show active{% endif %}" id="ema-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 600; color: #374151;">EMA 50/200 Strategy Parameters</h5>
+        <form method="GET" action="." id="emaForm">
+          <input type="hidden" name="active_tab" value="ema_backtest">
+          <input type="hidden" name="ema_backtest_symbol" id="emaSymbolHidden" value="{{ ema_selected_symbol }}">
+
+          <div class="row g-3 align-items-end">
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" 
+                       class="autocomplete-input" 
+                       id="emaSearchInput"
+                       placeholder="Type to search..."
+                       value="{{ ema_selected_symbol }}"
+                       autocomplete="off">
+                <div class="autocomplete-dropdown" id="emaDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="date" name="ema_from_date" class="form-control form-control-sm" value="{{ ema_from_date }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="date" name="ema_to_date" class="form-control form-control-sm" value="{{ ema_to_date }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Fast EMA</label>
+              <input type="number" min="1" step="1" name="ema_fast_period" class="form-control form-control-sm" value="{{ ema_fast_period }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Slow EMA</label>
+              <input type="number" min="1" step="1" name="ema_slow_period" class="form-control form-control-sm" value="{{ ema_slow_period }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Take Profit %</label>
+              <input type="number" step="0.01" min="0" name="ema_take_profit_pct" class="form-control form-control-sm" value="{{ ema_take_profit_pct }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Stop Loss %</label>
+              <input type="number" step="0.01" min="0" name="ema_stop_loss_pct" class="form-control form-control-sm" value="{{ ema_stop_loss_pct }}" required>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute EMA Model</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {% if ema_backtest_metrics %}
+        {% if ema_backtest_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ ema_backtest_metrics.error }}</div>
+        {% else %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="card metrics-header-box p-4 shadow-sm">
+                <span class="metrics-card-label">Initial Capital Allocation</span>
+                <h4 class="mt-2 mb-0 fw-bold">NPR {{ ema_backtest_metrics.initial_capital|floatformat:2 }}</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Terminal Liquidity Value</span>
+                <h4 class="mt-2 mb-0 fw-bold text-dark">NPR {{ ema_backtest_metrics.final_equity|floatformat:2 }}</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 text-white {% if ema_backtest_metrics.total_return >= 0 %}bg-success{% else %}bg-danger{% endif %} shadow-sm rounded-3">
+                <span class="metrics-card-label text-white-50">Compounded Total Return</span>
+                <h4 class="mt-2 mb-0 fw-bold">{{ ema_backtest_metrics.total_return|floatformat:2 }}%</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border border-light bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Sim Completed Trades | Win Rate</span>
+                <h4 class="mt-2 mb-0 fw-bold text-primary">{{ ema_backtest_metrics.total_trades }} Trades ({{ ema_backtest_metrics.win_rate }}% WR)</h4>
+              </div>
+            </div>
+          </div>
+          <div class="panel-outer">
+            <div class="p-3 bg-light border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">EMA Crossover Trade Log: {{ ema_selected_symbol }}</h6>
+            </div>
+            <table class="minimal-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Entry Signal</th>
+                  <th>Exit Signal</th>
+                  <th>Allocation Entry Date</th>
+                  <th>Liquidation Exit Date</th>
+                  <th class="th-num">Entry Price</th>
+                  <th class="th-num">Exit Price</th>
+                  <th class="th-num">Shares Held</th>
+                  <th class="th-num">Net Capital Profit/Loss</th>
+                  <th class="th-num">P&amp;L %</th>
+                  <th>Exit Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for trade in ema_completed_trades %}
+                <tr>
+                  <td class="text-success-custom">{{ trade.entry_signal }}</td>
+                  <td class="text-danger-custom">{{ trade.exit_signal }}</td>
+                  <td class="td-date">{{ trade.entry_date }}</td>
+                  <td class="td-date">{{ trade.exit_date }}</td>
+                  <td class="td-num text-muted">{{ trade.entry_price|floatformat:2 }}</td>
+                  <td class="td-num text-muted">{{ trade.exit_price|floatformat:2 }}</td>
+                  <td class="td-num text-muted">{{ trade.shares }}</td>
+                  <td class="td-num {% if trade.pnl >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">
+                    NPR {{ trade.pnl|floatformat:2 }}
+                  </td>
+                  <td class="td-num {% if trade.pnl_pct >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">
+                    {{ trade.pnl_pct|floatformat:2 }}%
+                  </td>
+                  <td class="text-muted">{{ trade.exit_reason }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="10" class="text-center text-muted py-4">No EMA crossover trades were generated in this date range.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         TAB 4 — CCI
+    ══════════════════════════════════════════════════════════════════ -->
+    <div class="tab-pane fade {% if active_tab == 'cci_backtest' %}show active{% endif %}" id="cci-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 600; color: #374151;">CCI +100 Long-Only Strategy Parameters</h5>
+        <form method="GET" action="." id="cciForm">
+          <input type="hidden" name="active_tab" value="cci_backtest">
+          <input type="hidden" name="cci_backtest_symbol" id="cciSymbolHidden" value="{{ cci_selected_symbol }}">
+
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" 
+                       class="autocomplete-input" 
+                       id="cciSearchInput"
+                       placeholder="Type to search..."
+                       value="{{ cci_selected_symbol }}"
+                       autocomplete="off">
+                <div class="autocomplete-dropdown" id="cciDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="date" name="cci_from_date" class="form-control form-control-sm" value="{{ cci_from_date }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="date" name="cci_to_date" class="form-control form-control-sm" value="{{ cci_to_date }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">CCI Period</label>
+              <input type="number" min="1" step="1" name="cci_period" class="form-control form-control-sm" value="{{ cci_period }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">ADX Threshold</label>
+              <input type="number" step="0.01" min="0" name="cci_adx_threshold" class="form-control form-control-sm" value="{{ cci_adx_threshold }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Vol Avg</label>
+              <input type="number" min="1" step="1" name="cci_volume_avg_period" class="form-control form-control-sm" value="{{ cci_volume_avg_period }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Vol Mult</label>
+              <input type="number" step="0.01" min="0.1" name="cci_volume_multiplier" class="form-control form-control-sm" value="{{ cci_volume_multiplier }}" required>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute CCI Model</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {% if cci_backtest_metrics %}
+        {% if cci_backtest_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ cci_backtest_metrics.error }}</div>
+        {% else %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="card metrics-header-box p-4 shadow-sm">
+                <span class="metrics-card-label">Initial Capital Allocation</span>
+                <h4 class="mt-2 mb-0 fw-bold">NPR {{ cci_backtest_metrics.initial_capital|floatformat:2 }}</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Terminal Liquidity Value</span>
+                <h4 class="mt-2 mb-0 fw-bold text-dark">NPR {{ cci_backtest_metrics.final_equity|floatformat:2 }}</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 text-white {% if cci_backtest_metrics.total_return >= 0 %}bg-success{% else %}bg-danger{% endif %} shadow-sm rounded-3">
+                <span class="metrics-card-label text-white-50">Compounded Total Return</span>
+                <h4 class="mt-2 mb-0 fw-bold">{{ cci_backtest_metrics.total_return|floatformat:2 }}%</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border border-light bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Sim Completed Trades | Win Rate</span>
+                <h4 class="mt-2 mb-0 fw-bold text-primary">{{ cci_backtest_metrics.total_trades }} Trades ({{ cci_backtest_metrics.win_rate }}% WR)</h4>
+              </div>
+            </div>
+          </div>
+          <div class="filter-card mb-4 d-flex justify-content-between align-items-center">
+            <div>
+              <div class="small text-muted">
+                Current Volume: {{ cci_backtest_metrics.latest_volume|default:0|floatformat:0 }}
+                |
+                Avg({{ cci_backtest_metrics.volume_avg_period }}): {{ cci_backtest_metrics.latest_avg_volume|default:0|floatformat:0 }}
+                |
+                Multiplier: {{ cci_backtest_metrics.volume_multiplier|floatformat:2 }}x
+              </div>
+            </div>
+            <div>
+              <span class="volume-status {% if cci_backtest_metrics.volume_breakout_confirmed %}volume-status-green{% else %}volume-status-red{% endif %}">
+                {{ cci_backtest_metrics.volume_status_text }}
+              </span>
+            </div>
+          </div>
+          <div class="panel-outer">
+            <div class="p-3 bg-light border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">CCI Trade Log: {{ cci_selected_symbol }}</h6>
+            </div>
+            <table class="minimal-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Entry Signal</th>
+                  <th>Exit Signal</th>
+                  <th>Allocation Entry Date</th>
+                  <th>Liquidation Exit Date</th>
+                  <th class="th-num">Entry Price</th>
+                  <th class="th-num">Exit Price</th>
+                  <th class="th-num">Shares Held</th>
+                  <th class="th-num">Net Capital Profit/Loss</th>
+                  <th class="th-num">P&amp;L %</th>
+                  <th>Exit Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for trade in cci_completed_trades %}
+                <tr>
+                  <td class="text-success-custom">{{ trade.entry_signal }}</td>
+                  <td class="text-danger-custom">{{ trade.exit_signal }}</td>
+                  <td class="td-date">{{ trade.entry_date }}</td>
+                  <td class="td-date">{{ trade.exit_date }}</td>
+                  <td class="td-num text-muted">{{ trade.entry_price|floatformat:2 }}</td>
+                  <td class="td-num text-muted">{{ trade.exit_price|floatformat:2 }}</td>
+                  <td class="td-num text-muted">{{ trade.shares }}</td>
+                  <td class="td-num {% if trade.pnl >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">
+                    NPR {{ trade.pnl|floatformat:2 }}
+                  </td>
+                  <td class="td-num {% if trade.pnl_pct >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">
+                    {{ trade.pnl_pct|floatformat:2 }}%
+                  </td>
+                  <td class="text-muted">{{ trade.exit_reason }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="10" class="text-center text-muted py-4">No CCI trades were generated in this date range.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         TAB 5 — RSI/SMA
+    ══════════════════════════════════════════════════════════════════ -->
+    <div class="tab-pane fade {% if active_tab == 'rsi_backtest' %}show active{% endif %}" id="rsi-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 600; color: #374151;">RSI/SMA Long-Only Strategy Parameters</h5>
+        <form method="GET" action="." id="rsiForm">
+          <input type="hidden" name="active_tab" value="rsi_backtest">
+          <input type="hidden" name="rsi_backtest_symbol" id="rsiSymbolHidden" value="{{ rsi_selected_symbol }}">
+
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" 
+                       class="autocomplete-input" 
+                       id="rsiSearchInput"
+                       placeholder="Type to search..."
+                       value="{{ rsi_selected_symbol }}"
+                       autocomplete="off">
+                <div class="autocomplete-dropdown" id="rsiDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="date" name="rsi_from_date" class="form-control form-control-sm" value="{{ rsi_from_date }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="date" name="rsi_to_date" class="form-control form-control-sm" value="{{ rsi_to_date }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">RSI Length</label>
+              <input type="number" min="1" step="1" name="rsi_length" class="form-control form-control-sm" value="{{ rsi_length }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">RSI SMA</label>
+              <input type="number" min="1" step="1" name="rsi_sma_length" class="form-control form-control-sm" value="{{ rsi_sma_length }}" required>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute RSI Model</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {% if rsi_backtest_metrics %}
+        {% if rsi_backtest_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ rsi_backtest_metrics.error }}</div>
+        {% else %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="card metrics-header-box p-4 shadow-sm">
+                <span class="metrics-card-label">Initial Capital Allocation</span>
+                <h4 class="mt-2 mb-0 fw-bold">NPR {{ rsi_backtest_metrics.initial_capital|floatformat:2 }}</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Terminal Liquidity Value</span>
+                <h4 class="mt-2 mb-0 fw-bold text-dark">NPR {{ rsi_backtest_metrics.final_equity|floatformat:2 }}</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 text-white {% if rsi_backtest_metrics.total_return >= 0 %}bg-success{% else %}bg-danger{% endif %} shadow-sm rounded-3">
+                <span class="metrics-card-label text-white-50">Compounded Total Return</span>
+                <h4 class="mt-2 mb-0 fw-bold">{{ rsi_backtest_metrics.total_return|floatformat:2 }}%</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border border-light bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Sim Completed Trades | Win Rate</span>
+                <h4 class="mt-2 mb-0 fw-bold text-primary">{{ rsi_backtest_metrics.total_trades }} Trades ({{ rsi_backtest_metrics.win_rate }}% WR)</h4>
+              </div>
+            </div>
+          </div>
+          <div class="panel-outer">
+            <div class="p-3 bg-light border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">RSI/SMA Trade Log: {{ rsi_selected_symbol }}</h6>
+            </div>
+            <table class="minimal-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Entry Signal</th>
+                  <th>Exit Signal</th>
+                  <th>Allocation Entry Date</th>
+                  <th>Liquidation Exit Date</th>
+                  <th class="th-num">Entry Price</th>
+                  <th class="th-num">Exit Price</th>
+                  <th class="th-num">Shares Held</th>
+                  <th class="th-num">Net Capital Profit/Loss</th>
+                  <th class="th-num">P&amp;L %</th>
+                  <th>Exit Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for trade in rsi_completed_trades %}
+                <tr>
+                  <td class="text-success-custom">{{ trade.entry_signal }}</td>
+                  <td class="text-danger-custom">{{ trade.exit_signal }}</td>
+                  <td class="td-date">{{ trade.entry_date }}</td>
+                  <td class="td-date">{{ trade.exit_date }}</td>
+                  <td class="td-num text-muted">{{ trade.entry_price|floatformat:2 }}</td>
+                  <td class="td-num text-muted">{{ trade.exit_price|floatformat:2 }}</td>
+                  <td class="td-num text-muted">{{ trade.shares }}</td>
+                  <td class="td-num {% if trade.pnl >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">
+                    NPR {{ trade.pnl|floatformat:2 }}
+                  </td>
+                  <td class="td-num {% if trade.pnl_pct >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">
+                    {{ trade.pnl_pct|floatformat:2 }}%
+                  </td>
+                  <td class="text-muted">{{ trade.exit_reason }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="10" class="text-center text-muted py-4">No RSI/SMA crossover trades were generated in this date range.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <div class="tab-pane fade {% if active_tab == 'msv_backtest' %}show active{% endif %}" id="msv-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 600; color: #374151;">Long-Only MSV Strategy Parameters</h5>
+        <form method="GET" action="." id="msvForm">
+          <input type="hidden" name="active_tab" value="msv_backtest">
+          <input type="hidden" name="msv_backtest_symbol" id="msvSymbolHidden" value="{{ msv_selected_symbol }}">
+
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text"
+                       class="autocomplete-input"
+                       id="msvSearchInput"
+                       placeholder="Type to search..."
+                       value="{{ msv_selected_symbol }}"
+                       autocomplete="off">
+                <div class="autocomplete-dropdown" id="msvDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="date" name="msv_from_date" class="form-control form-control-sm" value="{{ msv_from_date }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="date" name="msv_to_date" class="form-control form-control-sm" value="{{ msv_to_date }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">MACD Fast</label>
+              <input type="number" min="1" step="1" name="msv_macd_fast" class="form-control form-control-sm" value="{{ msv_macd_fast }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">MACD Slow</label>
+              <input type="number" min="2" step="1" name="msv_macd_slow" class="form-control form-control-sm" value="{{ msv_macd_slow }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">MACD Signal</label>
+              <input type="number" min="1" step="1" name="msv_macd_signal" class="form-control form-control-sm" value="{{ msv_macd_signal }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">ATR Len</label>
+              <input type="number" min="2" step="1" name="msv_atr_length" class="form-control form-control-sm" value="{{ msv_atr_length }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">ATR Mult</label>
+              <input type="number" min="0.1" step="0.1" name="msv_atr_multiplier" class="form-control form-control-sm" value="{{ msv_atr_multiplier }}" required>
+            </div>
+          </div>
+
+          <div class="row g-3 align-items-end mt-1">
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">RVOL Period</label>
+              <input type="number" min="2" step="1" name="msv_rvol_period" class="form-control form-control-sm" value="{{ msv_rvol_period }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">RVOL Threshold</label>
+              <input type="number" min="0.1" step="0.1" name="msv_rvol_threshold" class="form-control form-control-sm" value="{{ msv_rvol_threshold }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Supertrend Len</label>
+              <input type="number" min="2" step="1" name="msv_supertrend_length" class="form-control form-control-sm" value="{{ msv_supertrend_length }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Supertrend Mult</label>
+              <input type="number" min="0.1" step="0.1" name="msv_supertrend_multiplier" class="form-control form-control-sm" value="{{ msv_supertrend_multiplier }}" required>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute MSV Model</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {% if msv_backtest_metrics %}
+        {% if msv_backtest_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ msv_backtest_metrics.error }}</div>
+          {% if msv_backtest_metrics.warnings %}
+            <div class="alert alert-warning border-0 rounded-3 shadow-sm py-3">
+              <ul class="mb-0">
+                {% for warning in msv_backtest_metrics.warnings %}
+                  <li>{{ warning }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+        {% else %}
+          {% if msv_backtest_metrics.warnings %}
+            <div class="alert alert-warning border-0 rounded-3 shadow-sm py-3">
+              <strong>Warnings:</strong>
+              <ul class="mb-0 mt-1">
+                {% for warning in msv_backtest_metrics.warnings %}
+                  <li>{{ warning }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Latest Position</span>
+                <h5 class="mt-2 mb-0 fw-bold text-dark">{{ msv_backtest_metrics.latest_position_status }}</h5>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Latest Signal</span>
+                <h5 class="mt-2 mb-0 fw-bold {% if msv_backtest_metrics.latest_signal == 'Buy' %}text-success{% elif msv_backtest_metrics.latest_signal == 'Exit' %}text-danger{% else %}text-muted{% endif %}">{{ msv_backtest_metrics.latest_signal }}</h5>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Entries / Exits</span>
+                <h5 class="mt-2 mb-0 fw-bold text-primary">{{ msv_backtest_metrics.entries }} / {{ msv_backtest_metrics.exits }}</h5>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Supertrend Status</span>
+                <h5 class="mt-2 mb-0 fw-bold {% if msv_backtest_metrics.latest_trend_status == 'Bullish' %}text-success{% else %}text-danger{% endif %}">{{ msv_backtest_metrics.latest_trend_status }}</h5>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="filter-card">
+                <div class="small text-muted">RVOL Status</div>
+                <div class="fw-semibold {% if msv_backtest_metrics.latest_rvol_ok %}text-success{% else %}text-danger{% endif %}">
+                  {{ msv_backtest_metrics.latest_rvol|default:"N/A" }} (Threshold {{ msv_rvol_threshold }})
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="filter-card">
+                <div class="small text-muted">ATR Stop Loss</div>
+                <div class="fw-semibold text-dark">{{ msv_backtest_metrics.latest_stop_loss|default:"N/A" }}</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="filter-card">
+                <div class="small text-muted">MACD Histogram Panel</div>
+                <div class="fw-semibold text-dark">Shown in indicator table below</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="filter-card">
+                <div class="small text-muted">VWAP / Supertrend</div>
+                <div class="fw-semibold text-dark">{{ msv_backtest_metrics.latest_vwap|default:"N/A" }} / {{ msv_backtest_metrics.latest_supertrend|default:"N/A" }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-outer mb-4">
+            <div class="p-3 bg-light border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">MSV Trade Log: {{ msv_selected_symbol }}</h6>
+            </div>
+            <table class="minimal-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Entry Date</th>
+                  <th>Exit Date</th>
+                  <th class="th-num">Entry Price</th>
+                  <th class="th-num">Exit Price</th>
+                  <th class="th-num">P&amp;L %</th>
+                  <th>Exit Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for trade in msv_completed_trades %}
+                <tr>
+                  <td class="td-date">{{ trade.entry_date }}</td>
+                  <td class="td-date">{{ trade.exit_date }}</td>
+                  <td class="td-num text-muted">{{ trade.entry_price|floatformat:2 }}</td>
+                  <td class="td-num text-muted">{{ trade.exit_price|floatformat:2 }}</td>
+                  <td class="td-num {% if trade.pnl_pct >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">{{ trade.pnl_pct|floatformat:2 }}%</td>
+                  <td class="text-muted">{{ trade.exit_reason }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-4">No completed MSV trades in this date range.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="panel-outer">
+            <div class="p-3 bg-light border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">MSV Indicator Output (Chart/Panel Data)</h6>
+            </div>
+            <table class="minimal-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Date</th>
+                  <th class="th-num">Close</th>
+                  <th class="th-num">MACD</th>
+                  <th class="th-num">Signal</th>
+                  <th class="th-num">Histogram</th>
+                  <th class="th-num">Supertrend</th>
+                  <th class="th-num">VWAP</th>
+                  <th class="th-num">ATR</th>
+                  <th class="th-num">RVOL</th>
+                  <th>Signal</th>
+                  <th>Position</th>
+                  <th class="th-num">Stop Loss</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in msv_indicator_rows %}
+                <tr>
+                  <td class="td-date">{{ row.business_date }}</td>
+                  <td class="td-num">{{ row.close_price_adj|floatformat:2 }}</td>
+                  <td class="td-num">{{ row.MACD_line|floatformat:3 }}</td>
+                  <td class="td-num">{{ row.MACD_signal|floatformat:3 }}</td>
+                  <td class="td-num">{{ row.MACD_histogram|floatformat:3 }}</td>
+                  <td class="td-num">{{ row.Supertrend|floatformat:2 }}</td>
+                  <td class="td-num">{{ row.VWAP|floatformat:2 }}</td>
+                  <td class="td-num">{{ row.ATR|floatformat:2 }}</td>
+                  <td class="td-num">{{ row.RVOL|floatformat:3 }}</td>
+                  <td class="{% if row.signal == 'Buy' %}text-success-custom{% elif row.signal == 'Exit' %}text-danger-custom{% else %}text-muted{% endif %}">{{ row.signal }}</td>
+                  <td class="text-muted">{{ row.position_status }}</td>
+                  <td class="td-num">{{ row.stop_loss|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="12" class="text-center text-muted py-4">No indicator rows to render.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <div class="tab-pane fade {% if active_tab == 'imm_backtest' %}show active{% endif %}" id="imm-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 600; color: #374151;">Institutional Technical Scoring Parameters</h5>
+        <form method="GET" action="." id="immForm">
+          <input type="hidden" name="active_tab" value="imm_backtest">
+          <input type="hidden" name="imm_backtest_symbol" id="immSymbolHidden" value="{{ imm_selected_symbol }}">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" class="autocomplete-input" id="immSearchInput" placeholder="Type to search..." value="{{ imm_selected_symbol }}" autocomplete="off">
+                <div class="autocomplete-dropdown" id="immDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="date" name="imm_from_date" class="form-control form-control-sm" value="{{ imm_from_date }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="date" name="imm_to_date" class="form-control form-control-sm" value="{{ imm_to_date }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">RS Lookback</label>
+              <input type="number" min="2" step="1" name="imm_rs_lookback" class="form-control form-control-sm" value="{{ imm_rs_lookback }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">RSI Len</label>
+              <input type="number" min="2" step="1" name="imm_rsi_length" class="form-control form-control-sm" value="{{ imm_rsi_length }}" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">ATR Len</label>
+              <input type="number" min="2" step="1" name="imm_atr_length" class="form-control form-control-sm" value="{{ imm_atr_length }}" required>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Run IMM Score</button>
+            </div>
+          </div>
+          <div class="row g-3 align-items-end mt-1">
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">MACD Fast</label>
+              <input type="number" min="1" step="1" name="imm_macd_fast" class="form-control form-control-sm" value="{{ imm_macd_fast }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">MACD Slow</label>
+              <input type="number" min="2" step="1" name="imm_macd_slow" class="form-control form-control-sm" value="{{ imm_macd_slow }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">MACD Signal</label>
+              <input type="number" min="1" step="1" name="imm_macd_signal" class="form-control form-control-sm" value="{{ imm_macd_signal }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Supertrend Len</label>
+              <input type="number" min="2" step="1" name="imm_supertrend_length" class="form-control form-control-sm" value="{{ imm_supertrend_length }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Supertrend Mult</label>
+              <input type="number" min="0.1" step="0.1" name="imm_supertrend_multiplier" class="form-control form-control-sm" value="{{ imm_supertrend_multiplier }}" required>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {% if imm_backtest_metrics %}
+        {% if imm_backtest_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ imm_backtest_metrics.error }}</div>
+        {% else %}
+          {% if imm_backtest_metrics.warnings %}
+            <div class="alert alert-warning border-0 rounded-3 shadow-sm py-3">
+              <strong>Warnings:</strong>
+              <ul class="mb-0 mt-1">
+                {% for warning in imm_backtest_metrics.warnings %}
+                  <li>{{ warning }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Latest Technical Score</span>
+                <h4 class="mt-2 mb-0 fw-bold text-dark">{{ imm_backtest_metrics.latest_score|floatformat:2 }}</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Classification</span>
+                <h5 class="mt-2 mb-0 fw-bold text-primary">{{ imm_backtest_metrics.latest_classification }}</h5>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Buy / Sell Signals</span>
+                <h5 class="mt-2 mb-0 fw-bold text-dark">{{ imm_backtest_metrics.buy_count }} / {{ imm_backtest_metrics.sell_count }}</h5>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
+                <span class="metrics-card-label text-secondary">Latest RS | ATR%</span>
+                <h5 class="mt-2 mb-0 fw-bold text-dark">
+                  {% if imm_backtest_metrics.latest_relative_strength is not None %}{{ imm_backtest_metrics.latest_relative_strength|floatformat:3 }}{% else %}N/A{% endif %}
+                  |
+                  {% if imm_backtest_metrics.latest_atr_percent is not None %}{{ imm_backtest_metrics.latest_atr_percent|floatformat:2 }}{% else %}N/A{% endif %}
+                </h5>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-outer">
+            <div class="p-3 bg-light border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">IMM Technical Output: {{ imm_selected_symbol }}</h6>
+            </div>
+            <table class="minimal-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Date</th>
+                  <th class="th-num">Close</th>
+                  <th class="th-num">Score</th>
+                  <th>Class</th>
+                  <th class="th-num">RS</th>
+                  <th class="th-num">ATR%</th>
+                  <th>Volume Breakout</th>
+                  <th>Trend Align</th>
+                  <th>Momentum Align</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in imm_indicator_rows %}
+                <tr>
+                  <td class="td-date">{{ row.business_date }}</td>
+                  <td class="td-num">{{ row.close_price_adj|floatformat:2 }}</td>
+                  <td class="td-num fw-semibold">{{ row.technical_score|floatformat:2 }}</td>
+                  <td class="text-muted">{{ row.score_classification }}</td>
+                  <td class="td-num">{{ row.relative_strength|floatformat:3 }}</td>
+                  <td class="td-num">{{ row.atr_percent|floatformat:2 }}</td>
+                  <td class="{% if row.volume_breakout %}text-success-custom{% else %}text-muted{% endif %}">{% if row.volume_breakout %}Yes{% else %}No{% endif %}</td>
+                  <td class="{% if row.trend_alignment %}text-success-custom{% else %}text-muted{% endif %}">{% if row.trend_alignment %}Yes{% else %}No{% endif %}</td>
+                  <td class="{% if row.momentum_alignment %}text-success-custom{% else %}text-muted{% endif %}">{% if row.momentum_alignment %}Yes{% else %}No{% endif %}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="9" class="text-center text-muted py-4">No IMM rows generated in this date range.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="panel-outer mt-4">
+            <div class="p-3 bg-light border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">IMM Signal Events (BUY/SELL Only)</h6>
+            </div>
+            <table class="minimal-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Date</th>
+                  <th class="th-num">Close</th>
+                  <th>Signal</th>
+                  <th class="th-num">Score</th>
+                  <th>Class</th>
+                  <th class="th-num">RS</th>
+                  <th class="th-num">ATR%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in imm_event_rows %}
+                <tr>
+                  <td class="td-date">{{ row.business_date }}</td>
+                  <td class="td-num">{{ row.close_price_adj|floatformat:2 }}</td>
+                  <td>
+                    {% if row.buy_signal %}
+                      <span class="text-success-custom">BUY</span>
+                    {% elif row.sell_signal %}
+                      <span class="text-danger-custom">SELL</span>
+                    {% endif %}
+                  </td>
+                  <td class="td-num fw-semibold">{{ row.technical_score|floatformat:2 }}</td>
+                  <td class="text-muted">{{ row.score_classification }}</td>
+                  <td class="td-num">{{ row.relative_strength|floatformat:3 }}</td>
+                  <td class="td-num">{{ row.atr_percent|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="7" class="text-center text-muted py-4">No BUY/SELL event bars in this date range.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+
+  </div>{# /tab-content #}
+</div>{# /container #}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  /**
+   * AUTOCOMPLETE SEARCH SYSTEM
+   * Each strategy tab has its own autocomplete search input
+   */
+  class AutocompleteSearch {
+    constructor(inputId, dropdownId, hiddenInputId, apiUrl) {
+      this.input = document.getElementById(inputId);
+      this.dropdown = document.getElementById(dropdownId);
+      this.hiddenInput = document.getElementById(hiddenInputId);
+      this.apiUrl = apiUrl;
+      this.searchTimeout = null;
+      this.activeIndex = -1;
+      this.results = [];
+      
+      this.init();
+    }
+    
+    init() {
+      // Input events
+      this.input.addEventListener('input', () => this.handleInput());
+      this.input.addEventListener('focus', () => this.handleInput());
+      this.input.addEventListener('keydown', (e) => this.handleKeydown(e));
+      
+      // Click outside to close
+      document.addEventListener('click', (e) => {
+        if (!this.input.contains(e.target) && !this.dropdown.contains(e.target)) {
+          this.hideDropdown();
+        }
+      });
+    }
+    
+    handleInput() {
+      const query = this.input.value.trim();
+      
+      // Clear existing timeout
+      clearTimeout(this.searchTimeout);
+      
+      // If query is empty, show hint
+      if (query.length === 0) {
+        this.showHint();
+        return;
+      }
+      
+      // Debounce search
+      this.searchTimeout = setTimeout(() => {
+        this.performSearch(query);
+      }, 300);
+    }
+    
+    async performSearch(query) {
+      try {
+        this.showLoading();
+        
+        const response = await fetch(`${this.apiUrl}?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        this.results = data.results || [];
+        this.showResults();
+      } catch (error) {
+        console.error('Search error:', error);
+        this.hideDropdown();
+      }
+    }
+    
+    showHint() {
+      this.dropdown.innerHTML = '<div class="autocomplete-hint">Start typing to search for stocks and indices...</div>';
+      this.dropdown.classList.add('show');
+    }
+    
+    showLoading() {
+      this.dropdown.innerHTML = '<div class="autocomplete-loading">Searching...</div>';
+      this.dropdown.classList.add('show');
+    }
+    
+    showResults() {
+      if (this.results.length === 0) {
+        this.dropdown.innerHTML = '<div class="autocomplete-hint">No matches found</div>';
+        this.dropdown.classList.add('show');
+        return;
+      }
+      
+      this.dropdown.innerHTML = this.results.map((result, index) => 
+        `<div class="autocomplete-item" data-index="${index}" data-value="${result}">${result}</div>`
+      ).join('');
+      
+      // Add click handlers
+      this.dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+        item.addEventListener('click', () => {
+          this.selectItem(item.dataset.value);
+        });
+      });
+      
+      this.dropdown.classList.add('show');
+      this.activeIndex = -1;
+    }
+    
+    hideDropdown() {
+      this.dropdown.classList.remove('show');
+      this.activeIndex = -1;
+    }
+    
+    selectItem(value) {
+      this.input.value = value;
+      this.hiddenInput.value = value;
+      this.hideDropdown();
+    }
+    
+    handleKeydown(e) {
+      const items = this.dropdown.querySelectorAll('.autocomplete-item');
+      
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        this.activeIndex = Math.min(this.activeIndex + 1, items.length - 1);
+        this.updateActiveItem(items);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        this.activeIndex = Math.max(this.activeIndex - 1, -1);
+        this.updateActiveItem(items);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (this.activeIndex >= 0 && items[this.activeIndex]) {
+          this.selectItem(items[this.activeIndex].dataset.value);
+        } else if (this.input.value.trim()) {
+          // Use current input value
+          this.hiddenInput.value = this.input.value.trim().toUpperCase();
+        }
+      } else if (e.key === 'Escape') {
+        this.hideDropdown();
+      }
+    }
+    
+    updateActiveItem(items) {
+      items.forEach((item, index) => {
+        if (index === this.activeIndex) {
+          item.classList.add('active');
+          item.scrollIntoView({ block: 'nearest' });
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    }
+  }
+  
+  // Initialize autocomplete for each tab
+  document.addEventListener('DOMContentLoaded', function() {
+    // T3MA tab
+    new AutocompleteSearch(
+      't3SearchInput',
+      't3Dropdown',
+      't3SymbolHidden',
+      '{% url "symbol_autocomplete" %}'
+    );
+    
+    // EMA tab
+    new AutocompleteSearch(
+      'emaSearchInput',
+      'emaDropdown',
+      'emaSymbolHidden',
+      '{% url "symbol_autocomplete" %}'
+    );
+    
+    // CCI tab
+    new AutocompleteSearch(
+      'cciSearchInput',
+      'cciDropdown',
+      'cciSymbolHidden',
+      '{% url "symbol_autocomplete" %}'
+    );
+    
+    // RSI tab
+    new AutocompleteSearch(
+      'rsiSearchInput',
+      'rsiDropdown',
+      'rsiSymbolHidden',
+      '{% url "symbol_autocomplete" %}'
+    );
+
+    // MSV tab
+    new AutocompleteSearch(
+      'msvSearchInput',
+      'msvDropdown',
+      'msvSymbolHidden',
+      '{% url "symbol_autocomplete" %}'
+    );
+
+    // IMM tab
+    new AutocompleteSearch(
+      'immSearchInput',
+      'immDropdown',
+      'immSymbolHidden',
+      '{% url "symbol_autocomplete" %}'
+    );
+
+    const msvForm = document.getElementById('msvForm');
+    if (msvForm) {
+      msvForm.addEventListener('submit', function(e) {
+        const getNum = (name) => parseFloat(msvForm.querySelector(`[name="${name}"]`).value || '0');
+        const fast = getNum('msv_macd_fast');
+        const slow = getNum('msv_macd_slow');
+        const signal = getNum('msv_macd_signal');
+        const atrLen = getNum('msv_atr_length');
+        const atrMult = getNum('msv_atr_multiplier');
+        const rvolPeriod = getNum('msv_rvol_period');
+        const rvolTh = getNum('msv_rvol_threshold');
+        const stLen = getNum('msv_supertrend_length');
+        const stMult = getNum('msv_supertrend_multiplier');
+        const fromDate = msvForm.querySelector('[name="msv_from_date"]').value;
+        const toDate = msvForm.querySelector('[name="msv_to_date"]').value;
+
+        const issues = [];
+        if (!fromDate || !toDate) issues.push('From/To date is required.');
+        if (fast >= slow) issues.push('MACD Fast must be smaller than MACD Slow.');
+        if (signal < 1 || atrLen < 2 || rvolPeriod < 2 || stLen < 2) issues.push('Lookback periods are too small.');
+        if (atrMult <= 0 || rvolTh <= 0 || stMult <= 0) issues.push('Multipliers and thresholds must be greater than zero.');
+
+        if (issues.length) {
+          e.preventDefault();
+          alert('Validation warnings:\\n- ' + issues.join('\\n- '));
+        }
+      });
+    }
+
+    const immForm = document.getElementById('immForm');
+    if (immForm) {
+      immForm.addEventListener('submit', function(e) {
+        const getNum = (name) => parseFloat(immForm.querySelector(`[name="${name}"]`).value || '0');
+        const fast = getNum('imm_macd_fast');
+        const slow = getNum('imm_macd_slow');
+        const rsLookback = getNum('imm_rs_lookback');
+        const atrLen = getNum('imm_atr_length');
+        const rsiLen = getNum('imm_rsi_length');
+        const stLen = getNum('imm_supertrend_length');
+        const stMult = getNum('imm_supertrend_multiplier');
+        const fromDate = immForm.querySelector('[name="imm_from_date"]').value;
+        const toDate = immForm.querySelector('[name="imm_to_date"]').value;
+
+        const issues = [];
+        if (!fromDate || !toDate) issues.push('From/To date is required.');
+        if (fast >= slow) issues.push('MACD Fast must be smaller than MACD Slow.');
+        if (rsLookback < 2 || atrLen < 2 || rsiLen < 2 || stLen < 2) issues.push('Lookback periods are too small.');
+        if (stMult <= 0) issues.push('Supertrend multiplier must be greater than zero.');
+
+        if (issues.length) {
+          e.preventDefault();
+          alert('Validation warnings:\\n- ' + issues.join('\\n- '));
+        }
+      });
+    }
+    
+    // Ensure active tab is shown correctly
+    const activeBtn = document.querySelector('.nav-tabs .nav-link.active');
+    if (activeBtn) {
+      const tabInstance = bootstrap.Tab.getOrCreateInstance(activeBtn);
+      tabInstance.show();
+    }
+  });
+</script>
+</body>
+</html>
