@@ -5,8 +5,10 @@ import pandas as pd
 import requests
 from django.contrib import messages
 from django.core.cache import cache
+from django.db.models import OuterRef, Q, Subquery
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.core.management import call_command
 from django.views.decorators.http import require_POST
 
 from core_analysis.models import CompanyProfile, NepseDailyStockPrice, NepseMarketIndex, StockPriceAdjustment
@@ -16,6 +18,15 @@ from core_analysis.services.msv_strategy import run_msv_long_only_simulation
 from core_analysis.services.moving_average import run_ema_50_200_long_only_simulation
 from core_analysis.services.RSI_SMA import run_rsi_sma_long_only_simulation
 from core_analysis.services.strategy_tester import run_t3ma_macd_ribbon_simulation
+
+@require_POST
+def trigger_sync_and_calculate(request):
+    try:
+        call_command("sync_and_calculate")
+        messages.success(request, "Market Data and Signals sync_and_calculate successfully generated!")
+    except Exception as e:
+        messages.error(request, f"Command execution failed: {str(e)}")
+    return redirect("core_dashboard")
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -152,25 +163,72 @@ def symbol_autocomplete_view(request):
     this endpoint and builds the dropdown on demand, so the initial HTML
     response is drastically smaller.
 
-    Usage: GET /dashboard/symbols/?q=NBI
-    Returns: {"results": ["NBIL", "NBIA", ...]}
+    Usage: GET /dashboard/symbols/?q=nabil
+    Returns: {"results": [{"value": "NABIL", "label": "NABIL - Nabil Bank", "type": "company"}, ...]}
     """
-    q = request.GET.get("q", "").strip().upper()
+    q_raw = request.GET.get("q", "").strip()
+    q = q_raw.upper()
     if not q:
         return JsonResponse({"results": []})
 
-    companies = list(
-        CompanyProfile.objects.filter(symbol__istartswith=q)
-        .values_list("symbol", flat=True)
-        .order_by("symbol")[:30]
+    latest_stock_price_sq = (
+        StockPriceAdjustment.objects
+        .filter(company_id=OuterRef("symbol"))
+        .order_by("-business_date")
     )
-    indices = list(
+    latest_stock_date_sq = (
+        StockPriceAdjustment.objects
+        .filter(company_id=OuterRef("symbol"))
+        .order_by("-business_date")
+    )
+
+    # Match by ticker prefix first, then by company name.
+    company_rows = list(
+        CompanyProfile.objects.filter(
+            Q(symbol__istartswith=q_raw) | Q(security_name__icontains=q_raw)
+        )
+        .annotate(
+            latest_close=Subquery(latest_stock_price_sq.values("close_price_adj")[:1]),
+            latest_date=Subquery(latest_stock_date_sq.values("business_date")[:1]),
+        )
+        .values("symbol", "security_name", "latest_close", "latest_date")
+        .order_by("symbol")[:40]
+    )
+    index_rows = list(
         NepseMarketIndex.objects.filter(sector_name__icontains=q)
         .values_list("sector_name", flat=True)
         .distinct()
         .order_by("sector_name")[:10]
     )
-    return JsonResponse({"results": sorted(set(companies + indices))})
+
+    results = []
+    seen = set()
+
+    for row in company_rows:
+        symbol = (row.get("symbol") or "").strip().upper()
+        name = (row.get("security_name") or "").strip()
+        if not symbol or symbol in seen:
+            continue
+        seen.add(symbol)
+        label = f"{symbol} - {name}" if name else symbol
+        latest_close = row.get("latest_close")
+        latest_date = row.get("latest_date")
+        results.append({
+            "value": symbol,
+            "label": label,
+            "type": "company",
+            "latest_close": float(latest_close) if latest_close is not None else None,
+            "latest_date": latest_date.isoformat() if latest_date else None,
+        })
+
+    for index_name in index_rows:
+        index_value = (index_name or "").strip().upper()
+        if not index_value or index_value in seen:
+            continue
+        seen.add(index_value)
+        results.append({"value": index_value, "label": index_name, "type": "index"})
+
+    return JsonResponse({"results": results})
 
 
 # ── Main dashboard ────────────────────────────────────────────────────────────
