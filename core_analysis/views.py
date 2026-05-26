@@ -18,6 +18,7 @@ from core_analysis.services.msv_strategy import run_msv_long_only_simulation
 from core_analysis.services.moving_average import run_ema_50_200_long_only_simulation
 from core_analysis.services.RSI_SMA import run_rsi_sma_long_only_simulation
 from core_analysis.services.strategy_tester import run_t3ma_macd_ribbon_simulation
+from core_analysis.services.stage_analysis import calculate_stage_analysis
 
 @require_POST
 def trigger_sync_and_calculate(request):
@@ -260,11 +261,12 @@ def crud_dashboard_view(request):
         )
 
     # Initialise result vectors
-    backtest_metrics = ema_backtest_metrics = cci_backtest_metrics = rsi_backtest_metrics = msv_backtest_metrics = imm_backtest_metrics = None
+    backtest_metrics = ema_backtest_metrics = cci_backtest_metrics = rsi_backtest_metrics = msv_backtest_metrics = imm_backtest_metrics = stage_backtest_metrics = None
     completed_trades = ema_completed_trades = cci_completed_trades = rsi_completed_trades = msv_completed_trades = []
     msv_indicator_rows = []
     imm_indicator_rows = []
     imm_event_rows = []
+    stage_indicator_rows = []
 
     # Per-tab symbols
     selected_symbol     = g.get("backtest_symbol",     "").upper().strip()
@@ -273,6 +275,7 @@ def crud_dashboard_view(request):
     rsi_selected_symbol = g.get("rsi_backtest_symbol", "").upper().strip()
     msv_selected_symbol = g.get("msv_backtest_symbol", "").upper().strip()
     imm_selected_symbol = g.get("imm_backtest_symbol", "").upper().strip()
+    stage_selected_symbol = g.get("stage_backtest_symbol", "").upper().strip()
 
     # Per-tab independent date ranges
     t3_from  = g.get("t3_from_date",  g.get("from_date", "")).strip()
@@ -287,6 +290,8 @@ def crud_dashboard_view(request):
     msv_to   = g.get("msv_to_date",   g.get("to_date",   "")).strip()
     imm_from = g.get("imm_from_date", g.get("from_date", "")).strip()
     imm_to   = g.get("imm_to_date",   g.get("to_date",   "")).strip()
+    stage_from = g.get("stage_from_date", g.get("from_date", "")).strip()
+    stage_to   = g.get("stage_to_date",   g.get("to_date",   "")).strip()
 
     # ── TAB 2: T3MA ──────────────────────────────────────────────────────────
     if selected_symbol and active_tab == "backtest":
@@ -423,6 +428,34 @@ def crud_dashboard_view(request):
                     imm_indicator_rows = imm_df.tail(150).to_dict(orient="records")
                     imm_event_rows = imm_df[(imm_df["buy_signal"] == True) | (imm_df["sell_signal"] == True)].tail(120).to_dict(orient="records")
 
+    # TAB 8: Stage Analysis
+    if stage_selected_symbol and active_tab == "stage_backtest":
+        if not (stage_from and stage_to):
+            stage_backtest_metrics = {"error": "Please select both From Date and To Date."}
+        else:
+            df = _build_standard_dataframe(stage_selected_symbol, stage_from, stage_to)
+            if df.empty:
+                stage_backtest_metrics = {"error": f"No price data found for '{stage_selected_symbol}' in the selected date range."}
+            else:
+                # rename columns to match what calculate_stage_analysis expects
+                df_calc = df.rename(columns={
+                    "close_price_adj": "close",
+                    "high_price_adj": "high"
+                })
+                try:
+                    stage_df = calculate_stage_analysis(df_calc)
+                    if not stage_df.empty:
+                        stage_df["business_date"] = pd.to_datetime(stage_df["business_date"]).dt.strftime("%Y-%m-%d")
+                        stage_indicator_rows = stage_df.tail(150).to_dict(orient="records")
+                        latest_row = stage_df.iloc[-1]
+                        stage_backtest_metrics = {
+                            "latest_stage": latest_row.get("stage", "Stage 1"),
+                            "returns_3m": float(latest_row.get("returns_3m", 0) * 100) if pd.notna(latest_row.get("returns_3m")) else 0,
+                            "volume_ratio": float(latest_row.get("volume_ratio", 0)) if pd.notna(latest_row.get("volume_ratio")) else 0,
+                        }
+                except Exception as e:
+                    stage_backtest_metrics = {"error": f"Error running Stage Analysis: {str(e)}"}
+
     return render(request, "core_analysis/crud.html", {
         "records": queryset,
 
@@ -469,6 +502,13 @@ def crud_dashboard_view(request):
         "imm_selected_symbol":  imm_selected_symbol,
         "imm_from_date":        imm_from,
         "imm_to_date":          imm_to,
+        
+        # Stage
+        "stage_backtest_metrics": stage_backtest_metrics,
+        "stage_indicator_rows":   stage_indicator_rows,
+        "stage_selected_symbol":  stage_selected_symbol,
+        "stage_from_date":        stage_from,
+        "stage_to_date":          stage_to,
 
         # EMA parameters
         "ema_take_profit_pct": g.get("ema_take_profit_pct", "15"),

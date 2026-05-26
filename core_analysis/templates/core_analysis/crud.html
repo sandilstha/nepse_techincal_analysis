@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NEPSE Core Storage &amp; Backtest Panel</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     body { background-color: #f8fafc; font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #0f172a; }
@@ -189,6 +190,11 @@
               data-bs-toggle="tab" data-bs-target="#imm-backtest-pane" type="button" role="tab"
               aria-selected="{% if active_tab == 'imm_backtest' %}true{% else %}false{% endif %}">IMM Technical Scoring Console</button>
     </li>
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'stage_backtest' %}active{% endif %}"
+              data-bs-toggle="tab" data-bs-target="#stage-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'stage_backtest' %}true{% else %}false{% endif %}">Stage Analysis Desk</button>
+    </li>
   </ul>
 
   <div class="tab-content" id="workspaceTabsContent">
@@ -227,6 +233,9 @@
           </div>
           <button type="submit" class="btn btn-dark btn-sm mt-3 px-4 rounded-2">Commit Transaction Row</button>
         </form>
+        <div class="mt-3 small text-muted">
+          <strong>SOP:</strong> Stage 2 Buy Logic = Close &gt; Resistance AND Close &gt; 30W EMA AND Volume Ratio &gt; 1.5.
+        </div>
       </div>
 
       <div class="panel-outer">
@@ -309,6 +318,9 @@
             </div>
           </div>
         </form>
+        <div class="mt-3 small text-muted">
+          <strong>SOP:</strong> Stage 2 Buy Logic = Close &gt; Resistance AND Close &gt; 30W EMA AND Volume Ratio &gt; 1.5.
+        </div>
       </div>
 
       {% if backtest_metrics %}
@@ -1122,27 +1134,33 @@
           {% endif %}
 
           <div class="row g-3 mb-4">
-            <div class="col-md-3">
-              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
-                <span class="metrics-card-label text-secondary">Latest Technical Score</span>
+            <div class="col-md">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Latest Score</span>
                 <h4 class="mt-2 mb-0 fw-bold text-dark">{{ imm_backtest_metrics.latest_score|floatformat:2 }}</h4>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
+            <div class="col-md">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
                 <span class="metrics-card-label text-secondary">Classification</span>
                 <h5 class="mt-2 mb-0 fw-bold text-primary">{{ imm_backtest_metrics.latest_classification }}</h5>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
+            <div class="col-md">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Greed Meter</span>
+                <h5 class="mt-2 mb-0 fw-bold {% if 'Greed' in imm_backtest_metrics.latest_volume_greed %}text-success{% elif 'Fear' in imm_backtest_metrics.latest_volume_greed %}text-danger{% else %}text-muted{% endif %}">{{ imm_backtest_metrics.latest_volume_greed }}</h5>
+              </div>
+            </div>
+            <div class="col-md">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
                 <span class="metrics-card-label text-secondary">Buy / Sell Signals</span>
                 <h5 class="mt-2 mb-0 fw-bold text-dark">{{ imm_backtest_metrics.buy_count }} / {{ imm_backtest_metrics.sell_count }}</h5>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="card p-4 border-0 bg-white shadow-sm rounded-3">
-                <span class="metrics-card-label text-secondary">Latest RS | ATR%</span>
+            <div class="col-md">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">RS | ATR%</span>
                 <h5 class="mt-2 mb-0 fw-bold text-dark">
                   {% if imm_backtest_metrics.latest_relative_strength is not None %}{{ imm_backtest_metrics.latest_relative_strength|floatformat:3 }}{% else %}N/A{% endif %}
                   |
@@ -1164,11 +1182,12 @@
                     <th class="th-num">Close</th>
                     <th class="th-num">Score</th>
                     <th>Class</th>
+                    <th>Greed</th>
+                    <th class="th-num">Vol Ratio</th>
                     <th class="th-num">RS</th>
                     <th class="th-num">ATR%</th>
-                    <th>Volume Breakout</th>
-                    <th>Trend Align</th>
-                    <th>Momentum Align</th>
+                    <th>Vol Breakout</th>
+                    <th>Alignment</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1178,15 +1197,19 @@
                     <td class="td-num">{{ row.close_price_adj|floatformat:2 }}</td>
                     <td class="td-num fw-semibold">{{ row.technical_score|floatformat:2 }}</td>
                     <td class="text-muted">{{ row.score_classification }}</td>
+                    <td class="{% if 'Greed' in row.volume_greed %}text-success-custom{% elif 'Fear' in row.volume_greed %}text-danger-custom{% else %}text-muted{% endif %}">{{ row.volume_greed }}</td>
+                    <td class="td-num">{{ row.volume_ratio|floatformat:2 }}x</td>
                     <td class="td-num">{{ row.relative_strength|floatformat:3 }}</td>
                     <td class="td-num">{{ row.atr_percent|floatformat:2 }}</td>
                     <td class="{% if row.volume_breakout %}text-success-custom{% else %}text-muted{% endif %}">{% if row.volume_breakout %}Yes{% else %}No{% endif %}</td>
-                    <td class="{% if row.trend_alignment %}text-success-custom{% else %}text-muted{% endif %}">{% if row.trend_alignment %}Yes{% else %}No{% endif %}</td>
-                    <td class="{% if row.momentum_alignment %}text-success-custom{% else %}text-muted{% endif %}">{% if row.momentum_alignment %}Yes{% else %}No{% endif %}</td>
+                    <td>
+                      <span class="{% if row.trend_alignment %}text-success-custom{% else %}text-muted{% endif %}">T: {% if row.trend_alignment %}Yes{% else %}No{% endif %}</span> | 
+                      <span class="{% if row.momentum_alignment %}text-success-custom{% else %}text-muted{% endif %}">M: {% if row.momentum_alignment %}Yes{% else %}No{% endif %}</span>
+                    </td>
                   </tr>
                   {% empty %}
                   <tr>
-                    <td colspan="9" class="text-center text-muted py-4">No IMM rows generated in this date range.</td>
+                    <td colspan="10" class="text-center text-muted py-4">No IMM rows generated in this date range.</td>
                   </tr>
                   {% endfor %}
                 </tbody>
@@ -1207,6 +1230,8 @@
                     <th>Signal</th>
                     <th class="th-num">Score</th>
                     <th>Class</th>
+                    <th>Greed</th>
+                    <th class="th-num">Vol Ratio</th>
                     <th class="th-num">RS</th>
                     <th class="th-num">ATR%</th>
                   </tr>
@@ -1225,6 +1250,8 @@
                     </td>
                     <td class="td-num fw-semibold">{{ row.technical_score|floatformat:2 }}</td>
                     <td class="text-muted">{{ row.score_classification }}</td>
+                    <td class="{% if 'Greed' in row.volume_greed %}text-success-custom{% elif 'Fear' in row.volume_greed %}text-danger-custom{% else %}text-muted{% endif %}">{{ row.volume_greed }}</td>
+                    <td class="td-num">{{ row.volume_ratio|floatformat:2 }}x</td>
                     <td class="td-num">{{ row.relative_strength|floatformat:3 }}</td>
                     <td class="td-num">{{ row.atr_percent|floatformat:2 }}</td>
                   </tr>
@@ -1241,10 +1268,108 @@
       {% endif %}
     </div>
 
+    <div class="tab-pane fade {% if active_tab == 'stage_backtest' %}show active{% endif %}" id="stage-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 600; color: #374151;">NEPSE Stage Analysis Parameters</h5>
+        <form method="GET" action="." id="stageForm">
+          <input type="hidden" name="active_tab" value="stage_backtest">
+          <input type="hidden" name="stage_backtest_symbol" id="stageSymbolHidden" value="{{ stage_selected_symbol }}">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" class="autocomplete-input" id="stageSearchInput" placeholder="Type to search..." value="{{ stage_selected_symbol }}" autocomplete="off">
+                <div class="autocomplete-dropdown" id="stageDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="stageFromDate" name="stage_from_date" class="form-control form-control-sm" value="{{ stage_from_date }}" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="stageToDate" name="stage_to_date" class="form-control form-control-sm" value="{{ stage_to_date }}" required>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute Stage Scan</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {% if stage_backtest_metrics %}
+        {% if stage_backtest_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ stage_backtest_metrics.error }}</div>
+        {% else %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Latest Stage Classification</span>
+                <h4 class="mt-2 mb-0 fw-bold {% if stage_backtest_metrics.latest_stage == 'Stage 2' %}text-success{% elif stage_backtest_metrics.latest_stage == 'Stage 4' %}text-danger{% else %}text-muted{% endif %}">{{ stage_backtest_metrics.latest_stage }}</h4>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">3-Month Momentum Return</span>
+                <h4 class="mt-2 mb-0 fw-bold {% if stage_backtest_metrics.returns_3m >= 0 %}text-success{% else %}text-danger{% endif %}">{{ stage_backtest_metrics.returns_3m|floatformat:2 }}%</h4>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Latest Volume Expansion Ratio</span>
+                <h4 class="mt-2 mb-0 fw-bold {% if stage_backtest_metrics.volume_ratio > 1.5 %}text-success{% else %}text-dark{% endif %}">{{ stage_backtest_metrics.volume_ratio|floatformat:2 }}x</h4>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-outer">
+            <div class="p-3 bg-light border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">Stage Analysis Output: {{ stage_selected_symbol }}</h6>
+            </div>
+            <div class="imm-scroll-wrap">
+              <table class="minimal-table">
+                <thead class="table-light">
+                  <tr>
+                    <th>Date</th>
+                    <th class="th-num">Close</th>
+                    <th class="th-num">30-Week EMA</th>
+                    <th class="th-num">10-Week EMA</th>
+                    <th class="th-num">Resistance</th>
+                    <th class="th-num">Volume Ratio</th>
+                    <th class="th-num">3M Momentum %</th>
+                    <th>Calculated Stage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in stage_indicator_rows %}
+                  <tr>
+                    <td class="td-date">{{ row.business_date }}</td>
+                    <td class="td-num">{{ row.close|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.ema_30w|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.ema_10w|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.resistance|floatformat:2 }}</td>
+                    <td class="td-num {% if row.volume_ratio > 1.5 %}text-success-custom{% endif %}">{{ row.volume_ratio|floatformat:2 }}x</td>
+                    <td class="td-num">{% if row.returns_3m %}{{ row.returns_3m|add:"0"|floatformat:4 }}{% else %}0.00{% endif %}</td>
+                    <td class="{% if row.stage == 'Stage 2' %}text-success-custom{% elif row.stage == 'Stage 4' %}text-danger-custom{% else %}text-muted{% endif %} fw-semibold">{{ row.stage }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="8" class="text-center text-muted py-4">No Stage rows generated in this date range.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+
   </div>{# /tab-content #}
 </div>{# /container #}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
   /**
    * AUTOCOMPLETE SEARCH SYSTEM
@@ -1485,6 +1610,53 @@
       'immSymbolHidden',
       '{% url "symbol_autocomplete" %}'
     );
+
+    // Stage Analysis tab
+    new AutocompleteSearch(
+      'stageSearchInput',
+      'stageDropdown',
+      'stageSymbolHidden',
+      '{% url "symbol_autocomplete" %}'
+    );
+
+    const stageFromEl = document.getElementById('stageFromDate');
+    const stageToEl = document.getElementById('stageToDate');
+    if (stageFromEl && stageToEl && window.flatpickr) {
+      const tradingDayOnly = (date) => date.getDay() !== 0 && date.getDay() !== 6;
+      const today = new Date();
+
+      const toPicker = flatpickr(stageToEl, {
+        dateFormat: 'Y-m-d',
+        maxDate: today,
+        enable: [tradingDayOnly],
+        allowInput: false,
+      });
+
+      const fromPicker = flatpickr(stageFromEl, {
+        dateFormat: 'Y-m-d',
+        maxDate: stageToEl.value || today,
+        enable: [tradingDayOnly],
+        allowInput: false,
+      });
+
+      fromPicker.config.onChange.push(function(selectedDates) {
+        if (selectedDates.length) {
+          toPicker.set('minDate', selectedDates[0]);
+          if (toPicker.selectedDates[0] && toPicker.selectedDates[0] < selectedDates[0]) {
+            toPicker.setDate(selectedDates[0], true);
+          }
+        }
+      });
+
+      toPicker.config.onChange.push(function(selectedDates) {
+        if (selectedDates.length) {
+          fromPicker.set('maxDate', selectedDates[0]);
+          if (fromPicker.selectedDates[0] && fromPicker.selectedDates[0] > selectedDates[0]) {
+            fromPicker.setDate(selectedDates[0], true);
+          }
+        }
+      });
+    }
 
     const msvForm = document.getElementById('msvForm');
     if (msvForm) {

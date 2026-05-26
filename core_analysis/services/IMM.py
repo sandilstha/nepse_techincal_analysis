@@ -109,6 +109,28 @@ def _build_position_signals(raw_buy: pd.Series, raw_sell: pd.Series) -> Tuple[pd
     return buy_evt, sell_evt
 
 
+def calculate_volume_greed(df: pd.DataFrame) -> pd.Series:
+    """
+    Calculates a Volume Greed/Fear Meter based on Volume Ratio and Price Action.
+    High volume on up days = Greed (Accumulation)
+    High volume on down days = Fear (Distribution)
+    Low volume = Neutral / Indecision
+    """
+    conditions = [
+        (df["price_change_pct"] > 0) & (df["volume_ratio"] >= 2.0),
+        (df["price_change_pct"] > 0) & (df["volume_ratio"] >= 1.2),
+        (df["price_change_pct"] < 0) & (df["volume_ratio"] >= 2.0),
+        (df["price_change_pct"] < 0) & (df["volume_ratio"] >= 1.2),
+    ]
+    labels = [
+        "Extreme Greed",
+        "Greed",
+        "Extreme Fear",
+        "Fear"
+    ]
+    return pd.Series(np.select(conditions, labels, default="Neutral"), index=df.index)
+
+
 def calculate_technical_score(df: pd.DataFrame) -> pd.Series:
     trend_score = (
         np.where(df["close_price_adj"] > df["SMA_200"], 15, 0) +
@@ -136,6 +158,17 @@ def calculate_technical_score(df: pd.DataFrame) -> pd.Series:
         np.where((df["price_change_pct"] < 0) & (df["volume_change_pct"] > 0), -12, 0)
     )
 
+    greed_score = np.select(
+        [
+            df["volume_greed"] == "Extreme Greed",
+            df["volume_greed"] == "Greed",
+            df["volume_greed"] == "Extreme Fear",
+            df["volume_greed"] == "Fear",
+        ],
+        [15, 5, -15, -5],
+        default=0,
+    )
+
     rs_score = np.select(
         [
             df["relative_strength"] > 1.0,
@@ -156,7 +189,7 @@ def calculate_technical_score(df: pd.DataFrame) -> pd.Series:
         default=0,
     )
 
-    raw_score = trend_score + momentum_score + volume_score + rs_score + vol_score
+    raw_score = trend_score + momentum_score + volume_score + greed_score + rs_score + vol_score
     return pd.Series(raw_score, index=df.index).clip(0, 100)
 
 
@@ -239,7 +272,12 @@ def run_imm_scoring_system(
 
     df["price_change_pct"] = df["close_price_adj"].pct_change() * 100.0
     df["volume_change_pct"] = df["volume"].pct_change() * 100.0
-    df["volume_breakout"] = df["volume"] > df["VOL_SMA_20"]
+    
+    # Calculate volume ratio and greed meter
+    df["volume_ratio"] = _safe_divide(df["volume"], df["VOL_SMA_20"])
+    df["volume_breakout"] = df["volume_ratio"] >= 2.0
+    df["volume_breakout_status"] = np.where(df["volume_breakout"], "BREAKOUT", "NORMAL")
+    df["volume_greed"] = calculate_volume_greed(df)
 
     df["relative_strength"] = calculate_relative_strength(df, nepse_index_df, lookback=rs_lookback)
 
@@ -277,7 +315,10 @@ def run_imm_scoring_system(
         "sell_signal",
         "relative_strength",
         "atr_percent",
+        "volume_ratio",
         "volume_breakout",
+        "volume_breakout_status",
+        "volume_greed",
         "trend_alignment",
         "momentum_alignment",
         "MACD_line",
@@ -295,6 +336,8 @@ def run_imm_scoring_system(
         "warnings": warnings,
         "latest_score": float(latest["technical_score"]) if pd.notna(latest["technical_score"]) else None,
         "latest_classification": str(latest["score_classification"]),
+        "latest_volume_greed": str(latest["volume_greed"]),
+        "latest_volume_ratio": float(latest["volume_ratio"]) if pd.notna(latest["volume_ratio"]) else None,
         "latest_buy_signal": bool(latest["buy_signal"]) if pd.notna(latest["buy_signal"]) else False,
         "latest_sell_signal": bool(latest["sell_signal"]) if pd.notna(latest["sell_signal"]) else False,
         "latest_relative_strength": float(latest["relative_strength"]) if pd.notna(latest["relative_strength"]) else None,
