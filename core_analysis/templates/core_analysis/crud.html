@@ -6,111 +6,689 @@
   <title>NEPSE Core Storage &amp; Backtest Panel</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { background-color: #f8fafc; font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #0f172a; }
-    .workspace-wrap { padding: 2.5rem 0; }
-    
-    /* Header Enhancements */
-    .workspace-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
-    .workspace-title { font-size: 26px; font-weight: 700; margin: 0; color: #0f172a; letter-spacing: -0.025em; }
-    .workspace-sub { font-size: 15px; color: #64748b; margin: 4px 0 0; font-weight: 400; }
+    :root {
+      /* Light palette — slightly deeper */
+      --bg-base:    #020b1f;
+      --bg-surface: #07142e;
+      --bg-raised:  #0b1d3f;
+      --bg-input:   #0a1a36;
+      --line:       #17345c;
+      --line-bright:#255182;
 
-    /* Modern Pill Tabs */
-    .nav-tabs { border-bottom: none; gap: 10px; margin-bottom: 2rem !important; flex-wrap: wrap; }
-    .nav-tabs .nav-link { 
-      border: 1px solid #e2e8f0; 
-      color: #64748b; 
-      font-size: 14px; 
-      font-weight: 500; 
-      padding: 10px 20px; 
-      border-radius: 99px !important; 
-      background: #fff; 
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05); 
-      transition: all 0.2s ease-in-out; 
+      /* Text */
+      --ink-1:      #edf4ff;
+      --ink-2:      #a9bedf;
+      --ink-3:      #6f88ad;
+
+      /* Accent — blue for primary actions */
+      --amber:      #12d39a;
+      --amber-dim:  #0ca77b;
+      --amber-glow: rgba(18,211,154,0.2);
+
+      /* Signal colours */
+      --bull:       #14e7a0;
+      --bull-dim:   #0ea879;
+      --bull-bg:    rgba(20,231,160,0.12);
+      --bear:       #ff6e72;
+      --bear-dim:   #d94752;
+      --bear-bg:    rgba(255,110,114,0.12);
+      --caution:    #ffc166;
+      --caution-bg: rgba(255,193,102,0.12);
+      --neutral:    #5cb3ff;
+      --neutral-bg: rgba(92,179,255,0.12);
+
+      --panel: var(--bg-surface);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
     }
-    .nav-tabs .nav-link:hover { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; transform: translateY(-1px); }
-    .nav-tabs .nav-link.active { 
-      background: #0f172a; 
-      color: #fff; 
-      border-color: #0f172a; 
-      font-weight: 600; 
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); 
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      background: var(--bg-base);
+      background-image:
+        radial-gradient(ellipse 900px 600px at 0% 0%, rgba(33,88,255,0.18) 0%, transparent 62%),
+        radial-gradient(ellipse 700px 500px at 100% 100%, rgba(18,211,154,0.1) 0%, transparent 64%);
+      font-family: 'Manrope', system-ui, sans-serif;
+      color: var(--ink-1);
+      min-height: 100vh;
     }
 
-    /* Cards & Panels */
-    .card { border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03) !important; border: 1px solid #f1f5f9 !important; background: #fff; }
-    .panel-outer { border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background: #fff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); }
-    
-    /* Metrics Enhancements */
-    .metrics-header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; border-radius: 16px; padding: 1.5rem; border: none; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-    .metrics-card-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-    .bg-success { background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important; box-shadow: 0 4px 6px -1px rgba(16,185,129,0.2) !important; }
-    .bg-danger { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important; box-shadow: 0 4px 6px -1px rgba(239,68,68,0.2) !important; }
+    /* Monospace for numbers */
+    .mono { font-family: 'JetBrains Mono', monospace; }
 
-    /* Forms */
-    .form-control, .autocomplete-input { border-radius: 10px; border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); transition: all 0.2s; }
-    .form-control:focus, .autocomplete-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.15); outline: none; }
-    .form-label { font-weight: 600; color: #475569; margin-bottom: 0.4rem; }
-    .btn { border-radius: 10px; font-weight: 600; transition: all 0.2s; }
-    .btn-primary { background-color: #3b82f6; border-color: #3b82f6; box-shadow: 0 4px 6px -1px rgba(59,130,246,0.2); }
-    .btn-primary:hover { background-color: #2563eb; border-color: #2563eb; transform: translateY(-1px); }
-    .btn-dark { background-color: #0f172a !important; border-color: #0f172a !important; }
-    .btn-dark:hover { background-color: #1e293b !important; transform: translateY(-1px); }
+    .workspace-wrap { padding: 2rem 0 4rem; }
 
-    /* Tables */
-    .minimal-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-    .minimal-table thead tr { background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
-    .minimal-table thead th { padding: 14px 16px; font-weight: 600; font-size: 12px; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; }
+    /* ── Header ─────────────────────────────────────────────────────── */
+    .workspace-header {
+      display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1.25rem;
+      margin-bottom: 2.5rem;
+      background: linear-gradient(180deg, rgba(10,30,63,0.95) 0%, rgba(7,20,46,0.98) 100%);
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--amber);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: 0 12px 34px -10px rgba(0,0,0,0.8), 0 0 0 1px rgba(92,179,255,0.08) inset;
+      position: relative;
+    }
+    @media (min-width: 992px) {
+      .workspace-header {
+        flex-direction: row;
+        justify-content: space-between;
+      }
+      .workspace-header .header-text-center {
+        text-align: left;
+      }
+      .workspace-header .sync-toolbar {
+        position: relative;
+      }
+    }
+    .workspace-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: 26px; font-weight: 800; margin: 0;
+      color: var(--ink-1); letter-spacing: -0.02em;
+    }
+    .workspace-title span { color: var(--amber); }
+    .workspace-sub { font-size: 13.5px; color: var(--ink-2); margin: 6px 0 0; font-weight: 500; letter-spacing: 0.02em; }
+
+    /* ── Nav Tabs ──────────────────────────────────────────────────── */
+    .nav-tabs { 
+      border-bottom: 2px solid var(--line); 
+      gap: 8px; 
+      margin-bottom: 2.5rem !important; 
+      flex-wrap: wrap; 
+      padding-bottom: 0; 
+      justify-content: center; 
+    }
+    .nav-tabs .nav-link {
+      border: 1px solid transparent;
+      color: var(--ink-2);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      padding: 12px 24px;
+      border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
+      background: transparent;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      margin-bottom: -2px; 
+    }
+    .nav-tabs .nav-link:hover { 
+      color: var(--ink-1);
+      background: linear-gradient(180deg, rgba(14,35,68,0.95) 0%, rgba(10,26,52,0.98) 100%);
+      border-color: var(--line) var(--line) transparent var(--line); 
+      box-shadow: 0 -4px 15px -5px rgba(33,88,255,0.2);
+      transform: translateY(-2px);
+    }
+    .nav-tabs .nav-link:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+    .nav-tabs .nav-link.active {
+      background: var(--bg-surface);
+      color: var(--amber);
+      border-color: var(--line) var(--line) var(--bg-surface) var(--line);
+      font-weight: 800;
+      box-shadow: 0 -6px 20px -6px rgba(18,211,154,0.22);
+      transform: translateY(-1px);
+    }
+    .nav-tabs .nav-link.active::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: -1px;
+      right: -1px;
+      height: 3px;
+      background: linear-gradient(90deg, #2f6bff 0%, #12d39a 100%);
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      box-shadow: 0 2px 10px rgba(18,211,154,0.35);
+    }
+    .nav-group-label {
+      align-self: center;
+      color: var(--amber);
+      font-family: 'Poppins', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0 6px;
+    }
+
+    /* ── Cards & Panels ────────────────────────────────────────────── */
+    .card {
+      border-radius: var(--radius-lg) !important;
+      border: 1px solid var(--line) !important;
+      background: var(--bg-surface) !important;
+      box-shadow: 0 4px 24px -8px rgba(0,0,0,0.5) !important;
+    }
+    .panel-outer {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--bg-surface);
+      box-shadow: 0 4px 24px -8px rgba(0,0,0,0.5);
+    }
+    .panel-outer > .p-3 {
+      background: var(--bg-raised) !important;
+      border-bottom: 1px solid var(--line) !important;
+    }
+
+    /* ── Metric Cards ──────────────────────────────────────────────── */
+    .metrics-header-box {
+      background: linear-gradient(135deg, #143b84 0%, #0e8c6d 100%);
+      border: none;
+      color: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 8px 24px -8px rgba(18,211,154,0.32);
+    }
+    .metrics-card-label {
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.1em; font-weight: 700;
+      color: var(--ink-2);
+      font-family: 'Poppins', sans-serif;
+    }
+    .metrics-card-label-light { color: rgba(255,255,255,0.65); }
+    .card.metric-card {
+      background: var(--bg-raised) !important;
+      border: 1px solid var(--line) !important;
+    }
+    .bg-success {
+      background: linear-gradient(135deg, #065f46 0%, #059669 100%) !important;
+      border: none !important;
+      box-shadow: 0 4px 16px -4px rgba(5,150,105,0.35) !important;
+    }
+    .bg-danger {
+      background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%) !important;
+      border: none !important;
+      box-shadow: 0 4px 16px -4px rgba(220,38,38,0.35) !important;
+    }
+
+    /* ── Forms ─────────────────────────────────────────────────────── */
+    .form-control, .autocomplete-input {
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      padding: 0.45rem 0.75rem;
+      font-size: 13.5px;
+      background: var(--bg-input);
+      color: var(--ink-1);
+      box-shadow: none;
+      transition: all 0.18s;
+      font-family: 'Manrope', system-ui, sans-serif;
+    }
+    .form-control::placeholder, .autocomplete-input::placeholder { color: var(--ink-3); }
+    .form-control:focus, .autocomplete-input:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px var(--amber-glow);
+      outline: none;
+      background: var(--bg-input);
+      color: var(--ink-1);
+    }
+    select.form-control option { background: var(--bg-surface); color: var(--ink-1); }
+    .form-label { font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--ink-2); margin-bottom: 0.35rem; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* ── Buttons ───────────────────────────────────────────────────── */
+    .btn { border-radius: var(--radius-sm); font-weight: 700; transition: all 0.18s; letter-spacing: 0.03em; font-family: 'Poppins', sans-serif; }
+    .btn-primary {
+      background: linear-gradient(135deg, #11b687 0%, #0f9b75 100%);
+      border-color: #0f9b75;
+      color: #ffffff;
+      box-shadow: 0 6px 16px -6px rgba(18,211,154,0.42);
+    }
+    .btn-primary:hover { background: linear-gradient(135deg, #10c693 0%, #11b687 100%); border-color: #11b687; color: #ffffff; transform: translateY(-1px); box-shadow: 0 8px 20px -6px rgba(18,211,154,0.5); }
+    .btn-dark {
+      background: var(--bg-raised) !important;
+      border: 1px solid var(--line-bright) !important;
+      color: var(--ink-1) !important;
+    }
+    .btn-dark:hover { background: #112a50 !important; border-color: var(--amber) !important; color: var(--amber) !important; transform: translateY(-1px); }
+    .btn-outline-secondary {
+      background: var(--bg-surface);
+      border: 1px solid var(--line);
+      color: var(--ink-2);
+      font-size: 11px !important;
+    }
+    .btn-outline-secondary:hover { border-color: var(--amber); color: var(--amber); background: rgba(18,211,154,0.08); }
+
+    /* ── Tables ────────────────────────────────────────────────────── */
+    .minimal-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .minimal-table thead tr { background: var(--bg-raised); border-bottom: 1px solid var(--line); }
+    .minimal-table thead th {
+      padding: 11px 14px;
+      font-weight: 700;
+      font-size: 10px;
+      color: var(--ink-2);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      text-align: left;
+      font-family: 'JetBrains Mono', monospace;
+    }
     .minimal-table thead th.th-num { text-align: right; }
-    .minimal-table tbody tr { border-bottom: 1px solid #f1f5f9; transition: background 0.15s; }
-    .minimal-table tbody tr:hover { background: #f8fafc; }
-    .minimal-table td { padding: 14px 16px; vertical-align: middle; color: #334155; }
+    .minimal-table tbody tr { border-bottom: 1px solid rgba(42,52,68,0.7); transition: background 0.1s; }
+    .minimal-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.012); }
+    .minimal-table tbody tr:hover { background: rgba(18,211,154,0.08); }
+    .minimal-table td { padding: 11px 14px; vertical-align: middle; color: var(--ink-1); font-size: 13px; }
+    .table-light { background: var(--bg-raised) !important; }
 
     /* Table specifics */
-    .td-num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
-    .td-date { font-size: 13px; color: #64748b; font-variant-numeric: tabular-nums; }
-    .td-ticker { font-weight: 700; color: #0f172a; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; }
-    .text-success-custom { color: #059669 !important; font-weight: 600; }
-    .text-danger-custom  { color: #dc2626 !important; font-weight: 600; }
+    .td-num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; font-family: 'JetBrains Mono', monospace; }
+    .td-date { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', monospace; }
+    .td-ticker {
+      font-weight: 700; color: #93c8ff;
+      background: rgba(92,179,255,0.14);
+      border: 1px solid rgba(92,179,255,0.3);
+      padding: 3px 8px; border-radius: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+    .text-success-custom { color: var(--bull) !important; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .text-danger-custom  { color: var(--bear) !important; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .text-success { color: var(--bull) !important; }
+    .text-danger  { color: var(--bear) !important; }
+    .text-warning { color: var(--caution) !important; }
+    .text-primary { color: var(--neutral) !important; }
+    .text-muted   { color: var(--ink-2) !important; }
+    .text-dark    { color: var(--ink-1) !important; }
+    .text-secondary { color: var(--ink-2) !important; }
+    .text-white-50 { color: rgba(226,232,240,0.5) !important; }
+    h4.mt-2.fw-bold, h5.mt-2.fw-bold { color: var(--ink-1); font-family: 'Poppins', sans-serif; }
 
-    /* Custom inline form items */
-    .input-close { border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; font-size: 13px; width: 110px; text-align: right; outline: none; font-family: monospace; transition: all 0.2s; }
-    .input-close:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
-    
-    .btn-action-update { font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #475569; cursor: pointer; transition: all 0.15s; }
-    .btn-action-update:hover { background: #f8fafc; border-color: #94a3b8; color: #0f172a; }
+    /* Inline form items */
+    .input-close {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 12px;
+      width: 110px;
+      text-align: right;
+      outline: none;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg-input);
+      color: var(--ink-1);
+      transition: all 0.18s;
+    }
+    .input-close:focus { border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-glow); }
 
-    .btn-action-del { font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: 8px; border: 1px solid #fecaca; background: #fff; color: #dc2626; cursor: pointer; display: inline-block; transition: all 0.15s; }
-    .btn-action-del:hover { background: #fef2f2; border-color: #fca5a5; }
+    .btn-action-update {
+      font-size: 11px; font-weight: 700; padding: 6px 12px;
+      border-radius: 6px; border: 1px solid var(--line);
+      background: var(--bg-raised); color: var(--ink-2);
+      cursor: pointer; transition: all 0.15s;
+      font-family: 'Poppins', sans-serif; letter-spacing: 0.04em;
+    }
+    .btn-action-update:hover { background: var(--bg-input); border-color: var(--amber); color: var(--amber); }
 
-    .filter-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .btn-action-del {
+      font-size: 11px; font-weight: 700; padding: 6px 11px;
+      border-radius: 6px; border: 1px solid var(--bear-dim);
+      background: transparent; color: var(--bear);
+      cursor: pointer; display: inline-block; transition: all 0.15s;
+      font-family: 'Poppins', sans-serif; letter-spacing: 0.04em;
+    }
+    .btn-action-del:hover { background: var(--bear-bg); border-color: var(--bear); }
 
-    /* AUTOCOMPLETE STYLES */
+    .filter-card {
+      background: var(--bg-raised);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+    }
+
+    .sop-note {
+      border: 1px solid rgba(18,211,154,0.26);
+      border-left: 3px solid var(--amber);
+      border-radius: var(--radius-sm);
+      background: rgba(18,211,154,0.07);
+      color: var(--ink-2);
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 9px 12px;
+      margin: 0 0 14px;
+    }
+
+    .sop-note strong {
+      color: var(--amber);
+      font-weight: 800;
+      letter-spacing: 0.03em;
+    }
+
+    /* ── Autocomplete ──────────────────────────────────────────────── */
     .autocomplete-wrapper { position: relative; }
     .autocomplete-input { text-transform: uppercase; }
     .autocomplete-dropdown {
-      position: absolute; top: 100%; left: 0; right: 0; max-height: 320px; overflow-y: auto; background: white;
-      border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-      z-index: 1000; margin-top: 6px; display: none;
+      position: absolute; top: 100%; left: 0; right: 0;
+      max-height: 320px; overflow-y: auto;
+      background: var(--bg-surface);
+      border: 1px solid var(--line-bright);
+      border-radius: var(--radius-md);
+      box-shadow: 0 16px 32px -8px rgba(0,0,0,0.7);
+      z-index: 1000; margin-top: 5px; display: none;
     }
     .autocomplete-dropdown.show { display: block; }
-    .autocomplete-item { padding: 12px 16px; cursor: pointer; font-size: 13.5px; border-bottom: 1px solid #f1f5f9; transition: background 0.15s; }
-    .autocomplete-item-main { font-weight: 600; color: #0f172a; line-height: 1.2; }
-    .autocomplete-item-sub { font-size: 12px; color: #64748b; line-height: 1.3; margin-top: 4px; }
-    .autocomplete-item:hover, .autocomplete-item.active { background: #f8fafc; }
+    .autocomplete-item {
+      padding: 10px 14px; cursor: pointer; font-size: 13px;
+      border-bottom: 1px solid var(--line);
+      transition: background 0.12s;
+    }
+    .autocomplete-item-main { font-weight: 700; color: var(--ink-1); line-height: 1.2; font-family: 'Poppins', sans-serif; }
+    .autocomplete-item-sub { font-size: 11px; color: var(--ink-2); line-height: 1.3; margin-top: 3px; }
+    .autocomplete-item:hover, .autocomplete-item.active { background: rgba(18,211,154,0.12); }
     .autocomplete-item:last-child { border-bottom: none; }
-    .autocomplete-hint { padding: 12px 16px; font-size: 13px; color: #94a3b8; text-align: center; font-style: italic; }
-    .autocomplete-loading { padding: 14px; text-align: center; font-size: 13px; color: #64748b; }
-    .autocomplete-selected-meta { margin-top: 8px; font-size: 12px; color: #475569; font-variant-numeric: tabular-nums; font-weight: 500; }
-    
-    .volume-status { font-size: 12.5px; font-weight: 700; padding: 6px 12px; border-radius: 999px; display: inline-flex; align-items: center; letter-spacing: 0.025em; }
-    .volume-status-green { color: #059669; background: #d1fae5; border: 1px solid #a7f3d0; }
-    .volume-status-red { color: #dc2626; background: #fee2e2; border: 1px solid #fecaca; }
-    
-    .imm-scroll-wrap { max-height: min(55vh, 560px); overflow-y: auto; overflow-x: auto; border-radius: 0 0 16px 16px; }
-    .imm-scroll-wrap .minimal-table thead th { position: sticky; top: 0; z-index: 2; background: #f8fafc; box-shadow: 0 1px 0 #e2e8f0; border-bottom: none; }
-    .panel-outer > .p-3.bg-light.border-bottom { background-color: #f8fafc !important; border-bottom: 1px solid #e2e8f0 !important; }
+    .autocomplete-hint { padding: 12px 16px; font-size: 12px; color: var(--ink-3); text-align: center; font-style: italic; }
+    .autocomplete-loading { padding: 14px; text-align: center; font-size: 12px; color: var(--ink-2); }
+    .autocomplete-selected-meta { margin-top: 6px; font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; font-family: 'Manrope', system-ui, sans-serif; }
+
+    /* ── Volume status badges ──────────────────────────────────────── */
+    .volume-status {
+      font-size: 11.5px; font-weight: 700; padding: 5px 12px;
+      border-radius: 999px; display: inline-flex; align-items: center;
+      letter-spacing: 0.05em; font-family: 'JetBrains Mono', monospace;
+    }
+    .volume-status-green { color: var(--bull); background: var(--bull-bg); border: 1px solid var(--bull-dim); }
+    .volume-status-red   { color: var(--bear); background: var(--bear-bg); border: 1px solid var(--bear-dim); }
+
+    /* ── Scrollable table wraps ────────────────────────────────────── */
+    .imm-scroll-wrap { max-height: min(55vh, 560px); overflow-y: auto; overflow-x: auto; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+    .imm-scroll-wrap .minimal-table thead th {
+      position: sticky; top: 0; z-index: 2;
+      background: var(--bg-raised);
+      box-shadow: 0 1px 0 var(--line);
+      border-bottom: none;
+    }
+
+    /* ── Sync toolbar ──────────────────────────────────────────────── */
+    .sync-toolbar form {
+      background: var(--bg-raised);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 6px 10px;
+    }
+    .sync-row-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-2);
+      white-space: nowrap;
+      min-width: 72px;
+    }
+    .sync-sep {
+      color: var(--ink-3);
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .sync-date-input {
+      width: 118px !important;
+      min-width: 0 !important;
+      font-size: 12px !important;
+      padding: 4px 8px !important;
+    }
+    .sync-scope-input {
+      width: 130px !important;
+      min-width: 0 !important;
+      font-size: 12px !important;
+      padding: 4px 8px !important;
+    }
+    .sync-btn {
+      font-size: 12px !important;
+      padding: 5px 14px !important;
+      white-space: nowrap;
+    }
+
+    /* ── Alerts ────────────────────────────────────────────────────── */
+    .alert-info {
+      background: rgba(96,165,250,0.1) !important;
+      border: 1px solid rgba(96,165,250,0.25) !important;
+      color: var(--ink-1) !important;
+    }
+    .alert-warning {
+      background: var(--caution-bg) !important;
+      border: 1px solid rgba(251,191,36,0.3) !important;
+      color: var(--ink-1) !important;
+    }
+
+    /* ── Misc Bootstrap overrides ──────────────────────────────────── */
+    .bg-light   { background: var(--bg-raised) !important; }
+    .bg-white   { background: var(--bg-surface) !important; }
+    .border-bottom { border-color: var(--line) !important; }
+    .border-top    { border-color: var(--line) !important; }
+    .border-light  { border-color: var(--line) !important; }
+    .shadow-sm { box-shadow: 0 2px 12px -4px rgba(0,0,0,0.5) !important; }
+    .fw-bold   { color: var(--ink-1); }
+    .h-100     { height: 100%; }
+
+    /* ── Stage badge colours ───────────────────────────────────────── */
+    .stage-s1 { color: var(--ink-2); }
+    .stage-s2 { color: var(--bull); }
+    .stage-s3 { color: var(--caution); }
+    .stage-s4 { color: var(--bear); }
+
+    /* Scrollbar styling for light theme */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: var(--line-bright); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
+    .rrg-chart-card { min-height: 420px; }
+    .rrg-chart-wrap { position: relative; width: 100%; height: 390px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden; }
+    .rrg-chart-svg { width: 100%; height: 100%; display: block; }
+    .rrg-chart-empty { display: grid; height: 100%; place-items: center; color: #6b7280; font-size: 13px; }
+    .rrg-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #6b7280; }
+    .rrg-legend-item::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+    .rrg-leading::before { background: #16a34a; }
+    .rrg-weakening::before { background: #f59e0b; }
+    .rrg-lagging::before { background: #dc2626; }
+    .rrg-improving::before { background: #2563eb; }
+    .rrg-indices-chart-card { min-height: 620px; }
+    .rrg-indices-chart-card.rrg-indices-max-view {
+      position: fixed;
+      inset: 14px;
+      z-index: 2050;
+      overflow: auto;
+      padding: 14px !important;
+      border-radius: 8px !important;
+    }
+    .rrg-indices-chart-wrap {
+      position: relative;
+      width: 100%;
+      height: min(68vh, 620px);
+      min-height: 520px;
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .rrg-indices-max-view .rrg-indices-chart-wrap {
+      height: calc(100vh - 132px);
+      max-height: none;
+    }
+    .rrg-indices-chart-svg { width: 100%; height: 100%; display: block; }
+    .rrg-indices-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+      padding: 8px 10px;
+      background: #eef3f8;
+      border: 1px solid #d7e0ea;
+      border-radius: 6px;
+      color: #5b6b7f;
+      font-family: Arial, sans-serif;
+    }
+    .rrg-toolbar-btn {
+      height: 38px;
+      min-width: 52px;
+      border: 0;
+      border-radius: 4px;
+      padding: 0 14px;
+      color: #ffffff;
+      background: #6e7f93;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 38px;
+    }
+    .rrg-toolbar-btn:hover { filter: brightness(1.06); }
+    .rrg-toolbar-btn.primary { min-width: 102px; background: #0b559a; }
+    .rrg-toolbar-btn.active { box-shadow: 0 0 0 2px rgba(11,85,154,0.28) inset; background: #415467; }
+    .rrg-toolbar-icon-btn {
+      width: 28px;
+      min-width: 28px;
+      padding: 0;
+      color: #596b7e;
+      background: transparent;
+      font-size: 20px;
+      line-height: 32px;
+    }
+    .rrg-tail-control {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      column-gap: 8px;
+      min-width: 178px;
+    }
+    .rrg-tail-label {
+      grid-column: 1 / -1;
+      color: #596b7e;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1;
+    }
+    .rrg-tail-slider {
+      width: 118px;
+      accent-color: #1683e2;
+    }
+    .rrg-tail-number {
+      width: 42px;
+      height: 38px;
+      border: 1px solid #b8c8d8;
+      border-radius: 4px;
+      color: #5b6b7f;
+      background: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .rrg-arrow-mode {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #596b7e;
+      font-size: 18px;
+      white-space: nowrap;
+    }
+    .rrg-arrow-mode input {
+      width: 18px;
+      height: 18px;
+      accent-color: #0b559a;
+    }
+    .rrg-index-picker {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--bg-raised);
+      padding: 12px;
+    }
+    .rrg-index-picker-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .rrg-index-picker-title {
+      color: var(--ink-2);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      font-family: 'Poppins', sans-serif;
+    }
+    .rrg-index-picker-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .rrg-index-count {
+      color: var(--ink-2);
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .rrg-index-choice-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 8px;
+      max-height: 172px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .rrg-index-choice {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      min-height: 46px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.02);
+      color: var(--ink-1);
+      cursor: pointer;
+    }
+    .rrg-index-choice:hover,
+    .rrg-index-choice.is-selected {
+      border-color: var(--amber);
+      background: rgba(18,211,154,0.08);
+    }
+    .rrg-index-choice input {
+      margin-top: 3px;
+      accent-color: var(--amber);
+    }
+    .rrg-index-choice-main {
+      display: block;
+      color: var(--ink-1);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.2;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .rrg-index-choice-sub {
+      display: block;
+      color: var(--ink-3);
+      font-size: 10px;
+      line-height: 1.35;
+      margin-top: 2px;
+    }
+    .rrg-index-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.05);
+      color: #0f172a;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .rrg-index-badge::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .rrg-index-badge.leading { color: #15803d; }
+    .rrg-index-badge.weakening { color: #b45309; }
+    .rrg-index-badge.lagging { color: #b91c1c; }
+    .rrg-index-badge.improving { color: #1d4ed8; }
   </style>
 </head>
 <body>
@@ -122,33 +700,39 @@
     {% endfor %}
   {% endif %}
 
-  <div class="workspace-header py-2">
-    <div>
-      <p class="workspace-title">NEPSE Analytics Engine Workspace</p>
-      <p class="workspace-sub">Raw row inventory management and segregated strategy matrix experimentation</p>
+  <div class="workspace-header py-3">
+    <div class="header-text-center">
+      <p class="workspace-title"><span>NEPSE</span> Analytics Intelligence Workspace</p>
+      <p class="workspace-sub">Advanced Market Strategy &amp; Technical Analysis Console</p>
     </div>
-    <div class="d-flex gap-2">
-      <form method="POST" action="{% url 'trigger_daily_sync' %}">
+    <div class="d-flex flex-column gap-2 sync-toolbar">
+      <!-- Row 1: Sync Price Data -->
+      <form method="POST" action="{% url 'trigger_daily_sync' %}" class="d-flex align-items-center gap-2">
         {% csrf_token %}
-        <button type="submit" class="btn btn-dark btn-sm d-flex align-items-center gap-2 px-3 py-2 fw-medium rounded-2"
-                style="font-size: 13px; background-color: #0f172a; border: 1px solid #1e293b;"
-                onclick="this.innerHTML='Syncing Market Data...'; this.classList.add('disabled');">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16">
-            <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
-            <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9h1.017z"/>
-          </svg>
-          Sync Today's Price Data
+        <span class="sync-row-label">Sync Price</span>
+        <input type="text" id="headerSyncFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" autocomplete="off">
+        <span class="sync-sep">→</span>
+        <input type="text" id="headerSyncToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" autocomplete="off">
+        <select name="source" class="form-control form-control-sm sync-scope-input">
+          <option value="both">Stocks + Indices</option>
+          <option value="stocks">Stocks Only</option>
+          <option value="indices">Indices Only</option>
+        </select>
+        <button type="submit" class="btn btn-dark btn-sm sync-btn"
+                onclick="this.innerHTML='Syncing...'; this.classList.add('disabled');">
+          Sync Price Data
         </button>
       </form>
-      <form method="POST" action="{% url 'trigger_sync_and_calculate' %}">
+      <!-- Row 2: Sync & Calculate -->
+      <form method="POST" action="{% url 'trigger_sync_and_calculate' %}" class="d-flex align-items-center gap-2">
         {% csrf_token %}
-        <button type="submit" class="btn btn-primary btn-sm d-flex align-items-center gap-2 px-3 py-2 fw-medium rounded-2"
-                style="font-size: 13px;"
-                onclick="this.innerHTML='Syncing & Calculating...'; this.classList.add('disabled');">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-cpu" viewBox="0 0 16 16">
-            <path d="M5 0a.5.5 0 0 1 .5.5V2h1V.5a.5.5 0 0 1 1 0V2h1V.5a.5.5 0 0 1 1 0V2h1V.5a.5.5 0 0 1 1 0V2A2.5 2.5 0 0 1 14 4.5h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14a2.5 2.5 0 0 1-2.5 2.5v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14A2.5 2.5 0 0 1 2 11.5H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2A2.5 2.5 0 0 1 4.5 2V.5A.5.5 0 0 1 5 0m-.5 3A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13h7a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 11.5 3zM5 6.5A1.5 1.5 0 0 1 6.5 5h3A1.5 1.5 0 0 1 11 6.5v3A1.5 1.5 0 0 1 9.5 11h-3A1.5 1.5 0 0 1 5 9.5zM6.5 6a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5z"/>
-          </svg>
-          Sync & Calculate
+        <span class="sync-row-label">Sync &amp; Calc</span>
+        <input type="text" id="headerCalcFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" autocomplete="off">
+        <span class="sync-sep">→</span>
+        <input type="text" id="headerCalcToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" autocomplete="off">
+        <button type="submit" class="btn btn-primary btn-sm sync-btn"
+                onclick="this.innerHTML='Calculating...'; this.classList.add('disabled');">
+          Sync &amp; Calculate
         </button>
       </form>
     </div>
@@ -160,6 +744,7 @@
               data-bs-toggle="tab" data-bs-target="#inventory-pane" type="button" role="tab"
               aria-selected="{% if active_tab == 'inventory' %}true{% else %}false{% endif %}">Raw Inventory Manager</button>
     </li>
+    <li class="nav-group-label" aria-hidden="true">Trading Strategy Simulator</li>
     <li class="nav-item">
       <button class="nav-link {% if active_tab == 'backtest' %}active{% endif %}"
               data-bs-toggle="tab" data-bs-target="#backtest-pane" type="button" role="tab"
@@ -183,7 +768,7 @@
     <li class="nav-item">
       <button class="nav-link {% if active_tab == 'msv_backtest' %}active{% endif %}"
               data-bs-toggle="tab" data-bs-target="#msv-backtest-pane" type="button" role="tab"
-              aria-selected="{% if active_tab == 'msv_backtest' %}true{% else %}false{% endif %}">MACD+ST+VWAP+RVOL Desk</button>
+              aria-selected="{% if active_tab == 'msv_backtest' %}true{% else %}false{% endif %}">Momentum Scan Desk</button>
     </li>
     <li class="nav-item">
       <button class="nav-link {% if active_tab == 'imm_backtest' %}active{% endif %}"
@@ -195,6 +780,16 @@
               data-bs-toggle="tab" data-bs-target="#stage-backtest-pane" type="button" role="tab"
               aria-selected="{% if active_tab == 'stage_backtest' %}true{% else %}false{% endif %}">Stage Analysis Desk</button>
     </li>
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'rrg_backtest' %}active{% endif %}"
+              data-bs-toggle="tab" data-bs-target="#rrg-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'rrg_backtest' %}true{% else %}false{% endif %}">RRG Graph Desk</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {% if active_tab == 'rrg_indices' %}active{% endif %}"
+              data-bs-toggle="tab" data-bs-target="#rrg-indices-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'rrg_indices' %}true{% else %}false{% endif %}">RRG Indices</button>
+    </li>
   </ul>
 
   <div class="tab-content" id="workspaceTabsContent">
@@ -205,7 +800,7 @@
     <div class="tab-pane fade {% if active_tab == 'inventory' %}show active{% endif %}" id="inventory-pane" role="tabpanel">
 
       <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
-        <h5 class="mb-3" style="font-size: 14px; font-weight: 600; color: #374151;">Add New Stock Record Coordinates</h5>
+        <h5 class="mb-3" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">Add New Stock Record Coordinates</h5>
         <form method="POST" action="{% url 'crud_operations' %}">
           {% csrf_token %}
           <input type="hidden" name="action" value="create">
@@ -216,7 +811,7 @@
             </div>
             <div class="col-md-3">
               <label class="form-label text-muted small">Business Date</label>
-              <input type="date" name="business_date" class="form-control form-control-sm" required>
+              <input type="text" id="inventoryBusinessDate" name="business_date" class="form-control form-control-sm" required autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
             <div class="col-md-2">
               <label class="form-label text-muted small">External ID</label>
@@ -287,7 +882,7 @@
     ══════════════════════════════════════════════════════════════════ -->
     <div class="tab-pane fade {% if active_tab == 'backtest' %}show active{% endif %}" id="backtest-pane" role="tabpanel">
       <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
-        <h5 class="mb-2" style="font-size: 14px; font-weight: 600; color: #374151;">Adjust Strategy Simulation Scope</h5>
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">Adjust Strategy Simulation Scope</h5>
         <form method="GET" action="." id="t3Form">
           <input type="hidden" name="active_tab" value="backtest">
           <input type="hidden" name="backtest_symbol" id="t3SymbolHidden" value="{{ selected_symbol }}">
@@ -307,11 +902,11 @@
             </div>
             <div class="col-md-3">
               <label class="form-label text-muted small fw-medium">From Date</label>
-              <input type="date" name="t3_from_date" class="form-control form-control-sm" value="{{ t3_from_date }}" required>
+              <input type="text" id="t3FromDate" name="t3_from_date" class="form-control form-control-sm" value="{{ t3_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
             <div class="col-md-3">
               <label class="form-label text-muted small fw-medium">To Date</label>
-              <input type="date" name="t3_to_date" class="form-control form-control-sm" value="{{ t3_to_date }}" required>
+              <input type="text" id="t3ToDate" name="t3_to_date" class="form-control form-control-sm" value="{{ t3_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
             <div class="col-md-2">
               <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute Strategy Model</button>
@@ -356,7 +951,7 @@
 
           <div class="panel-outer">
             <div class="p-3 bg-light border-bottom">
-              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">Simulation Performance Matrix Log: {{ selected_symbol }}</h6>
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Simulation Performance Matrix Log: {{ selected_symbol }}</h6>
             </div>
             <table class="minimal-table">
               <thead class="table-light">
@@ -402,7 +997,7 @@
     ══════════════════════════════════════════════════════════════════ -->
     <div class="tab-pane fade {% if active_tab == 'ema_backtest' %}show active{% endif %}" id="ema-backtest-pane" role="tabpanel">
       <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
-        <h5 class="mb-2" style="font-size: 14px; font-weight: 600; color: #374151;">EMA 50/200 Strategy Parameters</h5>
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">EMA 50/200 Strategy Parameters</h5>
         <form method="GET" action="." id="emaForm">
           <input type="hidden" name="active_tab" value="ema_backtest">
           <input type="hidden" name="ema_backtest_symbol" id="emaSymbolHidden" value="{{ ema_selected_symbol }}">
@@ -422,11 +1017,11 @@
             </div>
             <div class="col-md-2">
               <label class="form-label text-muted small fw-medium">From Date</label>
-              <input type="date" name="ema_from_date" class="form-control form-control-sm" value="{{ ema_from_date }}" required>
+              <input type="text" id="emaFromDate" name="ema_from_date" class="form-control form-control-sm" value="{{ ema_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
             <div class="col-md-2">
               <label class="form-label text-muted small fw-medium">To Date</label>
-              <input type="date" name="ema_to_date" class="form-control form-control-sm" value="{{ ema_to_date }}" required>
+              <input type="text" id="emaToDate" name="ema_to_date" class="form-control form-control-sm" value="{{ ema_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
             <div class="col-md-1">
               <label class="form-label text-muted small fw-medium">Fast EMA</label>
@@ -483,7 +1078,7 @@
           </div>
           <div class="panel-outer">
             <div class="p-3 bg-light border-bottom">
-              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">EMA Crossover Trade Log: {{ ema_selected_symbol }}</h6>
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">EMA Crossover Trade Log: {{ ema_selected_symbol }}</h6>
             </div>
             <table class="minimal-table">
               <thead class="table-light">
@@ -535,7 +1130,7 @@
     ══════════════════════════════════════════════════════════════════ -->
     <div class="tab-pane fade {% if active_tab == 'cci_backtest' %}show active{% endif %}" id="cci-backtest-pane" role="tabpanel">
       <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
-        <h5 class="mb-2" style="font-size: 14px; font-weight: 600; color: #374151;">CCI +100 Long-Only Strategy Parameters</h5>
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">CCI +100 Long-Only Strategy Parameters</h5>
         <form method="GET" action="." id="cciForm">
           <input type="hidden" name="active_tab" value="cci_backtest">
           <input type="hidden" name="cci_backtest_symbol" id="cciSymbolHidden" value="{{ cci_selected_symbol }}">
@@ -555,11 +1150,11 @@
             </div>
             <div class="col-md-2">
               <label class="form-label text-muted small fw-medium">From Date</label>
-              <input type="date" name="cci_from_date" class="form-control form-control-sm" value="{{ cci_from_date }}" required>
+              <input type="text" id="cciFromDate" name="cci_from_date" class="form-control form-control-sm" value="{{ cci_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
             <div class="col-md-2">
               <label class="form-label text-muted small fw-medium">To Date</label>
-              <input type="date" name="cci_to_date" class="form-control form-control-sm" value="{{ cci_to_date }}" required>
+              <input type="text" id="cciToDate" name="cci_to_date" class="form-control form-control-sm" value="{{ cci_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
             <div class="col-md-1">
               <label class="form-label text-muted small fw-medium">CCI Period</label>
@@ -632,7 +1227,7 @@
           </div>
           <div class="panel-outer">
             <div class="p-3 bg-light border-bottom">
-              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">CCI Trade Log: {{ cci_selected_symbol }}</h6>
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">CCI Trade Log: {{ cci_selected_symbol }}</h6>
             </div>
             <table class="minimal-table">
               <thead class="table-light">
@@ -684,7 +1279,7 @@
     ══════════════════════════════════════════════════════════════════ -->
     <div class="tab-pane fade {% if active_tab == 'rsi_backtest' %}show active{% endif %}" id="rsi-backtest-pane" role="tabpanel">
       <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
-        <h5 class="mb-2" style="font-size: 14px; font-weight: 600; color: #374151;">RSI/SMA Long-Only Strategy Parameters</h5>
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">RSI/SMA Long-Only Strategy Parameters</h5>
         <form method="GET" action="." id="rsiForm">
           <input type="hidden" name="active_tab" value="rsi_backtest">
           <input type="hidden" name="rsi_backtest_symbol" id="rsiSymbolHidden" value="{{ rsi_selected_symbol }}">
@@ -704,11 +1299,11 @@
             </div>
             <div class="col-md-2">
               <label class="form-label text-muted small fw-medium">From Date</label>
-              <input type="date" name="rsi_from_date" class="form-control form-control-sm" value="{{ rsi_from_date }}" required>
+              <input type="text" id="rsiFromDate" name="rsi_from_date" class="form-control form-control-sm" value="{{ rsi_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
             <div class="col-md-2">
               <label class="form-label text-muted small fw-medium">To Date</label>
-              <input type="date" name="rsi_to_date" class="form-control form-control-sm" value="{{ rsi_to_date }}" required>
+              <input type="text" id="rsiToDate" name="rsi_to_date" class="form-control form-control-sm" value="{{ rsi_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
             <div class="col-md-2">
               <label class="form-label text-muted small fw-medium">RSI Length</label>
@@ -757,7 +1352,7 @@
           </div>
           <div class="panel-outer">
             <div class="p-3 bg-light border-bottom">
-              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">RSI/SMA Trade Log: {{ rsi_selected_symbol }}</h6>
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">RSI/SMA Trade Log: {{ rsi_selected_symbol }}</h6>
             </div>
             <table class="minimal-table">
               <thead class="table-light">
@@ -806,7 +1401,7 @@
 
     <div class="tab-pane fade {% if active_tab == 'msv_backtest' %}show active{% endif %}" id="msv-backtest-pane" role="tabpanel">
       <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
-        <h5 class="mb-2" style="font-size: 14px; font-weight: 600; color: #374151;">Long-Only MSV Strategy Parameters</h5>
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">Momentum Scan Parameters</h5>
         <form method="GET" action="." id="msvForm">
           <input type="hidden" name="active_tab" value="msv_backtest">
           <input type="hidden" name="msv_backtest_symbol" id="msvSymbolHidden" value="{{ msv_selected_symbol }}">
@@ -826,11 +1421,11 @@
             </div>
             <div class="col-md-2">
               <label class="form-label text-muted small fw-medium">From Date</label>
-              <input type="date" name="msv_from_date" class="form-control form-control-sm" value="{{ msv_from_date }}" required>
+              <input type="text" id="msvFromDate" name="msv_from_date" class="form-control form-control-sm" value="{{ msv_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
             <div class="col-md-2">
               <label class="form-label text-muted small fw-medium">To Date</label>
-              <input type="date" name="msv_to_date" class="form-control form-control-sm" value="{{ msv_to_date }}" required>
+              <input type="text" id="msvToDate" name="msv_to_date" class="form-control form-control-sm" value="{{ msv_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
             <div class="col-md-1">
               <label class="form-label text-muted small fw-medium">MACD Fast</label>
@@ -960,7 +1555,7 @@
 
           <div class="panel-outer mb-4">
             <div class="p-3 bg-light border-bottom">
-              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">MSV Trade Log: {{ msv_selected_symbol }}</h6>
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Momentum Scan Trade Log: {{ msv_selected_symbol }}</h6>
             </div>
             <table class="minimal-table">
               <thead class="table-light">
@@ -994,7 +1589,7 @@
 
           <div class="panel-outer">
             <div class="p-3 bg-light border-bottom">
-              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">MSV Indicator Output (Chart/Panel Data)</h6>
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Momentum Scan Indicator Output</h6>
             </div>
             <table class="minimal-table">
               <thead class="table-light">
@@ -1043,7 +1638,8 @@
 
     <div class="tab-pane fade {% if active_tab == 'imm_backtest' %}show active{% endif %}" id="imm-backtest-pane" role="tabpanel">
       <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
-        <h5 class="mb-2" style="font-size: 14px; font-weight: 600; color: #374151;">IMM Scoring Parameters</h5>
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">IMM Scoring Parameters</h5>
+        <div class="sop-note"><strong>SOP:</strong> Search and select the exact company symbol, choose a complete date range, then execute scoring. Review score class, volume greed, relative strength, ATR%, and BUY/SELL events before acting.</div>
         <form method="GET" action="." id="immForm">
           <input type="hidden" name="active_tab" value="imm_backtest">
           <input type="hidden" name="imm_backtest_symbol" id="immSymbolHidden" value="{{ imm_selected_symbol }}">
@@ -1057,11 +1653,11 @@
             </div>
             <div class="col-md-2">
               <label class="form-label text-muted small fw-medium">From Date</label>
-              <input type="date" name="imm_from_date" class="form-control form-control-sm" value="{{ imm_from_date }}" required>
+              <input type="text" id="immFromDate" name="imm_from_date" class="form-control form-control-sm" value="{{ imm_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
             <div class="col-md-2">
               <label class="form-label text-muted small fw-medium">To Date</label>
-              <input type="date" name="imm_to_date" class="form-control form-control-sm" value="{{ imm_to_date }}" required>
+              <input type="text" id="immToDate" name="imm_to_date" class="form-control form-control-sm" value="{{ imm_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
             <div class="col-md-1">
               <label class="form-label text-muted small fw-medium">RS Lookback</label>
@@ -1172,10 +1768,10 @@
 
           <div class="panel-outer">
             <div class="p-3 bg-light border-bottom">
-              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">Scoring Output: {{ imm_selected_symbol }}</h6>
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Scoring Output: {{ imm_selected_symbol }}</h6>
             </div>
             <div class="imm-scroll-wrap">
-              <table class="minimal-table">
+              <table class="minimal-table" id="immScoringTable">
                 <thead class="table-light">
                   <tr>
                     <th>Date</th>
@@ -1192,7 +1788,7 @@
                 </thead>
                 <tbody>
                   {% for row in imm_indicator_rows %}
-                  <tr>
+                  <tr data-date="{{ row.business_date }}" data-close="{{ row.close_price_adj|floatformat:6 }}" data-score="{{ row.technical_score|floatformat:6 }}">
                     <td class="td-date">{{ row.business_date }}</td>
                     <td class="td-num">{{ row.close_price_adj|floatformat:2 }}</td>
                     <td class="td-num fw-semibold">{{ row.technical_score|floatformat:2 }}</td>
@@ -1215,11 +1811,39 @@
                 </tbody>
               </table>
             </div>
+            <div class="p-3 bg-light border-top">
+              <div class="row g-2 align-items-end" id="immScoringFilters">
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Date From</label>
+                  <input type="text" id="immFilterDateFrom" class="form-control form-control-sm" placeholder="YYYY-MM-DD" autocomplete="off">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Date To</label>
+                  <input type="text" id="immFilterDateTo" class="form-control form-control-sm" placeholder="YYYY-MM-DD" autocomplete="off">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Close Min</label>
+                  <input type="number" step="0.01" id="immFilterCloseMin" class="form-control form-control-sm" placeholder="Min">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Close Max</label>
+                  <input type="number" step="0.01" id="immFilterCloseMax" class="form-control form-control-sm" placeholder="Max">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Score Min</label>
+                  <input type="number" step="0.01" id="immFilterScoreMin" class="form-control form-control-sm" placeholder="Min">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Score Max</label>
+                  <input type="number" step="0.01" id="immFilterScoreMax" class="form-control form-control-sm" placeholder="Max">
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="panel-outer mt-4">
             <div class="p-3 bg-light border-bottom">
-              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">Trade Signals (Buy/Sell)</h6>
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Trade Signals (Buy/Sell)</h6>
             </div>
             <div class="imm-scroll-wrap">
               <table class="minimal-table">
@@ -1257,7 +1881,7 @@
                   </tr>
                   {% empty %}
                   <tr>
-                    <td colspan="7" class="text-center text-muted py-4">No BUY/SELL event bars in this date range.</td>
+                    <td colspan="9" class="text-center text-muted py-4">No BUY/SELL event bars in this date range.</td>
                   </tr>
                   {% endfor %}
                 </tbody>
@@ -1270,7 +1894,8 @@
 
     <div class="tab-pane fade {% if active_tab == 'stage_backtest' %}show active{% endif %}" id="stage-backtest-pane" role="tabpanel">
       <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
-        <h5 class="mb-2" style="font-size: 14px; font-weight: 600; color: #374151;">NEPSE Stage Analysis Parameters</h5>
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">NEPSE Stage Analysis Parameters</h5>
+        <div class="sop-note"><strong>SOP:</strong> Search and select the exact symbol, use a 1Y+ range when possible, then execute Stage scan. Adjusted prices are used first; missing dates are filled from unadjusted fallback and shown in the Source column.</div>
         <form method="GET" action="." id="stageForm">
           <input type="hidden" name="active_tab" value="stage_backtest">
           <input type="hidden" name="stage_backtest_symbol" id="stageSymbolHidden" value="{{ stage_selected_symbol }}">
@@ -1294,6 +1919,63 @@
               <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute Stage Scan</button>
             </div>
           </div>
+          <div class="row g-3 mt-1">
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Vol Ratio Min</label>
+              <input type="number" min="0.1" step="0.1" name="stage_volume_multiplier" class="form-control form-control-sm" value="{{ stage_volume_multiplier }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Resistance Lookback</label>
+              <input type="number" min="2" step="1" name="stage_resistance_lookback" class="form-control form-control-sm" value="{{ stage_resistance_lookback }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Volume Avg Lookback</label>
+              <input type="number" min="2" step="1" name="stage_volume_lookback" class="form-control form-control-sm" value="{{ stage_volume_lookback }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Momentum Period</label>
+              <input type="number" min="2" step="1" name="stage_momentum_period" class="form-control form-control-sm" value="{{ stage_momentum_period }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">RSI Length</label>
+              <input type="number" min="2" step="1" name="stage_rsi_length" class="form-control form-control-sm" value="{{ stage_rsi_length }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">RSI Min</label>
+              <input type="number" min="0" step="0.1" name="stage_rsi_threshold" class="form-control form-control-sm" value="{{ stage_rsi_threshold }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">ADX Length</label>
+              <input type="number" min="2" step="1" name="stage_adx_length" class="form-control form-control-sm" value="{{ stage_adx_length }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">ADX Min</label>
+              <input type="number" min="0" step="0.1" name="stage_adx_threshold" class="form-control form-control-sm" value="{{ stage_adx_threshold }}" required>
+            </div>
+            <div class="col-md-4 d-flex align-items-end gap-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="stageUseRsi" name="stage_use_rsi" value="1" {% if stage_use_rsi %}checked{% endif %}>
+                <label class="form-check-label text-muted small fw-medium" for="stageUseRsi">Enable RSI Filter</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="stageUseAdx" name="stage_use_adx" value="1" {% if stage_use_adx %}checked{% endif %}>
+                <label class="form-check-label text-muted small fw-medium" for="stageUseAdx">Enable ADX Filter</label>
+              </div>
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col-12">
+              <div class="d-flex gap-2 flex-wrap align-items-center">
+                <span class="text-muted small fw-medium" style="font-size:11px;">Quick Range:</span>
+                <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="6m">6M</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="1y">1Y</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="2y">2Y</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="3y">3Y</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="ytd">YTD</button>
+                <span class="text-muted ms-1" style="font-size:11px;">⚠ Stage needs ≥150 trading days — use 1Y or longer</span>
+              </div>
+            </div>
+          </div>
         </form>
       </div>
 
@@ -1302,32 +1984,45 @@
           <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ stage_backtest_metrics.error }}</div>
         {% else %}
           <div class="row g-3 mb-4">
-            <div class="col-md-4">
+            <div class="col-lg-3 col-md-6">
               <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
                 <span class="metrics-card-label text-secondary">Latest Stage Classification</span>
-                <h4 class="mt-2 mb-0 fw-bold {% if stage_backtest_metrics.latest_stage == 'Stage 2' %}text-success{% elif stage_backtest_metrics.latest_stage == 'Stage 4' %}text-danger{% else %}text-muted{% endif %}">{{ stage_backtest_metrics.latest_stage }}</h4>
+                <h4 class="mt-2 mb-0 fw-bold
+                  {% if stage_backtest_metrics.latest_stage == 'Stage 2' %}text-success
+                  {% elif stage_backtest_metrics.latest_stage == 'Stage 3' %}text-warning
+                  {% elif stage_backtest_metrics.latest_stage == 'Stage 4' %}text-danger
+                  {% else %}text-muted{% endif %}">{{ stage_backtest_metrics.latest_stage_label|default:stage_backtest_metrics.latest_stage }}</h4>
+                <div class="small text-muted mt-1">Action: {{ stage_backtest_metrics.latest_action|default:"Watch" }}</div>
+                <div class="small text-muted mt-1">Latest row: {{ stage_backtest_metrics.latest_data_date }} | {{ stage_backtest_metrics.latest_price_source }}</div>
               </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-lg-3 col-md-6">
               <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
-                <span class="metrics-card-label text-secondary">3-Month Momentum Return</span>
+                <span class="metrics-card-label text-secondary">Momentum Return</span>
                 <h4 class="mt-2 mb-0 fw-bold {% if stage_backtest_metrics.returns_3m >= 0 %}text-success{% else %}text-danger{% endif %}">{{ stage_backtest_metrics.returns_3m|floatformat:2 }}%</h4>
               </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-lg-3 col-md-6">
               <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
                 <span class="metrics-card-label text-secondary">Latest Volume Expansion Ratio</span>
-                <h4 class="mt-2 mb-0 fw-bold {% if stage_backtest_metrics.volume_ratio > 1.5 %}text-success{% else %}text-dark{% endif %}">{{ stage_backtest_metrics.volume_ratio|floatformat:2 }}x</h4>
+                <h4 class="mt-2 mb-0 fw-bold {% if stage_backtest_metrics.volume_confirm %}text-success{% else %}text-dark{% endif %}">{{ stage_backtest_metrics.volume_ratio|floatformat:2 }}x</h4>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Indicator Confirmation Score</span>
+                <h4 class="mt-2 mb-0 fw-bold text-primary">{{ stage_backtest_metrics.stage2_score|default:0 }}/7</h4>
+                <div class="small text-muted mt-1">RSI {{ stage_backtest_metrics.rsi|floatformat:2 }}{% if stage_backtest_metrics.rsi_confirm %} (OK){% endif %} | ADX {{ stage_backtest_metrics.adx|floatformat:2 }}{% if stage_backtest_metrics.adx_confirm %} (OK){% endif %}</div>
               </div>
             </div>
           </div>
 
           <div class="panel-outer">
             <div class="p-3 bg-light border-bottom">
-              <h6 class="m-0 text-muted" style="font-size: 13px; font-weight: 600;">Stage Analysis Output: {{ stage_selected_symbol }}</h6>
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Stage Analysis Output: {{ stage_selected_symbol }}</h6>
             </div>
             <div class="imm-scroll-wrap">
-              <table class="minimal-table">
+              <table class="minimal-table" id="stageOutputTable">
                 <thead class="table-light">
                   <tr>
                     <th>Date</th>
@@ -1336,25 +2031,206 @@
                     <th class="th-num">10-Week EMA</th>
                     <th class="th-num">Resistance</th>
                     <th class="th-num">Volume Ratio</th>
-                    <th class="th-num">3M Momentum %</th>
+                    <th class="th-num">Momentum %</th>
+                    <th class="th-num">RSI</th>
+                    <th class="th-num">ADX</th>
+                    <th class="th-num">Score</th>
+                    <th>Source</th>
                     <th>Calculated Stage</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {% for row in stage_indicator_rows %}
-                  <tr>
+                  <tr data-date="{{ row.business_date }}" data-close="{{ row.close|floatformat:6 }}" data-score="{% if row.returns_3m %}{{ row.returns_3m|floatformat:6 }}{% else %}0{% endif %}">
                     <td class="td-date">{{ row.business_date }}</td>
                     <td class="td-num">{{ row.close|floatformat:2 }}</td>
                     <td class="td-num">{{ row.ema_30w|floatformat:2 }}</td>
                     <td class="td-num">{{ row.ema_10w|floatformat:2 }}</td>
                     <td class="td-num">{{ row.resistance|floatformat:2 }}</td>
-                    <td class="td-num {% if row.volume_ratio > 1.5 %}text-success-custom{% endif %}">{{ row.volume_ratio|floatformat:2 }}x</td>
-                    <td class="td-num">{% if row.returns_3m %}{{ row.returns_3m|add:"0"|floatformat:4 }}{% else %}0.00{% endif %}</td>
-                    <td class="{% if row.stage == 'Stage 2' %}text-success-custom{% elif row.stage == 'Stage 4' %}text-danger-custom{% else %}text-muted{% endif %} fw-semibold">{{ row.stage }}</td>
+                    <td class="td-num {% if row.volume_confirm %}text-success-custom{% endif %}">{{ row.volume_ratio|floatformat:2 }}x</td>
+                    <td class="td-num">{% if row.returns_3m %}{{ row.returns_3m|floatformat:2 }}%{% else %}0.00%{% endif %}</td>
+                    <td class="td-num {% if row.rsi_confirm %}text-success-custom{% endif %}">{{ row.rsi|floatformat:2 }}</td>
+                    <td class="td-num {% if row.adx_confirm %}text-success-custom{% endif %}">{{ row.adx|floatformat:2 }}</td>
+                    <td class="td-num fw-semibold">{{ row.stage2_score|default:0 }}/7</td>
+                    <td class="{% if row.price_source == 'Unadjusted fallback' %}text-warning{% else %}text-muted{% endif %}">{{ row.price_source|default:"Adjusted" }}</td>
+                    <td class="fw-semibold {% if row.stage == 'Stage 2' %}text-success-custom{% elif row.stage == 'Stage 3' %}text-warning{% elif row.stage == 'Stage 4' %}text-danger-custom{% else %}text-muted{% endif %}">{{ row.stage }} - {{ row.stage_name|default:"Basing/Neglect" }}</td>
+                    <td class="fw-semibold {% if row.stage == 'Stage 2' %}text-success-custom{% elif row.stage == 'Stage 3' %}text-warning{% elif row.stage == 'Stage 4' %}text-danger-custom{% else %}text-muted{% endif %}">{{ row.stage_action|default:"Watch" }}</td>
                   </tr>
                   {% empty %}
                   <tr>
-                    <td colspan="8" class="text-center text-muted py-4">No Stage rows generated in this date range.</td>
+                    <td colspan="13" class="text-center text-muted py-4">No Stage rows generated in this date range.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="p-3 bg-light border-top">
+              <div class="row g-2 align-items-end" id="stageOutputFilters">
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Date From</label>
+                  <input type="text" id="stageFilterDateFrom" class="form-control form-control-sm" placeholder="YYYY-MM-DD" autocomplete="off">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Date To</label>
+                  <input type="text" id="stageFilterDateTo" class="form-control form-control-sm" placeholder="YYYY-MM-DD" autocomplete="off">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Close Min</label>
+                  <input type="number" step="0.01" id="stageFilterCloseMin" class="form-control form-control-sm" placeholder="Min">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Close Max</label>
+                  <input type="number" step="0.01" id="stageFilterCloseMax" class="form-control form-control-sm" placeholder="Max">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Score Min</label>
+                  <input type="number" step="0.01" id="stageFilterScoreMin" class="form-control form-control-sm" placeholder="Momentum Min">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label text-muted small fw-medium mb-1">Score Max</label>
+                  <input type="number" step="0.01" id="stageFilterScoreMax" class="form-control form-control-sm" placeholder="Momentum Max">
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <div class="tab-pane fade {% if active_tab == 'rrg_backtest' %}show active{% endif %}" id="rrg-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">Relative Rotation Graph (RRG) Parameters</h5>
+        <div class="sop-note"><strong>SOP:</strong> Select one target symbol, set the benchmark index, date range, and lookback, then generate RRG. Use the quadrant, RS-Ratio, RS-Momentum, and trail direction to compare rotation versus the benchmark.</div>
+        <form method="GET" action="." id="rrgForm">
+          <input type="hidden" name="active_tab" value="rrg_backtest">
+          <input type="hidden" name="rrg_backtest_symbol" id="rrgSymbolHidden" value="{{ rrg_selected_symbol }}">
+          
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" class="autocomplete-input" id="rrgSearchInput" placeholder="Type to search..." value="{{ rrg_selected_symbol }}" autocomplete="off">
+                <div class="autocomplete-dropdown" id="rrgDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Benchmark Index</label>
+              <input type="text" class="form-control form-control-sm text-uppercase" name="rrg_benchmark_symbol" value="{{ rrg_benchmark_symbol }}" placeholder="NEPSE INDEX">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="rrgFromDate" name="rrg_from_date" class="form-control form-control-sm" value="{{ rrg_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="rrgToDate" name="rrg_to_date" class="form-control form-control-sm" value="{{ rrg_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Lookback</label>
+              <input type="number" min="2" step="1" name="rrg_lookback" class="form-control form-control-sm" value="{{ rrg_lookback }}" required>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Generate RRG</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {% if rrg_backtest_metrics %}
+        {% if rrg_backtest_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ rrg_backtest_metrics.error }}</div>
+        {% else %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Current Quadrant</span>
+                <h4 class="mt-2 mb-0 fw-bold 
+                  {% if rrg_backtest_metrics.latest_quadrant == 'Leading' %}text-success
+                  {% elif rrg_backtest_metrics.latest_quadrant == 'Weakening' %}text-warning
+                  {% elif rrg_backtest_metrics.latest_quadrant == 'Lagging' %}text-danger
+                  {% elif rrg_backtest_metrics.latest_quadrant == 'Improving' %}text-primary
+                  {% else %}text-muted{% endif %}">{{ rrg_backtest_metrics.latest_quadrant }}</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">RS-Ratio</span>
+                <h4 class="mt-2 mb-0 fw-bold text-dark">{{ rrg_backtest_metrics.latest_rs_ratio|floatformat:2 }}</h4>
+                <div class="small text-muted mt-1">Δ {{ rrg_backtest_metrics.rs_ratio_delta|floatformat:2 }}</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">RS-Momentum</span>
+                <h4 class="mt-2 mb-0 fw-bold text-dark">{{ rrg_backtest_metrics.latest_rs_momentum|floatformat:2 }}</h4>
+                <div class="small text-muted mt-1">Δ {{ rrg_backtest_metrics.rs_momentum_delta|floatformat:2 }}</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Benchmark</span>
+                <h4 class="mt-2 mb-0 fw-bold text-dark">{{ rrg_benchmark_symbol }}</h4>
+                <div class="small text-muted mt-1">{{ rrg_backtest_metrics.data_points }} plotted data points</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card p-4 border-0 bg-white shadow-sm rounded-3 mb-4 rrg-chart-card">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+              <div>
+                <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">RRG Quadrant Map</h6>
+                <div class="small text-muted mt-1">X-axis: RS-Ratio. Y-axis: RS-Momentum. Center line: 100.</div>
+              </div>
+              <div class="rrg-legend">
+                <span class="rrg-legend-item rrg-leading">Leading</span>
+                <span class="rrg-legend-item rrg-weakening">Weakening</span>
+                <span class="rrg-legend-item rrg-lagging">Lagging</span>
+                <span class="rrg-legend-item rrg-improving">Improving</span>
+              </div>
+            </div>
+            <div id="rrgChart" class="rrg-chart-wrap">
+              <div class="rrg-chart-empty">RRG chart data is not available.</div>
+            </div>
+          </div>
+          {{ rrg_chart_points|json_script:"rrg-chart-data" }}
+
+          <div class="panel-outer">
+            <div class="p-3 bg-light border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">RRG Log: {{ rrg_selected_symbol }} vs {{ rrg_benchmark_symbol }}</h6>
+            </div>
+            <div class="imm-scroll-wrap">
+              <table class="minimal-table">
+                <thead class="table-light">
+                  <tr>
+                    <th>Date</th>
+                    <th class="th-num">Stock Close</th>
+                    <th class="th-num">Benchmark Close</th>
+                    <th class="th-num">Relative Strength (RS)</th>
+                    <th class="th-num">RS-Ratio</th>
+                    <th class="th-num">RS-Momentum</th>
+                    <th>Quadrant</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in rrg_indicator_rows %}
+                  <tr>
+                    <td class="td-date">{{ row.business_date }}</td>
+                    <td class="td-num">{{ row.stock_close|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.bench_close|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.RS|floatformat:4 }}</td>
+                    <td class="td-num">{{ row.RS_Ratio|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.RS_Momentum|floatformat:2 }}</td>
+                    <td class="fw-semibold 
+                      {% if row.Quadrant == 'Leading' %}text-success-custom
+                      {% elif row.Quadrant == 'Weakening' %}text-warning
+                      {% elif row.Quadrant == 'Lagging' %}text-danger-custom
+                      {% elif row.Quadrant == 'Improving' %}text-primary
+                      {% else %}text-muted{% endif %}">{{ row.Quadrant }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No RRG data generated in this date range.</td>
                   </tr>
                   {% endfor %}
                 </tbody>
@@ -1365,7 +2241,204 @@
       {% endif %}
     </div>
 
+    <div class="tab-pane fade {% if active_tab == 'rrg_indices' %}show active{% endif %}" id="rrg-indices-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">RRG Indices Parameters</h5>
+        <div class="sop-note"><strong>SOP:</strong> Select the benchmark index, choose the indices to plot or use Select All, then generate RRG. Use Tail Length, Arrow Mode, Fit, and Center to review index rotation order and momentum shifts.</div>
+        <form method="GET" action="." id="rrgIndicesForm">
+          <input type="hidden" name="active_tab" value="rrg_indices">
+          <input type="hidden" name="rrg_indices_benchmark_symbol" id="rrgIndicesBenchmarkHidden" value="{{ rrg_indices_benchmark_symbol }}">
+          <input type="hidden" name="rrg_indices_selection_submitted" value="1">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Benchmark Index <span style="color: #9ca3af; font-size: 11px;">(Indices Only)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" class="autocomplete-input" id="rrgIndicesBenchmarkSearchInput" value="{{ rrg_indices_benchmark_symbol }}" placeholder="Search NEPSE index..." autocomplete="off">
+                <div class="autocomplete-dropdown" id="rrgIndicesBenchmarkDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="rrgIndicesFromDate" name="rrg_indices_from_date" class="form-control form-control-sm" value="{{ rrg_indices_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="rrgIndicesToDate" name="rrg_indices_to_date" class="form-control form-control-sm" value="{{ rrg_indices_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Lookback</label>
+              <input type="number" min="2" step="1" name="rrg_indices_lookback" class="form-control form-control-sm" value="{{ rrg_indices_lookback }}" required>
+            </div>
+            <input type="hidden" id="rrgIndicesTailLengthInput" name="rrg_indices_tail_length" value="{{ rrg_indices_tail_length }}">
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Generate Indices RRG</button>
+            </div>
+          </div>
+          <div class="row g-3 mt-1">
+            <div class="col-12">
+              <div class="rrg-index-picker">
+                <div class="rrg-index-picker-header">
+                  <div>
+                    <div class="rrg-index-picker-title">Indices To Plot</div>
+                    <div class="small text-muted mt-1">Select one, many, or all NEPSE indices for movement trails.</div>
+                  </div>
+                  <div class="rrg-index-picker-actions">
+                    <span class="rrg-index-count" id="rrgIndicesSelectedCount">{{ rrg_indices_selected_count }} selected</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" id="rrgIndicesSelectAllBtn">Select All</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" id="rrgIndicesClearBtn">Clear</button>
+                  </div>
+                </div>
+                <div class="rrg-index-choice-grid" id="rrgIndicesChoiceGrid">
+                  {% for choice in rrg_indices_choices %}
+                    <label class="rrg-index-choice {% if choice.selected %}is-selected{% endif %}">
+                      <input type="checkbox" class="rrg-index-checkbox" name="rrg_indices_selected_symbols" value="{{ choice.value }}" {% if choice.selected %}checked{% endif %}>
+                      <span>
+                        <span class="rrg-index-choice-main">{{ choice.label }}</span>
+                        <span class="rrg-index-choice-sub">{{ choice.value }}</span>
+                      </span>
+                    </label>
+                  {% empty %}
+                    <div class="text-muted small">No NEPSE indices found in the database.</div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {% if rrg_indices_metrics %}
+        {% if rrg_indices_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ rrg_indices_metrics.error }}</div>
+        {% else %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Plotted Indices</span>
+                <h4 class="mt-2 mb-0 fw-bold text-dark">{{ rrg_indices_metrics.indices_plotted }}</h4>
+                <div class="small text-muted mt-1">{{ rrg_indices_metrics.skipped_count }} skipped</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Leading / Weakening</span>
+                <h4 class="mt-2 mb-0 fw-bold text-dark">{{ rrg_indices_metrics.quadrant_counts.Leading }} / {{ rrg_indices_metrics.quadrant_counts.Weakening }}</h4>
+                <div class="small text-muted mt-1">Green and yellow quadrants</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Lagging / Improving</span>
+                <h4 class="mt-2 mb-0 fw-bold text-dark">{{ rrg_indices_metrics.quadrant_counts.Lagging }} / {{ rrg_indices_metrics.quadrant_counts.Improving }}</h4>
+                <div class="small text-muted mt-1">Red and blue quadrants</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 bg-white shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Benchmark</span>
+                <h4 class="mt-2 mb-0 fw-bold text-dark">{{ rrg_indices_benchmark_symbol }}</h4>
+                <div class="small text-muted mt-1">{{ rrg_indices_metrics.latest_date }} | Lookback {{ rrg_indices_metrics.lookback }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card p-4 border-0 bg-white shadow-sm rounded-3 mb-4 rrg-indices-chart-card">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+              <div>
+                <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">NEPSE Indices Relative Rotation Graph</h6>
+                <div class="small text-muted mt-1">Each dot is the latest index position versus {{ rrg_indices_benchmark_symbol }}. Axis center is 100.</div>
+              </div>
+              <div class="rrg-legend">
+                <span class="rrg-legend-item rrg-leading">Leading</span>
+                <span class="rrg-legend-item rrg-weakening">Weakening</span>
+                <span class="rrg-legend-item rrg-lagging">Lagging</span>
+                <span class="rrg-legend-item rrg-improving">Improving</span>
+              </div>
+            </div>
+            <div class="rrg-indices-toolbar" aria-label="RRG indices chart controls">
+              <button type="button" id="rrgIndicesAnimateBtn" class="rrg-toolbar-btn primary">&#9658; Animate</button>
+              <button type="button" id="rrgIndicesFitBtn" class="rrg-toolbar-btn">Fit</button>
+              <button type="button" id="rrgIndicesMaxBtn" class="rrg-toolbar-btn">Max</button>
+              <button type="button" id="rrgIndicesCenterBtn" class="rrg-toolbar-btn">Center</button>
+              <button type="button" id="rrgIndicesLockBtn" class="rrg-toolbar-btn rrg-toolbar-icon-btn" aria-label="Lock scale" title="Lock scale">&#128275;</button>
+              <div class="rrg-tail-control">
+                <span class="rrg-tail-label">Tail Length</span>
+                <input type="range" id="rrgIndicesTailSlider" class="rrg-tail-slider" min="1" max="{{ rrg_indices_tail_length }}" value="{{ rrg_indices_tail_length }}">
+                <input type="number" id="rrgIndicesTailNumber" class="rrg-tail-number" min="1" step="1" value="{{ rrg_indices_tail_length }}">
+              </div>
+              <label class="rrg-arrow-mode">
+                <input type="checkbox" id="rrgIndicesArrowMode">
+                <span>Arrow Mode</span>
+              </label>
+            </div>
+            <div id="rrgIndicesChart" class="rrg-indices-chart-wrap">
+              <div class="rrg-chart-empty">RRG indices chart data is not available.</div>
+            </div>
+          </div>
+          {{ rrg_indices_points|json_script:"rrg-indices-points-data" }}
+          {{ rrg_indices_trails|json_script:"rrg-indices-trails-data" }}
+          {{ rrg_indices_benchmark_points|json_script:"rrg-indices-benchmark-data" }}
+
+          <div class="panel-outer mb-4">
+            <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center gap-3">
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">RRG Indices Output Ordered By NEPSE Index List</h6>
+              <span class="text-muted small">{{ rrg_indices_metrics.indices_scanned }} scanned</span>
+            </div>
+            <div class="imm-scroll-wrap">
+              <table class="minimal-table">
+                <thead class="table-light">
+                  <tr>
+                    <th>Order</th>
+                    <th>Index</th>
+                    <th>Date</th>
+                    <th>Quadrant</th>
+                    <th class="th-num">Close</th>
+                    <th class="th-num">RS-Ratio</th>
+                    <th class="th-num">RS-Momentum</th>
+                    <th class="th-num">Ratio Delta</th>
+                    <th class="th-num">Momentum Delta</th>
+                    <th class="th-num">Rows</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for point in rrg_indices_points %}
+                  <tr>
+                    <td class="td-num">{{ point.order }}</td>
+                    <td><span class="td-ticker">{{ point.label }}</span><span class="text-muted ms-2 small">{{ point.symbol }}</span></td>
+                    <td class="td-date">{{ point.business_date }}</td>
+                    <td><span class="rrg-index-badge {{ point.Quadrant|lower }}">{{ point.Quadrant }}</span></td>
+                    <td class="td-num">{{ point.close|floatformat:2 }}</td>
+                    <td class="td-num">{{ point.RS_Ratio|floatformat:2 }}</td>
+                    <td class="td-num">{{ point.RS_Momentum|floatformat:2 }}</td>
+                    <td class="td-num {% if point.ratio_delta >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">{{ point.ratio_delta|floatformat:2 }}</td>
+                    <td class="td-num {% if point.momentum_delta >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">{{ point.momentum_delta|floatformat:2 }}</td>
+                    <td class="td-num">{{ point.data_points }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="10" class="text-center text-muted py-4">No RRG index data generated in this date range.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {% if rrg_indices_skipped %}
+            <div class="alert alert-secondary border-0 rounded-3 shadow-sm small">
+              <strong>Skipped indices:</strong>
+              {% for skipped in rrg_indices_skipped %}
+                {{ skipped.symbol }}{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    </div>
+
   </div>{# /tab-content #}
+
+
 </div>{# /container #}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -1376,12 +2449,21 @@
    * Each strategy tab has its own autocomplete search input
    */
   class AutocompleteSearch {
-    constructor(inputId, dropdownId, hiddenInputId, apiUrl) {
+    constructor(inputId, dropdownId, hiddenInputId, apiUrl, options = {}) {
       this.input = document.getElementById(inputId);
       this.dropdown = document.getElementById(dropdownId);
       this.hiddenInput = document.getElementById(hiddenInputId);
       this.apiUrl = apiUrl;
+      this.debounceMs = options.debounceMs || 180;
+      this.extraParams = options.extraParams || {};
+      this.minChars = options.minChars === undefined ? 2 : options.minChars;
+      this.emptySearch = options.emptySearch || false;
+      this.showAllOnFocus = options.showAllOnFocus || false;
+      this.hintText = options.hintText || 'Start typing to search for stocks and indices...';
       this.searchTimeout = null;
+      this.abortController = null;
+      this.resultCache = new Map();
+      this.lastQuery = '';
       this.activeIndex = -1;
       this.results = [];
       this.metaEl = null;
@@ -1396,7 +2478,16 @@
 
       // Input events
       this.input.addEventListener('input', () => this.handleInput());
-      this.input.addEventListener('focus', () => this.handleInput());
+      this.input.addEventListener('focus', () => {
+        if (this.showAllOnFocus && this.emptySearch) {
+          clearTimeout(this.searchTimeout);
+          this.searchTimeout = setTimeout(() => {
+            this.performSearch('');
+          }, this.debounceMs);
+        } else {
+          this.handleInput();
+        }
+      });
       this.input.addEventListener('keydown', (e) => this.handleKeydown(e));
       
       // Click outside to close
@@ -1413,35 +2504,74 @@
       // Clear existing timeout
       clearTimeout(this.searchTimeout);
       
-      // If query is empty, show hint
+      // Keep results focused: require at least 2 characters.
       if (query.length === 0) {
-        this.showHint();
+        this.hiddenInput.value = '';
+        if (this.emptySearch) {
+          this.searchTimeout = setTimeout(() => {
+            this.performSearch('');
+          }, this.debounceMs);
+        } else {
+          this.showHint();
+        }
+        return;
+      }
+      this.hiddenInput.value = query.toUpperCase();
+      this.metaEl.textContent = '';
+      if (query.length < this.minChars) {
+        this.showHint(`Type at least ${this.minChars} characters to search`);
         return;
       }
       
       // Debounce search
       this.searchTimeout = setTimeout(() => {
         this.performSearch(query);
-      }, 300);
+      }, this.debounceMs);
     }
     
     async performSearch(query) {
+      const normalizedQuery = query.trim();
+      if (!normalizedQuery && !this.emptySearch) return;
+      this.lastQuery = normalizedQuery;
+
+      if (this.resultCache.has(normalizedQuery.toUpperCase())) {
+        this.results = this.resultCache.get(normalizedQuery.toUpperCase());
+        this.showResults();
+        return;
+      }
+
       try {
         this.showLoading();
+
+        if (this.abortController) {
+          this.abortController.abort();
+        }
+        this.abortController = new AbortController();
         
-        const response = await fetch(`${this.apiUrl}?q=${encodeURIComponent(query)}`);
+        const searchUrl = new URL(this.apiUrl, window.location.origin);
+        searchUrl.searchParams.set('q', normalizedQuery);
+        Object.entries(this.extraParams).forEach(([key, value]) => {
+          searchUrl.searchParams.set(key, value);
+        });
+
+        const response = await fetch(searchUrl.toString(), {
+          signal: this.abortController.signal,
+        });
         const data = await response.json();
+        if (this.lastQuery !== normalizedQuery) return;
         
         this.results = data.results || [];
+        this.resultCache.set(normalizedQuery.toUpperCase(), this.results);
         this.showResults();
       } catch (error) {
+        if (error.name === 'AbortError') return;
         console.error('Search error:', error);
         this.hideDropdown();
       }
     }
     
-    showHint() {
-      this.dropdown.innerHTML = '<div class="autocomplete-hint">Start typing to search for stocks and indices...</div>';
+    showHint(message = this.hintText) {
+      this.dropdown.innerHTML = `<div class="autocomplete-hint">${message}</div>`;
       this.dropdown.classList.add('show');
     }
     
@@ -1463,6 +2593,11 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+      const formatDisplayDate = (value) => {
+        if (!value) return '';
+        const text = String(value).slice(0, 10);
+        return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : String(value);
+      };
 
       this.dropdown.innerHTML = this.results.map((result, index) => {
         const isObject = result && typeof result === 'object';
@@ -1478,7 +2613,7 @@
         }
         if (latestClose !== null && latestClose !== undefined) {
           const priceText = Number(latestClose).toFixed(2);
-          const dateText = latestDate ? ` (${latestDate})` : '';
+          const dateText = latestDate ? ` (${formatDisplayDate(latestDate)})` : '';
           subParts.push(`Latest: NPR ${priceText}${dateText}`);
         }
         const subText = subParts.length ? `<div class="autocomplete-item-sub">${escapeHtml(subParts.join(' | '))}</div>` : '';
@@ -1511,11 +2646,16 @@
       const value = isObject ? (selected.value || '') : String(indexOrValue || '');
       const latestClose = isObject ? selected.latest_close : null;
       const latestDate = isObject ? selected.latest_date : null;
+      const formatDisplayDate = (value) => {
+        if (!value) return '';
+        const text = String(value).slice(0, 10);
+        return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : String(value);
+      };
 
       this.input.value = value;
       this.hiddenInput.value = value;
       if (latestClose !== null && latestClose !== undefined) {
-        const datePart = latestDate ? ` on ${latestDate}` : '';
+        const datePart = latestDate ? ` on ${formatDisplayDate(latestDate)}` : '';
         this.metaEl.textContent = `Latest close: NPR ${Number(latestClose).toFixed(2)}${datePart}`;
       } else {
         this.metaEl.textContent = '';
@@ -1543,6 +2683,7 @@
           this.hiddenInput.value = this.input.value.trim().toUpperCase();
           this.input.value = this.input.value.trim().toUpperCase();
           this.metaEl.textContent = '';
+          this.hideDropdown();
         }
       } else if (e.key === 'Escape') {
         this.hideDropdown();
@@ -1619,48 +2760,297 @@
       '{% url "symbol_autocomplete" %}'
     );
 
-    const stageFromEl = document.getElementById('stageFromDate');
-    const stageToEl = document.getElementById('stageToDate');
-    if (stageFromEl && stageToEl && window.flatpickr) {
-      const tradingDayOnly = (date) => date.getDay() !== 0 && date.getDay() !== 6;
-      const today = new Date();
+    // RRG tab
+    new AutocompleteSearch(
+      'rrgSearchInput',
+      'rrgDropdown',
+      'rrgSymbolHidden',
+      '{% url "symbol_autocomplete" %}',
+      { debounceMs: 120, extraParams: { fast: '1' } }
+    );
 
-      const toPicker = flatpickr(stageToEl, {
-        dateFormat: 'Y-m-d',
-        maxDate: today,
-        enable: [tradingDayOnly],
-        allowInput: false,
-      });
+    new AutocompleteSearch(
+      'rrgIndicesBenchmarkSearchInput',
+      'rrgIndicesBenchmarkDropdown',
+      'rrgIndicesBenchmarkHidden',
+      '{% url "symbol_autocomplete" %}',
+      {
+        debounceMs: 80,
+        minChars: 0,
+        emptySearch: true,
+        showAllOnFocus: true,
+        extraParams: { indices_only: '1', all: '1' },
+        hintText: 'Search NEPSE indices only...'
+      }
+    );
 
-      const fromPicker = flatpickr(stageFromEl, {
-        dateFormat: 'Y-m-d',
-        maxDate: stageToEl.value || today,
-        enable: [tradingDayOnly],
-        allowInput: false,
-      });
-
-      fromPicker.config.onChange.push(function(selectedDates) {
-        if (selectedDates.length) {
-          toPicker.set('minDate', selectedDates[0]);
-          if (toPicker.selectedDates[0] && toPicker.selectedDates[0] < selectedDates[0]) {
-            toPicker.setDate(selectedDates[0], true);
-          }
-        }
-      });
-
-      toPicker.config.onChange.push(function(selectedDates) {
-        if (selectedDates.length) {
-          fromPicker.set('maxDate', selectedDates[0]);
-          if (fromPicker.selectedDates[0] && fromPicker.selectedDates[0] > selectedDates[0]) {
-            fromPicker.setDate(selectedDates[0], true);
+    const rrgForm = document.getElementById('rrgForm');
+    if (rrgForm) {
+      rrgForm.addEventListener('submit', () => {
+        const rrgSearchInput = document.getElementById('rrgSearchInput');
+        const rrgSymbolHidden = document.getElementById('rrgSymbolHidden');
+        if (rrgSearchInput && rrgSymbolHidden) {
+          const typedSymbol = rrgSearchInput.value.trim().toUpperCase();
+          if (typedSymbol) {
+            rrgSearchInput.value = typedSymbol;
+            rrgSymbolHidden.value = typedSymbol;
           }
         }
       });
     }
 
+    const setupRrgIndicesMultiSelect = () => {
+      const grid = document.getElementById('rrgIndicesChoiceGrid');
+      const countEl = document.getElementById('rrgIndicesSelectedCount');
+      const selectAllBtn = document.getElementById('rrgIndicesSelectAllBtn');
+      const clearBtn = document.getElementById('rrgIndicesClearBtn');
+      if (!grid || !countEl || !selectAllBtn || !clearBtn) return;
+
+      const checkboxes = Array.from(grid.querySelectorAll('.rrg-index-checkbox'));
+      const refresh = () => {
+        const selectedCount = checkboxes.filter((checkbox) => checkbox.checked).length;
+        countEl.textContent = `${selectedCount} selected`;
+        checkboxes.forEach((checkbox) => {
+          const label = checkbox.closest('.rrg-index-choice');
+          if (label) label.classList.toggle('is-selected', checkbox.checked);
+        });
+      };
+
+      selectAllBtn.addEventListener('click', () => {
+        checkboxes.forEach((checkbox) => { checkbox.checked = true; });
+        refresh();
+      });
+      clearBtn.addEventListener('click', () => {
+        checkboxes.forEach((checkbox) => { checkbox.checked = false; });
+        refresh();
+      });
+      checkboxes.forEach((checkbox) => {
+        checkbox.addEventListener('change', refresh);
+      });
+      refresh();
+    };
+
+    setupRrgIndicesMultiSelect();
+
+    const rrgIndicesForm = document.getElementById('rrgIndicesForm');
+    if (rrgIndicesForm) {
+      rrgIndicesForm.addEventListener('submit', (e) => {
+        const searchInput = document.getElementById('rrgIndicesBenchmarkSearchInput');
+        const hiddenInput = document.getElementById('rrgIndicesBenchmarkHidden');
+        if (searchInput && hiddenInput) {
+          const typedIndex = searchInput.value.trim().toUpperCase();
+          if (typedIndex) {
+            searchInput.value = typedIndex;
+            hiddenInput.value = typedIndex;
+          }
+        }
+        const selectedIndices = rrgIndicesForm.querySelectorAll('.rrg-index-checkbox:checked');
+        if (!selectedIndices.length) {
+          e.preventDefault();
+          alert('Select at least one NEPSE index to plot.');
+        }
+      });
+    }
+
+    const formatDate = (d) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    const isTradingDay = (d) => d.getDay() !== 0 && d.getDay() !== 6;
+    const normalizeToTradingDay = (d, reverse = false) => {
+      const cursor = new Date(d);
+      while (!isTradingDay(cursor)) {
+        cursor.setDate(cursor.getDate() + (reverse ? -1 : 1));
+      }
+      return cursor;
+    };
+
+    const setupFlatpickrRange = (fromId, toId) => {
+      if (!window.flatpickr) return;
+      const fromInput = document.getElementById(fromId);
+      const toInput = document.getElementById(toId);
+      if (!fromInput || !toInput) return;
+
+      const today = normalizeToTradingDay(new Date(), true);
+      const todayStr = formatDate(today);
+      if (!toInput.value) toInput.value = todayStr;
+      if (!fromInput.value) {
+        const oneYearAgo = new Date(today);
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        fromInput.value = formatDate(normalizeToTradingDay(oneYearAgo));
+      }
+
+      let fromPicker;
+      let toPicker;
+      const syncBounds = () => {
+        if (toPicker) {
+          toPicker.set('maxDate', todayStr);
+          toPicker.set('minDate', fromInput.value || null);
+        }
+        if (fromPicker) {
+          fromPicker.set('maxDate', toInput.value || todayStr);
+        }
+        if (fromInput.value && toInput.value && fromInput.value > toInput.value) {
+          fromInput.value = toInput.value;
+          if (fromPicker) fromPicker.setDate(fromInput.value, false);
+        }
+      };
+
+      toPicker = flatpickr(toInput, {
+        dateFormat: 'Y-m-d',
+        defaultDate: toInput.value || todayStr,
+        maxDate: todayStr,
+        enable: [isTradingDay],
+        allowInput: false,
+        onChange: function(selectedDates) {
+          if (!selectedDates.length) return;
+          const selectedTo = formatDate(selectedDates[0]);
+          if (fromPicker) {
+            fromPicker.set('maxDate', selectedTo);
+            if (fromInput.value && fromInput.value > selectedTo) {
+              fromInput.value = selectedTo;
+              fromPicker.setDate(selectedTo, false);
+            }
+          }
+          syncBounds();
+        }
+      });
+
+      fromPicker = flatpickr(fromInput, {
+        dateFormat: 'Y-m-d',
+        defaultDate: fromInput.value || undefined,
+        maxDate: toInput.value || todayStr,
+        enable: [isTradingDay],
+        allowInput: false,
+        onChange: function(selectedDates) {
+          if (!selectedDates.length) return;
+          const selectedFrom = formatDate(selectedDates[0]);
+          if (toPicker) {
+            toPicker.set('minDate', selectedFrom);
+            if (toInput.value && toInput.value < selectedFrom) {
+              toInput.value = selectedFrom;
+              toPicker.setDate(selectedFrom, false);
+            }
+          }
+          syncBounds();
+        }
+      });
+
+      syncBounds();
+    };
+
+    const setupFlatpickrSingle = (inputId) => {
+      if (!window.flatpickr) return;
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      const today = normalizeToTradingDay(new Date(), true);
+      const todayStr = formatDate(today);
+      if (!input.value) input.value = todayStr;
+      flatpickr(input, {
+        dateFormat: 'Y-m-d',
+        defaultDate: input.value || todayStr,
+        maxDate: todayStr,
+        enable: [isTradingDay],
+        allowInput: false,
+      });
+    };
+
+    const setupBottomTableFilters = (config) => {
+      const table = document.getElementById(config.tableId);
+      if (!table) return;
+      const tbody = table.querySelector('tbody');
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll('tr')).filter((row) => row.querySelector('td'));
+      if (!rows.length) return;
+
+      const els = {
+        dateFrom: document.getElementById(config.dateFromId),
+        dateTo: document.getElementById(config.dateToId),
+        closeMin: document.getElementById(config.closeMinId),
+        closeMax: document.getElementById(config.closeMaxId),
+        scoreMin: document.getElementById(config.scoreMinId),
+        scoreMax: document.getElementById(config.scoreMaxId),
+      };
+      if (Object.values(els).some((el) => !el)) return;
+
+      const parseNum = (v) => {
+        const n = parseFloat(v);
+        return Number.isFinite(n) ? n : null;
+      };
+      const normDate = (v) => (v || '').trim();
+
+      const apply = () => {
+        const dateFrom = normDate(els.dateFrom.value);
+        const dateTo = normDate(els.dateTo.value);
+        const closeMin = parseNum(els.closeMin.value);
+        const closeMax = parseNum(els.closeMax.value);
+        const scoreMin = parseNum(els.scoreMin.value);
+        const scoreMax = parseNum(els.scoreMax.value);
+
+        rows.forEach((row) => {
+          const rowDate = row.dataset.date || '';
+          const rowClose = parseFloat(row.dataset.close || 'NaN');
+          const rowScore = parseFloat(row.dataset.score || 'NaN');
+
+          let visible = true;
+          if (dateFrom && rowDate < dateFrom) visible = false;
+          if (dateTo && rowDate > dateTo) visible = false;
+          if (closeMin !== null && !(rowClose >= closeMin)) visible = false;
+          if (closeMax !== null && !(rowClose <= closeMax)) visible = false;
+          if (scoreMin !== null && !(rowScore >= scoreMin)) visible = false;
+          if (scoreMax !== null && !(rowScore <= scoreMax)) visible = false;
+
+          row.style.display = visible ? '' : 'none';
+        });
+      };
+
+      const bindEvent = (el) => {
+        el.addEventListener('input', apply);
+        el.addEventListener('change', apply);
+      };
+      Object.values(els).forEach(bindEvent);
+      apply();
+    };
+
+    setupFlatpickrSingle('inventoryBusinessDate');
+    setupFlatpickrRange('headerSyncFromDate', 'headerSyncToDate');
+    setupFlatpickrRange('headerCalcFromDate', 'headerCalcToDate');
+    setupFlatpickrRange('t3FromDate', 't3ToDate');
+    setupFlatpickrRange('emaFromDate', 'emaToDate');
+    setupFlatpickrRange('cciFromDate', 'cciToDate');
+    setupFlatpickrRange('rsiFromDate', 'rsiToDate');
+    setupFlatpickrRange('msvFromDate', 'msvToDate');
+    setupFlatpickrRange('rrgFromDate', 'rrgToDate');
+    setupFlatpickrRange('rrgIndicesFromDate', 'rrgIndicesToDate');
+    setupBottomTableFilters({
+      tableId: 'immScoringTable',
+      dateFromId: 'immFilterDateFrom',
+      dateToId: 'immFilterDateTo',
+      closeMinId: 'immFilterCloseMin',
+      closeMaxId: 'immFilterCloseMax',
+      scoreMinId: 'immFilterScoreMin',
+      scoreMaxId: 'immFilterScoreMax',
+    });
+    setupBottomTableFilters({
+      tableId: 'stageOutputTable',
+      dateFromId: 'stageFilterDateFrom',
+      dateToId: 'stageFilterDateTo',
+      closeMinId: 'stageFilterCloseMin',
+      closeMaxId: 'stageFilterCloseMax',
+      scoreMinId: 'stageFilterScoreMin',
+      scoreMaxId: 'stageFilterScoreMax',
+    });
+
     const msvForm = document.getElementById('msvForm');
     if (msvForm) {
       msvForm.addEventListener('submit', function(e) {
+        const symbolInput = document.getElementById('msvSearchInput');
+        const symbolHidden = document.getElementById('msvSymbolHidden');
+        const symbol = ((symbolHidden && symbolHidden.value) || (symbolInput && symbolInput.value) || '').trim().toUpperCase();
+        if (symbolInput) symbolInput.value = symbol;
+        if (symbolHidden) symbolHidden.value = symbol;
         const getNum = (name) => parseFloat(msvForm.querySelector(`[name="${name}"]`).value || '0');
         const fast = getNum('msv_macd_fast');
         const slow = getNum('msv_macd_slow');
@@ -1675,6 +3065,7 @@
         const toDate = msvForm.querySelector('[name="msv_to_date"]').value;
 
         const issues = [];
+        if (!symbol) issues.push('Target asset is required.');
         if (!fromDate || !toDate) issues.push('From/To date is required.');
         if (fast >= slow) issues.push('MACD Fast must be smaller than MACD Slow.');
         if (signal < 1 || atrLen < 2 || rvolPeriod < 2 || stLen < 2) issues.push('Lookback periods are too small.');
@@ -1689,8 +3080,8 @@
 
     const immForm = document.getElementById('immForm');
     if (immForm) {
-      const fromInput = immForm.querySelector('[name="imm_from_date"]');
-      const toInput = immForm.querySelector('[name="imm_to_date"]');
+      const fromInput = document.getElementById('immFromDate');
+      const toInput = document.getElementById('immToDate');
 
       const formatDate = (d) => {
         const year = d.getFullYear();
@@ -1698,43 +3089,103 @@
         const day = String(d.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
       };
+      const isTradingDay = (d) => d.getDay() !== 0 && d.getDay() !== 6;
+      const normalizeToTradingDay = (d, reverse = false) => {
+        const cursor = new Date(d);
+        while (!isTradingDay(cursor)) {
+          cursor.setDate(cursor.getDate() + (reverse ? -1 : 1));
+        }
+        return cursor;
+      };
 
       const today = new Date();
-      const todayStr = formatDate(today);
+      const todayTrading = normalizeToTradingDay(today, true);
+      const todayStr = formatDate(todayTrading);
 
       if (!toInput.value) {
         toInput.value = todayStr;
       }
       if (!fromInput.value) {
-        const oneYearAgo = new Date(today);
+        const oneYearAgo = new Date(todayTrading);
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        fromInput.value = formatDate(oneYearAgo);
+        fromInput.value = formatDate(normalizeToTradingDay(oneYearAgo));
       }
 
-      // Keep date pickers bounded to a valid range ending at today.
-      toInput.max = todayStr;
-      fromInput.max = toInput.value || todayStr;
-      toInput.min = fromInput.value || '';
+      let immFromPicker;
+      let immToPicker;
 
       const syncDateBounds = () => {
+        if (immToPicker) {
+          immToPicker.set('maxDate', todayStr);
+          immToPicker.set('minDate', fromInput.value || null);
+        }
+        if (immFromPicker) {
+          immFromPicker.set('maxDate', toInput.value || todayStr);
+        }
+        if (toInput.value && fromInput.value) {
+          if (fromInput.value > toInput.value) {
+            fromInput.value = toInput.value;
+            if (immFromPicker) immFromPicker.setDate(fromInput.value, false);
+          }
+        }
+      };
+      
+      if (window.flatpickr) {
+        // Descending flow: user picks latest "To Date" first, then "From Date" constrained to <= To Date.
+        immToPicker = flatpickr(toInput, {
+          dateFormat: 'Y-m-d',
+          defaultDate: toInput.value || todayStr,
+          maxDate: todayStr,
+          enable: [isTradingDay],
+          allowInput: false,
+          onChange: function(selectedDates) {
+            if (!selectedDates.length) return;
+            const selectedTo = formatDate(selectedDates[0]);
+            if (immFromPicker) {
+              immFromPicker.set('maxDate', selectedTo);
+              if (fromInput.value && fromInput.value > selectedTo) {
+                fromInput.value = selectedTo;
+                immFromPicker.setDate(selectedTo, false);
+              }
+            }
+            syncDateBounds();
+          }
+        });
+
+        immFromPicker = flatpickr(fromInput, {
+          dateFormat: 'Y-m-d',
+          defaultDate: fromInput.value || undefined,
+          maxDate: toInput.value || todayStr,
+          enable: [isTradingDay],
+          allowInput: false,
+          onChange: function(selectedDates) {
+            if (!selectedDates.length) return;
+            const selectedFrom = formatDate(selectedDates[0]);
+            if (immToPicker) {
+              immToPicker.set('minDate', selectedFrom);
+              if (toInput.value && toInput.value < selectedFrom) {
+                toInput.value = selectedFrom;
+                immToPicker.setDate(selectedFrom, false);
+              }
+            }
+            syncDateBounds();
+          }
+        });
+      } else {
+        // Fallback when flatpickr is unavailable.
         toInput.max = todayStr;
         fromInput.max = toInput.value || todayStr;
         toInput.min = fromInput.value || '';
-
-        if (toInput.value && fromInput.value && fromInput.value > toInput.value) {
-          fromInput.value = toInput.value;
-        }
-      };
-
-      fromInput.addEventListener('change', syncDateBounds);
-      toInput.addEventListener('change', syncDateBounds);
+        fromInput.addEventListener('change', syncDateBounds);
+        toInput.addEventListener('change', syncDateBounds);
+      }
 
       const setImmRange = (rangeKey) => {
-        const end = new Date(today);
-        let start = new Date(today);
+        const end = new Date(todayTrading);
+        let start = new Date(todayTrading);
 
         if (rangeKey === 'latest') {
-          start = new Date(today);
+          start = new Date(todayTrading);
         } else if (rangeKey === '1m') {
           start.setMonth(start.getMonth() - 1);
         } else if (rangeKey === '3m') {
@@ -1747,8 +3198,12 @@
           start = new Date(today.getFullYear(), 0, 1);
         }
 
-        fromInput.value = formatDate(start);
-        toInput.value = formatDate(end);
+        const normalizedStart = normalizeToTradingDay(start);
+        const normalizedEnd = normalizeToTradingDay(end, true);
+        fromInput.value = formatDate(normalizedStart);
+        toInput.value = formatDate(normalizedEnd);
+        if (immFromPicker) immFromPicker.setDate(fromInput.value, false);
+        if (immToPicker) immToPicker.setDate(toInput.value, false);
         syncDateBounds();
       };
 
@@ -1781,6 +3236,524 @@
       });
     }
     
+    // Stage Analysis date pickers — IMM-quality: trading-day filter + quick ranges
+    const stageFromInput = document.getElementById('stageFromDate');
+    const stageToInput   = document.getElementById('stageToDate');
+    const stageForm      = document.getElementById('stageForm');
+    if (stageFromInput && stageToInput && stageForm) {
+      const fmtDate = (d) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+      const isTradingDay = (d) => d.getDay() !== 0 && d.getDay() !== 6;
+      const toTradingDay = (d, rev = false) => {
+        const c = new Date(d);
+        while (!isTradingDay(c)) c.setDate(c.getDate() + (rev ? -1 : 1));
+        return c;
+      };
+
+      const stageToday = toTradingDay(new Date(), true);
+      const stageTodayStr = fmtDate(stageToday);
+
+      if (!stageToInput.value)   stageToInput.value = stageTodayStr;
+      if (!stageFromInput.value) {
+        const y1 = new Date(stageToday);
+        y1.setFullYear(y1.getFullYear() - 1);
+        stageFromInput.value = fmtDate(toTradingDay(y1));
+      }
+
+      let stageToPicker, stageFromPicker;
+
+      const syncStageBounds = () => {
+        if (stageToPicker)   stageToPicker.set('minDate', stageFromInput.value || null);
+        if (stageFromPicker) stageFromPicker.set('maxDate', stageToInput.value || stageTodayStr);
+        if (stageFromInput.value && stageToInput.value && stageFromInput.value > stageToInput.value) {
+          stageFromInput.value = stageToInput.value;
+          if (stageFromPicker) stageFromPicker.setDate(stageFromInput.value, false);
+        }
+      };
+
+      if (window.flatpickr) {
+        stageToPicker = flatpickr(stageToInput, {
+          dateFormat: 'Y-m-d',
+          defaultDate: stageToInput.value || stageTodayStr,
+          maxDate: stageTodayStr,
+          enable: [isTradingDay],
+          allowInput: false,
+          onChange(selectedDates) {
+            if (!selectedDates.length) return;
+            const sel = fmtDate(selectedDates[0]);
+            if (stageFromPicker) {
+              stageFromPicker.set('maxDate', sel);
+              if (stageFromInput.value && stageFromInput.value > sel) {
+                stageFromInput.value = sel;
+                stageFromPicker.setDate(sel, false);
+              }
+            }
+            syncStageBounds();
+          }
+        });
+
+        stageFromPicker = flatpickr(stageFromInput, {
+          dateFormat: 'Y-m-d',
+          defaultDate: stageFromInput.value || undefined,
+          maxDate: stageToInput.value || stageTodayStr,
+          enable: [isTradingDay],
+          allowInput: false,
+          onChange(selectedDates) {
+            if (!selectedDates.length) return;
+            const sel = fmtDate(selectedDates[0]);
+            if (stageToPicker) {
+              stageToPicker.set('minDate', sel);
+              if (stageToInput.value && stageToInput.value < sel) {
+                stageToInput.value = sel;
+                stageToPicker.setDate(sel, false);
+              }
+            }
+            syncStageBounds();
+          }
+        });
+      }
+
+      // Quick-range shortcut buttons (Stage needs ≥150 rows — minimum 8 months recommended)
+      const setStageRange = (rangeKey) => {
+        const end = new Date(stageToday);
+        let start = new Date(stageToday);
+        if      (rangeKey === '6m')  start.setMonth(start.getMonth() - 6);
+        else if (rangeKey === '1y')  start.setFullYear(start.getFullYear() - 1);
+        else if (rangeKey === '2y')  start.setFullYear(start.getFullYear() - 2);
+        else if (rangeKey === '3y')  start.setFullYear(start.getFullYear() - 3);
+        else if (rangeKey === 'ytd') start = new Date(stageToday.getFullYear(), 0, 1);
+        const ns = fmtDate(toTradingDay(start));
+        const ne = fmtDate(toTradingDay(end, true));
+        stageFromInput.value = ns;
+        stageToInput.value   = ne;
+        if (stageFromPicker) stageFromPicker.setDate(ns, false);
+        if (stageToPicker)   stageToPicker.setDate(ne, false);
+        syncStageBounds();
+      };
+
+      stageForm.querySelectorAll('[data-stage-range]').forEach((btn) => {
+        btn.addEventListener('click', () => setStageRange(btn.dataset.stageRange));
+      });
+
+      stageForm.addEventListener('submit', function(e) {
+        const getNum = (name) => parseFloat(stageForm.querySelector(`[name="${name}"]`)?.value || '0');
+        const volMult = getNum('stage_volume_multiplier');
+        const resLookback = getNum('stage_resistance_lookback');
+        const volLookback = getNum('stage_volume_lookback');
+        const momentumPeriod = getNum('stage_momentum_period');
+        const rsiLen = getNum('stage_rsi_length');
+        const rsiMin = getNum('stage_rsi_threshold');
+        const adxLen = getNum('stage_adx_length');
+        const adxMin = getNum('stage_adx_threshold');
+
+        const issues = [];
+        if (!stageFromInput.value || !stageToInput.value) issues.push('From/To date is required.');
+        if (volMult <= 0) issues.push('Volume ratio minimum must be greater than zero.');
+        if (resLookback < 2 || volLookback < 2 || momentumPeriod < 2 || rsiLen < 2 || adxLen < 2) {
+          issues.push('Lookback/length values must be at least 2.');
+        }
+        if (rsiMin < 0 || rsiMin > 100) issues.push('RSI minimum should be between 0 and 100.');
+        if (adxMin < 0 || adxMin > 100) issues.push('ADX minimum should be between 0 and 100.');
+
+        if (issues.length) {
+          e.preventDefault();
+          alert('Validation warnings:\\n- ' + issues.join('\\n- '));
+        }
+      });
+    }
+
+    const drawRrgChart = () => {
+      const container = document.getElementById('rrgChart');
+      const dataEl = document.getElementById('rrg-chart-data');
+      if (!container || !dataEl) return;
+
+      const points = JSON.parse(dataEl.textContent || '[]')
+        .filter((row) => Number.isFinite(Number(row.RS_Ratio)) && Number.isFinite(Number(row.RS_Momentum)));
+      if (!points.length) return;
+
+      const width = 900;
+      const height = 390;
+      const pad = 46;
+      const ratios = points.map((row) => Number(row.RS_Ratio));
+      const momentums = points.map((row) => Number(row.RS_Momentum));
+      const spread = Math.max(
+        2,
+        Math.ceil(Math.max(...ratios.map((value) => Math.abs(value - 100)), ...momentums.map((value) => Math.abs(value - 100))))
+      );
+      const min = 100 - spread;
+      const max = 100 + spread;
+      const scaleX = (value) => pad + ((value - min) / (max - min)) * (width - pad * 2);
+      const scaleY = (value) => height - pad - ((value - min) / (max - min)) * (height - pad * 2);
+      const colorFor = (quadrant) => ({
+        Leading: '#16a34a',
+        Weakening: '#f59e0b',
+        Lagging: '#dc2626',
+        Improving: '#2563eb',
+      }[quadrant] || '#6b7280');
+      const formatDisplayDate = (value) => {
+        if (!value) return '';
+        const text = String(value).slice(0, 10);
+        return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : String(value);
+      };
+
+      const path = points
+        .map((row, index) => `${index === 0 ? 'M' : 'L'} ${scaleX(Number(row.RS_Ratio)).toFixed(2)} ${scaleY(Number(row.RS_Momentum)).toFixed(2)}`)
+        .join(' ');
+      const latest = points[points.length - 1];
+      const pointNodes = points.map((row, index) => {
+        const radius = index === points.length - 1 ? 6 : 3.5;
+        return `<circle cx="${scaleX(Number(row.RS_Ratio)).toFixed(2)}" cy="${scaleY(Number(row.RS_Momentum)).toFixed(2)}" r="${radius}" fill="${colorFor(row.Quadrant)}"><title>${formatDisplayDate(row.business_date)}: ${Number(row.RS_Ratio).toFixed(2)}, ${Number(row.RS_Momentum).toFixed(2)} (${row.Quadrant})</title></circle>`;
+      }).join('');
+
+      container.innerHTML = `
+        <svg class="rrg-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Relative Rotation Graph">
+          <rect x="${pad}" y="${pad}" width="${(width - pad * 2) / 2}" height="${(height - pad * 2) / 2}" fill="rgba(37, 99, 235, 0.08)"></rect>
+          <rect x="${width / 2}" y="${pad}" width="${(width - pad * 2) / 2}" height="${(height - pad * 2) / 2}" fill="rgba(22, 163, 74, 0.08)"></rect>
+          <rect x="${pad}" y="${height / 2}" width="${(width - pad * 2) / 2}" height="${(height - pad * 2) / 2}" fill="rgba(220, 38, 38, 0.08)"></rect>
+          <rect x="${width / 2}" y="${height / 2}" width="${(width - pad * 2) / 2}" height="${(height - pad * 2) / 2}" fill="rgba(245, 158, 11, 0.08)"></rect>
+          <line x1="${pad}" y1="${height / 2}" x2="${width - pad}" y2="${height / 2}" stroke="#94a3b8" stroke-width="1.5"></line>
+          <line x1="${width / 2}" y1="${pad}" x2="${width / 2}" y2="${height - pad}" stroke="#94a3b8" stroke-width="1.5"></line>
+          <rect x="${pad}" y="${pad}" width="${width - pad * 2}" height="${height - pad * 2}" fill="none" stroke="#cbd5e1"></rect>
+          <text x="${width - pad - 70}" y="${pad + 22}" fill="#16a34a" font-size="13" font-weight="700">Leading</text>
+          <text x="${width - pad - 88}" y="${height - pad - 12}" fill="#f59e0b" font-size="13" font-weight="700">Weakening</text>
+          <text x="${pad + 14}" y="${height - pad - 12}" fill="#dc2626" font-size="13" font-weight="700">Lagging</text>
+          <text x="${pad + 14}" y="${pad + 22}" fill="#2563eb" font-size="13" font-weight="700">Improving</text>
+          <text x="${width / 2}" y="${height - 12}" fill="#475569" font-size="12" text-anchor="middle">RS-Ratio</text>
+          <text x="15" y="${height / 2}" fill="#475569" font-size="12" text-anchor="middle" transform="rotate(-90 15 ${height / 2})">RS-Momentum</text>
+          <text x="${width / 2 + 6}" y="${height / 2 - 7}" fill="#64748b" font-size="11">100</text>
+          <path d="${path}" fill="none" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+          ${pointNodes}
+          <text x="${scaleX(Number(latest.RS_Ratio)) + 10}" y="${scaleY(Number(latest.RS_Momentum)) - 10}" fill="#0f172a" font-size="12" font-weight="700">Latest</text>
+        </svg>`;
+    };
+
+    const readRrgIndicesJson = (id) => {
+      const el = document.getElementById(id);
+      if (!el) return [];
+      try {
+        return JSON.parse(el.textContent || '[]');
+      } catch (e) {
+        return [];
+      }
+    };
+
+    let rrgIndicesScaleMode = 'center';
+    let rrgIndicesLockedDomain = null;
+    let rrgIndicesLastDomain = null;
+    let rrgIndicesAnimationTimer = null;
+
+    const getRrgIndicesMaxTail = () => {
+      const trails = readRrgIndicesJson('rrg-indices-trails-data');
+      const counts = trails.reduce((acc, row) => {
+        const key = row.symbol || '';
+        acc.set(key, (acc.get(key) || 0) + 1);
+        return acc;
+      }, new Map());
+      return Math.max(1, ...Array.from(counts.values()), 1);
+    };
+
+    const syncRrgIndicesTailControls = (value) => {
+      const maxTail = getRrgIndicesMaxTail();
+      const normalized = Math.max(1, Math.min(Number(value) || maxTail, maxTail));
+      const slider = document.getElementById('rrgIndicesTailSlider');
+      const number = document.getElementById('rrgIndicesTailNumber');
+      const hidden = document.getElementById('rrgIndicesTailLengthInput');
+      if (slider) {
+        slider.max = String(maxTail);
+        slider.value = String(normalized);
+      }
+      if (number) {
+        number.max = String(maxTail);
+        number.value = String(normalized);
+      }
+      if (hidden) hidden.value = String(normalized);
+      return normalized;
+    };
+
+    const setupRrgIndicesToolbar = () => {
+      const chartCard = document.querySelector('.rrg-indices-chart-card');
+      const animateBtn = document.getElementById('rrgIndicesAnimateBtn');
+      const fitBtn = document.getElementById('rrgIndicesFitBtn');
+      const maxBtn = document.getElementById('rrgIndicesMaxBtn');
+      const centerBtn = document.getElementById('rrgIndicesCenterBtn');
+      const lockBtn = document.getElementById('rrgIndicesLockBtn');
+      const slider = document.getElementById('rrgIndicesTailSlider');
+      const number = document.getElementById('rrgIndicesTailNumber');
+      const arrowMode = document.getElementById('rrgIndicesArrowMode');
+      if (!chartCard || !animateBtn || !fitBtn || !maxBtn || !centerBtn || !lockBtn || !slider || !number || !arrowMode) return;
+
+      syncRrgIndicesTailControls(number.value || slider.value || 30);
+      centerBtn.classList.add('active');
+
+      const refreshScaleButtons = () => {
+        fitBtn.classList.toggle('active', rrgIndicesScaleMode === 'fit');
+        centerBtn.classList.toggle('active', rrgIndicesScaleMode === 'center');
+      };
+      const refreshLockButton = () => {
+        lockBtn.classList.toggle('active', Boolean(rrgIndicesLockedDomain));
+        lockBtn.innerHTML = rrgIndicesLockedDomain ? '&#128274;' : '&#128275;';
+      };
+      const stopAnimation = () => {
+        if (rrgIndicesAnimationTimer) {
+          clearInterval(rrgIndicesAnimationTimer);
+          rrgIndicesAnimationTimer = null;
+        }
+        animateBtn.innerHTML = '&#9658; Animate';
+        animateBtn.classList.remove('active');
+      };
+
+      slider.addEventListener('input', () => {
+        stopAnimation();
+        syncRrgIndicesTailControls(slider.value);
+        drawRrgIndicesChart();
+      });
+      number.addEventListener('input', () => {
+        stopAnimation();
+        syncRrgIndicesTailControls(number.value);
+        drawRrgIndicesChart();
+      });
+      arrowMode.addEventListener('change', drawRrgIndicesChart);
+
+      fitBtn.addEventListener('click', () => {
+        rrgIndicesScaleMode = 'fit';
+        rrgIndicesLockedDomain = null;
+        refreshScaleButtons();
+        refreshLockButton();
+        drawRrgIndicesChart();
+      });
+      centerBtn.addEventListener('click', () => {
+        rrgIndicesScaleMode = 'center';
+        rrgIndicesLockedDomain = null;
+        refreshScaleButtons();
+        refreshLockButton();
+        drawRrgIndicesChart();
+      });
+      maxBtn.addEventListener('click', () => {
+        chartCard.classList.toggle('rrg-indices-max-view');
+        maxBtn.classList.toggle('active', chartCard.classList.contains('rrg-indices-max-view'));
+        drawRrgIndicesChart();
+      });
+      lockBtn.addEventListener('click', () => {
+        rrgIndicesLockedDomain = rrgIndicesLockedDomain ? null : (rrgIndicesLastDomain ? { ...rrgIndicesLastDomain } : null);
+        refreshLockButton();
+        drawRrgIndicesChart();
+      });
+      animateBtn.addEventListener('click', () => {
+        if (rrgIndicesAnimationTimer) {
+          stopAnimation();
+          return;
+        }
+        const maxTail = getRrgIndicesMaxTail();
+        let nextTail = 1;
+        animateBtn.textContent = 'Animating';
+        animateBtn.classList.add('active');
+        syncRrgIndicesTailControls(nextTail);
+        drawRrgIndicesChart();
+        rrgIndicesAnimationTimer = setInterval(() => {
+          nextTail += 1;
+          syncRrgIndicesTailControls(nextTail);
+          drawRrgIndicesChart();
+          if (nextTail >= maxTail) stopAnimation();
+        }, 180);
+      });
+    };
+
+    const drawRrgIndicesChart = () => {
+      const container = document.getElementById('rrgIndicesChart');
+      if (!container) return;
+
+      const readJson = readRrgIndicesJson;
+      const escapeSvg = (value) => {
+        const entityMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return String(value == null ? '' : value).replace(/[&<>"']/g, (ch) => entityMap[ch]);
+      };
+      const colorFor = (quadrant) => ({
+        Leading: '#057a1f',
+        Weakening: '#f0b400',
+        Lagging: '#e11919',
+        Improving: '#2749df',
+      }[quadrant] || '#475569');
+
+      const points = readJson('rrg-indices-points-data')
+        .filter((row) => Number.isFinite(Number(row.RS_Ratio)) && Number.isFinite(Number(row.RS_Momentum)));
+      if (!points.length) return;
+
+      const allTrails = readJson('rrg-indices-trails-data')
+        .filter((row) => Number.isFinite(Number(row.RS_Ratio)) && Number.isFinite(Number(row.RS_Momentum)));
+      const maxTail = getRrgIndicesMaxTail();
+      const tailLength = syncRrgIndicesTailControls(document.getElementById('rrgIndicesTailNumber')?.value || maxTail);
+      const arrowMode = document.getElementById('rrgIndicesArrowMode')?.checked || false;
+      const allTrailsBySymbol = allTrails.reduce((acc, row) => {
+        if (!acc.has(row.symbol)) acc.set(row.symbol, []);
+        acc.get(row.symbol).push(row);
+        return acc;
+      }, new Map());
+      const trails = Array.from(allTrailsBySymbol.values()).flatMap((rows) => {
+        rows.sort((a, b) => Number(a.step) - Number(b.step));
+        return rows.slice(-tailLength).map((row, index) => ({ ...row, step: index + 1 }));
+      });
+      const benchmark = readJson('rrg-indices-benchmark-data')
+        .filter((row) => Number.isFinite(Number(row.close)));
+
+      const width = 1080;
+      const height = 620;
+      const plotLeft = 74;
+      const plotRight = width - 38;
+      const plotTop = 148;
+      const plotBottom = height - 58;
+      const plotWidth = plotRight - plotLeft;
+      const plotHeight = plotBottom - plotTop;
+      const coords = points.concat(trails);
+      let min;
+      let max;
+      if (rrgIndicesLockedDomain) {
+        min = rrgIndicesLockedDomain.min;
+        max = rrgIndicesLockedDomain.max;
+      } else if (rrgIndicesScaleMode === 'fit') {
+        const values = coords.flatMap((row) => [Number(row.RS_Ratio), Number(row.RS_Momentum)]).concat([100]);
+        min = Math.floor(Math.min(...values)) - 1;
+        max = Math.ceil(Math.max(...values)) + 1;
+      } else {
+        const spread = Math.max(
+          2,
+          Math.ceil(Math.max(...coords.flatMap((row) => [
+            Math.abs(Number(row.RS_Ratio) - 100),
+            Math.abs(Number(row.RS_Momentum) - 100),
+          ]))) + 1
+        );
+        min = 100 - spread;
+        max = 100 + spread;
+      }
+      if (!Number.isFinite(min) || !Number.isFinite(max) || min === max) {
+        min = 98;
+        max = 102;
+      }
+      rrgIndicesLastDomain = { min, max };
+      const scaleX = (value) => plotLeft + ((value - min) / (max - min)) * plotWidth;
+      const scaleY = (value) => plotBottom - ((value - min) / (max - min)) * plotHeight;
+      const centerX = scaleX(100);
+      const centerY = scaleY(100);
+
+      const tickStep = Math.max(1, Math.ceil((max - min) / 8));
+      const ticks = [];
+      for (let value = Math.floor(min / tickStep) * tickStep; value <= max + 0.001; value += tickStep) {
+        if (value >= min - 0.001) ticks.push(value);
+      }
+      if (!ticks.some((value) => Math.abs(value - 100) < 0.001)) ticks.push(100);
+      ticks.sort((a, b) => a - b);
+
+      const gridNodes = ticks.map((value) => {
+        const x = scaleX(value);
+        const y = scaleY(value);
+        const strong = Math.abs(value - 100) < 0.001;
+        return `
+          <line x1="${x.toFixed(2)}" y1="${plotTop}" x2="${x.toFixed(2)}" y2="${plotBottom}" stroke="${strong ? '#111827' : '#9ca3af'}" stroke-width="${strong ? 2 : 1}" opacity="${strong ? 0.9 : 0.55}"></line>
+          <line x1="${plotLeft}" y1="${y.toFixed(2)}" x2="${plotRight}" y2="${y.toFixed(2)}" stroke="${strong ? '#111827' : '#9ca3af'}" stroke-width="${strong ? 2 : 1}" opacity="${strong ? 0.9 : 0.55}"></line>
+          <text x="${x.toFixed(2)}" y="${plotBottom + 25}" fill="#111827" font-size="14" text-anchor="middle">${value}</text>
+          <text x="${plotLeft - 12}" y="${(y + 5).toFixed(2)}" fill="#111827" font-size="14" text-anchor="end">${value}</text>
+        `;
+      }).join('');
+
+      let sparkNodes = '';
+      if (benchmark.length > 1) {
+        const sparkLeft = plotLeft;
+        const sparkRight = plotRight;
+        const sparkTop = 24;
+        const sparkBottom = 116;
+        const closes = benchmark.map((row) => Number(row.close));
+        const minClose = Math.min(...closes);
+        const maxClose = Math.max(...closes);
+        const closeRange = Math.max(1, maxClose - minClose);
+        const sparkX = (index) => sparkLeft + (index / (benchmark.length - 1)) * (sparkRight - sparkLeft);
+        const sparkY = (close) => sparkBottom - ((close - minClose) / closeRange) * (sparkBottom - sparkTop - 12) - 6;
+        const linePath = benchmark
+          .map((row, index) => `${index === 0 ? 'M' : 'L'} ${sparkX(index).toFixed(2)} ${sparkY(Number(row.close)).toFixed(2)}`)
+          .join(' ');
+        const firstY = sparkY(Number(benchmark[0].close));
+        const lastX = sparkX(benchmark.length - 1);
+        const lastY = sparkY(closes[closes.length - 1]);
+        const areaPath = `${linePath} L ${lastX.toFixed(2)} ${sparkBottom} L ${sparkLeft} ${sparkBottom} Z`;
+        const latest = benchmark[benchmark.length - 1];
+        sparkNodes = `
+          <text x="${plotLeft}" y="19" fill="#111827" font-size="19" font-weight="700">${escapeSvg('NEPSE RRG Indices')}</text>
+          <text x="${plotLeft + 198}" y="19" fill="#334155" font-size="13">${escapeSvg(latest.business_date || '')}</text>
+          <rect x="${sparkLeft}" y="${sparkTop}" width="${sparkRight - sparkLeft}" height="${sparkBottom - sparkTop}" fill="#f3f4f6"></rect>
+          <path d="${areaPath}" fill="#e5e7eb"></path>
+          <path d="${linePath}" fill="none" stroke="#c7c7c7" stroke-width="3" stroke-linejoin="round"></path>
+          <line x1="${sparkLeft}" y1="${lastY.toFixed(2)}" x2="${sparkRight}" y2="${lastY.toFixed(2)}" stroke="#303030" stroke-width="2"></line>
+          <line x1="${lastX.toFixed(2)}" y1="${sparkTop}" x2="${lastX.toFixed(2)}" y2="${sparkBottom}" stroke="#303030" stroke-width="2"></line>
+          <text x="${sparkLeft - 10}" y="${(lastY + 5).toFixed(2)}" fill="#111827" font-size="15" font-weight="700" text-anchor="end">${Number(latest.close).toFixed(2)}</text>
+          <circle cx="${sparkLeft}" cy="${firstY.toFixed(2)}" r="0.1" fill="transparent"></circle>
+        `;
+      }
+
+      const trailsBySymbol = trails.reduce((acc, row) => {
+        if (!acc.has(row.symbol)) acc.set(row.symbol, []);
+        acc.get(row.symbol).push(row);
+        return acc;
+      }, new Map());
+      const trailNodes = Array.from(trailsBySymbol.entries()).map(([symbol, rows]) => {
+        rows.sort((a, b) => Number(a.step) - Number(b.step));
+        if (rows.length < 2) return '';
+        const point = points.find((row) => row.symbol === symbol) || rows[rows.length - 1];
+        const path = rows
+          .map((row, index) => `${index === 0 ? 'M' : 'L'} ${scaleX(Number(row.RS_Ratio)).toFixed(2)} ${scaleY(Number(row.RS_Momentum)).toFixed(2)}`)
+          .join(' ');
+        const trailDots = rows.slice(0, -1).map((row, index) => {
+          const opacity = 0.18 + (index / Math.max(1, rows.length - 1)) * 0.35;
+          return `<circle cx="${scaleX(Number(row.RS_Ratio)).toFixed(2)}" cy="${scaleY(Number(row.RS_Momentum)).toFixed(2)}" r="3" fill="${colorFor(row.Quadrant)}" opacity="${opacity.toFixed(2)}"></circle>`;
+        }).join('');
+        const arrowAttr = arrowMode ? ' marker-end="url(#rrgIndicesArrowHead)"' : '';
+        return `<path d="${path}" fill="none" stroke="${colorFor(point.Quadrant)}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.42"${arrowAttr}></path>${trailDots}`;
+      }).join('');
+
+      const pointNodes = points.map((point) => {
+        const x = scaleX(Number(point.RS_Ratio));
+        const y = scaleY(Number(point.RS_Momentum));
+        const rightSide = Number(point.RS_Ratio) >= 100;
+        const dx = rightSide ? 10 : -10;
+        const anchor = rightSide ? 'start' : 'end';
+        const dy = ((Number(point.order) % 3) - 1) * 5 - 5;
+        const color = colorFor(point.Quadrant);
+        return `
+          <circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="7" fill="${color}" stroke="#ffffff" stroke-width="2">
+            <title>${escapeSvg(point.symbol)}: ${Number(point.RS_Ratio).toFixed(2)}, ${Number(point.RS_Momentum).toFixed(2)} (${escapeSvg(point.Quadrant)})</title>
+          </circle>
+          <text x="${(x + dx).toFixed(2)}" y="${(y + dy).toFixed(2)}" fill="#111827" font-size="13" font-weight="700" text-anchor="${anchor}">${escapeSvg(point.label)}</text>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <svg class="rrg-indices-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="NEPSE indices relative rotation graph">
+          ${arrowMode ? '<defs><marker id="rrgIndicesArrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1f2937"></path></marker></defs>' : ''}
+          <rect x="0" y="0" width="${width}" height="${height}" fill="#ffffff"></rect>
+          ${sparkNodes}
+          <rect x="${plotLeft}" y="${plotTop}" width="${centerX - plotLeft}" height="${centerY - plotTop}" fill="#c9d0ff" opacity="0.78"></rect>
+          <rect x="${centerX}" y="${plotTop}" width="${plotRight - centerX}" height="${centerY - plotTop}" fill="#bfe3bf" opacity="0.9"></rect>
+          <rect x="${plotLeft}" y="${centerY}" width="${centerX - plotLeft}" height="${plotBottom - centerY}" fill="#ffb7b7" opacity="0.9"></rect>
+          <rect x="${centerX}" y="${centerY}" width="${plotRight - centerX}" height="${plotBottom - centerY}" fill="#fff0b8" opacity="0.92"></rect>
+          ${gridNodes}
+          <rect x="${plotLeft}" y="${plotTop}" width="${plotWidth}" height="${plotHeight}" fill="none" stroke="#b7b7b7" stroke-width="1"></rect>
+          <text x="${plotLeft + 18}" y="${plotTop + 30}" fill="#2749df" font-size="21" font-weight="800">Improving</text>
+          <text x="${plotRight - 22}" y="${plotTop + 30}" fill="#057a1f" font-size="21" font-weight="800" text-anchor="end">Leading</text>
+          <text x="${plotLeft + 18}" y="${plotBottom - 22}" fill="#e11919" font-size="21" font-weight="800">Lagging</text>
+          <text x="${plotRight - 22}" y="${plotBottom - 22}" fill="#f0b400" font-size="21" font-weight="800" text-anchor="end">Weakening</text>
+          <text x="${(plotLeft + plotRight) / 2}" y="${height - 16}" fill="#111827" font-size="16" font-weight="700" text-anchor="middle">JdK RS-Ratio</text>
+          <text x="24" y="${(plotTop + plotBottom) / 2}" fill="#111827" font-size="16" font-weight="700" text-anchor="middle" transform="rotate(-90 24 ${(plotTop + plotBottom) / 2})">JdK RS-Momentum</text>
+          <text x="${(plotLeft + plotRight) / 2}" y="${plotBottom - 16}" fill="#64748b" font-size="22" font-weight="800" opacity="0.7" text-anchor="middle">NEPSE / RRG</text>
+          ${trailNodes}
+          ${pointNodes}
+        </svg>`;
+    };
+
+    drawRrgChart();
+    setupRrgIndicesToolbar();
+    drawRrgIndicesChart();
+
     // Ensure active tab is shown correctly
     const activeBtn = document.querySelector('.nav-tabs .nav-link.active');
     if (activeBtn) {

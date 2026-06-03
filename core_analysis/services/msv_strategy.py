@@ -125,6 +125,13 @@ def run_msv_long_only_simulation(
     if missing:
         return {"error": f"Missing required fields: {', '.join(sorted(missing))}", "warnings": ["Required OHLCV columns are not fully available."]}, pd.DataFrame(), pd.DataFrame()
 
+    df["business_date"] = pd.to_datetime(df["business_date"], errors="coerce")
+    if df["business_date"].isna().any():
+        return {
+            "error": "Invalid business_date values.",
+            "warnings": ["MSV strategy requires valid dates to calculate VWAP."],
+        }, pd.DataFrame(), pd.DataFrame()
+
     df = df.sort_values("business_date").reset_index(drop=True)
     for col in ["open_price_adj", "high_price_adj", "low_price_adj", "close_price_adj", "volume"]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
@@ -150,7 +157,15 @@ def run_msv_long_only_simulation(
         length=settings["supertrend_length"],
         multiplier=settings["supertrend_multiplier"],
     )
-    vwap = ta.vwap(df["high_price_adj"], df["low_price_adj"], df["close_price_adj"], df["volume"])
+    vwap_source = df.set_index("business_date", drop=False)
+    vwap = ta.vwap(
+        vwap_source["high_price_adj"],
+        vwap_source["low_price_adj"],
+        vwap_source["close_price_adj"],
+        vwap_source["volume"],
+    )
+    if vwap is not None:
+        vwap = pd.Series(vwap.to_numpy(), index=df.index)
 
     if macd_df is None or macd_df.empty or atr is None or supertrend_df is None or supertrend_df.empty or vwap is None:
         return {

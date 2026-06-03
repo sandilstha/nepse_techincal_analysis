@@ -11,7 +11,7 @@ from .views import (
 urlpatterns = [
     
     # HTML View Form CRUD Engine Interfaces
-    path('dashboard/', crud_dashboard_view, name='crud_dashboard'),
+    path('', crud_dashboard_view, name='crud_dashboard'),
     path('dashboard/process/', crud_operations_handler, name='crud_operations'),
     path('dashboard/delete/<int:pk>/', crud_delete_handler, name='crud_delete'),
     path('dashboard/sync/', trigger_daily_api_sync_view, name='trigger_daily_sync'),

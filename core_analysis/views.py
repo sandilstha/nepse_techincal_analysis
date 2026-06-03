@@ -1,8 +1,7 @@
-from decimal import Decimal
+from datetime import date
 
 import numpy as np
 import pandas as pd
-import requests
 from django.contrib import messages
 from django.core.cache import cache
 from django.db.models import OuterRef, Q, Subquery
@@ -19,15 +18,34 @@ from core_analysis.services.moving_average import run_ema_50_200_long_only_simul
 from core_analysis.services.RSI_SMA import run_rsi_sma_long_only_simulation
 from core_analysis.services.strategy_tester import run_t3ma_macd_ribbon_simulation
 from core_analysis.services.stage_analysis import calculate_stage_analysis
+from core_analysis.services.RGG_Chart import run_rrg_simulation
+from core_analysis.services.RGG_indices import NEPSE_INDEX_LABELS, ordered_nepse_indices, run_rrg_indices_simulation
 
 @require_POST
 def trigger_sync_and_calculate(request):
+    from_date_raw = (request.POST.get("from_date") or "").strip()
+    to_date_raw = (request.POST.get("to_date") or "").strip()
     try:
-        call_command("sync_and_calculate")
-        messages.success(request, "Market Data and Signals sync_and_calculate successfully generated!")
+        from_date = date.fromisoformat(from_date_raw) if from_date_raw else None
+        to_date = date.fromisoformat(to_date_raw) if to_date_raw else None
+    except ValueError:
+        messages.error(request, "Invalid sync date format. Use YYYY-MM-DD.")
+        return redirect("crud_dashboard")
+    try:
+        kwargs = {
+            "source": "adjustments" if CompanyProfile.objects.exists() else "both",
+        }
+        if from_date:
+            kwargs["from_date"] = from_date
+        if to_date:
+            kwargs["to_date"] = to_date
+        call_command("sync_and_calculate", **kwargs)
+        cache.delete("nepse_symbol_lists")
+        scope = f" ({from_date_raw or 'start'} to {to_date_raw or 'latest'})" if (from_date or to_date) else ""
+        messages.success(request, f"Market Data and Signals sync_and_calculate successfully generated{scope}!")
     except Exception as e:
         messages.error(request, f"Command execution failed: {str(e)}")
-    return redirect("core_dashboard")
+    return redirect("crud_dashboard")
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -71,11 +89,14 @@ def _get_symbol_lists():
     return db_companies, db_indices
 
 
-def _build_standard_dataframe(symbol, start_date, end_date):
+def _build_standard_dataframe(symbol, start_date, end_date, use_unadjusted_fallback=False):
     """
-    OPTIMIZED: Normalizes data from StockPriceAdjustment and NepseMarketIndex 
+    OPTIMIZED: Normalizes data from StockPriceAdjustment and NepseMarketIndex
     into an identical DataFrame with strict date filtering applied at the database level.
     Returns ONLY the data within the user-specified date range.
+
+    When use_unadjusted_fallback=True for company symbols, missing adjusted-price
+    dates are filled from NepseDailyStockPrice. Existing adjusted rows are kept.
     """
     symbol = (symbol or "").strip()
     symbol_upper = symbol.upper()
@@ -87,7 +108,8 @@ def _build_standard_dataframe(symbol, start_date, end_date):
         "NON LIFE INSURANCE", "OTHERS INDEX", "SENSITIVE FLOAT INDEX", "SENSITIVE INDEX", "TRADING INDEX"
     ]
     empty_schema = pd.DataFrame(columns=[
-        "business_date", "open_price_adj", "high_price_adj", "low_price_adj", "close_price_adj", "volume"
+        "business_date", "open_price_adj", "high_price_adj", "low_price_adj",
+        "close_price_adj", "volume", "price_source",
     ])
 
     if symbol_upper in valid_sectors:
@@ -111,6 +133,7 @@ def _build_standard_dataframe(symbol, start_date, end_date):
             "close_index": "close_price_adj",
             "turnover_volume": "volume",
         }, inplace=True)
+        df["price_source"] = "Market index"
     else:
         # OPTIMIZED: Only select required columns and apply date filter at DB level
         qs = StockPriceAdjustment.objects.filter(
@@ -123,9 +146,44 @@ def _build_standard_dataframe(symbol, start_date, end_date):
         ).order_by("business_date")
         
         data = list(qs)
-        if not data:
+        adjusted_df = pd.DataFrame(data)
+        if not adjusted_df.empty:
+            adjusted_df["price_source"] = "Adjusted"
+        if use_unadjusted_fallback:
+            unadjusted_qs = NepseDailyStockPrice.objects.filter(
+                symbol__exact=symbol_upper,
+                business_date__gte=start_date,
+                business_date__lte=end_date,
+            ).values(
+                "business_date", "open_price", "high_price", "low_price", "close_price",
+            ).order_by("business_date")
+            unadjusted_df = pd.DataFrame(list(unadjusted_qs))
+            if not unadjusted_df.empty:
+                unadjusted_df.rename(columns={
+                    "open_price": "open_price_adj",
+                    "high_price": "high_price_adj",
+                    "low_price": "low_price_adj",
+                    "close_price": "close_price_adj",
+                }, inplace=True)
+                unadjusted_df["price_source"] = "Unadjusted fallback"
+                if not adjusted_df.empty:
+                    adjusted_df["_source_rank"] = 0
+                    unadjusted_df["_source_rank"] = 1
+                    df = pd.concat([adjusted_df, unadjusted_df], ignore_index=True)
+                    df = (
+                        df.sort_values(["business_date", "_source_rank"])
+                        .drop_duplicates(subset=["business_date"], keep="first")
+                        .drop(columns=["_source_rank"])
+                    )
+                else:
+                    df = unadjusted_df
+            else:
+                df = adjusted_df
+        else:
+            df = adjusted_df
+        if df.empty:
             return empty_schema
-        df = pd.DataFrame(data)
+
         volume_qs = NepseDailyStockPrice.objects.filter(
             symbol__exact=symbol_upper,
             business_date__gte=start_date,
@@ -155,6 +213,73 @@ def _build_standard_dataframe(symbol, start_date, end_date):
     return df
 
 
+def _build_index_dataframes(start_date, end_date):
+    rows = list(
+        NepseMarketIndex.objects.filter(
+            business_date__gte=start_date,
+            business_date__lte=end_date,
+        ).values(
+            "sector_name", "business_date", "open_index", "high_index",
+            "low_index", "close_index", "turnover_volume",
+        ).order_by("sector_name", "business_date")
+    )
+    if not rows:
+        return {}
+
+    df = pd.DataFrame(rows)
+    df["sector_name"] = df["sector_name"].astype(str).str.upper().str.strip()
+    df.rename(columns={
+        "open_index": "open_price_adj",
+        "high_index": "high_price_adj",
+        "low_index": "low_price_adj",
+        "close_index": "close_price_adj",
+        "turnover_volume": "volume",
+    }, inplace=True)
+    df["business_date"] = pd.to_datetime(df["business_date"])
+    for col in ["open_price_adj", "high_price_adj", "low_price_adj", "close_price_adj"]:
+        df[col] = df[col].astype(float)
+    df["volume"] = pd.to_numeric(df["volume"], errors="coerce")
+
+    frames = {}
+    for sector_name, sector_df in df.groupby("sector_name", sort=False):
+        frames[sector_name] = sector_df[[
+            "business_date", "open_price_adj", "high_price_adj",
+            "low_price_adj", "close_price_adj", "volume",
+        ]].reset_index(drop=True)
+    return frames
+
+
+def _build_benchmark_sparkline(df, limit=45):
+    if df.empty:
+        return []
+    sparkline_df = df.tail(limit).copy()
+    sparkline_df["business_date"] = pd.to_datetime(sparkline_df["business_date"]).dt.strftime("%Y-%m-%d")
+    return [
+        {
+            "business_date": row["business_date"],
+            "close": round(float(row["close_price_adj"]), 2),
+        }
+        for _, row in sparkline_df.iterrows()
+    ]
+
+
+def _build_rrg_index_choices(benchmark_symbol="NEPSE INDEX"):
+    index_names = list(
+        NepseMarketIndex.objects
+        .values_list("sector_name", flat=True)
+        .distinct()
+        .order_by("sector_name")
+    )
+    ordered_names = ordered_nepse_indices(index_names, benchmark_symbol)
+    return [
+        {
+            "value": name,
+            "label": NEPSE_INDEX_LABELS.get(name, name.replace(" INDEX", "")),
+        }
+        for name in ordered_names
+    ]
+
+
 # ── Symbol autocomplete API (used by the JS search boxes) ────────────────────
 
 def symbol_autocomplete_view(request):
@@ -169,32 +294,87 @@ def symbol_autocomplete_view(request):
     """
     q_raw = request.GET.get("q", "").strip()
     q = q_raw.upper()
-    if not q:
+    fast_mode = request.GET.get("fast") == "1"
+    indices_only = request.GET.get("indices_only") == "1"
+    show_all_indices = indices_only and request.GET.get("all") == "1"
+    # Avoid overly broad scans for 0/1-character queries.
+    if len(q_raw) < 2 and not show_all_indices:
         return JsonResponse({"results": []})
 
-    latest_stock_price_sq = (
-        StockPriceAdjustment.objects
-        .filter(company_id=OuterRef("symbol"))
-        .order_by("-business_date")
-    )
-    latest_stock_date_sq = (
-        StockPriceAdjustment.objects
-        .filter(company_id=OuterRef("symbol"))
-        .order_by("-business_date")
-    )
+    cache_mode = "indices" if indices_only else ("fast" if fast_mode else "full")
+    cache_key = f"symbol_autocomplete:v4:{cache_mode}:{'all' if show_all_indices else 'query'}:{q_raw.lower()}"
+    cached_results = cache.get(cache_key)
+    if cached_results is not None:
+        return JsonResponse({"results": cached_results})
 
-    # Match by ticker prefix first, then by company name.
-    company_rows = list(
-        CompanyProfile.objects.filter(
-            Q(symbol__istartswith=q_raw) | Q(security_name__icontains=q_raw)
+    # Bug fix 5: the two subqueries were identical — .values() must be applied
+    # *inside* Subquery so each one selects a different field.
+    # Match by ticker prefix and company name prefix for focused results.
+    # Fast mode intentionally avoids contains scans and latest-price subqueries.
+    if indices_only:
+        index_qs = NepseMarketIndex.objects.all()
+        if q:
+            index_qs = index_qs.filter(sector_name__icontains=q)
+        index_rows = list(
+            index_qs
+            .values_list("sector_name", flat=True)
+            .distinct()
+            .order_by("sector_name")[:50]
         )
-        .annotate(
-            latest_close=Subquery(latest_stock_price_sq.values("close_price_adj")[:1]),
-            latest_date=Subquery(latest_stock_date_sq.values("business_date")[:1]),
-        )
-        .values("symbol", "security_name", "latest_close", "latest_date")
-        .order_by("symbol")[:40]
+        if q:
+            index_rows = sorted(
+                index_rows,
+                key=lambda value: (
+                    not str(value).upper().startswith(q),
+                    str(value).upper(),
+                ),
+            )
+        results = []
+        seen = set()
+        for index_name in index_rows:
+            index_value = (index_name or "").strip().upper()
+            if not index_value or index_value in seen:
+                continue
+            seen.add(index_value)
+            results.append({"value": index_value, "label": index_value, "type": "index"})
+        cache.set(cache_key, results, timeout=300)
+        return JsonResponse({"results": results})
+
+    name_filter = Q(security_name__istartswith=q_raw)
+    if not fast_mode and len(q_raw) >= 3:
+        name_filter = name_filter | Q(security_name__icontains=q_raw)
+
+    company_qs = CompanyProfile.objects.filter(
+        Q(symbol__istartswith=q_raw) | name_filter
     )
+    if fast_mode:
+        company_rows = list(
+            company_qs
+            .values("symbol", "security_name")
+            .order_by("symbol")[:20]
+        )
+    else:
+        latest_stock_price_sq = (
+            StockPriceAdjustment.objects
+            .filter(company_id=OuterRef("symbol"))
+            .order_by("-business_date")
+            .values("close_price_adj")[:1]
+        )
+        latest_stock_date_sq = (
+            StockPriceAdjustment.objects
+            .filter(company_id=OuterRef("symbol"))
+            .order_by("-business_date")
+            .values("business_date")[:1]
+        )
+        company_rows = list(
+            company_qs
+            .annotate(
+                latest_close=Subquery(latest_stock_price_sq),
+                latest_date=Subquery(latest_stock_date_sq),
+            )
+            .values("symbol", "security_name", "latest_close", "latest_date")
+            .order_by("symbol")[:25]
+        )
     index_rows = list(
         NepseMarketIndex.objects.filter(sector_name__icontains=q)
         .values_list("sector_name", flat=True)
@@ -229,6 +409,7 @@ def symbol_autocomplete_view(request):
         seen.add(index_value)
         results.append({"value": index_value, "label": index_name, "type": "index"})
 
+    cache.set(cache_key, results, timeout=300)
     return JsonResponse({"results": results})
 
 
@@ -261,12 +442,19 @@ def crud_dashboard_view(request):
         )
 
     # Initialise result vectors
-    backtest_metrics = ema_backtest_metrics = cci_backtest_metrics = rsi_backtest_metrics = msv_backtest_metrics = imm_backtest_metrics = stage_backtest_metrics = None
+    backtest_metrics = ema_backtest_metrics = cci_backtest_metrics = rsi_backtest_metrics = msv_backtest_metrics = imm_backtest_metrics = stage_backtest_metrics = rrg_backtest_metrics = None
     completed_trades = ema_completed_trades = cci_completed_trades = rsi_completed_trades = msv_completed_trades = []
     msv_indicator_rows = []
     imm_indicator_rows = []
     imm_event_rows = []
     stage_indicator_rows = []
+    rrg_indicator_rows = []
+    rrg_chart_points = []
+    rrg_indices_metrics = None
+    rrg_indices_points = []
+    rrg_indices_trails = []
+    rrg_indices_skipped = []
+    rrg_indices_benchmark_points = []
 
     # Per-tab symbols
     selected_symbol     = g.get("backtest_symbol",     "").upper().strip()
@@ -276,6 +464,22 @@ def crud_dashboard_view(request):
     msv_selected_symbol = g.get("msv_backtest_symbol", "").upper().strip()
     imm_selected_symbol = g.get("imm_backtest_symbol", "").upper().strip()
     stage_selected_symbol = g.get("stage_backtest_symbol", "").upper().strip()
+    rrg_selected_symbol = g.get("rrg_backtest_symbol", "").upper().strip()
+    rrg_benchmark_symbol = g.get("rrg_benchmark_symbol", "NEPSE INDEX").upper().strip()
+    rrg_indices_benchmark_symbol = g.get("rrg_indices_benchmark_symbol", "NEPSE INDEX").upper().strip()
+    rrg_indices_choices = _build_rrg_index_choices(rrg_indices_benchmark_symbol)
+    rrg_indices_choice_values = [choice["value"] for choice in rrg_indices_choices]
+    rrg_indices_selection_submitted = g.get("rrg_indices_selection_submitted") == "1"
+    rrg_indices_selected_symbols = [
+        symbol.strip().upper()
+        for symbol in g.getlist("rrg_indices_selected_symbols")
+        if symbol.strip()
+    ]
+    if not rrg_indices_selection_submitted:
+        rrg_indices_selected_symbols = rrg_indices_choice_values[:]
+    rrg_indices_selected_set = set(rrg_indices_selected_symbols)
+    for choice in rrg_indices_choices:
+        choice["selected"] = choice["value"] in rrg_indices_selected_set
 
     # Per-tab independent date ranges
     t3_from  = g.get("t3_from_date",  g.get("from_date", "")).strip()
@@ -292,6 +496,20 @@ def crud_dashboard_view(request):
     imm_to   = g.get("imm_to_date",   g.get("to_date",   "")).strip()
     stage_from = g.get("stage_from_date", g.get("from_date", "")).strip()
     stage_to   = g.get("stage_to_date",   g.get("to_date",   "")).strip()
+    rrg_from = g.get("rrg_from_date", g.get("from_date", "")).strip()
+    rrg_to   = g.get("rrg_to_date",   g.get("to_date",   "")).strip()
+    rrg_indices_from = g.get("rrg_indices_from_date", g.get("from_date", "")).strip()
+    rrg_indices_to   = g.get("rrg_indices_to_date",   g.get("to_date",   "")).strip()
+    stage_volume_multiplier = _safe_float(g.get("stage_volume_multiplier", 1.5), 1.5)
+    stage_resistance_lookback = _safe_int(g.get("stage_resistance_lookback", 20), 20, minimum=2)
+    stage_volume_lookback = _safe_int(g.get("stage_volume_lookback", 20), 20, minimum=2)
+    stage_momentum_period = _safe_int(g.get("stage_momentum_period", 60), 60, minimum=2)
+    stage_rsi_length = _safe_int(g.get("stage_rsi_length", 14), 14, minimum=2)
+    stage_rsi_threshold = _safe_float(g.get("stage_rsi_threshold", 55.0), 55.0)
+    stage_adx_length = _safe_int(g.get("stage_adx_length", 14), 14, minimum=2)
+    stage_adx_threshold = _safe_float(g.get("stage_adx_threshold", 20.0), 20.0)
+    stage_use_rsi = (g.get("stage_use_rsi", "").strip().lower() in {"1", "true", "yes", "on"})
+    stage_use_adx = (g.get("stage_use_adx", "").strip().lower() in {"1", "true", "yes", "on"})
 
     # ── TAB 2: T3MA ──────────────────────────────────────────────────────────
     if selected_symbol and active_tab == "backtest":
@@ -374,37 +592,52 @@ def crud_dashboard_view(request):
         if not (msv_from and msv_to):
             msv_backtest_metrics = {"error": "Please select both From Date and To Date."}
         else:
-            df = _build_standard_dataframe(msv_selected_symbol, msv_from, msv_to)
+            df = _build_standard_dataframe(
+                msv_selected_symbol,
+                msv_from,
+                msv_to,
+                use_unadjusted_fallback=True,
+            )
             if df.empty:
                 msv_backtest_metrics = {"error": f"No price data found for '{msv_selected_symbol}' in the selected date range."}
             else:
-                msv_backtest_metrics, msv_trades_df, msv_indicator_df = run_msv_long_only_simulation(
-                    df,
-                    macd_fast=_safe_int(g.get("msv_macd_fast", 12), 12, minimum=1),
-                    macd_slow=_safe_int(g.get("msv_macd_slow", 26), 26, minimum=2),
-                    macd_signal=_safe_int(g.get("msv_macd_signal", 9), 9, minimum=1),
-                    atr_length=_safe_int(g.get("msv_atr_length", 14), 14, minimum=2),
-                    atr_multiplier=_safe_float(g.get("msv_atr_multiplier", 2.0), 2.0),
-                    rvol_period=_safe_int(g.get("msv_rvol_period", 20), 20, minimum=2),
-                    rvol_threshold=_safe_float(g.get("msv_rvol_threshold", 1.5), 1.5),
-                    supertrend_length=_safe_int(g.get("msv_supertrend_length", 10), 10, minimum=2),
-                    supertrend_multiplier=_safe_float(g.get("msv_supertrend_multiplier", 3.0), 3.0),
-                )
+                try:
+                    msv_backtest_metrics, msv_trades_df, msv_indicator_df = run_msv_long_only_simulation(
+                        df,
+                        macd_fast=_safe_int(g.get("msv_macd_fast", 12), 12, minimum=1),
+                        macd_slow=_safe_int(g.get("msv_macd_slow", 26), 26, minimum=2),
+                        macd_signal=_safe_int(g.get("msv_macd_signal", 9), 9, minimum=1),
+                        atr_length=_safe_int(g.get("msv_atr_length", 14), 14, minimum=2),
+                        atr_multiplier=_safe_float(g.get("msv_atr_multiplier", 2.0), 2.0),
+                        rvol_period=_safe_int(g.get("msv_rvol_period", 20), 20, minimum=2),
+                        rvol_threshold=_safe_float(g.get("msv_rvol_threshold", 1.5), 1.5),
+                        supertrend_length=_safe_int(g.get("msv_supertrend_length", 10), 10, minimum=2),
+                        supertrend_multiplier=_safe_float(g.get("msv_supertrend_multiplier", 3.0), 3.0),
+                    )
+                except Exception as e:
+                    msv_backtest_metrics = {"error": f"Error running MSV strategy: {str(e)}"}
+                    msv_trades_df = pd.DataFrame()
+                    msv_indicator_df = pd.DataFrame()
                 if isinstance(msv_backtest_metrics, dict) and "error" not in msv_backtest_metrics:
                     if not msv_trades_df.empty:
                         msv_trades_df["entry_date"] = pd.to_datetime(msv_trades_df["entry_date"]).dt.strftime("%Y-%m-%d")
                         msv_trades_df["exit_date"] = pd.to_datetime(msv_trades_df["exit_date"]).dt.strftime("%Y-%m-%d")
-                        msv_completed_trades = msv_trades_df.to_dict(orient="records")
+                        msv_completed_trades = msv_trades_df.iloc[::-1].to_dict(orient="records")
                     if not msv_indicator_df.empty:
                         msv_indicator_df["business_date"] = pd.to_datetime(msv_indicator_df["business_date"]).dt.strftime("%Y-%m-%d")
-                        msv_indicator_rows = msv_indicator_df.tail(150).to_dict(orient="records")
+                        msv_indicator_rows = msv_indicator_df.tail(150).iloc[::-1].to_dict(orient="records")
 
     # TAB 7: IMM institutional technical scoring
     if imm_selected_symbol and active_tab == "imm_backtest":
         if not (imm_from and imm_to):
             imm_backtest_metrics = {"error": "Please select both From Date and To Date."}
         else:
-            stock_df = _build_standard_dataframe(imm_selected_symbol, imm_from, imm_to)
+            stock_df = _build_standard_dataframe(
+                imm_selected_symbol,
+                imm_from,
+                imm_to,
+                use_unadjusted_fallback=True,
+            )
             nepse_df = _build_standard_dataframe("NEPSE INDEX", imm_from, imm_to)
             if stock_df.empty:
                 imm_backtest_metrics = {"error": f"No price data found for '{imm_selected_symbol}' in the selected date range."}
@@ -425,36 +658,153 @@ def crud_dashboard_view(request):
                 )
                 if isinstance(imm_backtest_metrics, dict) and "error" not in imm_backtest_metrics and not imm_df.empty:
                     imm_df["business_date"] = pd.to_datetime(imm_df["business_date"]).dt.strftime("%Y-%m-%d")
-                    imm_indicator_rows = imm_df.tail(150).to_dict(orient="records")
-                    imm_event_rows = imm_df[(imm_df["buy_signal"] == True) | (imm_df["sell_signal"] == True)].tail(120).to_dict(orient="records")
+                    imm_indicator_rows = imm_df.tail(150).iloc[::-1].to_dict(orient="records")
+                    imm_event_rows = (
+                        imm_df[(imm_df["buy_signal"] == True) | (imm_df["sell_signal"] == True)]
+                        .tail(120)
+                        .iloc[::-1]
+                        .to_dict(orient="records")
+                    )
 
     # TAB 8: Stage Analysis
     if stage_selected_symbol and active_tab == "stage_backtest":
         if not (stage_from and stage_to):
             stage_backtest_metrics = {"error": "Please select both From Date and To Date."}
         else:
-            df = _build_standard_dataframe(stage_selected_symbol, stage_from, stage_to)
+            df = _build_standard_dataframe(
+                stage_selected_symbol,
+                stage_from,
+                stage_to,
+                use_unadjusted_fallback=True,
+            )
             if df.empty:
                 stage_backtest_metrics = {"error": f"No price data found for '{stage_selected_symbol}' in the selected date range."}
             else:
                 # rename columns to match what calculate_stage_analysis expects
                 df_calc = df.rename(columns={
                     "close_price_adj": "close",
-                    "high_price_adj": "high"
+                    "high_price_adj": "high",
+                    "low_price_adj": "low",
                 })
-                try:
-                    stage_df = calculate_stage_analysis(df_calc)
-                    if not stage_df.empty:
-                        stage_df["business_date"] = pd.to_datetime(stage_df["business_date"]).dt.strftime("%Y-%m-%d")
-                        stage_indicator_rows = stage_df.tail(150).to_dict(orient="records")
-                        latest_row = stage_df.iloc[-1]
-                        stage_backtest_metrics = {
-                            "latest_stage": latest_row.get("stage", "Stage 1"),
-                            "returns_3m": float(latest_row.get("returns_3m", 0) * 100) if pd.notna(latest_row.get("returns_3m")) else 0,
-                            "volume_ratio": float(latest_row.get("volume_ratio", 0)) if pd.notna(latest_row.get("volume_ratio")) else 0,
+                # Bug fix 6: warn early if volume is entirely missing so users
+                # know Stage 2 (which requires volume_ratio > 1.5) can never fire.
+                if "volume" not in df_calc.columns or df_calc["volume"].isna().all():
+                    stage_backtest_metrics = {
+                        "error": (
+                            f"No volume data found for '{stage_selected_symbol}'. "
+                            "Stage 2 classification requires volume — ensure the symbol "
+                            "has traded quantity records in the selected date range."
+                        )
+                    }
+                else:
+                    try:
+                        stage_df = calculate_stage_analysis(
+                            df_calc,
+                            volume_multiplier=stage_volume_multiplier,
+                            resistance_lookback=stage_resistance_lookback,
+                            volume_lookback=stage_volume_lookback,
+                            momentum_period=stage_momentum_period,
+                            rsi_length=stage_rsi_length,
+                            rsi_threshold=stage_rsi_threshold,
+                            adx_length=stage_adx_length,
+                            adx_threshold=stage_adx_threshold,
+                            use_rsi_filter=stage_use_rsi,
+                            use_adx_filter=stage_use_adx,
+                        )
+                        if not stage_df.empty:
+                            stage_meta = {
+                                "Stage 1": ("Basing/Neglect", "Watch"),
+                                "Stage 2": ("Advancing/Mark-up", "Buy"),
+                                "Stage 3": ("Distribution/Top", "Reduce"),
+                                "Stage 4": ("Declining/Mark-down", "Avoid"),
+                            }
+                            stage_df["stage_name"] = stage_df["stage"].map(lambda s: stage_meta.get(s, ("Unknown", "Watch"))[0])
+                            stage_df["stage_action"] = stage_df["stage"].map(lambda s: stage_meta.get(s, ("Unknown", "Watch"))[1])
+                            stage_df["business_date"] = pd.to_datetime(stage_df["business_date"]).dt.strftime("%Y-%m-%d")
+                            # Bug fix 7: scale returns_3m to percent in the indicator
+                            # rows so the template can display it as e.g. "5.00" not "0.0500".
+                            if "returns_3m" in stage_df.columns:
+                                stage_df["returns_3m"] = stage_df["returns_3m"] * 100
+                            stage_indicator_rows = stage_df.tail(150).iloc[::-1].to_dict(orient="records")
+                            latest_row = stage_df.iloc[-1]
+                            latest_stage = latest_row.get("stage", "Stage 1")
+                            latest_name = latest_row.get("stage_name", "Basing/Neglect")
+                            stage_backtest_metrics = {
+                                "latest_data_date": latest_row.get("business_date", ""),
+                                "latest_price_source": latest_row.get("price_source", "Adjusted"),
+                                "latest_stage": latest_stage,
+                                "latest_stage_label": f"{latest_stage} - {latest_name}",
+                                "latest_action": latest_row.get("stage_action", "Watch"),
+                                # returns_3m is already in percent at this point
+                                "returns_3m": float(latest_row.get("returns_3m", 0)) if pd.notna(latest_row.get("returns_3m")) else 0,
+                                "volume_ratio": float(latest_row.get("volume_ratio", 0)) if pd.notna(latest_row.get("volume_ratio")) else 0,
+                                "volume_confirm": bool(latest_row.get("volume_confirm", False)),
+                                "rsi": float(latest_row.get("rsi", 0)) if pd.notna(latest_row.get("rsi")) else 0,
+                                "rsi_confirm": bool(latest_row.get("rsi_confirm", False)),
+                                "adx": float(latest_row.get("adx", 0)) if pd.notna(latest_row.get("adx")) else 0,
+                                "adx_confirm": bool(latest_row.get("adx_confirm", False)),
+                                "stage2_score": int(latest_row.get("stage2_score", 0)) if pd.notna(latest_row.get("stage2_score")) else 0,
+                            }
+                    except Exception as e:
+                        stage_backtest_metrics = {"error": f"Error running Stage Analysis: {str(e)}"}
+
+    # TAB 9: RRG (Relative Rotation Graph)
+    if rrg_selected_symbol and active_tab == "rrg_backtest":
+        if not (rrg_from and rrg_to):
+            rrg_backtest_metrics = {"error": "Please select both From Date and To Date."}
+        else:
+            stock_df = _build_standard_dataframe(
+                rrg_selected_symbol,
+                rrg_from,
+                rrg_to,
+                use_unadjusted_fallback=True,
+            )
+            bench_df = _build_standard_dataframe(
+                rrg_benchmark_symbol,
+                rrg_from,
+                rrg_to,
+                use_unadjusted_fallback=True,
+            )
+            if stock_df.empty:
+                rrg_backtest_metrics = {"error": f"No price data found for '{rrg_selected_symbol}' in the selected date range."}
+            elif bench_df.empty:
+                rrg_backtest_metrics = {"error": f"No price data found for '{rrg_benchmark_symbol}' in the selected date range."}
+            else:
+                rrg_lookback = _safe_int(g.get("rrg_lookback", 14), 14, minimum=2)
+                rrg_backtest_metrics, rrg_df = run_rrg_simulation(
+                    stock_df=stock_df,
+                    benchmark_df=bench_df,
+                    lookback=rrg_lookback
+                )
+                if isinstance(rrg_backtest_metrics, dict) and "error" not in rrg_backtest_metrics and not rrg_df.empty:
+                    rrg_df["business_date"] = pd.to_datetime(rrg_df["business_date"]).dt.strftime("%Y-%m-%d")
+                    rrg_chart_points = [
+                        {
+                            "business_date": row["business_date"],
+                            "RS_Ratio": round(float(row["RS_Ratio"]), 2),
+                            "RS_Momentum": round(float(row["RS_Momentum"]), 2),
+                            "Quadrant": str(row["Quadrant"]),
                         }
-                except Exception as e:
-                    stage_backtest_metrics = {"error": f"Error running Stage Analysis: {str(e)}"}
+                        for _, row in rrg_df.tail(50).iterrows()
+                    ]
+                    rrg_indicator_rows = rrg_df.tail(150).iloc[::-1].to_dict(orient="records")
+
+    # TAB 10: RRG Indices
+    if active_tab == "rrg_indices":
+        if not (rrg_indices_from and rrg_indices_to):
+            rrg_indices_metrics = {"error": "Please select both From Date and To Date."}
+        else:
+            bench_df = _build_standard_dataframe(rrg_indices_benchmark_symbol, rrg_indices_from, rrg_indices_to)
+            index_frames = _build_index_dataframes(rrg_indices_from, rrg_indices_to)
+            rrg_indices_metrics, rrg_indices_points, rrg_indices_trails, rrg_indices_skipped = run_rrg_indices_simulation(
+                index_frames=index_frames,
+                benchmark_df=bench_df,
+                benchmark_symbol=rrg_indices_benchmark_symbol,
+                lookback=_safe_int(g.get("rrg_indices_lookback", 14), 14, minimum=2),
+                tail_length=_safe_int(g.get("rrg_indices_tail_length", 30), 30, minimum=1),
+                selected_symbols=rrg_indices_selected_symbols,
+            )
+            rrg_indices_benchmark_points = _build_benchmark_sparkline(bench_df)
 
     return render(request, "core_analysis/crud.html", {
         "records": queryset,
@@ -509,6 +859,40 @@ def crud_dashboard_view(request):
         "stage_selected_symbol":  stage_selected_symbol,
         "stage_from_date":        stage_from,
         "stage_to_date":          stage_to,
+        "stage_volume_multiplier": g.get("stage_volume_multiplier", "1.5"),
+        "stage_resistance_lookback": g.get("stage_resistance_lookback", "20"),
+        "stage_volume_lookback": g.get("stage_volume_lookback", "20"),
+        "stage_momentum_period": g.get("stage_momentum_period", "60"),
+        "stage_rsi_length": g.get("stage_rsi_length", "14"),
+        "stage_rsi_threshold": g.get("stage_rsi_threshold", "55"),
+        "stage_adx_length": g.get("stage_adx_length", "14"),
+        "stage_adx_threshold": g.get("stage_adx_threshold", "20"),
+        "stage_use_rsi": stage_use_rsi,
+        "stage_use_adx": stage_use_adx,
+
+        # RRG
+        "rrg_backtest_metrics": rrg_backtest_metrics,
+        "rrg_indicator_rows":   rrg_indicator_rows,
+        "rrg_chart_points":     rrg_chart_points,
+        "rrg_selected_symbol":  rrg_selected_symbol,
+        "rrg_benchmark_symbol": rrg_benchmark_symbol,
+        "rrg_from_date":        rrg_from,
+        "rrg_to_date":          rrg_to,
+        "rrg_lookback":         g.get("rrg_lookback", "14"),
+
+        # RRG Indices
+        "rrg_indices_metrics": rrg_indices_metrics,
+        "rrg_indices_points": rrg_indices_points,
+        "rrg_indices_trails": rrg_indices_trails,
+        "rrg_indices_skipped": rrg_indices_skipped,
+        "rrg_indices_benchmark_points": rrg_indices_benchmark_points,
+        "rrg_indices_benchmark_symbol": rrg_indices_benchmark_symbol,
+        "rrg_indices_choices": rrg_indices_choices,
+        "rrg_indices_selected_count": len(rrg_indices_selected_symbols),
+        "rrg_indices_from_date": rrg_indices_from,
+        "rrg_indices_to_date": rrg_indices_to,
+        "rrg_indices_lookback": g.get("rrg_indices_lookback", "14"),
+        "rrg_indices_tail_length": g.get("rrg_indices_tail_length", "30"),
 
         # EMA parameters
         "ema_take_profit_pct": g.get("ema_take_profit_pct", "15"),
@@ -592,70 +976,33 @@ def crud_delete_handler(request, pk):
 
 def trigger_daily_api_sync_view(request):
     """
-    On-demand daily sync engine endpoint: fetches the latest page from the
-    stock prices endpoint and skips already-existing rows.
+    On-demand daily sync engine endpoint.
     """
-    session = requests.Session()
-    stock_url = "http://192.168.1.35:8000/api/nepse-data/api/stock-prices/?format=json"
-
-    records_saved = 0
-    seen_api_ids = set()
-
-    def clean_dec(val):
-        if val is None:
-            return Decimal("0.00")
-        val_str = str(val).strip()
-        if val_str == "" or val_str.lower() in ["none", "null", "nan", "-"]:
-            return Decimal("0.00")
-        try:
-            return Decimal(val_str)
-        except Exception:
-            return Decimal("0.00")
+    from_date_raw = (request.POST.get("from_date") or "").strip()
+    to_date_raw = (request.POST.get("to_date") or "").strip()
+    try:
+        from_date = date.fromisoformat(from_date_raw) if from_date_raw else None
+        to_date = date.fromisoformat(to_date_raw) if to_date_raw else None
+    except ValueError:
+        messages.error(request, "Invalid sync date format. Use YYYY-MM-DD.")
+        return redirect("crud_dashboard")
+    source = (request.POST.get("source") or "both").strip().lower()
+    if source not in {"both", "stocks", "indices"}:
+        source = "both"
 
     try:
-        response = session.get(stock_url, timeout=15)
-        if response.status_code == 200:
-            payload = response.json()
-            results = payload.get("results", [])
-
-            stock_instances = []
-            for item in results:
-                current_id = item["id"]
-                if current_id in seen_api_ids:
-                    continue
-                if NepseDailyStockPrice.objects.filter(api_id=current_id).exists():
-                    continue
-
-                stock_instances.append(NepseDailyStockPrice(
-                    api_id=current_id,
-                    business_date=item["business_date"],
-                    security_id=item["security_id"],
-                    symbol=item["symbol"],
-                    security_name=item["security_name"],
-                    open_price=clean_dec(item["open_price"]),
-                    high_price=clean_dec(item["high_price"]),
-                    low_price=clean_dec(item["low_price"]),
-                    close_price=clean_dec(item["close_price"]),
-                    previous_close=clean_dec(item["previous_close"]),
-                    average_traded_price=clean_dec(item["average_traded_price"]),
-                    total_traded_quantity=item["total_traded_quantity"],
-                    total_traded_value=clean_dec(item["total_traded_value"]),
-                    total_trades=item["total_trades"],
-                    market_capitalization=clean_dec(item["market_capitalization"]),
-                    fifty_two_week_high=clean_dec(item["fifty_two_week_high"]),
-                    fifty_two_week_low=clean_dec(item["fifty_two_week_low"]),
-                    last_updated_time=item["last_updated_time"],
-                ))
-                seen_api_ids.add(current_id)
-
-            if stock_instances:
-                NepseDailyStockPrice.objects.bulk_create(stock_instances, ignore_conflicts=True)
-                records_saved = len(stock_instances)
-                # Invalidate symbol cache after a sync that may have added new symbols
-                cache.delete("nepse_symbol_lists")
-
-        messages.success(request, f"Daily sync executed successfully. Processed {records_saved} new market rows.")
+        kwargs = {"source": source}
+        if from_date:
+            kwargs["from_date"] = from_date
+        if to_date:
+            kwargs["to_date"] = to_date
+        call_command("sync_nepse_data", **kwargs)
+        cache.delete("nepse_symbol_lists")
+        messages.success(
+            request,
+            f"Price sync completed (source={source}, from={from_date_raw or 'start'}, to={to_date_raw or 'latest'}).",
+        )
     except Exception as e:
-        messages.error(request, f"Daily pipeline sync interrupted: {str(e)}")
+        messages.error(request, f"Price sync failed: {str(e)}")
 
     return redirect("crud_dashboard")
