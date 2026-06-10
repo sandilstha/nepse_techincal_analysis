@@ -11,7 +11,9 @@ from django.utils.dateparse import parse_datetime
 from core_analysis.models import NepseDailyStockPrice, NepseMarketIndex
 
 
-DEFAULT_API_BASE_URL = "http://192.168.1.35:8000"
+# Default upstream NEPSE API host. Overridable per-run with --api-base-url, or
+# globally via the NEPSE_API_BASE_URL environment variable.
+DEFAULT_API_BASE_URL = os.environ.get("NEPSE_API_BASE_URL", "http://192.168.1.35:8000")
 
 
 class Command(BaseCommand):
@@ -38,8 +40,23 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--api-base-url",
-            default=os.environ.get("NEPSE_API_BASE_URL", DEFAULT_API_BASE_URL),
-            help="Base URL for the upstream NEPSE API. Can also be set with NEPSE_API_BASE_URL.",
+            default=DEFAULT_API_BASE_URL,
+            help="Base URL for the upstream NEPSE API.",
+        )
+        parser.add_argument(
+            "--api-token",
+            default=os.environ.get("NEPSE_API_TOKEN", ""),
+            help="Bearer/Token value for the upstream API. Can also be set with NEPSE_API_TOKEN.",
+        )
+        parser.add_argument(
+            "--api-key",
+            default=os.environ.get("NEPSE_API_KEY", ""),
+            help="API key for the upstream API. Can also be set with NEPSE_API_KEY.",
+        )
+        parser.add_argument(
+            "--api-cookie",
+            default=os.environ.get("NEPSE_API_COOKIE", ""),
+            help="Cookie header for session-auth upstream APIs. Can also be set with NEPSE_API_COOKIE.",
         )
         parser.add_argument(
             "--batch-size",
@@ -64,6 +81,9 @@ class Command(BaseCommand):
         to_date = options.get("to_date")
         source = options.get("source", "both")
         api_base_url = options["api_base_url"].rstrip("/")
+        api_token = (options.get("api_token") or "").strip()
+        api_key = (options.get("api_key") or "").strip()
+        api_cookie = (options.get("api_cookie") or "").strip()
         batch_size = max(int(options.get("batch_size") or 2000), 1)
         max_pages = options.get("max_pages")
         dry_run = bool(options.get("dry_run"))
@@ -72,6 +92,13 @@ class Command(BaseCommand):
             raise CommandError("--from-date cannot be later than --to-date.")
 
         session = requests.Session()
+        _configure_session(
+            session,
+            api_base_url=api_base_url,
+            api_token=api_token,
+            api_key=api_key,
+            api_cookie=api_cookie,
+        )
         self.stdout.write(
             self.style.WARNING(
                 f"Sync scope={source}, from_date={from_date or 'None'}, to_date={to_date or 'None'}, api={api_base_url}"
@@ -291,7 +318,17 @@ def _fetch_page(session, url, label):
         response.raise_for_status()
         payload = response.json()
     except requests.RequestException as exc:
-        raise CommandError(f"{label.title()} API request failed for {url}: {exc}") from exc
+        detail = ""
+        response = getattr(exc, "response", None)
+        if response is not None and response.status_code == 403:
+            body = (response.text or "").strip().replace("\n", " ")[:300]
+            detail = (
+                " Upstream returned 403 Forbidden. The endpoint may be blocking this request client, "
+                "IP address, date range, or configured API base URL."
+            )
+            if body:
+                detail += f" Response: {body}"
+        raise CommandError(f"{label.title()} API request failed for {url}: {exc}.{detail}") from exc
     except ValueError as exc:
         raise CommandError(f"{label.title()} API returned invalid JSON for {url}.") from exc
 
@@ -299,6 +336,32 @@ def _fetch_page(session, url, label):
     if next_url:
         next_url = urljoin(response.url, next_url)
     return payload, next_url
+
+
+def _configure_session(session, api_base_url="", api_token="", api_key="", api_cookie=""):
+    parsed_base = urlparse(api_base_url or "")
+    origin = f"{parsed_base.scheme}://{parsed_base.netloc}" if parsed_base.scheme and parsed_base.netloc else ""
+    session.headers.update({
+        "Accept": "application/json",
+        "Accept-Language": "en-US,en;q=0.9",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/125.0 Safari/537.36"
+        ),
+    })
+    if origin:
+        session.headers["Origin"] = origin
+        session.headers["Referer"] = f"{origin}/"
+    if api_token:
+        auth_header = os.environ.get("NEPSE_API_AUTH_HEADER", "Authorization").strip() or "Authorization"
+        auth_prefix = os.environ.get("NEPSE_API_AUTH_PREFIX", "Bearer").strip()
+        session.headers[auth_header] = f"{auth_prefix} {api_token}".strip()
+    if api_key:
+        api_key_header = os.environ.get("NEPSE_API_KEY_HEADER", "X-API-Key").strip() or "X-API-Key"
+        session.headers[api_key_header] = api_key
+    if api_cookie:
+        session.headers["Cookie"] = api_cookie
 
 
 def _date_in_range(row_date, from_date, to_date):

@@ -10,22 +10,63 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def _env_bool(name, default=False):
+    """Parse a boolean from an environment variable ('1', 'true', 'yes', 'on')."""
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-rog4sy4xp-#2c!%f%%yf)8j^@qtf*8&_e9ikcb5(td!q*l2ngb'
+# Read from the environment in production; the insecure fallback is dev-only.
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-rog4sy4xp-#2c!%f%%yf)8j^@qtf*8&_e9ikcb5(td!q*l2ngb',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Defaults to True for local dev; set DJANGO_DEBUG=0 in production.
+DEBUG = _env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost','192.168.1.31']
+# Comma-separated list via DJANGO_ALLOWED_HOSTS in production.
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get(
+        'DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,192.168.1.31'
+    ).split(',')
+    if host.strip()
+]
+
+# ── Production security hardening (only enforced when DEBUG is off) ────────────
+# These are no-ops in local development but switch on TLS/cookie protections in
+# production. Front-end must terminate HTTPS for SECURE_SSL_REDIRECT to be safe.
+if not DEBUG:
+    SECURE_SSL_REDIRECT = _env_bool('DJANGO_SECURE_SSL_REDIRECT', True)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    X_FRAME_OPTIONS = 'DENY'
+    # Comma-separated origins, e.g. "https://nepse.example.com"
+    CSRF_TRUSTED_ORIGINS = [
+        origin.strip()
+        for origin in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',')
+        if origin.strip()
+    ]
 
 
 # Application definition
@@ -45,6 +86,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise serves static files (with compression + far-future caching)
+    # directly from the app in production. Must sit right after SecurityMiddleware.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -76,14 +120,16 @@ WSGI_APPLICATION = 'nepse_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# Credentials are read from the environment so they are never committed to VCS.
+# The fallbacks keep local development working out-of-the-box.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'nepse_database',             # Your schema name from your screenshot
-        'USER': 'root',                      # Your username from your screenshot
-        'PASSWORD': '1234', # Replace this with your actual MySQL root password
-        'HOST': '127.0.0.1',                  # Your Hostname from your screenshot
-        'PORT': '3306',                      # Your Port from your screenshot
+        'NAME': os.environ.get('DB_NAME', 'nepse_database'),
+        'USER': os.environ.get('DB_USER', 'root'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', '1234'),
+        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('DB_PORT', '3306'),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
@@ -127,3 +173,33 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+# Target for `manage.py collectstatic` in production deployments.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Static file storage:
+#   - DEBUG (dev): plain storage — runserver/staticfiles serves straight from the
+#     app dir, so no `collectstatic` is needed to work locally.
+#   - Production (DEBUG=0): WhiteNoise compresses assets and appends a content
+#     hash to each filename (cache-busting) so they can be cached forever.
+#     Requires `python manage.py collectstatic` at deploy time.
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': (
+            'django.contrib.staticfiles.storage.StaticFilesStorage'
+            if DEBUG
+            else 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+        ),
+    },
+}
+
+# Default primary-key type for new models (silences Django system check W042).
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ── Market Insights dashboard ───────────────────────────────────────────────
+# Default auto-refresh interval (seconds) for the /insights/ dashboard. The UI
+# lets users override this per-session; this is just the initial value. Can be
+# overridden via the INSIGHTS_REFRESH_SECONDS environment variable.
+INSIGHTS_REFRESH_SECONDS = int(os.environ.get('INSIGHTS_REFRESH_SECONDS', '30'))

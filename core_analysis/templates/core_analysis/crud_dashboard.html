@@ -1,0 +1,131 @@
+{% extends "core_analysis/base.html" %}
+{% load static %}
+
+{% block content %}
+<ul class="nav nav-tabs mb-4 {% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' %}nav-section-strategy{% elif active_tab == 'msv_backtest' or active_tab == 'imm_backtest' or active_tab == 'stage_backtest' or active_tab == 'support_resistance' %}nav-section-advanced{% elif active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}nav-section-rrg{% else %}nav-section-inventory{% endif %}" id="workspaceTabs" role="tablist">
+
+    <li class="nav-item primary-menu-item">
+      <button class="nav-link primary-menu-tab {% if active_tab == 'inventory' %}active{% endif %}"
+              data-primary-section="inventory"
+              data-bs-target="#inventory-pane"
+              type="button" role="tab"
+              aria-selected="{% if active_tab == 'inventory' %}true{% else %}false{% endif %}">Raw Inventory Manager</button>
+    </li>
+    <li class="nav-item primary-menu-item">
+      <button type="button"
+              class="primary-menu-tab {% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' %}active{% endif %}"
+              id="strategyMenuToggle"
+              data-primary-section="strategy"
+              aria-expanded="{% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' %}true{% else %}false{% endif %}">
+        Trading Strategy Simulator
+      </button>
+    </li>
+    <li class="nav-item primary-menu-item">
+      <button type="button"
+              class="primary-menu-tab {% if active_tab == 'msv_backtest' or active_tab == 'imm_backtest' or active_tab == 'stage_backtest' or active_tab == 'support_resistance' %}active{% endif %}"
+              id="advancedMenuToggle"
+              data-primary-section="advanced"
+              aria-expanded="{% if active_tab == 'msv_backtest' or active_tab == 'imm_backtest' or active_tab == 'stage_backtest' or active_tab == 'support_resistance' %}true{% else %}false{% endif %}">
+        Advanced Market Analysis Desks
+      </button>
+    </li>
+    <li class="nav-item primary-menu-item">
+      <button type="button"
+              class="primary-menu-tab {% if active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}active{% endif %}"
+              id="rrgMenuToggle"
+              data-primary-section="rrg"
+              aria-expanded="{% if active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}true{% else %}false{% endif %}">
+        RRG Chart
+      </button>
+    </li>
+    <li class="nav-row-break" aria-hidden="true"></li>
+    <li class="nav-item strategy-card-item">
+      <button class="nav-link strategy-card-button {% if active_tab == 'backtest' %}active{% endif %}"
+              data-section="strategy"
+              data-bs-toggle="tab" data-bs-target="#backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'backtest' %}true{% else %}false{% endif %}">T3MA Ribbon Simulation Desk</button>
+    </li>
+    <li class="nav-item strategy-card-item">
+      <button class="nav-link strategy-card-button {% if active_tab == 'ema_backtest' %}active{% endif %}"
+              data-section="strategy"
+              data-bs-toggle="tab" data-bs-target="#ema-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'ema_backtest' %}true{% else %}false{% endif %}">EMA 50/200 Crossover Desk</button>
+    </li>
+    <li class="nav-item strategy-card-item">
+      <button class="nav-link strategy-card-button {% if active_tab == 'cci_backtest' %}active{% endif %}"
+              data-section="strategy"
+              data-bs-toggle="tab" data-bs-target="#cci-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'cci_backtest' %}true{% else %}false{% endif %}">CCI +100 Long-Only Desk</button>
+    </li>
+    <li class="nav-item strategy-card-item">
+      <button class="nav-link strategy-card-button {% if active_tab == 'rsi_backtest' %}active{% endif %}"
+              data-section="strategy"
+              data-bs-toggle="tab" data-bs-target="#rsi-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'rsi_backtest' %}true{% else %}false{% endif %}">RSI/SMA Long-Only Desk</button>
+    </li>
+    <li class="nav-item advanced-tool-item">
+      <button class="nav-link {% if active_tab == 'msv_backtest' %}active{% endif %}"
+              data-section="advanced"
+              data-bs-toggle="tab" data-bs-target="#msv-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'msv_backtest' %}true{% else %}false{% endif %}">Momentum Scan Desk</button>
+    </li>
+    <li class="nav-item advanced-tool-item">
+      <button class="nav-link {% if active_tab == 'imm_backtest' %}active{% endif %}"
+              data-section="advanced"
+              data-bs-toggle="tab" data-bs-target="#imm-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'imm_backtest' %}true{% else %}false{% endif %}">IMM Technical Scoring Console</button>
+    </li>
+    <li class="nav-item advanced-tool-item">
+      <button class="nav-link {% if active_tab == 'stage_backtest' %}active{% endif %}"
+              data-section="advanced"
+              data-bs-toggle="tab" data-bs-target="#stage-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'stage_backtest' %}true{% else %}false{% endif %}">Stage Analysis Desk</button>
+    </li>
+    <li class="nav-item advanced-tool-item">
+      <button class="nav-link {% if active_tab == 'support_resistance' %}active{% endif %}"
+              data-section="advanced"
+              data-bs-toggle="tab" data-bs-target="#support-resistance-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'support_resistance' %}true{% else %}false{% endif %}">Support &amp; Resistance</button>
+    </li>
+    <li class="nav-item rrg-tool-item">
+      <button class="nav-link {% if active_tab == 'rrg_backtest' %}active{% endif %}"
+              data-section="rrg"
+              data-bs-toggle="tab" data-bs-target="#rrg-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'rrg_backtest' %}true{% else %}false{% endif %}">RRG Graph Desk</button>
+    </li>
+    <li class="nav-item rrg-tool-item">
+      <button class="nav-link {% if active_tab == 'rrg_indices' %}active{% endif %}"
+              data-section="rrg"
+              data-bs-toggle="tab" data-bs-target="#rrg-indices-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'rrg_indices' %}true{% else %}false{% endif %}">RRG Indices</button>
+    </li>
+  </ul>
+
+  <div class="tab-content" id="workspaceTabsContent">
+    {% include "core_analysis/includes/_inventory_tab.html" %}
+    {% include "core_analysis/includes/_t3ma_tab.html" %}
+    {% include "core_analysis/includes/_ema_tab.html" %}
+    {% include "core_analysis/includes/_cci_tab.html" %}
+    {% include "core_analysis/includes/_rsi_tab.html" %}
+    {% include "core_analysis/includes/_msv_tab.html" %}
+    {% include "core_analysis/includes/_imm_tab.html" %}
+    {% include "core_analysis/includes/_stage_tab.html" %}
+    {% include "core_analysis/includes/_support_resistance_tab.html" %}
+    {% include "core_analysis/includes/_rrg_tab.html" %}
+    {% include "core_analysis/includes/_rrg_indices_tab.html" %}
+  </div>{# /tab-content #}
+{% endblock %}
+
+{% block extra_js %}
+<!-- TradingView Lightweight Charts (Open Source) -->
+<!--
+  Pinned to v4.2.3. The chart code below uses the v4 series API
+  (addCandlestickSeries / addLineSeries / addHistogramSeries / setMarkers),
+  all of which were REMOVED in v5. Loading the unpinned "latest" build served
+  v5 and broke the chart with "addCandlestickSeries is not a function".
+-->
+<script src="https://unpkg.com/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
+
+<script>window.NEPSE_URLS = { symbolAutocomplete: "{% url 'symbol_autocomplete' %}" };</script>
+<script src="{% static 'core_analysis/js/dashboard.js' %}"></script>
+{% endblock %}

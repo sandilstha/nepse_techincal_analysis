@@ -1,15 +1,23 @@
 from django.urls import path
 from .views import (
-    crud_dashboard_view, 
-    crud_operations_handler, 
+    crud_dashboard_view,
+    crud_operations_handler,
     crud_delete_handler,
     trigger_daily_api_sync_view,
     symbol_autocomplete_view,
     trigger_sync_and_calculate
 )
+from .insights_views import market_insights_view, market_insights_api
+from .udf_views import (
+    udf_config,
+    udf_time,
+    udf_symbols,
+    udf_search,
+    udf_history,
+)
 
 urlpatterns = [
-    
+
     # HTML View Form CRUD Engine Interfaces
     path('', crud_dashboard_view, name='crud_dashboard'),
     path('dashboard/process/', crud_operations_handler, name='crud_operations'),
@@ -18,4 +26,15 @@ urlpatterns = [
     path('dashboard/sync-calculate/', trigger_sync_and_calculate, name='trigger_sync_and_calculate'),
     # NEW — lightweight autocomplete endpoint for symbol search boxes
     path('dashboard/symbols/', symbol_autocomplete_view, name='symbol_autocomplete'),
+
+    # Market Insights dashboard (homepage-style market overview) + its polling API
+    path('insights/', market_insights_view, name='market_insights'),
+    path('insights/api/', market_insights_api, name='market_insights_api'),
+
+    # TradingView Advanced Charts UDF datafeed (no trailing slashes — UDF spec)
+    path('insights/udf/config', udf_config, name='udf_config'),
+    path('insights/udf/time', udf_time, name='udf_time'),
+    path('insights/udf/symbols', udf_symbols, name='udf_symbols'),
+    path('insights/udf/search', udf_search, name='udf_search'),
+    path('insights/udf/history', udf_history, name='udf_history'),
 ]

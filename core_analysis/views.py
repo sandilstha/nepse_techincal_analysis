@@ -1,10 +1,12 @@
 from datetime import date
+from decimal import Decimal, InvalidOperation
 
 import numpy as np
 import pandas as pd
 from django.contrib import messages
 from django.core.cache import cache
-from django.db.models import OuterRef, Q, Subquery
+from django.db import IntegrityError
+from django.db.models import Max, OuterRef, Q, Subquery
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.management import call_command
@@ -20,6 +22,12 @@ from core_analysis.services.strategy_tester import run_t3ma_macd_ribbon_simulati
 from core_analysis.services.stage_analysis import calculate_stage_analysis
 from core_analysis.services.RGG_Chart import run_rrg_simulation
 from core_analysis.services.RGG_indices import NEPSE_INDEX_LABELS, ordered_nepse_indices, run_rrg_indices_simulation
+from core_analysis.services.advanced_market_structure import run_advanced_market_structure_analysis
+from core_analysis.services.support_resistance import (
+    DEFAULT_LEVEL_FAMILIES,
+    build_institutional_analysis_rows,
+    run_support_resistance_analysis,
+)
 
 @require_POST
 def trigger_sync_and_calculate(request):
@@ -165,7 +173,7 @@ def _build_standard_dataframe(symbol, start_date, end_date, use_unadjusted_fallb
                     "low_price": "low_price_adj",
                     "close_price": "close_price_adj",
                 }, inplace=True)
-                unadjusted_df["price_source"] = "Unadjusted fallback"
+                unadjusted_df["price_source"] = "Unadjusted close"
                 if not adjusted_df.empty:
                     adjusted_df["_source_rank"] = 0
                     unadjusted_df["_source_rank"] = 1
@@ -443,11 +451,15 @@ def crud_dashboard_view(request):
 
     # Initialise result vectors
     backtest_metrics = ema_backtest_metrics = cci_backtest_metrics = rsi_backtest_metrics = msv_backtest_metrics = imm_backtest_metrics = stage_backtest_metrics = rrg_backtest_metrics = None
+    support_resistance_metrics = None
+    advanced_market_structure_metrics = None
+    institutional_analysis_rows = []
     completed_trades = ema_completed_trades = cci_completed_trades = rsi_completed_trades = msv_completed_trades = []
     msv_indicator_rows = []
     imm_indicator_rows = []
     imm_event_rows = []
     stage_indicator_rows = []
+    support_resistance_rows = []
     rrg_indicator_rows = []
     rrg_chart_points = []
     rrg_indices_metrics = None
@@ -455,6 +467,7 @@ def crud_dashboard_view(request):
     rrg_indices_trails = []
     rrg_indices_skipped = []
     rrg_indices_benchmark_points = []
+    imm_data_upload_date = None
 
     # Per-tab symbols
     selected_symbol     = g.get("backtest_symbol",     "").upper().strip()
@@ -464,10 +477,19 @@ def crud_dashboard_view(request):
     msv_selected_symbol = g.get("msv_backtest_symbol", "").upper().strip()
     imm_selected_symbol = g.get("imm_backtest_symbol", "").upper().strip()
     stage_selected_symbol = g.get("stage_backtest_symbol", "").upper().strip()
+    support_resistance_selected_symbol = g.get("support_resistance_symbol", "").upper().strip()
     rrg_selected_symbol = g.get("rrg_backtest_symbol", "").upper().strip()
     rrg_benchmark_symbol = g.get("rrg_benchmark_symbol", "NEPSE INDEX").upper().strip()
     rrg_indices_benchmark_symbol = g.get("rrg_indices_benchmark_symbol", "NEPSE INDEX").upper().strip()
     rrg_indices_choices = _build_rrg_index_choices(rrg_indices_benchmark_symbol)
+
+    if active_tab == "imm_backtest":
+        latest_adjusted_date = StockPriceAdjustment.objects.aggregate(max_date=Max("business_date"))["max_date"]
+        latest_raw_date = NepseDailyStockPrice.objects.aggregate(max_date=Max("business_date"))["max_date"]
+        imm_data_upload_date = max(
+            [row_date for row_date in (latest_adjusted_date, latest_raw_date) if row_date],
+            default=None,
+        )
     rrg_indices_choice_values = [choice["value"] for choice in rrg_indices_choices]
     rrg_indices_selection_submitted = g.get("rrg_indices_selection_submitted") == "1"
     rrg_indices_selected_symbols = [
@@ -496,6 +518,8 @@ def crud_dashboard_view(request):
     imm_to   = g.get("imm_to_date",   g.get("to_date",   "")).strip()
     stage_from = g.get("stage_from_date", g.get("from_date", "")).strip()
     stage_to   = g.get("stage_to_date",   g.get("to_date",   "")).strip()
+    support_resistance_from = g.get("support_resistance_from_date", g.get("from_date", "")).strip()
+    support_resistance_to = g.get("support_resistance_to_date", g.get("to_date", "")).strip()
     rrg_from = g.get("rrg_from_date", g.get("from_date", "")).strip()
     rrg_to   = g.get("rrg_to_date",   g.get("to_date",   "")).strip()
     rrg_indices_from = g.get("rrg_indices_from_date", g.get("from_date", "")).strip()
@@ -510,6 +534,33 @@ def crud_dashboard_view(request):
     stage_adx_threshold = _safe_float(g.get("stage_adx_threshold", 20.0), 20.0)
     stage_use_rsi = (g.get("stage_use_rsi", "").strip().lower() in {"1", "true", "yes", "on"})
     stage_use_adx = (g.get("stage_use_adx", "").strip().lower() in {"1", "true", "yes", "on"})
+    support_resistance_std_period = _safe_int(g.get("support_resistance_std_period", 20), 20, minimum=2)
+    support_resistance_rsi_length = _safe_int(g.get("support_resistance_rsi_length", 14), 14, minimum=2)
+    support_resistance_stochastic_length = _safe_int(g.get("support_resistance_stochastic_length", 14), 14, minimum=2)
+    support_resistance_fractal_window = _safe_int(g.get("support_resistance_fractal_window", 5), 5, minimum=3)
+    if support_resistance_fractal_window % 2 == 0:
+        support_resistance_fractal_window += 1
+    support_resistance_family_options = [
+        {"value": "pivots", "label": "Pivots"},
+        {"value": "stochastics", "label": "Stochastics"},
+        {"value": "fibonacci", "label": "Fibonacci"},
+        {"value": "moving_averages", "label": "Moving Averages"},
+        {"value": "highs_lows", "label": "Highs/Lows"},
+        {"value": "rsi", "label": "RSI"},
+        {"value": "hlc", "label": "HLC"},
+        {"value": "standard_deviation", "label": "Standard Deviation"},
+    ]
+    support_resistance_filters_submitted = g.get("support_resistance_filters_submitted") == "1"
+    support_resistance_enabled_families = [
+        family.strip().lower()
+        for family in g.getlist("support_resistance_families")
+        if family.strip().lower() in DEFAULT_LEVEL_FAMILIES
+    ]
+    if not support_resistance_filters_submitted:
+        support_resistance_enabled_families = list(DEFAULT_LEVEL_FAMILIES)
+    support_resistance_enabled_set = set(support_resistance_enabled_families)
+    for option in support_resistance_family_options:
+        option["checked"] = option["value"] in support_resistance_enabled_set
 
     # ── TAB 2: T3MA ──────────────────────────────────────────────────────────
     if selected_symbol and active_tab == "backtest":
@@ -748,7 +799,53 @@ def crud_dashboard_view(request):
                     except Exception as e:
                         stage_backtest_metrics = {"error": f"Error running Stage Analysis: {str(e)}"}
 
-    # TAB 9: RRG (Relative Rotation Graph)
+    # TAB 9: Support & Resistance
+    if support_resistance_selected_symbol and active_tab == "support_resistance":
+        if not (support_resistance_from and support_resistance_to):
+            support_resistance_metrics = {"error": "Please select both From Date and To Date."}
+        else:
+            df = _build_standard_dataframe(
+                support_resistance_selected_symbol,
+                support_resistance_from,
+                support_resistance_to,
+                use_unadjusted_fallback=True,
+            )
+            if df.empty:
+                support_resistance_metrics = {
+                    "error": f"No price data found for '{support_resistance_selected_symbol}' in the selected date range."
+                }
+            else:
+                # Run the advanced layer first so its DBSCAN volume-density
+                # zones can feed the support/resistance confluence engine.
+                try:
+                    advanced_market_structure_metrics = run_advanced_market_structure_analysis(
+                        df,
+                        symbol=support_resistance_selected_symbol,
+                        fractal_window=support_resistance_fractal_window,
+                    )
+                except Exception as e:
+                    advanced_market_structure_metrics = {"error": f"Error running Advanced Market Structure analysis: {str(e)}"}
+                density_zones = None
+                if isinstance(advanced_market_structure_metrics, dict) and not advanced_market_structure_metrics.get("error"):
+                    density_zones = advanced_market_structure_metrics.get("density_zones")
+                try:
+                    support_resistance_metrics, support_resistance_rows = run_support_resistance_analysis(
+                        df,
+                        symbol=support_resistance_selected_symbol,
+                        std_period=support_resistance_std_period,
+                        rsi_length=support_resistance_rsi_length,
+                        stochastic_length=support_resistance_stochastic_length,
+                        enabled_families=support_resistance_enabled_families,
+                        density_zones=density_zones,
+                    )
+                except Exception as e:
+                    support_resistance_metrics = {"error": f"Error running Support & Resistance analysis: {str(e)}"}
+                institutional_analysis_rows = build_institutional_analysis_rows(
+                    support_resistance_metrics,
+                    advanced_market_structure_metrics,
+                )
+
+    # TAB 10: RRG (Relative Rotation Graph)
     if rrg_selected_symbol and active_tab == "rrg_backtest":
         if not (rrg_from and rrg_to):
             rrg_backtest_metrics = {"error": "Please select both From Date and To Date."}
@@ -789,7 +886,7 @@ def crud_dashboard_view(request):
                     ]
                     rrg_indicator_rows = rrg_df.tail(150).iloc[::-1].to_dict(orient="records")
 
-    # TAB 10: RRG Indices
+    # TAB 11: RRG Indices
     if active_tab == "rrg_indices":
         if not (rrg_indices_from and rrg_indices_to):
             rrg_indices_metrics = {"error": "Please select both From Date and To Date."}
@@ -806,7 +903,7 @@ def crud_dashboard_view(request):
             )
             rrg_indices_benchmark_points = _build_benchmark_sparkline(bench_df)
 
-    return render(request, "core_analysis/crud.html", {
+    return render(request, "core_analysis/crud_dashboard.html", {
         "records": queryset,
 
         # OPTIMIZED: Empty symbol lists (autocomplete handles search)
@@ -852,6 +949,7 @@ def crud_dashboard_view(request):
         "imm_selected_symbol":  imm_selected_symbol,
         "imm_from_date":        imm_from,
         "imm_to_date":          imm_to,
+        "imm_data_upload_date": imm_data_upload_date,
         
         # Stage
         "stage_backtest_metrics": stage_backtest_metrics,
@@ -869,6 +967,20 @@ def crud_dashboard_view(request):
         "stage_adx_threshold": g.get("stage_adx_threshold", "20"),
         "stage_use_rsi": stage_use_rsi,
         "stage_use_adx": stage_use_adx,
+
+        # Support & Resistance
+        "support_resistance_metrics": support_resistance_metrics,
+        "support_resistance_rows": support_resistance_rows,
+        "support_resistance_selected_symbol": support_resistance_selected_symbol,
+        "support_resistance_from_date": support_resistance_from,
+        "support_resistance_to_date": support_resistance_to,
+        "support_resistance_std_period": g.get("support_resistance_std_period", "20"),
+        "support_resistance_rsi_length": g.get("support_resistance_rsi_length", "14"),
+        "support_resistance_stochastic_length": g.get("support_resistance_stochastic_length", "14"),
+        "support_resistance_fractal_window": support_resistance_fractal_window,
+        "support_resistance_family_options": support_resistance_family_options,
+        "advanced_market_structure_metrics": advanced_market_structure_metrics,
+        "institutional_analysis_rows": institutional_analysis_rows,
 
         # RRG
         "rrg_backtest_metrics": rrg_backtest_metrics,
@@ -939,29 +1051,56 @@ def crud_operations_handler(request):
         action = request.POST.get("action")
 
         if action == "create":
-            company_symbol = request.POST.get("company").upper()
+            company_symbol = (request.POST.get("company") or "").upper().strip()
+            business_date_raw = (request.POST.get("business_date") or "").strip()
+            external_id_raw = (request.POST.get("external_id") or "").strip()
+            security_id_raw = (request.POST.get("security_id") or "").strip()
+            close_price_raw = (request.POST.get("close_price_adj") or "").strip()
+
+            try:
+                business_date = date.fromisoformat(business_date_raw)
+                external_id = int(external_id_raw)
+                security_id = int(security_id_raw)
+                close_price_adj = Decimal(close_price_raw)
+            except (TypeError, ValueError, InvalidOperation):
+                messages.error(request, "Inventory create failed: enter a valid ticker, date, IDs, and close price.")
+                return redirect("crud_dashboard")
+
+            if not company_symbol:
+                messages.error(request, "Inventory create failed: company ticker is required.")
+                return redirect("crud_dashboard")
+
             company_profile, _ = CompanyProfile.objects.get_or_create(
                 symbol=company_symbol,
                 defaults={"security_name": f"Manual profile reference {company_symbol}"},
             )
-            StockPriceAdjustment.objects.create(
-                external_id=request.POST.get("external_id"),
-                business_date=request.POST.get("business_date"),
-                company=company_profile,
-                security_id=request.POST.get("security_id"),
-                open_price=0, high_price=0, low_price=0, close_price=0,
-                open_price_adj=0, high_price_adj=0, low_price_adj=0,
-                close_price_adj=request.POST.get("close_price_adj"),
-                adjustment_factor=1.0,
-            )
-            # Invalidate symbol cache so new company appears in dropdowns
-            cache.delete("nepse_symbol_lists")
+            try:
+                StockPriceAdjustment.objects.create(
+                    external_id=external_id,
+                    business_date=business_date,
+                    company=company_profile,
+                    security_id=security_id,
+                    open_price=0, high_price=0, low_price=0, close_price=0,
+                    open_price_adj=0, high_price_adj=0, low_price_adj=0,
+                    close_price_adj=close_price_adj,
+                    adjustment_factor=Decimal("1.0"),
+                )
+                # Invalidate symbol cache so new company appears in dropdowns
+                cache.delete("nepse_symbol_lists")
+                messages.success(request, f"Inventory row added for {company_symbol} on {business_date}.")
+            except IntegrityError:
+                messages.error(request, "Inventory create failed: this external ID or ticker/date row already exists.")
 
         elif action == "update":
             record_id = request.POST.get("record_id")
             record = get_object_or_404(StockPriceAdjustment, id=record_id)
-            record.close_price_adj = request.POST.get("close_price_adj")
+            try:
+                record.close_price_adj = Decimal((request.POST.get("close_price_adj") or "").strip())
+            except (InvalidOperation, ValueError):
+                messages.error(request, "Inventory update failed: close price must be a valid number.")
+                return redirect("crud_dashboard")
             record.save(update_fields=["close_price_adj"])
+            messages.success(request, f"Close price updated for {record.company_id} on {record.business_date}.")
 
     return redirect("crud_dashboard")
 
@@ -974,9 +1113,11 @@ def crud_delete_handler(request, pk):
     return redirect("crud_dashboard")
 
 
+@require_POST
 def trigger_daily_api_sync_view(request):
     """
-    On-demand daily sync engine endpoint.
+    On-demand daily sync engine endpoint. POST-only so the heavy external sync
+    cannot be triggered by a GET (e.g. a forged <img> tag).
     """
     from_date_raw = (request.POST.get("from_date") or "").strip()
     to_date_raw = (request.POST.get("to_date") or "").strip()

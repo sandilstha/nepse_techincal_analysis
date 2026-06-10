@@ -1,0 +1,143 @@
+    <div class="tab-pane fade {% if active_tab == 'rrg_backtest' %}show active{% endif %}" id="rrg-backtest-pane" role="tabpanel">
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">Relative Rotation Graph (RRG) Parameters</h5>
+        <div class="sop-note"><strong>SOP:</strong> Select one target symbol, set the benchmark index, date range, and lookback, then generate RRG. Use the quadrant, RS-Ratio, RS-Momentum, and trail direction to compare rotation versus the benchmark.</div>
+        <form method="GET" action="." id="rrgForm">
+          <input type="hidden" name="active_tab" value="rrg_backtest">
+          <input type="hidden" name="rrg_backtest_symbol" id="rrgSymbolHidden" value="{{ rrg_selected_symbol }}">
+          
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
+              <div class="autocomplete-wrapper">
+                <input type="text" class="autocomplete-input" id="rrgSearchInput" placeholder="Type to search..." value="{{ rrg_selected_symbol }}" autocomplete="off">
+                <div class="autocomplete-dropdown" id="rrgDropdown"></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">Benchmark Index</label>
+              <input type="text" class="form-control form-control-sm text-uppercase" name="rrg_benchmark_symbol" value="{{ rrg_benchmark_symbol }}" placeholder="NEPSE INDEX">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">From Date</label>
+              <input type="text" id="rrgFromDate" name="rrg_from_date" class="form-control form-control-sm" value="{{ rrg_from_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small fw-medium">To Date</label>
+              <input type="text" id="rrgToDate" name="rrg_to_date" class="form-control form-control-sm" value="{{ rrg_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-1">
+              <label class="form-label text-muted small fw-medium">Lookback</label>
+              <input type="number" min="2" step="1" name="rrg_lookback" class="form-control form-control-sm" value="{{ rrg_lookback }}" required>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Generate RRG</button>
+            </div>
+          </div>
+          {% include "core_analysis/includes/_quick_range_controls.html" with from_id="rrgFromDate" to_id="rrgToDate" %}
+        </form>
+      </div>
+
+      {% if rrg_backtest_metrics %}
+        {% if rrg_backtest_metrics.error %}
+          <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ rrg_backtest_metrics.error }}</div>
+        {% else %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Current Quadrant</span>
+                <h4 class="mt-2 mb-0 fw-bold 
+                  {% if rrg_backtest_metrics.latest_quadrant == 'Leading' %}text-success
+                  {% elif rrg_backtest_metrics.latest_quadrant == 'Weakening' %}text-warning
+                  {% elif rrg_backtest_metrics.latest_quadrant == 'Lagging' %}text-danger
+                  {% elif rrg_backtest_metrics.latest_quadrant == 'Improving' %}text-primary
+                  {% else %}text-muted{% endif %}">{{ rrg_backtest_metrics.latest_quadrant }}</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">RS-Ratio</span>
+                <h4 class="mt-2 mb-0 fw-bold text-light">{{ rrg_backtest_metrics.latest_rs_ratio|floatformat:2 }}</h4>
+                <div class="small text-muted mt-1">Δ {{ rrg_backtest_metrics.rs_ratio_delta|floatformat:2 }}</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">RS-Momentum</span>
+                <h4 class="mt-2 mb-0 fw-bold text-light">{{ rrg_backtest_metrics.latest_rs_momentum|floatformat:2 }}</h4>
+                <div class="small text-muted mt-1">Δ {{ rrg_backtest_metrics.rs_momentum_delta|floatformat:2 }}</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
+                <span class="metrics-card-label text-secondary">Benchmark</span>
+                <h4 class="mt-2 mb-0 fw-bold text-light">{{ rrg_benchmark_symbol }}</h4>
+                <div class="small text-muted mt-1">{{ rrg_backtest_metrics.data_points }} plotted data points</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card p-4 border-0 metric-card shadow-sm rounded-3 mb-4 rrg-chart-card">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+              <div>
+                <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">RRG Quadrant Map</h6>
+                <div class="small text-muted mt-1">X-axis: RS-Ratio. Y-axis: RS-Momentum. Center line: 100.</div>
+              </div>
+              <div class="rrg-legend">
+                <span class="rrg-legend-item rrg-leading">Leading</span>
+                <span class="rrg-legend-item rrg-weakening">Weakening</span>
+                <span class="rrg-legend-item rrg-lagging">Lagging</span>
+                <span class="rrg-legend-item rrg-improving">Improving</span>
+              </div>
+            </div>
+            <div id="rrgChart" class="rrg-chart-wrap">
+              <div class="rrg-chart-empty">RRG chart data is not available.</div>
+            </div>
+          </div>
+          {{ rrg_chart_points|json_script:"rrg-chart-data" }}
+
+          <div class="panel-outer">
+            <div class="p-3 bg-raised border-bottom">
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">RRG Log: {{ rrg_selected_symbol }} vs {{ rrg_benchmark_symbol }}</h6>
+            </div>
+            <div class="imm-scroll-wrap">
+              <table class="minimal-table">
+                <thead class="">
+                  <tr>
+                    <th>Date</th>
+                    <th class="th-num">Stock Close</th>
+                    <th class="th-num">Benchmark Close</th>
+                    <th class="th-num">Relative Strength (RS)</th>
+                    <th class="th-num">RS-Ratio</th>
+                    <th class="th-num">RS-Momentum</th>
+                    <th>Quadrant</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in rrg_indicator_rows %}
+                  <tr>
+                    <td class="td-date">{{ row.business_date }}</td>
+                    <td class="td-num">{{ row.stock_close|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.bench_close|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.RS|floatformat:4 }}</td>
+                    <td class="td-num">{{ row.RS_Ratio|floatformat:2 }}</td>
+                    <td class="td-num">{{ row.RS_Momentum|floatformat:2 }}</td>
+                    <td class="fw-semibold 
+                      {% if row.Quadrant == 'Leading' %}text-success-custom
+                      {% elif row.Quadrant == 'Weakening' %}text-warning
+                      {% elif row.Quadrant == 'Lagging' %}text-danger-custom
+                      {% elif row.Quadrant == 'Improving' %}text-primary
+                      {% else %}text-muted{% endif %}">{{ row.Quadrant }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No RRG data generated in this date range.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>

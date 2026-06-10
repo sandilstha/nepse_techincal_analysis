@@ -1,0 +1,243 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEPSE Market Insights</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}">
+</head>
+<body>
+<div class="mi-shell">
+
+  <!-- ── Top bar ──────────────────────────────────────────────────────── -->
+  <header class="mi-topbar">
+    <div class="mi-brand">
+      <span class="mi-logo">NEPSE</span>
+      <div>
+        <h1 class="mi-title">Market Insights</h1>
+        <p class="mi-subtitle">Live NEPSE market overview &amp; analytics</p>
+      </div>
+    </div>
+
+    <div class="mi-controls">
+      <span class="mi-live-badge" id="mi-live-badge" hidden>LIVE</span>
+      <div class="mi-asof">
+        <span class="mi-asof-label" id="mi-asof-label">As of</span>
+        <span class="mi-asof-date" id="mi-asof-date">—</span>
+      </div>
+
+      <div class="mi-status" id="mi-status" title="Connection status">
+        <span class="mi-status-dot"></span>
+        <span class="mi-status-text" id="mi-status-text">Connecting…</span>
+      </div>
+
+      <label class="mi-refresh-wrap" title="Auto-refresh interval">
+        <select id="mi-refresh-select" class="mi-select" aria-label="Auto-refresh interval">
+          <option value="0">Manual</option>
+          <option value="15">15s</option>
+          <option value="30">30s</option>
+          <option value="60">60s</option>
+          <option value="300">5m</option>
+        </select>
+      </label>
+
+      <button type="button" id="mi-refresh-btn" class="mi-icon-btn" title="Refresh now" aria-label="Refresh now">⟳</button>
+      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
+      <a href="{% url 'crud_dashboard' %}" class="mi-icon-btn mi-workbench-link" title="Analytics workbench" aria-label="Analytics workbench">⚙</a>
+    </div>
+  </header>
+
+  {% if load_error %}
+  <div class="mi-banner" id="mi-load-banner">{{ load_error }}</div>
+  {% endif %}
+
+  <!-- ── Market Overview ──────────────────────────────────────────────── -->
+  <section class="mi-stats" id="mi-overview">
+    <article class="mi-stat" data-key="nepse">
+      <span class="mi-stat-label">NEPSE Index</span>
+      <span class="mi-stat-value" id="ov-index">—</span>
+      <span class="mi-stat-delta" id="ov-index-delta">—</span>
+    </article>
+    <article class="mi-stat" data-key="change">
+      <span class="mi-stat-label">Daily Change</span>
+      <span class="mi-stat-value" id="ov-change">—</span>
+      <span class="mi-stat-sub" id="ov-change-abs">—</span>
+    </article>
+    <article class="mi-stat" data-key="turnover">
+      <span class="mi-stat-label">Total Turnover</span>
+      <span class="mi-stat-value" id="ov-turnover">—</span>
+      <span class="mi-stat-sub" id="ov-volume">—</span>
+    </article>
+    <article class="mi-stat" data-key="trades">
+      <span class="mi-stat-label">Total Trades</span>
+      <span class="mi-stat-value" id="ov-trades">—</span>
+      <span class="mi-stat-sub" id="ov-scrips">—</span>
+    </article>
+    <article class="mi-stat mi-stat-breadth" data-key="breadth">
+      <span class="mi-stat-label">Market Breadth</span>
+      <div class="mi-breadth-mini" id="ov-breadth">
+        <span class="up" id="ov-adv">0</span>
+        <span class="flat" id="ov-unch">0</span>
+        <span class="down" id="ov-dec">0</span>
+      </div>
+      <div class="mi-breadth-bar"><span id="ov-breadth-bar"></span></div>
+    </article>
+  </section>
+
+  <!-- ── Index OHLC + Breadth ─────────────────────────────────────────── -->
+  <section class="mi-grid mi-grid-2-1">
+    <article class="mi-card mi-ohlc-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Index OHLC</h2>
+        <div class="mi-card-tools">
+          <select id="ohlc-symbol" class="mi-select" aria-label="Chart symbol"></select>
+          <span class="mi-card-hint" id="ohlc-sessions">— sessions</span>
+        </div>
+      </div>
+      <div class="mi-draw-toolbar" id="ohlc-toolbar">
+        <div class="mi-draw-group">
+          <button type="button" class="mi-draw-btn is-active" data-tool="cursor">Cursor</button>
+          <button type="button" class="mi-draw-btn" data-tool="line">Line</button>
+          <button type="button" class="mi-draw-btn" data-tool="hline">Horizontal</button>
+          <button type="button" class="mi-draw-btn" data-tool="vline">Vertical</button>
+          <button type="button" class="mi-draw-btn mi-draw-clear" id="ohlc-clear">Clear</button>
+        </div>
+        <span class="mi-draw-hint">Select a drawing · Del removes selected</span>
+      </div>
+      <div class="mi-ohlc-wrap">
+        <div class="mi-chart-ohlc" id="ohlc-chart"></div>
+        <canvas class="mi-draw-canvas" id="ohlc-draw"></canvas>
+        <!-- Upgraded to a TradingView Advanced Charts terminal when the licensed
+             library is installed (see TRADINGVIEW_SETUP.md). -->
+        <div class="mi-tv" id="mi-tv-container"></div>
+      </div>
+    </article>
+
+    <article class="mi-card mi-card-breadth">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Market Breadth</h2>
+        <span class="mi-pill" id="breadth-sentiment">—</span>
+      </div>
+      <div class="mi-chart mi-chart-donut" id="chart-breadth"></div>
+      <div class="mi-breadth-legend" id="breadth-legend"></div>
+      <div class="mi-breadth-detail" id="breadth-detail"></div>
+    </article>
+  </section>
+
+  <!-- ── Gainers / Losers / Most active ───────────────────────────────── -->
+  <section class="mi-grid mi-grid-3">
+    <article class="mi-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Top Gainers</h2>
+        <span class="mi-pill mi-pill-up">▲</span>
+      </div>
+      <div class="mi-table-wrap">
+        <table class="mi-table">
+          <thead><tr><th>Symbol</th><th class="num">LTP</th><th class="num">% Chg</th></tr></thead>
+          <tbody id="tbl-gainers"></tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="mi-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Top Losers</h2>
+        <span class="mi-pill mi-pill-down">▼</span>
+      </div>
+      <div class="mi-table-wrap">
+        <table class="mi-table">
+          <thead><tr><th>Symbol</th><th class="num">LTP</th><th class="num">% Chg</th></tr></thead>
+          <tbody id="tbl-losers"></tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="mi-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Most Active</h2>
+        <span class="mi-pill">⚡</span>
+      </div>
+      <div class="mi-table-wrap">
+        <table class="mi-table">
+          <thead><tr><th>Symbol</th><th class="num">Volume</th><th class="num">Turnover</th></tr></thead>
+          <tbody id="tbl-active"></tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+
+  <!-- ── Index Contributors ───────────────────────────────────────────── -->
+  <section class="mi-grid mi-grid-1">
+    <article class="mi-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Index Contributors</h2>
+        <span class="mi-card-hint">points each stock moved the NEPSE index today</span>
+      </div>
+      <div class="mi-contrib">
+        <div class="mi-contrib-col">
+          <div class="mi-contrib-head up">▲ Pushing the index up</div>
+          <div id="contrib-positive"></div>
+        </div>
+        <div class="mi-contrib-col">
+          <div class="mi-contrib-head down">▼ Pulling the index down</div>
+          <div id="contrib-negative"></div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ── Sector turnover ──────────────────────────────────────────────── -->
+  <section class="mi-grid mi-grid-1">
+    <article class="mi-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Sector Turnover</h2>
+        <span class="mi-card-hint">share of today's turnover</span>
+      </div>
+      <div class="mi-chart" id="chart-sectors"></div>
+    </article>
+  </section>
+
+  <!-- ── Heatmap ──────────────────────────────────────────────────────── -->
+  <section class="mi-grid mi-grid-1">
+    <article class="mi-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Market Heatmap</h2>
+        <div class="mi-card-tools">
+          <span class="mi-card-hint">size = turnover · colour = daily change</span>
+          <select id="heatmap-sector" class="mi-select" aria-label="Filter heatmap by sector">
+            <option value="ALL">All sectors</option>
+          </select>
+        </div>
+      </div>
+      <div class="mi-chart mi-chart-heatmap" id="chart-heatmap"></div>
+    </article>
+  </section>
+
+  <footer class="mi-footer">
+    <span>NEPSE Analytics Platform · data sourced from internal NEPSE API</span>
+    <span id="mi-last-updated"></span>
+  </footer>
+</div>
+
+<script type="application/json" id="mi-bootstrap">{{ bootstrap_json|safe }}</script>
+<script>
+  window.MI_CONFIG = {
+    apiUrl: "{% url 'market_insights_api' %}",
+    refreshSeconds: {{ refresh_seconds }},
+    udfBase: "/insights/udf",
+    tvLibraryPath: "{% static 'core_analysis/charting_library/' %}",
+    tvSymbol: "NEPSE",
+    tvTimezone: "Asia/Kathmandu"
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.1/dist/apexcharts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script src="{% static 'core_analysis/js/insights.js' %}"></script>
+<script src="{% static 'core_analysis/js/ohlc-chart.js' %}"></script>
+<script src="{% static 'core_analysis/js/tv-chart.js' %}"></script>
+</body>
+</html>

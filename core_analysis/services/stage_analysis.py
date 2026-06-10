@@ -64,6 +64,10 @@ def calculate_stage_analysis(
     if df.empty or not required_columns.issubset(df.columns):
         return df
 
+    # Work on a copy so we never mutate the caller's DataFrame (avoids
+    # SettingWithCopyWarning and accidental upstream state corruption).
+    df = df.copy()
+
     if len(df) < _MIN_ROWS:
         df['stage'] = 'Insufficient Data'
         return df

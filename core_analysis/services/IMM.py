@@ -736,6 +736,7 @@ def run_imm_scoring_system(
 
     metrics: Dict = {
         "warnings": warnings,
+        "latest_data_date": latest["business_date"],
         "latest_score": float(latest["technical_score"]) if pd.notna(latest["technical_score"]) else None,
         "latest_classification": str(latest["score_classification"]),
         "latest_volume_greed": str(latest["volume_greed"]),

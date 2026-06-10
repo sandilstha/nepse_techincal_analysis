@@ -5,6 +5,14 @@ import numpy as np
 import pandas as pd
 
 from core_analysis.services import IMM, msv_strategy
+from core_analysis.services.advanced_market_structure import (
+    generate_dummy_ohlcv,
+    run_advanced_market_structure_analysis,
+)
+from core_analysis.services.support_resistance import (
+    build_institutional_analysis_rows,
+    run_support_resistance_analysis,
+)
 
 
 class FakeTechnicalAnalysis:
@@ -147,6 +155,130 @@ class MSVStrategyTests(unittest.TestCase):
         self.assertNotIn("error", metrics)
         self.assertEqual(len(output), len(stock_df))
         self.assertFalse(output["VWAP"].isna().all())
+
+
+class SupportResistanceTests(unittest.TestCase):
+    def _sample_support_resistance_frame(self):
+        return pd.DataFrame(
+            {
+                "business_date": pd.to_datetime(["2025-06-01", "2025-06-02"]),
+                "high_price_adj": [29.20, 28.64],
+                "low_price_adj": [28.70, 28.01],
+                "close_price_adj": [28.99, 28.17],
+                "price_source": ["Adjusted", "Adjusted"],
+            }
+        )
+
+    def test_support_resistance_pivots_match_standard_formula(self):
+        df = self._sample_support_resistance_frame()
+
+        metrics, rows = run_support_resistance_analysis(df, symbol="KGC")
+        levels_by_label = {
+            label: row["price"]
+            for row in rows
+            for label in row["level_names"]
+        }
+
+        self.assertNotIn("error", metrics)
+        self.assertEqual(metrics["pivot"], 28.27)
+        self.assertEqual(levels_by_label["Pivot Point 1st Resistance Point"], 28.54)
+        self.assertEqual(levels_by_label["Pivot Point 2nd Level Resistance"], 28.90)
+        self.assertEqual(levels_by_label["Pivot Point 3rd Level Resistance"], 29.17)
+        self.assertEqual(levels_by_label["Pivot Point 1st Support Point"], 27.91)
+        self.assertEqual(levels_by_label["Pivot Point 2nd Support Point"], 27.64)
+        self.assertEqual(levels_by_label["Pivot Point 3rd Support Point"], 27.28)
+        self.assertEqual(len(metrics["simple_level_rows"]), 8)
+        self.assertEqual(metrics["simple_level_rows"][-1]["basis"], "Pivot S1/S2/R1/R2")
+
+    def test_support_resistance_honors_selected_level_families(self):
+        df = self._sample_support_resistance_frame()
+
+        metrics, rows = run_support_resistance_analysis(
+            df,
+            symbol="KGC",
+            enabled_families=["hlc"],
+        )
+        labels = {
+            label
+            for row in rows
+            for label in row["level_names"]
+        }
+
+        self.assertEqual(metrics["enabled_families"], ["hlc"])
+        self.assertIn("High", labels)
+        self.assertIn("Low", labels)
+        self.assertNotIn("Pivot Point", labels)
+
+    def test_nearest_headline_levels_use_confluence(self):
+        df = pd.DataFrame(
+            {
+                "business_date": pd.to_datetime(["2025-06-01", "2025-06-02", "2025-06-03"]),
+                "open_price_adj": [90.0, 118.0, 101.0],
+                "high_price_adj": [120.0, 116.0, 105.0],
+                "low_price_adj": [80.0, 96.0, 95.0],
+                "close_price_adj": [118.0, 102.0, 100.0],
+                "volume": [1000, 1200, 900],
+            }
+        )
+
+        metrics, _ = run_support_resistance_analysis(df, symbol="BB")
+
+        # Headline cards now use the confluence engine (real reaction levels with
+        # >= 2 agreeing methods), not the raw Bollinger band.
+        self.assertEqual(metrics["nearest_level_basis"], "Confluence")
+        self.assertEqual(metrics["nearest_resistance"]["basis"], "Confluence")
+        self.assertEqual(metrics["nearest_support"]["basis"], "Confluence")
+        self.assertGreaterEqual(metrics["nearest_resistance"]["method_count"], 2)
+        self.assertGreaterEqual(metrics["nearest_support"]["method_count"], 2)
+        self.assertGreaterEqual(metrics["nearest_resistance"]["price"], metrics["latest_price"])
+        self.assertLessEqual(metrics["nearest_support"]["price"], metrics["latest_price"])
+        # Bollinger bands are still computed and exposed as a reference.
+        self.assertIn("middle_band", metrics["bollinger_bands"])
+
+
+class AdvancedMarketStructureTests(unittest.TestCase):
+    def test_advanced_market_structure_runs_on_dummy_ohlcv(self):
+        df = generate_dummy_ohlcv(rows=180, seed=7)
+
+        metrics = run_advanced_market_structure_analysis(df, symbol="DUMMY", fractal_window=5)
+
+        self.assertNotIn("error", metrics)
+        self.assertEqual(metrics["symbol"], "DUMMY")
+        self.assertGreater(metrics["pivot_count"], 0)
+        self.assertIn("density_zones", metrics)
+        self.assertIn("profile", metrics)
+        self.assertIn("chart", metrics)
+        self.assertGreater(len(metrics["chart"]["candles"]), 0)
+
+    def test_advanced_market_structure_rejects_short_data(self):
+        df = generate_dummy_ohlcv(rows=8, seed=7)
+
+        metrics = run_advanced_market_structure_analysis(df, symbol="SHORT", fractal_window=5)
+
+        self.assertIn("error", metrics)
+
+
+class InstitutionalAnalysisTests(unittest.TestCase):
+    def test_institutional_analysis_returns_exact_framework_table_contract(self):
+        df = generate_dummy_ohlcv(rows=160, seed=11)
+        support_metrics, _ = run_support_resistance_analysis(df)
+        advanced_metrics = run_advanced_market_structure_analysis(df, symbol="DUMMY", fractal_window=5)
+
+        rows = build_institutional_analysis_rows(support_metrics, advanced_metrics)
+
+        # 9 framework systems plus the appended "Institutional Consensus" row.
+        self.assertEqual(len(rows), 10)
+        self.assertEqual(rows[-1]["system"], "Institutional Consensus")
+        # Keys are lowercase snake_case to match the template ({{ row.system }}).
+        for row in rows:
+            self.assertIn("system", row)
+            self.assertIn("institutional_logic", row)
+            self.assertIn("price_sentiment", row)
+            self.assertIn("status", row)
+            self.assertTrue(row["system"])
+            self.assertTrue(row["institutional_logic"])
+            self.assertTrue(row["price_sentiment"])
+            self.assertTrue(row["status"])
 
 
 if __name__ == "__main__":
