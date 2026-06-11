@@ -233,7 +233,7 @@
 
   function renderCharts(d) {
     // The NEPSE Index card is now the Lightweight Charts OHLC chart (ohlc-chart.js).
-    renderBreadthChart(d.breadth || {});
+    renderBreadthChart(d.breadth || {}, d.live);
     renderSectorChart(d.sectors || []);
     populateHeatmapSectors(d.heatmap || []);
     renderHeatmap();
@@ -268,35 +268,51 @@
     return all.filter(function (t) { return (t.sector || "Other") === sel; }).slice(0, HEATMAP_SECTOR_LIMIT);
   }
 
-  function renderBreadthChart(b) {
-    var t = baseChartOpts();
-    var values = [b.advancing || 0, b.declining || 0, b.unchanged || 0];
-    var opts = {
-      chart: { type: "donut", height: 230, fontFamily: "Manrope, sans-serif" },
-      series: values,
-      labels: ["Advancing", "Declining", "Unchanged"],
-      colors: [t.up, t.down, t.flat],
-      stroke: { width: 0 },
-      legend: { show: false },
-      dataLabels: { enabled: true, formatter: function (val, o) { return o.w.config.series[o.seriesIndex]; }, style: { fontSize: "11px" } },
-      plotOptions: { pie: { donut: { size: "62%", labels: { show: true, total: { show: true, label: "Scrips", color: t.foreColor, formatter: function (w) { return w.globals.seriesTotals.reduce(function (a, c) { return a + c; }, 0); } } } } } },
-      tooltip: { theme: themeName() }
-    };
-    mountChart("chart-breadth", "breadth", opts);
-    el("breadth-legend").innerHTML =
-      '<span><i style="background:' + t.up + '"></i>Advancing</span>' +
-      '<span><i style="background:' + t.down + '"></i>Declining</span>' +
-      '<span><i style="background:' + t.flat + '"></i>Unchanged</span>';
-    renderBreadthDetail(b);
+  function renderBreadthChart(b, live) {
+    // The donut was removed (the figures below convey the same data); render the
+    // chart only if its container is still present.
+    var node = el("chart-breadth");
+    if (node) {
+      var t = baseChartOpts();
+      var opts = {
+        chart: { type: "donut", height: 230, fontFamily: "Manrope, sans-serif" },
+        series: [b.advancing || 0, b.declining || 0, b.unchanged || 0],
+        labels: ["Advancing", "Declining", "Unchanged"],
+        colors: [t.up, t.down, t.flat],
+        stroke: { width: 0 },
+        legend: { show: false },
+        dataLabels: { enabled: true, formatter: function (val, o) { return o.w.config.series[o.seriesIndex]; }, style: { fontSize: "11px" } },
+        plotOptions: { pie: { donut: { size: "62%", labels: { show: true, total: { show: true, label: "Scrips", color: t.foreColor, formatter: function (w) { return w.globals.seriesTotals.reduce(function (a, c) { return a + c; }, 0); } } } } } },
+        tooltip: { theme: themeName() }
+      };
+      mountChart("chart-breadth", "breadth", opts);
+      var legend = el("breadth-legend");
+      if (legend) {
+        legend.innerHTML =
+          '<span><i style="background:' + t.up + '"></i>Advancing</span>' +
+          '<span><i style="background:' + t.down + '"></i>Declining</span>' +
+          '<span><i style="background:' + t.flat + '"></i>Unchanged</span>';
+      }
+    }
+    renderBreadthDetail(b, live);
   }
 
-  function renderBreadthDetail(b) {
+  function renderBreadthDetail(b, live) {
     var box = el("breadth-detail");
     if (!box) return;
     var adv = b.advancing || 0, dec = b.declining || 0, unch = b.unchanged || 0;
     var total = adv + dec + unch;
     var chip = el("breadth-sentiment");
-    if (!total) { box.innerHTML = ""; if (chip) chip.textContent = "—"; return; }
+
+    // Breadth is counted per-scrip from the live feed; when that feed is stale
+    // (not live), these advancing/declining counts are a prior session's and
+    // won't match the official headline totals — so grey the card and badge it
+    // "Delayed" instead of presenting old counts as current.
+    var card = box.closest(".mi-card-breadth");
+    var stale = live === false && total > 0;
+    if (card) card.classList.toggle("is-stale", stale);
+
+    if (!total) { box.innerHTML = ""; if (chip) { chip.textContent = "—"; chip.className = "mi-pill"; } return; }
 
     function pct(n) { return (n / total * 100).toFixed(1) + "%"; }
     var ratio = dec > 0 ? adv / dec : (adv > 0 ? Infinity : 0);
@@ -310,8 +326,10 @@
     else { label = "Strong Bearish"; cls = "down"; }
 
     if (chip) {
-      chip.textContent = label;
-      chip.className = "mi-pill " + (cls === "up" ? "mi-pill-up" : cls === "down" ? "mi-pill-down" : "");
+      // When stale, the sentiment is computed off a prior session — badge it
+      // "Delayed" rather than implying a current bullish/bearish read.
+      chip.textContent = stale ? "Delayed" : label;
+      chip.className = "mi-pill " + (stale ? "mi-pill-stale" : cls === "up" ? "mi-pill-up" : cls === "down" ? "mi-pill-down" : "");
     }
 
     function row(k, v, c) {
@@ -320,6 +338,7 @@
     }
 
     box.innerHTML =
+      (stale ? '<div class="mi-bd-stale-note">Last session — live feed delayed</div>' : "") +
       '<div class="mi-bd-bar">' +
         '<i class="up" style="width:' + (adv / total * 100) + '%"></i>' +
         '<i class="flat" style="width:' + (unch / total * 100) + '%"></i>' +

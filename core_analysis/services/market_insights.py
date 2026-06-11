@@ -548,6 +548,7 @@ def build_payload(force=False):
     if live_rows and enriched:
         is_live = True
         as_of = _live_get(live_rows[0], "businessDate", "business_date")
+        live_feed_date = as_of  # the live feed's own date, for staleness check below
         live_time = max(
             (_live_get(r, "lastUpdatedTime", "last_updated_time") or "") for r in live_rows
         ) or None
@@ -556,6 +557,7 @@ def build_payload(force=False):
         enriched = _enrich(rows, sector_map)
         is_live = False
         as_of = latest_date.isoformat() if latest_date else None
+        live_feed_date = None
         live_time = None
 
     # Authoritative index data — NEPSE headline + sector performance — from the
@@ -570,15 +572,50 @@ def build_payload(force=False):
 
     if nepse_headline and nepse_headline.get("value") is not None:
         index_source = "official"
+        official_date = nepse_headline.get("date")
+        # Label the dashboard with the official trading day. The live-price feed
+        # can lag (it has served a stale prior-day date); trust the authoritative
+        # index feed's date for the headline so totals and "as of" agree.
+        if official_date:
+            as_of = official_date
+            # If the live-price feed's own date trails the official trading day,
+            # it's serving stale prior-session quotes — don't badge the dashboard
+            # "LIVE" off it. The headline (index/turnover) is already sourced from
+            # the fresh official feeds; only the per-scrip live view is stale.
+            if is_live and live_feed_date and str(live_feed_date)[:10] < official_date[:10]:
+                is_live = False
+                live_time = None
     else:
         nepse_headline = None  # let _overview fall back to the DB
         index_source = "eod"
 
-    # Official daily totals (turnover / trades) — pick the row matching the
-    # current trading day, else the most recent.
+    # Official daily totals (turnover / trades / shares) come from the
+    # MarketSummaryHistory feed. Match the row to the AUTHORITATIVE trading day
+    # reported by the official index feed (NepseSubIndices), NOT the live-price
+    # feed — that feed has been observed serving a stale prior-day date, which
+    # would otherwise select a previous day's turnover for the headline. Fall
+    # back to the most recent official row when no date matches.
     ms_row = None
     if summary:
-        ms_row = next((r for r in summary if r.get("businessDate") == as_of), summary[0])
+        official_day = ((nepse_headline or {}).get("date") or as_of or "")[:10]
+        ms_row = next(
+            (r for r in summary if str(r.get("businessDate") or "")[:10] == official_day),
+            summary[0],
+        )
+
+    # Reconcile sector turnover to the OFFICIAL total: the 13 index sub-sectors
+    # only cover indexed scrips, so the remainder (debentures, preference /
+    # promoter shares) is shown as an "Other" slice. This makes the donut total
+    # match the headline Total Turnover instead of reading low.
+    if sectors and ms_row:
+        official_turnover = _f(ms_row.get("totalTurnover"))
+        sector_turnover = sum((s.get("turnover") or 0.0) for s in sectors)
+        if official_turnover and official_turnover - sector_turnover > 0:
+            sectors = sectors + [{
+                "sector": "Other", "raw": "OTHER",
+                "index": None, "change": None, "pct": None,
+                "turnover": round(official_turnover - sector_turnover, 2),
+            }]
 
     # Official top gainers / losers / most-active scrips (fetched above); fall
     # back to the lists computed from the live-price feed when unavailable.

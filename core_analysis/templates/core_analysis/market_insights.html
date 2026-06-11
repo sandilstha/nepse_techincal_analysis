@@ -8,7 +8,7 @@
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
 </head>
 <body>
 <div class="mi-shell">
@@ -24,6 +24,7 @@
     </div>
 
     <div class="mi-controls">
+      <a href="{% url 'market_insights' %}" class="mi-icon-btn mi-home-link" title="Home" aria-label="Home">🏠</a>
       <span class="mi-live-badge" id="mi-live-badge" hidden>LIVE</span>
       <div class="mi-asof">
         <span class="mi-asof-label" id="mi-asof-label">As of</span>
@@ -50,6 +51,8 @@
       <a href="{% url 'crud_dashboard' %}" class="mi-icon-btn mi-workbench-link" title="Analytics workbench" aria-label="Analytics workbench">⚙</a>
     </div>
   </header>
+
+  {% include "core_analysis/includes/_primary_nav.html" with active_section='insights' %}
 
   {% if load_error %}
   <div class="mi-banner" id="mi-load-banner">{{ load_error }}</div>
@@ -88,7 +91,7 @@
     </article>
   </section>
 
-  <!-- ── Index OHLC + Breadth ─────────────────────────────────────────── -->
+  <!-- ── Index OHLC (left) + Market Breadth / Sector Turnover (right) ──── -->
   <section class="mi-grid mi-grid-2-1">
     <article class="mi-card mi-ohlc-card">
       <div class="mi-card-head">
@@ -117,15 +120,23 @@
       </div>
     </article>
 
-    <article class="mi-card mi-card-breadth">
-      <div class="mi-card-head">
-        <h2 class="mi-card-title">Market Breadth</h2>
-        <span class="mi-pill" id="breadth-sentiment">—</span>
-      </div>
-      <div class="mi-chart mi-chart-donut" id="chart-breadth"></div>
-      <div class="mi-breadth-legend" id="breadth-legend"></div>
-      <div class="mi-breadth-detail" id="breadth-detail"></div>
-    </article>
+    <div class="mi-side-stack">
+      <article class="mi-card mi-card-breadth">
+        <div class="mi-card-head">
+          <h2 class="mi-card-title">Market Breadth</h2>
+          <span class="mi-pill" id="breadth-sentiment">—</span>
+        </div>
+        <div class="mi-breadth-detail" id="breadth-detail"></div>
+      </article>
+
+      <article class="mi-card mi-sector-card">
+        <div class="mi-card-head">
+          <h2 class="mi-card-title">Sector Turnover</h2>
+          <span class="mi-card-hint">share of today's turnover</span>
+        </div>
+        <div class="mi-chart" id="chart-sectors"></div>
+      </article>
+    </div>
   </section>
 
   <!-- ── Gainers / Losers / Most active ───────────────────────────────── -->
@@ -190,17 +201,6 @@
     </article>
   </section>
 
-  <!-- ── Sector turnover ──────────────────────────────────────────────── -->
-  <section class="mi-grid mi-grid-1">
-    <article class="mi-card">
-      <div class="mi-card-head">
-        <h2 class="mi-card-title">Sector Turnover</h2>
-        <span class="mi-card-hint">share of today's turnover</span>
-      </div>
-      <div class="mi-chart" id="chart-sectors"></div>
-    </article>
-  </section>
-
   <!-- ── Heatmap ──────────────────────────────────────────────────────── -->
   <section class="mi-grid mi-grid-1">
     <article class="mi-card">
@@ -236,8 +236,8 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.1/dist/apexcharts.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
-<script src="{% static 'core_analysis/js/insights.js' %}"></script>
-<script src="{% static 'core_analysis/js/ohlc-chart.js' %}"></script>
-<script src="{% static 'core_analysis/js/tv-chart.js' %}"></script>
+<script src="{% static 'core_analysis/js/insights.js' %}?v={{ asset_version }}"></script>
+<script src="{% static 'core_analysis/js/ohlc-chart.js' %}?v={{ asset_version }}"></script>
+<script src="{% static 'core_analysis/js/tv-chart.js' %}?v={{ asset_version }}"></script>
 </body>
 </html>
