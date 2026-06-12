@@ -271,8 +271,8 @@
   }
 
   function renderBreadthChart(b, live) {
-    // The donut was removed (the figures below convey the same data); render the
-    // chart only if its container is still present.
+    // Donut for the Market Breadth card; detail rows beside it carry the exact
+    // counts and stale-feed note.
     var node = el("chart-breadth");
     if (node) {
       var t = baseChartOpts();
@@ -366,33 +366,50 @@
     rows.sort(function (a, b) { return b.turnover - a.turnover; });
     var labels = rows.map(function (s) { return s.sector; });
     var data = rows.map(function (s) { return Math.round(s.turnover); });
+    var total = data.reduce(function (sum, v) { return sum + v; }, 0);
 
     var opts = {
-      // height 100%: the chart tracks its flex container, so the donut fills
-      // the card whether it shares the column with the breadth card or owns it.
-      chart: { type: "donut", height: "100%", fontFamily: "Manrope, sans-serif" },
-      series: data,
-      labels: labels,
-      colors: SECTOR_COLORS.slice(0, data.length),
-      stroke: { width: 0 },
-      legend: { position: "right", fontSize: "11px", labels: { colors: t.foreColor }, itemMargin: { vertical: 1 } },
-      dataLabels: { enabled: true, formatter: function (val) { return val >= 6 ? val.toFixed(0) + "%" : ""; }, style: { fontSize: "10px" }, dropShadow: { enabled: false } },
+      chart: { type: "bar", height: "100%", toolbar: { show: false }, fontFamily: "Manrope, sans-serif" },
+      series: [{ name: "Turnover", data: data }],
+      colors: SECTOR_COLORS.slice(0, Math.max(data.length, 1)),
+      legend: { show: false },
       plotOptions: {
-        pie: {
-          donut: {
-            size: "58%",
-            labels: {
-              show: true,
-              total: {
-                show: true, label: "Turnover", color: t.foreColor,
-                formatter: function (w) { return fmtMoney(w.globals.seriesTotals.reduce(function (a, c) { return a + c; }, 0)); }
-              }
-            }
-          }
+        bar: {
+          horizontal: true,
+          distributed: true,
+          borderRadius: 4,
+          barHeight: "62%",
+          dataLabels: { position: "right" }
         }
       },
+      dataLabels: {
+        enabled: true,
+        formatter: function (v) {
+          return total ? (v / total * 100).toFixed(1) + "%" : "";
+        },
+        offsetX: 8,
+        style: { fontSize: "11px", fontWeight: 700, colors: [t.foreColor] },
+        background: { enabled: false },
+        dropShadow: { enabled: false }
+      },
+      xaxis: {
+        categories: labels,
+        labels: {
+          formatter: function (v) { return fmtCompact(Number(v)); },
+          style: { colors: t.foreColor, fontSize: "11px" }
+        },
+        axisBorder: { color: t.grid },
+        axisTicks: { color: t.grid }
+      },
+      yaxis: {
+        labels: {
+          maxWidth: 150,
+          style: { colors: t.foreColor, fontSize: "11px", fontWeight: 600 }
+        }
+      },
+      grid: { borderColor: t.grid, strokeDashArray: 3, xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } } },
       tooltip: { theme: themeName(), y: { formatter: function (v) { return fmtMoney(v); } } },
-      responsive: [{ breakpoint: 600, options: { legend: { position: "bottom" } } }]
+      noData: { text: "No sector turnover available", style: { color: t.foreColor } }
     };
     mountChart("chart-sectors", "sectors", opts);
   }

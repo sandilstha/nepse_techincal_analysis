@@ -91,8 +91,8 @@
     </article>
   </section>
 
-  <!-- ── Index OHLC (left) + Market Breadth / Sector Turnover (right) ──── -->
-  <section class="mi-grid mi-grid-2-1">
+  <!-- ── Index OHLC (full-width trading view) ─────────────────────────── -->
+  <section class="mi-grid mi-grid-1">
     <article class="mi-card mi-ohlc-card">
       <div class="mi-card-head">
         <h2 class="mi-card-title">Index OHLC</h2>
@@ -119,24 +119,31 @@
         <div class="mi-tv" id="mi-tv-container"></div>
       </div>
     </article>
+  </section>
 
-    <div class="mi-side-stack">
-      <article class="mi-card mi-card-breadth">
-        <div class="mi-card-head">
-          <h2 class="mi-card-title">Market Breadth</h2>
-          <span class="mi-pill" id="breadth-sentiment">—</span>
+  <!-- ── Market pulse: Breadth + Sector Turnover (balanced pair) ───────── -->
+  <section class="mi-grid mi-grid-1-1 mi-pulse">
+    <article class="mi-card mi-card-breadth">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Market Breadth</h2>
+        <span class="mi-pill" id="breadth-sentiment">—</span>
+      </div>
+      <div class="mi-breadth-layout">
+        <div class="mi-breadth-donut">
+          <div class="mi-chart mi-chart-donut" id="chart-breadth"></div>
+          <div class="mi-breadth-legend" id="breadth-legend"></div>
         </div>
         <div class="mi-breadth-detail" id="breadth-detail"></div>
-      </article>
+      </div>
+    </article>
 
-      <article class="mi-card mi-sector-card">
-        <div class="mi-card-head">
-          <h2 class="mi-card-title">Sector Turnover</h2>
-          <span class="mi-card-hint">share of today's turnover</span>
-        </div>
-        <div class="mi-chart" id="chart-sectors"></div>
-      </article>
-    </div>
+    <article class="mi-card mi-sector-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Sector Turnover</h2>
+        <span class="mi-card-hint">bar = turnover share</span>
+      </div>
+      <div class="mi-chart" id="chart-sectors"></div>
+    </article>
   </section>
 
   <!-- ── Gainers / Losers / Most active ───────────────────────────────── -->

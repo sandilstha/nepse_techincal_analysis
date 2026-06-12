@@ -326,6 +326,49 @@ def _subindex_metrics(row):
     }
 
 
+def _contributors_index_metrics(row, fallback=None):
+    """Headline NEPSE metrics parsed from the contributors page.
+
+    The contributors page carries the exchange-matching live headline during the
+    session. Keep high/low/date from the sub-index feed when available because
+    the contributor summary only exposes value, change and previous close.
+    """
+    if not row:
+        return None
+
+    fallback = fallback or {}
+    value = _f(row.get("value"))
+    if value is None:
+        return None
+
+    change = _f(row.get("change"))
+    prev = _f(row.get("prev_close"))
+    if change is None and prev is not None:
+        change = value - prev
+    if prev is None and change is not None:
+        prev = value - change
+
+    pct = _f(row.get("pct"))
+    if pct is None and change is not None and prev and prev > 0:
+        pct = (change / prev) * 100.0
+
+    return {
+        "value": value,
+        "prev": prev,
+        "change": change,
+        "pct": pct,
+        "high": _f(row.get("high")) if row.get("high") is not None else fallback.get("high"),
+        "low": _f(row.get("low")) if row.get("low") is not None else fallback.get("low"),
+        "turnover": _f(row.get("turnover")) if row.get("turnover") is not None else fallback.get("turnover", 0.0),
+        "date": (
+            row.get("date")
+            or row.get("businessDate")
+            or row.get("business_date")
+            or fallback.get("date")
+        ),
+    }
+
+
 def _sectors_from_subindices(subidx):
     """Sector performance from the NepseSubIndices feed (same labels as _sectors)."""
     sectors = []
@@ -512,9 +555,9 @@ def build_payload(force=False):
     """Assemble (and cache) the full Market Insights dashboard payload.
 
     Stock-level widgets use the intraday live feed when it is reachable, and
-    fall back to the end-of-day database otherwise. The NEPSE index headline,
-    sector indices and OHLC history always come from the database (the live
-    feed is stock-level only).
+    fall back to the end-of-day database otherwise. The NEPSE headline prefers
+    the official contributors summary, sector indices prefer NepseSubIndices,
+    and both fall back to the end-of-day database when live services are down.
     """
     if not force:
         cached = cache.get(CACHE_KEY)
@@ -560,15 +603,22 @@ def build_payload(force=False):
         live_feed_date = None
         live_time = None
 
-    # Authoritative index data — NEPSE headline + sector performance — from the
-    # NepseSubIndices feed (clean OHLC, correct change, matches the exchange).
-    # Falls back to the end-of-day database when the feed is unavailable.
+    # Sector performance comes from the NepseSubIndices feed. The NEPSE headline
+    # prefers the contributors page below because that source tracks the live
+    # exchange headline during the session, while NepseSubIndices has been
+    # observed freezing closingIndex on a prior tick/session.
+    headline_from_contributors = False
     if subidx:
         nepse_headline = _subindex_metrics(subidx.get(SUBINDEX_NEPSE_KEY))
         sectors = _sectors_from_subindices(subidx)
     else:
         nepse_headline = None
         sectors = _sectors()
+
+    contrib_headline = _contributors_index_metrics((contrib or {}).get("index"), nepse_headline)
+    if contrib_headline:
+        nepse_headline = contrib_headline
+        headline_from_contributors = True
 
     if nepse_headline and nepse_headline.get("value") is not None:
         index_source = "official"
@@ -591,21 +641,32 @@ def build_payload(force=False):
 
     # Official daily totals (turnover / trades / shares) come from the
     # MarketSummaryHistory feed. Match the row to the AUTHORITATIVE trading day
-    # reported by the official index feed (NepseSubIndices), NOT the live-price
-    # feed — that feed has been observed serving a stale prior-day date, which
-    # would otherwise select a previous day's turnover for the headline. Fall
-    # back to the most recent official row when no date matches.
+    # reported by the official headline date, NOT the live-price feed — that
+    # feed has been observed serving a stale prior-day date, which would
+    # otherwise select a previous day's turnover for the headline. When the
+    # contributor page supplies the headline, use the latest summary row because
+    # that page does not expose its own business date.
     ms_row = None
     if summary:
-        official_day = ((nepse_headline or {}).get("date") or as_of or "")[:10]
+        summary_day = str(summary[0].get("businessDate") or "")[:10]
+        official_day = summary_day if headline_from_contributors and summary_day else (
+            ((nepse_headline or {}).get("date") or as_of or "")[:10]
+        )
         ms_row = next(
             (r for r in summary if str(r.get("businessDate") or "")[:10] == official_day),
             summary[0],
         )
+        if headline_from_contributors and ms_row.get("businessDate"):
+            as_of = ms_row.get("businessDate")
+            if nepse_headline is not None:
+                nepse_headline["date"] = ms_row.get("businessDate")
+            if is_live and live_feed_date and str(live_feed_date)[:10] < str(as_of)[:10]:
+                is_live = False
+                live_time = None
 
     # Reconcile sector turnover to the OFFICIAL total: the 13 index sub-sectors
     # only cover indexed scrips, so the remainder (debentures, preference /
-    # promoter shares) is shown as an "Other" slice. This makes the donut total
+    # promoter shares) is shown as an "Other" row. This makes sector turnover
     # match the headline Total Turnover instead of reading low.
     if sectors and ms_row:
         official_turnover = _f(ms_row.get("totalTurnover"))

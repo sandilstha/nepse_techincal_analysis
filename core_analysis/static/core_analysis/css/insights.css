@@ -28,9 +28,9 @@
   --flat:        #9bb0d3;
   --flat-soft:   rgba(155, 176, 211, 0.14);
 
-  --shadow:      0 14px 38px -16px rgba(0, 0, 0, 0.85);
-  --radius:      16px;
-  --radius-sm:   10px;
+  --shadow:      0 18px 44px -22px rgba(0, 0, 0, 0.72);
+  --radius:      18px;
+  --radius-sm:   11px;
 }
 
 [data-theme="light"] {
@@ -83,7 +83,7 @@ body {
 .mi-shell {
   max-width: 1480px;
   margin: 0 auto;
-  padding: 1.4rem clamp(14px, 2.2vw, 40px) 3rem;
+  padding: 1.7rem clamp(16px, 2.6vw, 48px) 3.4rem;
 }
 
 /* ── Top bar ──────────────────────────────────────────────────────────── */
@@ -262,19 +262,21 @@ body {
 .mi-stats {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 0.9rem;
-  margin-bottom: 1.2rem;
+  gap: 1.1rem;
+  margin-bottom: 1.5rem;
 }
 .mi-stat {
-  display: flex; flex-direction: column; gap: 0.3rem;
-  padding: 1rem 1.1rem;
+  display: flex; flex-direction: column; gap: 0.35rem;
+  padding: 1.2rem 1.3rem;
   background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  transition: border-color 0.15s ease, transform 0.15s ease;
 }
+.mi-stat:hover { border-color: var(--line); transform: translateY(-2px); }
 .mi-stat-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-3); }
-.mi-stat-value { font-size: 1.55rem; font-weight: 700; line-height: 1.1; }
+.mi-stat-value { font-size: 1.7rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
 .mi-stat-delta { font-size: 0.85rem; font-weight: 600; }
 .mi-stat-sub { font-size: 0.74rem; color: var(--ink-3); }
 
@@ -297,7 +299,7 @@ body {
 .flat { color: var(--flat); }
 
 /* ── Card grids ───────────────────────────────────────────────────────── */
-.mi-grid { display: grid; gap: 0.9rem; margin-bottom: 1.2rem; }
+.mi-grid { display: grid; gap: 1.1rem; margin-bottom: 1.5rem; }
 .mi-grid-1    { grid-template-columns: 1fr; }
 .mi-grid-3    { grid-template-columns: repeat(3, 1fr); }
 .mi-grid-2-1  { grid-template-columns: 2fr 1fr; }
@@ -309,16 +311,16 @@ body {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 1.05rem 1.15rem 1.15rem;
+  padding: 1.3rem 1.45rem 1.4rem;
   min-width: 0;
 }
 .mi-card-head {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 0.7rem;
+  margin-bottom: 1rem;
 }
 .mi-card-title {
   margin: 0; font-family: 'Poppins', sans-serif;
-  font-size: 1rem; font-weight: 600; letter-spacing: -0.01em;
+  font-size: 1.08rem; font-weight: 600; letter-spacing: -0.01em;
 }
 .mi-card-hint { font-size: 0.7rem; color: var(--ink-3); }
 .mi-card-tools { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; justify-content: flex-end; }
@@ -365,15 +367,15 @@ body {
 .mi-chart-ohlc { position: absolute; inset: 0; width: 100%; height: 100%; }
 .mi-draw-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
 
-/* Right column beside the OHLC chart: Market Breadth (top) + Sector Turnover. */
-.mi-side-stack { display: flex; flex-direction: column; gap: 0.9rem; min-width: 0; }
-.mi-side-stack > .mi-card { min-width: 0; margin: 0; }
-/* The sector card absorbs the column height left over by the cards above it
-   (all of it when the breadth card is hidden), and its chart grows with it so
-   the donut fills the card instead of leaving dead space below a fixed height. */
-.mi-side-stack .mi-sector-card { flex: 1 1 auto; display: flex; flex-direction: column; }
-.mi-side-stack .mi-sector-card .mi-chart { flex: 1 1 auto; min-height: 260px; }
-
+/* Market pulse row: Market Breadth + Sector Turnover sit side by side as an
+   equal-width pair (mi-grid-1-1). Both cards stretch to the same height; the
+   turnover bar chart gets enough vertical room for all sector labels. */
+.mi-pulse > .mi-card { display: flex; flex-direction: column; }
+.mi-sector-card .mi-chart {
+  flex: 1 1 auto; min-height: 0;
+  height: clamp(340px, 40vh, 480px);
+  margin: auto 0;
+}
 /* TradingView Advanced Charts container (hidden until the library is installed) */
 .mi-tv { display: none; position: absolute; inset: 0; width: 100%; height: 100%; border-radius: var(--radius-sm); overflow: hidden; z-index: 4; }
 
@@ -407,8 +409,19 @@ body {
 .mi-breadth-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 
 .mi-card-breadth { display: flex; flex-direction: column; }
-.mi-card-breadth .mi-chart-donut { flex: 0 0 auto; }
-.mi-breadth-detail { margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.1rem; }
+.mi-breadth-layout {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.9fr) minmax(220px, 1fr);
+  gap: 1rem;
+  align-items: center;
+  flex: 1 1 auto;
+}
+.mi-breadth-donut { min-width: 0; }
+.mi-card-breadth .mi-chart-donut {
+  flex: 0 0 auto;
+  min-height: 220px;
+}
+.mi-breadth-detail { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
 .mi-bd-bar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: var(--flat-soft); margin-bottom: 0.5rem; }
 .mi-bd-bar i { display: block; height: 100%; }
 .mi-bd-bar i.up { background: var(--up); }
@@ -439,11 +452,10 @@ body {
 .mi-card-breadth.is-stale .mi-bd-bar,
 .mi-card-breadth.is-stale .mi-bd-row { opacity: 0.5; filter: grayscale(0.45); }
 
-/* Hide the breadth card entirely while the per-scrip feed is delayed — its
-   counts are a prior session's. It reappears when the feed is live again.
-   The sector card keeps stretching to match the Index OHLC column height;
-   its donut grows with it (see .mi-sector-card flex rules + height:100%). */
-.mi-feed-delayed .mi-card-breadth { display: none; }
+/* Keep the breadth card visible while delayed, but grey it enough that the
+   prior-session counts cannot be mistaken for live breadth. */
+.mi-card-breadth.is-stale .mi-chart-donut,
+.mi-card-breadth.is-stale .mi-breadth-legend { opacity: 0.58; filter: grayscale(0.45); }
 
 /* Page-level "live feed delayed" marker: the heatmap is built purely from the
    per-scrip live feed, so when that feed lags, dim it and reveal the hint. */
@@ -509,6 +521,8 @@ body:not(.mi-feed-delayed) .mi-stale-hint { display: none; }
   .mi-grid-3 { grid-template-columns: 1fr; }
   .mi-topbar { flex-direction: column; align-items: stretch; }
   .mi-controls { justify-content: space-between; }
+  .mi-breadth-layout { grid-template-columns: 1fr; }
+  .mi-card-breadth .mi-chart-donut { min-height: 210px; }
 }
 @media (max-width: 560px) {
   .mi-stats { grid-template-columns: repeat(2, 1fr); }

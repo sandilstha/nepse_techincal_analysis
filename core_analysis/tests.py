@@ -1,8 +1,11 @@
 import unittest
+from contextlib import ExitStack
+from datetime import date
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+from django.core.exceptions import ImproperlyConfigured
 
 from core_analysis.services import IMM, msv_strategy
 from core_analysis.services.advanced_market_structure import (
@@ -13,6 +16,11 @@ from core_analysis.services.support_resistance import (
     build_institutional_analysis_rows,
     run_support_resistance_analysis,
 )
+
+try:
+    from core_analysis.services import market_insights
+except ImproperlyConfigured:  # Allows `python core_analysis/tests.py` outside Django.
+    market_insights = None
 
 
 class FakeTechnicalAnalysis:
@@ -64,6 +72,66 @@ class FakeTechnicalAnalysis:
     @staticmethod
     def atr(high, low, close, length):
         return pd.Series(2.0, index=close.index)
+
+
+@unittest.skipIf(market_insights is None, "Django settings unavailable")
+class MarketInsightsHeadlineTests(unittest.TestCase):
+    def test_payload_prefers_contributor_headline_over_stale_subindex(self):
+        stale_subindex = {
+            "NepseIndex": {
+                "closingIndex": 2731.53,
+                "absChange": 3.50,
+                "percentageChange": 0.13,
+                "highIndex": 2731.53,
+                "lowIndex": 2721.40,
+                "turnoverValue": 0,
+                "businessDate": "2026-06-11",
+            }
+        }
+        live_contributors = {
+            "index": {
+                "value": 2721.72,
+                "change": -6.31,
+                "prev_close": 2728.03,
+                "pct": -0.23,
+            },
+            "positive": [],
+            "negative": [],
+        }
+        summary = [{
+            "businessDate": "2026-06-12",
+            "totalTurnover": 1164469269.88,
+            "totalTradedShares": 2524762,
+            "totalTransactions": 0,
+            "tradedScrips": 0,
+        }]
+
+        patches = [
+            patch.object(market_insights.cache, "get", return_value=None),
+            patch.object(market_insights.cache, "set"),
+            patch.object(market_insights, "fetch_live_rows", return_value=None),
+            patch.object(market_insights, "fetch_subindices", return_value=stale_subindex),
+            patch.object(market_insights, "fetch_market_summary", return_value=summary),
+            patch.object(market_insights, "fetch_contributors", return_value=live_contributors),
+            patch.object(market_insights, "fetch_top_gainers", return_value=None),
+            patch.object(market_insights, "fetch_top_losers", return_value=None),
+            patch.object(market_insights, "fetch_top_active", return_value=None),
+            patch.object(market_insights, "_sector_map", return_value={}),
+            patch.object(market_insights, "_latest_stock_rows", return_value=(date(2026, 6, 11), [])),
+            patch.object(market_insights, "_nepse_history", return_value=[]),
+        ]
+
+        with ExitStack() as stack:
+            for p in patches:
+                stack.enter_context(p)
+            payload = market_insights.build_payload(force=True)
+
+        self.assertEqual(payload["as_of"], "2026-06-12")
+        self.assertEqual(payload["overview"]["nepse_index"], 2721.72)
+        self.assertEqual(payload["overview"]["nepse_change"], -6.31)
+        self.assertEqual(payload["overview"]["nepse_pct"], -0.23)
+        self.assertEqual(payload["overview"]["turnover"], 1164469269.88)
+        self.assertEqual(payload["overview"]["volume"], 2524762)
 
 
 def make_price_frame(close_values):
