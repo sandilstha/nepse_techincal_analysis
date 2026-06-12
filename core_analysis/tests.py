@@ -18,9 +18,10 @@ from core_analysis.services.support_resistance import (
 )
 
 try:
-    from core_analysis.services import market_insights
+    from core_analysis.services import market_insights, nepse_contributors
 except ImproperlyConfigured:  # Allows `python core_analysis/tests.py` outside Django.
     market_insights = None
+    nepse_contributors = None
 
 
 class FakeTechnicalAnalysis:
@@ -132,6 +133,30 @@ class MarketInsightsHeadlineTests(unittest.TestCase):
         self.assertEqual(payload["overview"]["nepse_pct"], -0.23)
         self.assertEqual(payload["overview"]["turnover"], 1164469269.88)
         self.assertEqual(payload["overview"]["volume"], 2524762)
+
+
+@unittest.skipIf(nepse_contributors is None, "Django settings unavailable")
+class NepseContributorsParserTests(unittest.TestCase):
+    def test_sector_view_parser_extracts_top_gainers_and_losers(self):
+        html = """
+        <div class="pill-stream">
+          <div class="stream-title up">▲ Top Gainers</div>
+          <div class="pill up"><span>Investment</span><span class="pill-pts">+0.50</span></div>
+          <div class="pill up"><span>Finance</span><span class="pill-pts">+0.18</span></div>
+        </div>
+        <div class="pill-stream">
+          <div class="stream-title down">▼ Top Losers</div>
+          <div class="pill down"><span>Microfinance</span><span class="pill-pts">-0.94</span></div>
+          <div class="pill down"><span>Commercial Banks</span><span class="pill-pts">-0.74</span></div>
+        </div>
+        """
+
+        movers = nepse_contributors._parse_sector_movers(html)
+
+        self.assertEqual(movers["positive"][0], {"sector": "Investment", "points": 0.5})
+        self.assertEqual(movers["positive"][1], {"sector": "Finance", "points": 0.18})
+        self.assertEqual(movers["negative"][0], {"sector": "Microfinance", "points": -0.94})
+        self.assertEqual(movers["negative"][1], {"sector": "Commercial Banks", "points": -0.74})
 
 
 def make_price_frame(close_values):

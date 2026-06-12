@@ -493,6 +493,8 @@
     var c = d.contributors || {};
     renderContribList("contrib-positive", c.positive, "up");
     renderContribList("contrib-negative", c.negative, "down");
+    renderSectorMoverList("sector-positive", (c.sectors || {}).positive, "up");
+    renderSectorMoverList("sector-negative", (c.sectors || {}).negative, "down");
   }
 
   function renderContribList(id, rows, cls) {
@@ -518,6 +520,23 @@
   }
 
   // ── Render everything ──────────────────────────────────────────────────
+  function renderSectorMoverList(id, rows, cls) {
+    var box = el(id);
+    if (!box) return;
+    if (!rows || !rows.length) {
+      box.innerHTML = '<div class="mi-empty">No sector data available</div>';
+      return;
+    }
+    box.innerHTML = rows.map(function (r) {
+      var points = isNum(r.points) ? r.points : 0;
+      var label = r.sector || r.name || "";
+      return '<div class="mi-sector-mover-row ' + cls + '">' +
+        '<span class="mi-sector-mover-name" title="' + escapeHtml(label) + '">' + escapeHtml(label) + "</span>" +
+        '<span class="mi-sector-mover-pts">' + (points > 0 ? "+" : "") + points.toFixed(2) + "</span>" +
+        "</div>";
+    }).join("");
+  }
+
   function renderAll(d) {
     state.data = d;
     // Stock-level widgets sourced from the per-scrip live feed (heatmap, breadth)
@@ -626,11 +645,16 @@
     if (bootstrap) {
       try { initial = JSON.parse(bootstrap.textContent); } catch (e) {}
     }
-    if (initial) {
+    if (initial && initial.has_data) {
+      // Warm cache: server embedded a ready payload — paint it, no fetch needed.
       renderAll(initial);
-      setStatus(initial.has_data ? "live" : "stale", initial.has_data ? "Live" : "No data");
+      setStatus("live", "Live");
       stamp();
     } else {
+      // Cold cache: the server shipped the shell instantly without touching the
+      // external feeds. Paint the empty structure, then fetch the live payload
+      // on demand so the page is interactive immediately and data fills in.
+      if (initial) renderAll(initial);
       setStatus("stale", "Loading…");
       refresh(false);
     }

@@ -37,6 +37,16 @@ from core_analysis.services.nepse_top_movers import (
 CACHE_KEY = "market_insights_payload"
 CACHE_TTL = 15  # seconds — short so the live feed actually flows through to polls
 
+# Last successful payload, kept for an hour. Served to callers when a rebuild is
+# already in flight (stampede control) so a cold cache never fans out into N×7
+# duplicate external requests.
+CACHE_LAST_GOOD_KEY = "market_insights_payload_last_good"
+CACHE_LAST_GOOD_TTL = 3600
+# Only one cold rebuild runs at a time; the lock self-expires so a crashed build
+# can't wedge the dashboard.
+BUILD_LOCK_KEY = "market_insights_build_lock"
+BUILD_LOCK_TTL = 20
+
 NEPSE_INDEX_NAME = "NEPSE INDEX"
 SUBINDEX_NEPSE_KEY = "NepseIndex"  # NEPSE headline key in the NepseSubIndices feed
 HISTORY_DAYS = 180
@@ -551,18 +561,36 @@ def _nepse_history(days=HISTORY_DAYS):
 
 # ── public API ─────────────────────────────────────────────────────────────
 
-def build_payload(force=False):
+def build_payload(force=False, cache_only=False):
     """Assemble (and cache) the full Market Insights dashboard payload.
 
     Stock-level widgets use the intraday live feed when it is reachable, and
     fall back to the end-of-day database otherwise. The NEPSE headline prefers
     the official contributors summary, sector indices prefer NepseSubIndices,
     and both fall back to the end-of-day database when live services are down.
+
+    cache_only=True returns the cached payload if present, else None — without
+    ever touching the external feeds. The page-render view uses this so the HTML
+    shell is returned instantly; the browser then fetches the live payload from
+    /insights/api/ on demand (see insights_views.market_insights_view).
     """
     if not force:
         cached = cache.get(CACHE_KEY)
         if cached is not None:
             return cached
+
+    # Render path: do not block HTML generation on the external feeds.
+    if cache_only:
+        return None
+
+    # Stampede control: only one cold rebuild runs at a time. Other callers
+    # polling just after the 15s cache expired are served the last known-good
+    # payload instead of each firing its own seven external requests.
+    got_lock = cache.add(BUILD_LOCK_KEY, 1, BUILD_LOCK_TTL)
+    if not got_lock and not force:
+        last_good = cache.get(CACHE_LAST_GOOD_KEY)
+        if last_good is not None:
+            return last_good
 
     # Fetch every external feed CONCURRENTLY. Done sequentially, a single slow or
     # down service serialises into a multi-second stall (timeouts add up); in
@@ -702,10 +730,13 @@ def build_payload(force=False):
         "contributors": {
             "positive": contrib["positive"] if contrib else [],
             "negative": contrib["negative"] if contrib else [],
+            "sectors": contrib.get("sectors", {"positive": [], "negative": []}) if contrib else {"positive": [], "negative": []},
         },
         "stock_count": len(enriched),
     }
     cache.set(CACHE_KEY, payload, CACHE_TTL)
+    cache.set(CACHE_LAST_GOOD_KEY, payload, CACHE_LAST_GOOD_TTL)
+    cache.delete(BUILD_LOCK_KEY)
     return payload
 
 

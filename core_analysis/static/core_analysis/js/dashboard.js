@@ -518,7 +518,7 @@
       return cursor;
     };
 
-    const setupFlatpickrRange = (fromId, toId) => {
+    const setupFlatpickrRange = (fromId, toId, opts = {}) => {
       if (!window.flatpickr) return;
       const fromInput = document.getElementById(fromId);
       const toInput = document.getElementById(toId);
@@ -528,9 +528,18 @@
       const todayStr = formatDate(today);
       if (!toInput.value) toInput.value = todayStr;
       if (!fromInput.value) {
-        const oneYearAgo = new Date(today);
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        fromInput.value = formatDate(normalizeToTradingDay(oneYearAgo));
+        if (opts.defaultMonthRange) {
+          // Sync bars: default to the last month (From = one month before the
+          // latest trading day) so a routine sync covers recent gaps without
+          // pulling a whole year.
+          const oneMonthAgo = new Date(today);
+          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+          fromInput.value = formatDate(normalizeToTradingDay(oneMonthAgo));
+        } else {
+          const oneYearAgo = new Date(today);
+          oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+          fromInput.value = formatDate(normalizeToTradingDay(oneYearAgo));
+        }
       }
 
       let fromPicker;
@@ -830,8 +839,8 @@
     };
 
     setupFlatpickrSingle('inventoryBusinessDate');
-    setupFlatpickrRange('headerSyncFromDate', 'headerSyncToDate');
-    setupFlatpickrRange('headerCalcFromDate', 'headerCalcToDate');
+    setupFlatpickrRange('headerSyncFromDate', 'headerSyncToDate', { defaultMonthRange: true });
+    setupFlatpickrRange('headerCalcFromDate', 'headerCalcToDate', { defaultMonthRange: true });
     setupFlatpickrRange('t3FromDate', 't3ToDate');
     setupFlatpickrRange('emaFromDate', 'emaToDate');
     setupFlatpickrRange('cciFromDate', 'cciToDate');

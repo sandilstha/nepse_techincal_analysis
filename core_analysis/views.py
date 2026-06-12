@@ -1,9 +1,11 @@
+import os
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
 import numpy as np
 import pandas as pd
 from django.contrib import messages
+from django.contrib.staticfiles import finders
 from django.core.cache import cache
 from django.db import IntegrityError
 from django.db.models import Max, OuterRef, Q, Subquery
@@ -57,6 +59,16 @@ def trigger_sync_and_calculate(request):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _dashboard_asset_version():
+    """Cache-bust token for dashboard.js: its file mtime, so a changed script is
+    fetched fresh by the browser without a manual hard-refresh."""
+    path = finders.find("core_analysis/js/dashboard.js")
+    try:
+        return int(os.path.getmtime(path)) if path else 1
+    except OSError:
+        return 1
+
 
 def _safe_float(value, default):
     try:
@@ -1058,6 +1070,7 @@ def crud_dashboard_view(request):
         "imm_supertrend_multiplier": g.get("imm_supertrend_multiplier", "3.0"),
 
         "active_tab": active_tab,
+        "dashboard_asset_version": _dashboard_asset_version(),
     })
 
 

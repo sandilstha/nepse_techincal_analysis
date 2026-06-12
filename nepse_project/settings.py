@@ -160,6 +160,12 @@ DATABASES = {
         'PASSWORD': os.environ.get('DB_PASSWORD', '1234'),
         'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
         'PORT': os.environ.get('DB_PORT', '3306'),
+        # Reuse a MySQL connection across requests (persistent connections) instead
+        # of opening + tearing one down on every request. Cuts per-request latency,
+        # especially on the dashboard polls. CONN_HEALTH_CHECKS revalidates a reused
+        # connection so a dropped socket is replaced transparently.
+        'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', '60')),
+        'CONN_HEALTH_CHECKS': True,
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
@@ -227,6 +233,35 @@ STORAGES = {
 
 # Default primary-key type for new models (silences Django system check W042).
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ── Caching ───────────────────────────────────────────────────────────────────
+# The Market Insights dashboard leans on the cache heavily: the 15s payload cache,
+# the cold-build stampede lock, the last-good payload, and the symbol-autocomplete
+# cache all live here. The default LocMemCache is per-process — correct and fast
+# for a single-process server (runserver, or a single Gunicorn/Waitress worker),
+# where those keys are shared across that process's request threads.
+#
+# Running MULTIPLE worker processes? Set REDIS_URL so the cache AND the stampede
+# lock are shared across every worker (otherwise each worker has its own cache and
+# can trigger its own cold rebuild). Requires the redis client:  pip install redis
+REDIS_URL = os.environ.get('REDIS_URL', '').strip()
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'nepse-insights',
+            # Generous ceiling so the payload / last-good / autocomplete entries are
+            # never evicted under normal churn (default MAX_ENTRIES is only 300).
+            'OPTIONS': {'MAX_ENTRIES': 2000},
+        }
+    }
 
 # ── Market Insights dashboard ───────────────────────────────────────────────
 # Default auto-refresh interval (seconds) for the /insights/ dashboard. The UI

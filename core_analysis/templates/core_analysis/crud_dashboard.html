@@ -127,5 +127,5 @@
 <script src="https://unpkg.com/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
 
 <script>window.NEPSE_URLS = { symbolAutocomplete: "{% url 'symbol_autocomplete' %}" };</script>
-<script src="{% static 'core_analysis/js/dashboard.js' %}"></script>
+<script src="{% static 'core_analysis/js/dashboard.js' %}?v={{ dashboard_asset_version }}"></script>
 {% endblock %}
