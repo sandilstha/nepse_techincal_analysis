@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 import pandas_ta as ta
 
-_MIN_ROWS = 150
+_MIN_ROWS = 150        # full Weinstein read: needs the real 30-week (150-day) baseline
+_MIN_PROVISIONAL = 30  # below this there isn't even enough history for a provisional read
 
 
 def _coerce_int(value, default, minimum=1):
@@ -68,12 +69,33 @@ def calculate_stage_analysis(
     # SettingWithCopyWarning and accidental upstream state corruption).
     df = df.copy()
 
-    if len(df) < _MIN_ROWS:
-        df['stage'] = 'Insufficient Data'
-        return df
+    n = len(df)
+    provisional = False
+    long_ema_len, short_ema_len = 150, 50
 
-    df['ema_30w'] = ta.ema(df['close'], length=150)
-    df['ema_10w'] = ta.ema(df['close'], length=50)
+    if n < _MIN_ROWS:
+        if n < _MIN_PROVISIONAL:
+            # Truly too little history (e.g. just-listed) — no meaningful read.
+            df['stage'] = 'Insufficient Data'
+            df['provisional'] = False
+            df['history_rows'] = n
+            return df
+        # Newly listed: scale the 30-week / 10-week baselines down to the
+        # available history (preserving the ~3:1 ratio) so we can still produce
+        # a usable, clearly-flagged *provisional* classification instead of a
+        # bare "Insufficient Data - Unknown". The result is marked provisional
+        # so the UI can warn that it's based on a short window.
+        provisional = True
+        long_ema_len = max(10, min(150, n // 2))
+        short_ema_len = max(4, long_ema_len // 3)
+        # A 60-bar momentum window would be entirely NaN on a short history;
+        # cap it so momentum still contributes to the score.
+        momentum_period = min(momentum_period, max(5, n // 3))
+
+    df['provisional'] = provisional
+    df['history_rows'] = n
+    df['ema_30w'] = ta.ema(df['close'], length=long_ema_len)
+    df['ema_10w'] = ta.ema(df['close'], length=short_ema_len)
 
     df['avg_volume'] = df['volume'].rolling(volume_lookback).mean()
     safe_avg = df['avg_volume'].replace(0, np.nan)

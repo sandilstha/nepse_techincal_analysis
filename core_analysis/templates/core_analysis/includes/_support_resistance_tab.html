@@ -132,6 +132,66 @@
             </div>
           </div>
 
+          {% if support_resistance_metrics.pivot_average %}
+          {% with pa=support_resistance_metrics.pivot_average %}
+          <div class="panel-outer mb-4">
+            <div class="p-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <div>
+                <h5 class="mb-1 fw-bold">Pivot Average Support &amp; Resistance</h5>
+                <div class="small text-muted">Classic &middot; Camarilla &middot; Woodie's &middot; Fibonacci — averaged per level &middot; H {{ pa.input.high|floatformat:2 }} / L {{ pa.input.low|floatformat:2 }} / C {{ pa.input.close|floatformat:2 }}</div>
+              </div>
+              <div class="small text-muted">52-Week range {{ pa.input.wk52_low|floatformat:2 }} – {{ pa.input.wk52_high|floatformat:2 }}</div>
+            </div>
+            <div style="overflow-x:auto;">
+            <table class="minimal-table">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th class="th-num">S3</th><th class="th-num">S2</th><th class="th-num">S1</th>
+                  <th class="th-num">Pivot</th>
+                  <th class="th-num">R1</th><th class="th-num">R2</th><th class="th-num">R3</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for m in pa.methods %}
+                <tr>
+                  <td class="fw-semibold">{{ m.name }}</td>
+                  <td class="td-num text-success-custom">{{ m.s3|floatformat:2 }}</td>
+                  <td class="td-num text-success-custom">{{ m.s2|floatformat:2 }}</td>
+                  <td class="td-num text-success-custom">{{ m.s1|floatformat:2 }}</td>
+                  <td class="td-num">{{ m.pivot|floatformat:2 }}</td>
+                  <td class="td-num text-danger-custom">{{ m.r1|floatformat:2 }}</td>
+                  <td class="td-num text-danger-custom">{{ m.r2|floatformat:2 }}</td>
+                  <td class="td-num text-danger-custom">{{ m.r3|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+                <tr class="sr-latest-row">
+                  <td class="fw-bold">Average</td>
+                  <td class="td-num fw-bold">{{ pa.average.s3|floatformat:2 }}</td>
+                  <td class="td-num fw-bold">{{ pa.average.s2|floatformat:2 }}</td>
+                  <td class="td-num fw-bold">{{ pa.average.s1|floatformat:2 }}</td>
+                  <td class="td-num fw-bold">{{ pa.average.pivot|floatformat:2 }}</td>
+                  <td class="td-num fw-bold">{{ pa.average.r1|floatformat:2 }}</td>
+                  <td class="td-num fw-bold">{{ pa.average.r2|floatformat:2 }}</td>
+                  <td class="td-num fw-bold">{{ pa.average.r3|floatformat:2 }}</td>
+                </tr>
+              </tbody>
+            </table>
+            </div>
+            {% if pa.fib_52week %}
+            <div class="p-3 border-top">
+              <div class="small fw-bold text-muted mb-2">52-Week Fibonacci Retracement</div>
+              <div class="d-flex flex-wrap gap-2">
+                {% for f in pa.fib_52week %}
+                  <span class="sr-pill {% if f.kind == 'resistance' %}sr-level-resistance{% elif f.kind == 'support' %}sr-level-support{% else %}sr-level-neutral{% endif %}" style="padding:5px 11px;border-radius:6px;">{{ f.label }} &middot; {{ f.price|floatformat:2 }}</span>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+          {% endwith %}
+          {% endif %}
+
           {% if support_resistance_metrics.confluence_resistances or support_resistance_metrics.confluence_supports %}
           <div class="panel-outer mb-4">
             <div class="p-3 bg-raised border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">

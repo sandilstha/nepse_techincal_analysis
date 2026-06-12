@@ -57,8 +57,13 @@ def _records(payload):
             if isinstance(value, list):
                 return value
         values = list(payload.values())
-        if values and all(isinstance(v, dict) for v in values):
-            return values  # dict keyed by symbol -> record
+        # dict keyed by symbol -> record. Guard against error/meta envelopes
+        # (e.g. {"error": {...}}) by requiring the values to actually look like
+        # mover records (carry a symbol-ish field), not just be dicts.
+        if values and all(isinstance(v, dict) for v in values) and all(
+            _g(v, "symbol", "Symbol", "stockSymbol", "scrip") is not None for v in values
+        ):
+            return values
     return []
 
 
@@ -73,10 +78,13 @@ def _map_mover(row):
     volume = _f(_g(row, "totalTradedQuantity", "shareTraded", "sharesTraded", "turnoverVolume",
                    "total_traded_quantity", "quantity", "tradedShares"))
     turnover = _f(_g(row, "totalTradedValue", "turnoverValue", "amount", "total_traded_value", "turnover"))
-    # TopTenTradeScrips reports shares traded + closing price but no turnover —
-    # approximate it (volume x price) so the Most Active turnover column is filled.
-    if turnover is None and volume is not None and ltp is not None:
-        turnover = volume * ltp
+    # TopTenTradeScrips reports shares traded + price but no turnover — approximate
+    # it (volume x price). Prefer the average traded price (volume x avg == exact
+    # turnover); fall back to LTP only when no average is provided.
+    if turnover is None and volume is not None:
+        price = _f(_g(row, "averageTradedPrice", "average_traded_price", "avgPrice", "averagePrice")) or ltp
+        if price is not None:
+            turnover = volume * price
     return {
         "symbol": symbol,
         "name": _g(row, "securityName", "security_name", "companyName", "name"),

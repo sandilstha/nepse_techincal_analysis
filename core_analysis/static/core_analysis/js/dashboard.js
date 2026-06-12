@@ -1184,26 +1184,84 @@
       });
     }
 
+    // --- Single-symbol RRG toolbar state (mirrors the indices toolbar) ---
+    let rrgScaleMode = 'center';   // 'center' | 'fit'
+    let rrgLockedDomain = null;
+    let rrgLastDomain = null;
+    let rrgAnimationTimer = null;
+
+    const readRrgPoints = () => {
+      const dataEl = document.getElementById('rrg-chart-data');
+      if (!dataEl) return [];
+      try {
+        return JSON.parse(dataEl.textContent || '[]')
+          .filter((row) => Number.isFinite(Number(row.RS_Ratio)) && Number.isFinite(Number(row.RS_Momentum)));
+      } catch (e) {
+        return [];
+      }
+    };
+
+    const getRrgMaxTail = () => Math.max(1, readRrgPoints().length);
+
+    const syncRrgTailControls = (value) => {
+      const maxTail = getRrgMaxTail();
+      const normalized = Math.max(1, Math.min(Number(value) || maxTail, maxTail));
+      const slider = document.getElementById('rrgTailSlider');
+      const number = document.getElementById('rrgTailNumber');
+      if (slider) {
+        slider.max = String(maxTail);
+        slider.value = String(normalized);
+      }
+      if (number) {
+        number.max = String(maxTail);
+        number.value = String(normalized);
+      }
+      return normalized;
+    };
+
     const drawRrgChart = () => {
       const container = document.getElementById('rrgChart');
       const dataEl = document.getElementById('rrg-chart-data');
       if (!container || !dataEl) return;
 
-      const points = JSON.parse(dataEl.textContent || '[]')
-        .filter((row) => Number.isFinite(Number(row.RS_Ratio)) && Number.isFinite(Number(row.RS_Momentum)));
-      if (!points.length) return;
+      const allPoints = readRrgPoints();
+      if (!allPoints.length) return;
+      // Tail Length: show only the last N points of the trail (1 = latest only).
+      const maxTail = getRrgMaxTail();
+      const tailLength = syncRrgTailControls(document.getElementById('rrgTailNumber')?.value || maxTail);
+      const arrowMode = document.getElementById('rrgArrowMode')?.checked || false;
+      const points = allPoints.slice(-tailLength);
 
       const width = 900;
       const height = 390;
       const pad = 46;
-      const ratios = points.map((row) => Number(row.RS_Ratio));
-      const momentums = points.map((row) => Number(row.RS_Momentum));
-      const spread = Math.max(
-        2,
-        Math.ceil(Math.max(...ratios.map((value) => Math.abs(value - 100)), ...momentums.map((value) => Math.abs(value - 100))))
-      );
-      const min = 100 - spread;
-      const max = 100 + spread;
+      // Domain (axis range): Lock pins it, Fit hugs the visible points, Center
+      // keeps 100 in the middle with a symmetric spread.
+      let min;
+      let max;
+      if (rrgLockedDomain) {
+        min = rrgLockedDomain.min;
+        max = rrgLockedDomain.max;
+      } else if (rrgScaleMode === 'fit') {
+        const values = points.flatMap((row) => [Number(row.RS_Ratio), Number(row.RS_Momentum)]).concat([100]);
+        min = Math.floor(Math.min(...values)) - 1;
+        max = Math.ceil(Math.max(...values)) + 1;
+      } else {
+        const spread = Math.max(
+          2,
+          Math.ceil(Math.max(...points.flatMap((row) => [
+            Math.abs(Number(row.RS_Ratio) - 100),
+            Math.abs(Number(row.RS_Momentum) - 100),
+          ])))
+        );
+        min = 100 - spread;
+        max = 100 + spread;
+      }
+      if (!Number.isFinite(min) || !Number.isFinite(max) || min === max) {
+        min = 98;
+        max = 102;
+      }
+      rrgLastDomain = { min, max };
       const scaleX = (value) => pad + ((value - min) / (max - min)) * (width - pad * 2);
       const scaleY = (value) => height - pad - ((value - min) / (max - min)) * (height - pad * 2);
       const colorFor = (quadrant) => ({
@@ -1218,23 +1276,48 @@
         return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : String(value);
       };
 
-      const path = points
-        .map((row, index) => `${index === 0 ? 'M' : 'L'} ${scaleX(Number(row.RS_Ratio)).toFixed(2)} ${scaleY(Number(row.RS_Momentum)).toFixed(2)}`)
-        .join(' ');
+      // Quadrant cross is anchored at value 100, clamped into the plot box so
+      // it stays visible even when Fit/Lock push 100 toward an edge.
+      const centerX = scaleX(100);
+      const centerY = scaleY(100);
+      const cx = Math.max(pad, Math.min(width - pad, centerX));
+      const cy = Math.max(pad, Math.min(height - pad, centerY));
+
       const latest = points[points.length - 1];
-      const pointNodes = points.map((row, index) => {
-        const radius = index === points.length - 1 ? 6 : 3.5;
-        return `<circle cx="${scaleX(Number(row.RS_Ratio)).toFixed(2)}" cy="${scaleY(Number(row.RS_Momentum)).toFixed(2)}" r="${radius}" fill="${colorFor(row.Quadrant)}"><title>${formatDisplayDate(row.business_date)}: ${Number(row.RS_Ratio).toFixed(2)}, ${Number(row.RS_Momentum).toFixed(2)} (${row.Quadrant})</title></circle>`;
+      const latestX = scaleX(Number(latest.RS_Ratio));
+      const latestY = scaleY(Number(latest.RS_Momentum));
+      const latestColor = colorFor(latest.Quadrant);
+
+      // Trail along the visible tail (needs >= 2 points). Arrow Mode adds a
+      // direction arrowhead at the leading (latest) end.
+      const arrowAttr = arrowMode ? ' marker-end="url(#rrgArrowHead)"' : '';
+      const path = points.length > 1
+        ? `<path d="${points
+            .map((row, index) => `${index === 0 ? 'M' : 'L'} ${scaleX(Number(row.RS_Ratio)).toFixed(2)} ${scaleY(Number(row.RS_Momentum)).toFixed(2)}`)
+            .join(' ')}" fill="none" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"${arrowAttr}></path>`
+        : '';
+
+      // Historical dots (all but the latest), fading toward the start of the tail.
+      const trailDots = points.slice(0, -1).map((row, index) => {
+        const opacity = 0.25 + (index / Math.max(1, points.length - 1)) * 0.45;
+        return `<circle cx="${scaleX(Number(row.RS_Ratio)).toFixed(2)}" cy="${scaleY(Number(row.RS_Momentum)).toFixed(2)}" r="3.5" fill="${colorFor(row.Quadrant)}" opacity="${opacity.toFixed(2)}"><title>${formatDisplayDate(row.business_date)}: ${Number(row.RS_Ratio).toFixed(2)}, ${Number(row.RS_Momentum).toFixed(2)} (${row.Quadrant})</title></circle>`;
       }).join('');
+
+      const latestDot = `<circle cx="${latestX.toFixed(2)}" cy="${latestY.toFixed(2)}" r="6" fill="${latestColor}"><title>${formatDisplayDate(latest.business_date)}: ${Number(latest.RS_Ratio).toFixed(2)}, ${Number(latest.RS_Momentum).toFixed(2)} (${latest.Quadrant})</title></circle>`;
+
+      // Pulsing halo around the latest point so it visibly blinks (CSS
+      // animation in dashboard.css — reliable on innerHTML-injected SVG).
+      const blink = `<circle class="rrg-blink" cx="${latestX.toFixed(2)}" cy="${latestY.toFixed(2)}" r="6" fill="none" stroke="${latestColor}" stroke-width="2.5"></circle>`;
 
       container.innerHTML = `
         <svg class="rrg-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Relative Rotation Graph">
-          <rect x="${pad}" y="${pad}" width="${(width - pad * 2) / 2}" height="${(height - pad * 2) / 2}" fill="rgba(37, 99, 235, 0.08)"></rect>
-          <rect x="${width / 2}" y="${pad}" width="${(width - pad * 2) / 2}" height="${(height - pad * 2) / 2}" fill="rgba(22, 163, 74, 0.08)"></rect>
-          <rect x="${pad}" y="${height / 2}" width="${(width - pad * 2) / 2}" height="${(height - pad * 2) / 2}" fill="rgba(220, 38, 38, 0.08)"></rect>
-          <rect x="${width / 2}" y="${height / 2}" width="${(width - pad * 2) / 2}" height="${(height - pad * 2) / 2}" fill="rgba(245, 158, 11, 0.08)"></rect>
-          <line x1="${pad}" y1="${height / 2}" x2="${width - pad}" y2="${height / 2}" stroke="#94a3b8" stroke-width="1.5"></line>
-          <line x1="${width / 2}" y1="${pad}" x2="${width / 2}" y2="${height - pad}" stroke="#94a3b8" stroke-width="1.5"></line>
+          ${arrowMode ? '<defs><marker id="rrgArrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#0f172a"></path></marker></defs>' : ''}
+          <rect x="${pad}" y="${pad}" width="${(cx - pad).toFixed(2)}" height="${(cy - pad).toFixed(2)}" fill="rgba(37, 99, 235, 0.08)"></rect>
+          <rect x="${cx.toFixed(2)}" y="${pad}" width="${(width - pad - cx).toFixed(2)}" height="${(cy - pad).toFixed(2)}" fill="rgba(22, 163, 74, 0.08)"></rect>
+          <rect x="${pad}" y="${cy.toFixed(2)}" width="${(cx - pad).toFixed(2)}" height="${(height - pad - cy).toFixed(2)}" fill="rgba(220, 38, 38, 0.08)"></rect>
+          <rect x="${cx.toFixed(2)}" y="${cy.toFixed(2)}" width="${(width - pad - cx).toFixed(2)}" height="${(height - pad - cy).toFixed(2)}" fill="rgba(245, 158, 11, 0.08)"></rect>
+          <line x1="${pad}" y1="${cy.toFixed(2)}" x2="${width - pad}" y2="${cy.toFixed(2)}" stroke="#94a3b8" stroke-width="1.5"></line>
+          <line x1="${cx.toFixed(2)}" y1="${pad}" x2="${cx.toFixed(2)}" y2="${height - pad}" stroke="#94a3b8" stroke-width="1.5"></line>
           <rect x="${pad}" y="${pad}" width="${width - pad * 2}" height="${height - pad * 2}" fill="none" stroke="#cbd5e1"></rect>
           <text x="${width - pad - 70}" y="${pad + 22}" fill="#16a34a" font-size="13" font-weight="700">Leading</text>
           <text x="${width - pad - 88}" y="${height - pad - 12}" fill="#f59e0b" font-size="13" font-weight="700">Weakening</text>
@@ -1242,11 +1325,101 @@
           <text x="${pad + 14}" y="${pad + 22}" fill="#2563eb" font-size="13" font-weight="700">Improving</text>
           <text x="${width / 2}" y="${height - 12}" fill="#475569" font-size="12" text-anchor="middle">RS-Ratio</text>
           <text x="15" y="${height / 2}" fill="#475569" font-size="12" text-anchor="middle" transform="rotate(-90 15 ${height / 2})">RS-Momentum</text>
-          <text x="${width / 2 + 6}" y="${height / 2 - 7}" fill="#64748b" font-size="11">100</text>
-          <path d="${path}" fill="none" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
-          ${pointNodes}
-          <text x="${scaleX(Number(latest.RS_Ratio)) + 10}" y="${scaleY(Number(latest.RS_Momentum)) - 10}" fill="#0f172a" font-size="12" font-weight="700">Latest</text>
+          <text x="${(cx + 6).toFixed(2)}" y="${(cy - 7).toFixed(2)}" fill="#64748b" font-size="11">100</text>
+          ${path}
+          ${trailDots}
+          ${latestDot}
+          ${blink}
+          <text x="${(latestX + 10).toFixed(2)}" y="${(latestY - 12).toFixed(2)}" fill="#0f172a" font-size="12" font-weight="700">Latest</text>
         </svg>`;
+    };
+
+    const setupRrgToolbar = () => {
+      const chartCard = document.querySelector('.rrg-chart-card');
+      const animateBtn = document.getElementById('rrgAnimateBtn');
+      const fitBtn = document.getElementById('rrgFitBtn');
+      const maxBtn = document.getElementById('rrgMaxBtn');
+      const centerBtn = document.getElementById('rrgCenterBtn');
+      const lockBtn = document.getElementById('rrgLockBtn');
+      const slider = document.getElementById('rrgTailSlider');
+      const number = document.getElementById('rrgTailNumber');
+      const arrowMode = document.getElementById('rrgArrowMode');
+      if (!chartCard || !animateBtn || !fitBtn || !maxBtn || !centerBtn || !lockBtn || !slider || !number || !arrowMode) return;
+
+      syncRrgTailControls(getRrgMaxTail());   // default: show the full trail
+      centerBtn.classList.add('active');
+
+      const refreshScaleButtons = () => {
+        fitBtn.classList.toggle('active', rrgScaleMode === 'fit');
+        centerBtn.classList.toggle('active', rrgScaleMode === 'center');
+      };
+      const refreshLockButton = () => {
+        lockBtn.classList.toggle('active', Boolean(rrgLockedDomain));
+        lockBtn.innerHTML = rrgLockedDomain ? '&#128274;' : '&#128275;';
+      };
+      const stopAnimation = () => {
+        if (rrgAnimationTimer) {
+          clearInterval(rrgAnimationTimer);
+          rrgAnimationTimer = null;
+        }
+        animateBtn.innerHTML = '&#9658; Animate';
+        animateBtn.classList.remove('active');
+      };
+
+      slider.addEventListener('input', () => {
+        stopAnimation();
+        syncRrgTailControls(slider.value);
+        drawRrgChart();
+      });
+      number.addEventListener('input', () => {
+        stopAnimation();
+        syncRrgTailControls(number.value);
+        drawRrgChart();
+      });
+      arrowMode.addEventListener('change', drawRrgChart);
+
+      fitBtn.addEventListener('click', () => {
+        rrgScaleMode = 'fit';
+        rrgLockedDomain = null;
+        refreshScaleButtons();
+        refreshLockButton();
+        drawRrgChart();
+      });
+      centerBtn.addEventListener('click', () => {
+        rrgScaleMode = 'center';
+        rrgLockedDomain = null;
+        refreshScaleButtons();
+        refreshLockButton();
+        drawRrgChart();
+      });
+      maxBtn.addEventListener('click', () => {
+        chartCard.classList.toggle('rrg-max-view');
+        maxBtn.classList.toggle('active', chartCard.classList.contains('rrg-max-view'));
+        drawRrgChart();
+      });
+      lockBtn.addEventListener('click', () => {
+        rrgLockedDomain = rrgLockedDomain ? null : (rrgLastDomain ? { ...rrgLastDomain } : null);
+        refreshLockButton();
+        drawRrgChart();
+      });
+      animateBtn.addEventListener('click', () => {
+        if (rrgAnimationTimer) {
+          stopAnimation();
+          return;
+        }
+        const total = getRrgMaxTail();
+        let nextTail = 1;
+        animateBtn.textContent = 'Animating';
+        animateBtn.classList.add('active');
+        syncRrgTailControls(nextTail);
+        drawRrgChart();
+        rrgAnimationTimer = setInterval(() => {
+          nextTail += 1;
+          syncRrgTailControls(nextTail);
+          drawRrgChart();
+          if (nextTail >= total) stopAnimation();
+        }, 180);
+      });
     };
 
     const readRrgIndicesJson = (id) => {
@@ -1723,6 +1896,7 @@
       }
     };
 
+    setupRrgToolbar();
     drawRrgChart();
     drawAdvancedMarketStructureChart();
     setupRrgIndicesToolbar();

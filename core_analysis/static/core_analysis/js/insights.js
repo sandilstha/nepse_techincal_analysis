@@ -141,15 +141,16 @@
   }
 
   function renderBreadthMini(b) {
-    el("ov-adv").textContent = fmtNum(b.advancing, 0);
-    el("ov-unch").textContent = fmtNum(b.unchanged, 0);
-    el("ov-dec").textContent = fmtNum(b.declining, 0);
-    var total = (b.advancing || 0) + (b.declining || 0) + (b.unchanged || 0);
+    var adv = b.advancing || 0, dec = b.declining || 0, unch = b.unchanged || 0;
+    el("ov-adv").textContent = fmtNum(adv, 0);
+    el("ov-unch").textContent = fmtNum(unch, 0);
+    el("ov-dec").textContent = fmtNum(dec, 0);
+    var total = adv + dec + unch;
     var bar = el("ov-breadth-bar");
     if (!total) { bar.innerHTML = ""; return; }
-    var pa = (b.advancing / total * 100).toFixed(1);
-    var pf = (b.unchanged / total * 100).toFixed(1);
-    var pd = (b.declining / total * 100).toFixed(1);
+    var pa = (adv / total * 100).toFixed(1);
+    var pf = (unch / total * 100).toFixed(1);
+    var pd = (dec / total * 100).toFixed(1);
     bar.innerHTML =
       '<i class="up" style="width:' + pa + '%"></i>' +
       '<i class="flat" style="width:' + pf + '%"></i>' +
@@ -163,7 +164,8 @@
 
   function escapeHtml(s) {
     return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function renderRankedTable(tbodyId, rows, kind) {
@@ -366,7 +368,9 @@
     var data = rows.map(function (s) { return Math.round(s.turnover); });
 
     var opts = {
-      chart: { type: "donut", height: 320, fontFamily: "Manrope, sans-serif" },
+      // height 100%: the chart tracks its flex container, so the donut fills
+      // the card whether it shares the column with the breadth card or owns it.
+      chart: { type: "donut", height: "100%", fontFamily: "Manrope, sans-serif" },
       series: data,
       labels: labels,
       colors: SECTOR_COLORS.slice(0, data.length),
@@ -499,6 +503,10 @@
   // ── Render everything ──────────────────────────────────────────────────
   function renderAll(d) {
     state.data = d;
+    // Stock-level widgets sourced from the per-scrip live feed (heatmap, breadth)
+    // are a prior session's data when the feed lags. Flag the page so those are
+    // visibly marked delayed rather than read as current.
+    document.body.classList.toggle("mi-feed-delayed", d.live === false && !!d.has_data);
     renderOverview(d);
     renderRankedTable("tbl-gainers", d.gainers, "ranked");
     renderRankedTable("tbl-losers", d.losers, "ranked");
@@ -516,7 +524,14 @@
 
     // A manual refresh forces a fresh server build (bypasses the short payload cache).
     var url = CONFIG.apiUrl + (manual ? (CONFIG.apiUrl.indexOf("?") >= 0 ? "&" : "?") + "force=1" : "");
-    fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" }, credentials: "same-origin" })
+    // Abort a hung request so it can't pin inFlight=true and stall auto-refresh.
+    var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    var timeoutId = ctrl ? setTimeout(function () { ctrl.abort(); }, 12000) : null;
+    fetch(url, {
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      credentials: "same-origin",
+      signal: ctrl ? ctrl.signal : undefined
+    })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
@@ -535,6 +550,7 @@
         if (window.console) console.warn("Market Insights refresh failed:", err.message);
       })
       .finally(function () {
+        if (timeoutId) clearTimeout(timeoutId);
         state.inFlight = false;
         if (btn) btn.classList.remove("is-spinning");
       });

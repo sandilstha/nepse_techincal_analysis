@@ -90,6 +90,22 @@
                 <span class="rrg-legend-item rrg-improving">Improving</span>
               </div>
             </div>
+            <div class="rrg-indices-toolbar" aria-label="RRG chart controls">
+              <button type="button" id="rrgAnimateBtn" class="rrg-toolbar-btn primary">&#9658; Animate</button>
+              <button type="button" id="rrgFitBtn" class="rrg-toolbar-btn">Fit</button>
+              <button type="button" id="rrgMaxBtn" class="rrg-toolbar-btn">Max</button>
+              <button type="button" id="rrgCenterBtn" class="rrg-toolbar-btn">Center</button>
+              <button type="button" id="rrgLockBtn" class="rrg-toolbar-btn rrg-toolbar-icon-btn" aria-label="Lock scale" title="Lock scale">&#128275;</button>
+              <div class="rrg-tail-control">
+                <span class="rrg-tail-label">Tail Length</span>
+                <input type="range" id="rrgTailSlider" class="rrg-tail-slider" min="1" value="1">
+                <input type="number" id="rrgTailNumber" class="rrg-tail-number" min="1" step="1" value="1">
+              </div>
+              <label class="rrg-arrow-mode">
+                <input type="checkbox" id="rrgArrowMode">
+                <span>Arrow Mode</span>
+              </label>
+            </div>
             <div id="rrgChart" class="rrg-chart-wrap">
               <div class="rrg-chart-empty">RRG chart data is not available.</div>
             </div>

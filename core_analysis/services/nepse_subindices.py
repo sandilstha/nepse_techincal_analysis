@@ -40,7 +40,7 @@ def fetch_subindices():
             cache.set(CACHE_KEY, FAIL_SENTINEL, FAIL_TTL)
             return None
     except (requests.RequestException, ValueError):
-        cache.set(CACHE_KEY, FAIL_SENTINEL, CACHE_TTL)
+        cache.set(CACHE_KEY, FAIL_SENTINEL, FAIL_TTL)
         return None
 
     cache.set(CACHE_KEY, data, CACHE_TTL)

@@ -279,6 +279,22 @@ def _build_bollinger_headline_levels(close: pd.Series, latest_price: float, peri
     band_width = upper_band - lower_band
     percent_b = ((latest_price - lower_band) / band_width) if band_width > 0 else None
 
+    metadata = {
+        "period": int(period),
+        "middle_band": round(middle_band, 2),
+        "upper_band": round(upper_band, 2),
+        "lower_band": round(lower_band, 2),
+        "band_width": round(band_width, 2),
+        "percent_b": round(float(percent_b), 4) if percent_b is not None and math.isfinite(percent_b) else None,
+    }
+
+    # Degenerate (flat) series: zero band width makes upper == lower, so the two
+    # "levels" merge into one row that would be forced to both zones and served
+    # as headline support AND resistance at the same price. Keep the metadata
+    # (callers use middle band / %B) but emit no headline rows.
+    if band_width <= 0:
+        return None, None, metadata
+
     levels = []
     _add_level(
         levels,
@@ -304,14 +320,6 @@ def _build_bollinger_headline_levels(close: pd.Series, latest_price: float, peri
         _force_level_zone(upper_row, "resistance")
     if lower_row:
         _force_level_zone(lower_row, "support")
-    metadata = {
-        "period": int(period),
-        "middle_band": round(middle_band, 2),
-        "upper_band": round(upper_band, 2),
-        "lower_band": round(lower_band, 2),
-        "band_width": round(band_width, 2),
-        "percent_b": round(float(percent_b), 4) if percent_b is not None and math.isfinite(percent_b) else None,
-    }
     return upper_row, lower_row, metadata
 
 
@@ -851,6 +859,104 @@ def _bollinger_headline(boll_row: dict[str, Any] | None, band_name: str) -> dict
 
 
 # ---------------------------------------------------------------------------
+# Pivot-average support / resistance (Classic + Camarilla + Woodie + Fibonacci),
+# plus 52-week Fibonacci retracement. Averages each tier across the four methods
+# to give a wider, more robust S/R map than the confluence engine.
+# ---------------------------------------------------------------------------
+
+def _round2(value):
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    # round(nan)/round(inf) return nan/inf rather than raising — block them
+    # here so a poisoned input can't surface as "nan" in the rendered table.
+    return round(parsed, 2) if math.isfinite(parsed) else None
+
+
+def _classic_pivot(h, l, c):
+    p = (h + l + c) / 3.0
+    rng = h - l
+    return {
+        "name": "Classic", "pivot": p,
+        "r1": 2 * p - l, "r2": p + rng, "r3": h + 2 * (p - l),
+        "s1": 2 * p - h, "s2": p - rng, "s3": l - 2 * (h - p),
+    }
+
+
+def _woodie_pivot(h, l, c):
+    p = (h + l + 2 * c) / 4.0
+    rng = h - l
+    return {
+        "name": "Woodie", "pivot": p,
+        "r1": 2 * p - l, "r2": p + rng, "r3": h + 2 * (p - l),
+        "s1": 2 * p - h, "s2": p - rng, "s3": l - 2 * (h - p),
+    }
+
+
+def _fibonacci_pivot(h, l, c):
+    p = (h + l + c) / 3.0
+    rng = h - l
+    return {
+        "name": "Fibonacci", "pivot": p,
+        "r1": p + 0.382 * rng, "r2": p + 0.618 * rng, "r3": p + rng,
+        "s1": p - 0.382 * rng, "s2": p - 0.618 * rng, "s3": p - rng,
+    }
+
+
+def _camarilla_pivot(h, l, c):
+    rng = h - l
+    return {
+        "name": "Camarilla", "pivot": (h + l + c) / 3.0,
+        "r1": c + rng * 1.1 / 12, "r2": c + rng * 1.1 / 6, "r3": c + rng * 1.1 / 4,
+        "s1": c - rng * 1.1 / 12, "s2": c - rng * 1.1 / 6, "s3": c - rng * 1.1 / 4,
+    }
+
+
+def compute_pivot_average(high, low, close, wk52_high=None, wk52_low=None, latest_price=None):
+    """Average of the four pivot methods per tier + 52-week Fibonacci levels."""
+    try:
+        h, l, c = float(high), float(low), float(close)
+    except (TypeError, ValueError):
+        return None
+    if not (h >= l) or h <= 0:
+        return None
+
+    methods = [_classic_pivot(h, l, c), _camarilla_pivot(h, l, c),
+               _woodie_pivot(h, l, c), _fibonacci_pivot(h, l, c)]
+
+    keys = ("pivot", "r1", "r2", "r3", "s1", "s2", "s3")
+    average = {k: _round2(sum(m[k] for m in methods) / len(methods)) for k in keys}
+
+    method_rows = [{k: _round2(m[k]) for k in keys} | {"name": m["name"]} for m in methods]
+
+    # 52-week Fibonacci retracement (absolute price levels off the real range).
+    price = _safe_float(latest_price)
+    fib_52 = []
+    hi52, lo52 = _safe_float(wk52_high), _safe_float(wk52_low)
+    if hi52 and lo52 and hi52 > lo52:
+        wk_rng = hi52 - lo52
+        for ratio in (0.236, 0.382, 0.5, 0.618, 0.786):
+            level = _round2(hi52 - ratio * wk_rng)
+            kind = "neutral"
+            if price is not None and level is not None:
+                kind = "resistance" if level > price else "support"
+            fib_52.append({"label": f"{ratio * 100:.1f}%", "price": level, "kind": kind})
+
+    return {
+        "input": {
+            "high": _round2(h), "low": _round2(l), "close": _round2(c),
+            "wk52_high": _round2(hi52), "wk52_low": _round2(lo52),
+        },
+        "methods": method_rows,
+        "average": average,
+        "resistances": [average["r1"], average["r2"], average["r3"]],
+        "supports": [average["s1"], average["s2"], average["s3"]],
+        "fib_52week": fib_52,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -862,6 +968,7 @@ def run_support_resistance_analysis(
     stochastic_length: int = 14,
     enabled_families=None,
     density_zones=None,
+    fractal_window: int = 5,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """
     Compute support and resistance levels for a price series.
@@ -881,6 +988,9 @@ def run_support_resistance_analysis(
         Stochastic %K period (default 14).
     enabled_families : iterable or None
         Subset of DEFAULT_LEVEL_FAMILIES to compute.  None = all families.
+    fractal_window : int
+        +/- bars a swing high/low must dominate to count as a fractal pivot
+        in the confluence engine (default 5).
 
     Returns
     -------
@@ -892,6 +1002,7 @@ def run_support_resistance_analysis(
     std_period = _coerce_int(std_period, 20, minimum=2)
     rsi_length = _coerce_int(rsi_length, 14, minimum=2)
     stochastic_length = _coerce_int(stochastic_length, 14, minimum=2)
+    fractal_window = _coerce_int(fractal_window, 5, minimum=2)
     enabled_families = _normalize_level_families(enabled_families)
 
     if df is None or df.empty:
@@ -925,6 +1036,16 @@ def run_support_resistance_analysis(
     latest_low = float(latest_row["low_price_adj"])
     previous_close = float(previous_row["close_price_adj"])
     levels = []
+
+    # Pivot-average S/R (Classic + Camarilla + Woodie + Fibonacci) + 52-week Fib,
+    # using the latest session's H/L/C and the 52-week high/low from the data.
+    _wk = work_df.tail(min(252, len(work_df)))
+    pivot_average = compute_pivot_average(
+        latest_high, latest_low, latest_price,
+        wk52_high=float(_wk["high_price_adj"].max()),
+        wk52_low=float(_wk["low_price_adj"].min()),
+        latest_price=latest_price,
+    )
 
     pivot = (latest_high + latest_low + latest_price) / 3
     price_range = latest_high - latest_low
@@ -1012,7 +1133,7 @@ def run_support_resistance_analysis(
         latest_price,
         std_period,
     )
-    swing_highs, swing_lows = _find_swings(work_df)
+    swing_highs, swing_lows = _find_swings(work_df, window=fractal_window)
     swing_levels = (
         [{"price": s["price"], "label": f"Swing high {s['date']}"} for s in swing_highs[-12:]]
         + [{"price": s["price"], "label": f"Swing low {s['date']}"} for s in swing_lows[-12:]]
@@ -1079,6 +1200,7 @@ def run_support_resistance_analysis(
         "price_zone": price_zone,
         "latest_swing_high": latest_swing_high,
         "latest_swing_low": latest_swing_low,
+        "pivot_average": pivot_average,
         "bollinger_bands": bollinger_bands,
         "resistance_distance_pct": round((resistance_distance / latest_price) * 100, 2) if resistance_distance is not None else None,
         "support_distance_pct": round((support_distance / latest_price) * 100, 2) if support_distance is not None else None,
@@ -1371,8 +1493,8 @@ _BTMM_DETAIL_SECTIONS = [
     {
         "title": "Execution Rules",
         "items": [
-            "BUY: Low < Asian_Low, EMA_13 crosses above EMA_50, and EMA_5 > EMA_13.",
-            "SELL: High > Asian_High, EMA_13 crosses below EMA_50, and EMA_5 < EMA_13.",
+            "BUY: Low < Opening_Range_Low, EMA_13 crosses above EMA_50, and EMA_5 > EMA_13.",
+            "SELL: High > Opening_Range_High, EMA_13 crosses below EMA_50, and EMA_5 < EMA_13.",
         ],
     },
     {
@@ -1538,16 +1660,20 @@ def _read_wyckoff(ctx: dict[str, Any]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def _read_elliott_wave(ctx: dict[str, Any]) -> dict[str, Any]:
-    trend, rsi, price = ctx["trend_bias"], ctx["rsi"], ctx["price"]
+    trend, rsi = ctx["trend_bias"], ctx["rsi"]
     res, sup = ctx["resistance"], ctx["support"]
     up = "Bull" in trend or "Above" in trend
     down = "Bear" in trend or "Below" in trend
 
     signal, confidence = "Neutral", 46
     if up:
+        # Wave-5 divergence: price pressing into the nearest resistance (within
+        # 1%) while momentum lags. (`price >= res` could never trigger — the
+        # nearest resistance is by construction a zone above the price.)
+        at_resistance = _safe_float(ctx.get("resistance_pct")) is not None and ctx["resistance_pct"] <= 1.0
         if rsi is not None and rsi >= 60:
             posture, signal, confidence = "Impulse (likely wave 3) — momentum expanding", "Bullish", 64
-        elif rsi is not None and price is not None and res is not None and price >= res and rsi < 60:
+        elif rsi is not None and at_resistance and rsi < 60:
             posture, signal, confidence = "Possible wave 5 — price extends but momentum lags (bearish divergence risk)", "Neutral", 50
         else:
             posture, signal, confidence = "Impulsive up-trend, mid-wave", "Bullish", 56
@@ -1673,11 +1799,20 @@ def _read_structural_sr(ctx: dict[str, Any]) -> dict[str, Any]:
     else:
         status = "Pivot straddle — mixed momentum"
 
-    if rr is not None and signal == "Bullish":
-        if rr >= 2:
-            confidence += 8
-        elif rr < 1:
-            confidence -= 8
+    # rr = resistance_distance / support_distance (reward-up vs risk-down).
+    # For a long, a high ratio is favourable; for a short the INVERSE applies
+    # (more room below than above), so adjust both directions symmetrically.
+    if rr is not None:
+        if signal == "Bullish":
+            if rr >= 2:
+                confidence += 8
+            elif rr < 1:
+                confidence -= 8
+        elif signal == "Bearish":
+            if rr <= 0.5:
+                confidence += 8
+            elif rr > 1:
+                confidence -= 8
 
     logic = (
         f"Pivot {_price_text(pivot)}; support {_price_text(sup)}, resistance {_price_text(res)}; "
@@ -1719,12 +1854,17 @@ def _institutional_consensus(rows: list[dict]) -> dict[str, Any]:
     bull_w = sum(r["confidence"] for r in bull)
     bear_w = sum(r["confidence"] for r in bear)
     total_w = bull_w + bear_w
+    panel_w = total_w + sum(r["confidence"] for r in neutral)
 
     if total_w == 0:
         signal, confidence, lean = "Neutral", 0, 0.0
     else:
         lean = (bull_w - bear_w) / total_w
-        confidence = int(round(abs(lean) * 100))
+        # Conviction = |lean| scaled by how much of the panel actually voted a
+        # direction. Without the participation factor, a single directional
+        # framework among nine neutrals reads as "100% conviction".
+        participation = (total_w / panel_w) if panel_w > 0 else 0.0
+        confidence = int(round(abs(lean) * participation * 100))
         if lean > 0.15:
             signal = "Bullish"
         elif lean < -0.15:

@@ -22,6 +22,7 @@
     { t: "NEPSE", l: "NEPSE Index" },
     { t: "SENSITIVE", l: "Sensitive" },
     { t: "FLOAT", l: "Float" },
+    { t: "SENFLOAT", l: "Sensitive Float" },
     { t: "BANKING", l: "Banking" },
     { t: "DEVBANK", l: "Development Bank" },
     { t: "FINANCE", l: "Finance" },

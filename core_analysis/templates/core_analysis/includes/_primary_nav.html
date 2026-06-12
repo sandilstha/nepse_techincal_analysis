@@ -1,0 +1,16 @@
+{% comment %}
+Home dashboard primary navigation. Include with an active_section of
+insights | technical | rrg | floorsheet, e.g.:
+  {% include "core_analysis/includes/_primary_nav.html" with active_section="insights" %}
+{% endcomment %}
+<nav class="mi-primary-nav" aria-label="Primary sections">
+  <a href="{% url 'market_insights' %}"
+     class="mi-nav-link {% if active_section == 'insights' %}active{% endif %}"
+     {% if active_section == 'insights' %}aria-current="page"{% endif %}>Market Insights</a>
+  <a href="{% url 'crud_dashboard' %}?active_tab=stage_backtest"
+     class="mi-nav-link {% if active_section == 'technical' %}active{% endif %}">Technical Analysis Desk</a>
+  <a href="{% url 'crud_dashboard' %}?active_tab=rrg_backtest"
+     class="mi-nav-link {% if active_section == 'rrg' %}active{% endif %}">RRG Graph Desk</a>
+  <a href="{% url 'floorsheet' %}"
+     class="mi-nav-link {% if active_section == 'floorsheet' %}active{% endif %}">Floor sheet</a>
+</nav>

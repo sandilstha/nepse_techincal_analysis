@@ -7,7 +7,7 @@ from .views import (
     symbol_autocomplete_view,
     trigger_sync_and_calculate
 )
-from .insights_views import market_insights_view, market_insights_api
+from .insights_views import market_insights_view, market_insights_api, floorsheet_view
 from .udf_views import (
     udf_config,
     udf_time,
@@ -18,18 +18,22 @@ from .udf_views import (
 
 urlpatterns = [
 
-    # HTML View Form CRUD Engine Interfaces
-    path('', crud_dashboard_view, name='crud_dashboard'),
+    # Market Insights is the landing page (served at root); /insights/ kept as an alias.
+    path('', market_insights_view, name='market_insights'),
+    path('insights/', market_insights_view),
+    path('insights/api/', market_insights_api, name='market_insights_api'),
+
+    # Floor sheet (placeholder until a trade-level data source is wired up).
+    path('floorsheet/', floorsheet_view, name='floorsheet'),
+
+    # Analytics workbench (moved off root to /workbench/)
+    path('workbench/', crud_dashboard_view, name='crud_dashboard'),
     path('dashboard/process/', crud_operations_handler, name='crud_operations'),
     path('dashboard/delete/<int:pk>/', crud_delete_handler, name='crud_delete'),
     path('dashboard/sync/', trigger_daily_api_sync_view, name='trigger_daily_sync'),
     path('dashboard/sync-calculate/', trigger_sync_and_calculate, name='trigger_sync_and_calculate'),
     # NEW — lightweight autocomplete endpoint for symbol search boxes
     path('dashboard/symbols/', symbol_autocomplete_view, name='symbol_autocomplete'),
-
-    # Market Insights dashboard (homepage-style market overview) + its polling API
-    path('insights/', market_insights_view, name='market_insights'),
-    path('insights/api/', market_insights_api, name='market_insights_api'),
 
     # TradingView Advanced Charts UDF datafeed (no trailing slashes — UDF spec)
     path('insights/udf/config', udf_config, name='udf_config'),

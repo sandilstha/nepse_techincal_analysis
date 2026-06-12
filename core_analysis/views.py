@@ -362,15 +362,18 @@ def symbol_autocomplete_view(request):
             .order_by("symbol")[:20]
         )
     else:
+        # Read the latest close/date from the raw daily-price table (kept current
+        # by the daily-prices sync) rather than the adjusted-price table (synced
+        # separately and often a few days behind), so the dropdown shows today's date.
         latest_stock_price_sq = (
-            StockPriceAdjustment.objects
-            .filter(company_id=OuterRef("symbol"))
+            NepseDailyStockPrice.objects
+            .filter(symbol=OuterRef("symbol"))
             .order_by("-business_date")
-            .values("close_price_adj")[:1]
+            .values("close_price")[:1]
         )
         latest_stock_date_sq = (
-            StockPriceAdjustment.objects
-            .filter(company_id=OuterRef("symbol"))
+            NepseDailyStockPrice.objects
+            .filter(symbol=OuterRef("symbol"))
             .order_by("-business_date")
             .values("business_date")[:1]
         )
@@ -780,12 +783,26 @@ def crud_dashboard_view(request):
                             latest_row = stage_df.iloc[-1]
                             latest_stage = latest_row.get("stage", "Stage 1")
                             latest_name = latest_row.get("stage_name", "Basing/Neglect")
+                            # Provisional read for newly listed stocks: the stage
+                            # is computed on scaled (shorter) EMA baselines, so flag
+                            # it clearly and report how much history backs it.
+                            is_provisional = bool(latest_row.get("provisional", False))
+                            history_rows = int(latest_row.get("history_rows", len(stage_df)))
+                            history_weeks = history_rows // 5
+                            stage_label = f"{latest_stage} - {latest_name}"
+                            latest_action = latest_row.get("stage_action", "Watch")
+                            if is_provisional:
+                                stage_label += " (Provisional)"
+                                latest_action = f"{latest_action} (provisional)"
                             stage_backtest_metrics = {
                                 "latest_data_date": latest_row.get("business_date", ""),
                                 "latest_price_source": latest_row.get("price_source", "Adjusted"),
                                 "latest_stage": latest_stage,
-                                "latest_stage_label": f"{latest_stage} - {latest_name}",
-                                "latest_action": latest_row.get("stage_action", "Watch"),
+                                "latest_stage_label": stage_label,
+                                "latest_action": latest_action,
+                                "is_provisional": is_provisional,
+                                "history_weeks": history_weeks,
+                                "weeks_needed": 30,
                                 # returns_3m is already in percent at this point
                                 "returns_3m": float(latest_row.get("returns_3m", 0)) if pd.notna(latest_row.get("returns_3m")) else 0,
                                 "volume_ratio": float(latest_row.get("volume_ratio", 0)) if pd.notna(latest_row.get("volume_ratio")) else 0,
@@ -837,6 +854,7 @@ def crud_dashboard_view(request):
                         stochastic_length=support_resistance_stochastic_length,
                         enabled_families=support_resistance_enabled_families,
                         density_zones=density_zones,
+                        fractal_window=support_resistance_fractal_window,
                     )
                 except Exception as e:
                     support_resistance_metrics = {"error": f"Error running Support & Resistance analysis: {str(e)}"}

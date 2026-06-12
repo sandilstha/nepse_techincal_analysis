@@ -368,7 +368,11 @@ body {
 /* Right column beside the OHLC chart: Market Breadth (top) + Sector Turnover. */
 .mi-side-stack { display: flex; flex-direction: column; gap: 0.9rem; min-width: 0; }
 .mi-side-stack > .mi-card { min-width: 0; margin: 0; }
-.mi-side-stack .mi-sector-card { flex: 1 1 auto; }
+/* The sector card absorbs the column height left over by the cards above it
+   (all of it when the breadth card is hidden), and its chart grows with it so
+   the donut fills the card instead of leaving dead space below a fixed height. */
+.mi-side-stack .mi-sector-card { flex: 1 1 auto; display: flex; flex-direction: column; }
+.mi-side-stack .mi-sector-card .mi-chart { flex: 1 1 auto; min-height: 260px; }
 
 /* TradingView Advanced Charts container (hidden until the library is installed) */
 .mi-tv { display: none; position: absolute; inset: 0; width: 100%; height: 100%; border-radius: var(--radius-sm); overflow: hidden; z-index: 4; }
@@ -434,6 +438,28 @@ body {
 }
 .mi-card-breadth.is-stale .mi-bd-bar,
 .mi-card-breadth.is-stale .mi-bd-row { opacity: 0.5; filter: grayscale(0.45); }
+
+/* Hide the breadth card entirely while the per-scrip feed is delayed — its
+   counts are a prior session's. It reappears when the feed is live again.
+   The sector card keeps stretching to match the Index OHLC column height;
+   its donut grows with it (see .mi-sector-card flex rules + height:100%). */
+.mi-feed-delayed .mi-card-breadth { display: none; }
+
+/* Page-level "live feed delayed" marker: the heatmap is built purely from the
+   per-scrip live feed, so when that feed lags, dim it and reveal the hint. */
+.mi-stale-hint { color: var(--down); font-weight: 600; }
+body:not(.mi-feed-delayed) .mi-stale-hint { display: none; }
+.mi-feed-delayed .mi-chart-heatmap { opacity: 0.6; filter: grayscale(0.4); }
+
+/* The header-row Market Breadth mini comes from the same per-scrip feed, so
+   when delayed its counts are a prior session's (and won't add up to the
+   official "scrips traded" on the Total Trades tile next to it) — dim it and
+   tag the label so the two tiles can't be read as the same day's data. */
+.mi-feed-delayed .mi-stat-breadth .mi-breadth-mini,
+.mi-feed-delayed .mi-stat-breadth .mi-breadth-bar { opacity: 0.45; filter: grayscale(0.5); }
+.mi-feed-delayed .mi-stat-breadth .mi-stat-label::after {
+  content: " · delayed"; color: var(--down); text-transform: none; letter-spacing: normal;
+}
 
 /* ── Index contributors ───────────────────────────────────────────────── */
 .mi-contrib { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }

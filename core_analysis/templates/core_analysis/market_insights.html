@@ -207,6 +207,7 @@
       <div class="mi-card-head">
         <h2 class="mi-card-title">Market Heatmap</h2>
         <div class="mi-card-tools">
+          <span class="mi-card-hint mi-stale-hint">⏳ Last session — live feed delayed</span>
           <span class="mi-card-hint">size = turnover · colour = daily change</span>
           <select id="heatmap-sector" class="mi-select" aria-label="Filter heatmap by sector">
             <option value="ALL">All sectors</option>
@@ -223,7 +224,7 @@
   </footer>
 </div>
 
-<script type="application/json" id="mi-bootstrap">{{ bootstrap_json|safe }}</script>
+{{ bootstrap_payload|json_script:"mi-bootstrap" }}
 <script>
   window.MI_CONFIG = {
     apiUrl: "{% url 'market_insights_api' %}",

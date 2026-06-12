@@ -99,6 +99,9 @@
                   {% elif stage_backtest_metrics.latest_stage == 'Stage 4' %}text-danger
                   {% else %}text-muted{% endif %}">{{ stage_backtest_metrics.latest_stage_label|default:stage_backtest_metrics.latest_stage }}</h4>
                 <div class="small text-muted mt-1">Action: {{ stage_backtest_metrics.latest_action|default:"Watch" }}</div>
+                {% if stage_backtest_metrics.is_provisional %}
+                <div class="small text-warning mt-1" style="font-size:11px;">⚠ New listing — based on {{ stage_backtest_metrics.history_weeks }} weeks (need {{ stage_backtest_metrics.weeks_needed }} for full read)</div>
+                {% endif %}
                 <div class="small text-muted mt-1">Latest row: {{ stage_backtest_metrics.latest_data_date }} | {{ stage_backtest_metrics.latest_price_source }}</div>
               </div>
             </div>
