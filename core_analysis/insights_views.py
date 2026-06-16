@@ -40,6 +40,7 @@ _ASSET_FILES = (
     "core_analysis/js/insights.js",
     "core_analysis/js/ohlc-chart.js",
     "core_analysis/js/tv-chart.js",
+    "core_analysis/js/ta-chart.js",
 )
 
 
@@ -133,6 +134,25 @@ def market_insights_view(request):
         "tv_enabled": _tv_library_installed(),
     }
     return render(request, "core_analysis/market_insights.html", context)
+
+
+@require_GET
+def technical_analysis_view(request, symbol=None):
+    """MetaStock-style charting terminal (Lightweight Charts).
+
+    Renders price (OHLC bars / candles / line) + volume and lets the user add
+    technical indicators from a dropdown. Price/volume are served by the UDF
+    history feed (udf_views.py); indicator series are computed server-side with
+    pandas_ta (indicator_views.py). The symbol may be supplied in the path
+    (/chart/NABIL/) or via ?symbol= — it is only the chart's initial ticker,
+    which the datafeed validates. Defaults to the NEPSE index.
+    """
+    sym = (symbol or request.GET.get("symbol") or "NEPSE").strip().upper()
+    context = {
+        "symbol": sym,
+        "asset_version": _asset_version(),
+    }
+    return render(request, "core_analysis/technical_analysis.html", context)
 
 
 @require_GET

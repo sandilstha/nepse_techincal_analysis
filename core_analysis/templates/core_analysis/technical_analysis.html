@@ -1,0 +1,108 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Technical Analysis · {{ symbol }} · NEPSE</title>
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <style>
+    /* MetaStock-style terminal: price + volume on top, indicator panes below. */
+    html, body { height: 100%; margin: 0; }
+    .ta-shell { display: flex; flex-direction: column; height: 100vh; }
+
+    .ta-topbar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 7px 12px; border-bottom: 1px solid var(--line, rgba(128,128,128,.25));
+      flex: 0 0 auto;
+    }
+    .ta-brand { font-weight: 700; letter-spacing: .03em; }
+    .ta-quote { font-variant-numeric: tabular-nums; font-size: 13px; opacity: .85; }
+    .ta-spacer { flex: 1 1 auto; }
+    .ta-input, .ta-select {
+      background: var(--surface, rgba(128,128,128,.08));
+      color: inherit; border: 1px solid var(--line, rgba(128,128,128,.3));
+      border-radius: 8px; padding: 5px 8px; font: inherit;
+    }
+    .ta-input { width: 130px; text-transform: uppercase; }
+    .ta-btn {
+      background: var(--accent, #4a90e2); color: #fff; border: 0;
+      border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit;
+    }
+    .ta-btn.ghost { background: transparent; color: inherit; border: 1px solid var(--line, rgba(128,128,128,.3)); }
+    .ta-icon-btn { text-decoration: none; font-size: 18px; padding: 4px 8px; border-radius: 8px; }
+    .ta-icon-btn:hover { background: rgba(128,128,128,.18); }
+
+    .ta-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .ta-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--surface, rgba(128,128,128,.12));
+      border: 1px solid var(--line, rgba(128,128,128,.3));
+      border-radius: 999px; padding: 3px 6px 3px 10px; font-size: 12px;
+    }
+    .ta-chip button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 14px; line-height: 1; }
+
+    .ta-body { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    #ta-price { flex: 1 1 auto; min-height: 220px; position: relative; }
+    #ta-osc-stack { flex: 0 0 auto; }
+    .ta-osc-pane { position: relative; height: 150px; border-top: 1px solid var(--line, rgba(128,128,128,.25)); }
+    .ta-osc-label {
+      position: absolute; top: 4px; left: 8px; z-index: 3; font-size: 11px;
+      opacity: .7; pointer-events: none;
+    }
+    .ta-osc-close {
+      position: absolute; top: 2px; right: 6px; z-index: 3; cursor: pointer;
+      border: 0; background: transparent; color: inherit; font-size: 14px; opacity: .6;
+    }
+    .ta-osc-close:hover { opacity: 1; }
+    #ta-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: .7; }
+  </style>
+</head>
+<body>
+<div class="ta-shell">
+
+  <header class="ta-topbar">
+    <span class="ta-brand">NEPSE · TA</span>
+
+    <input id="ta-symbol" class="ta-input" list="ta-symlist" value="{{ symbol }}"
+           placeholder="Symbol" aria-label="Symbol" autocomplete="off">
+    <datalist id="ta-symlist"></datalist>
+    <button id="ta-go" class="ta-btn ghost" title="Load symbol">Go</button>
+
+    <span class="ta-quote" id="ta-quote">—</span>
+
+    <span class="ta-spacer"></span>
+
+    <select id="ta-type" class="ta-select" aria-label="Chart type">
+      <option value="bars" selected>Bars</option>
+      <option value="candles">Candles</option>
+      <option value="line">Line</option>
+    </select>
+
+    <select id="ta-ind" class="ta-select" aria-label="Add indicator"></select>
+    <button id="ta-add" class="ta-btn" title="Add indicator">+ Add</button>
+
+    <div class="ta-chips" id="ta-chips"></div>
+
+    <a href="{% url 'market_insights' %}" class="ta-icon-btn" title="Home" aria-label="Home">🏠</a>
+  </header>
+
+  <div class="ta-body">
+    <div id="ta-price"><div id="ta-loading">Loading {{ symbol }}…</div></div>
+    <div id="ta-osc-stack"></div>
+  </div>
+</div>
+
+<script>
+  window.TA_CONFIG = {
+    udfBase: "/insights/udf",
+    catalogUrl: "{% url 'indicator_catalog' %}",
+    indicatorUrl: "{% url 'indicator_data' %}",
+    symbol: "{{ symbol|escapejs }}",
+    interval: "1D"
+  };
+</script>
+<script defer src="{% static 'core_analysis/vendor/lightweight-charts.standalone.production.js' %}"></script>
+<script defer src="{% static 'core_analysis/js/ta-chart.js' %}?v={{ asset_version }}"></script>
+</body>
+</html>

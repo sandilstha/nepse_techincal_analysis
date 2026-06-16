@@ -7,7 +7,12 @@ from .views import (
     symbol_autocomplete_view,
     trigger_sync_and_calculate
 )
-from .insights_views import market_insights_view, market_insights_api, floorsheet_view
+from .insights_views import (
+    market_insights_view,
+    market_insights_api,
+    floorsheet_view,
+    technical_analysis_view,
+)
 from .udf_views import (
     udf_config,
     udf_time,
@@ -15,6 +20,7 @@ from .udf_views import (
     udf_search,
     udf_history,
 )
+from .indicator_views import indicator_catalog, indicator_data
 
 urlpatterns = [
 
@@ -22,6 +28,12 @@ urlpatterns = [
     path('', market_insights_view, name='market_insights'),
     path('insights/', market_insights_view),
     path('insights/api/', market_insights_api, name='market_insights_api'),
+
+    # Technical Analysis terminal (Lightweight Charts: price + volume + indicators).
+    path('chart/', technical_analysis_view, name='technical_analysis'),
+    path('chart/indicators', indicator_catalog, name='indicator_catalog'),
+    path('chart/indicator', indicator_data, name='indicator_data'),
+    path('chart/<str:symbol>/', technical_analysis_view, name='technical_analysis_symbol'),
 
     # Floor sheet (placeholder until a trade-level data source is wired up).
     path('floorsheet/', floorsheet_view, name='floorsheet'),
