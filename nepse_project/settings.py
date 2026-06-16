@@ -73,7 +73,7 @@ DEBUG = _env_bool('DJANGO_DEBUG', True)
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get(
-        'DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,192.168.1.31'
+        'DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,192.168.1.31,nepstockswatch.sandilstha.com.np'
     ).split(',')
     if host.strip()
 ]
