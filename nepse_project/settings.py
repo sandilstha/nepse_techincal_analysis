@@ -105,9 +105,15 @@ SECURE_REFERRER_POLICY = 'same-origin'
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
 X_FRAME_OPTIONS = 'DENY'
 
+# Comma-separated list via DJANGO_CSRF_TRUSTED_ORIGINS in production.
+# Note: unlike ALLOWED_HOSTS, each origin must include the scheme (https://).
+_csrf_origins_raw = os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS')
+if not _csrf_origins_raw:
+    _csrf_origins_raw = 'https://nepstockswatch.sandilstha.com.np'
+
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
-    for origin in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',')
+    for origin in _csrf_origins_raw.split(',')
     if origin.strip()
 ]
 
