@@ -4,6 +4,7 @@ from decimal import Decimal, InvalidOperation
 
 import numpy as np
 import pandas as pd
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.contrib.staticfiles import finders
 from django.core.cache import cache
@@ -12,7 +13,7 @@ from django.db.models import Max, OuterRef, Q, Subquery
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.management import call_command
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from core_analysis.models import CompanyProfile, NepseDailyStockPrice, NepseMarketIndex, StockPriceAdjustment
 from core_analysis.services.CCI import run_cci_long_only_simulation
@@ -31,6 +32,7 @@ from core_analysis.services.support_resistance import (
     run_support_resistance_analysis,
 )
 
+@staff_member_required
 @require_POST
 def trigger_sync_and_calculate(request):
     from_date_raw = (request.POST.get("from_date") or "").strip()
@@ -302,6 +304,8 @@ def _build_rrg_index_choices(benchmark_symbol="NEPSE INDEX"):
 
 # ── Symbol autocomplete API (used by the JS search boxes) ────────────────────
 
+@staff_member_required
+@require_GET
 def symbol_autocomplete_view(request):
     """
     OPTIMIZED: Lightweight JSON endpoint for the search-as-you-type dropdown.
@@ -438,6 +442,7 @@ def symbol_autocomplete_view(request):
 
 # ── Main dashboard ────────────────────────────────────────────────────────────
 
+@staff_member_required
 def crud_dashboard_view(request):
     """
     OPTIMIZED: Consolidated Dashboard Controller with performance improvements.
@@ -1076,6 +1081,8 @@ def crud_dashboard_view(request):
 
 # ── CRUD handlers (unchanged) ─────────────────────────────────────────────────
 
+@staff_member_required
+@require_POST
 def crud_operations_handler(request):
     """CREATE & UPDATE operations handler via HTML Form Actions."""
     if request.method == "POST":
@@ -1136,6 +1143,7 @@ def crud_operations_handler(request):
     return redirect("crud_dashboard")
 
 
+@staff_member_required
 @require_POST
 def crud_delete_handler(request, pk):
     """DELETE operation route (POST only, CSRF-protected)."""
@@ -1144,6 +1152,7 @@ def crud_delete_handler(request, pk):
     return redirect("crud_dashboard")
 
 
+@staff_member_required
 @require_POST
 def trigger_daily_api_sync_view(request):
     """

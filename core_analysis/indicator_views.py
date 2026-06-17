@@ -23,6 +23,8 @@ Indicators are tagged with a `pane`:
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import numpy as np
 import pandas as pd
 import pandas_ta as ta  # retained only for SuperTrend (no TA-Lib equivalent)
@@ -32,7 +34,7 @@ from django.views.decorators.http import require_GET
 
 # Reuse the UDF datafeed's symbol resolution + bar loader so price and
 # indicators always come from exactly the same source rows.
-from core_analysis.udf_views import _resolve, _bars
+from core_analysis.udf_views import _resolve, _chart_bars
 
 
 # ── series helpers ───────────────────────────────────────────────────────────
@@ -185,6 +187,22 @@ def indicator_catalog(request):
     )
 
 
+def _history_window(request):
+    """Parse UDF-style history window parameters from the indicator request."""
+    def _int(name):
+        try:
+            return int(request.GET.get(name))
+        except (TypeError, ValueError):
+            return None
+
+    from_ts, to_ts, countback = _int("from"), _int("to"), _int("countback")
+    from_date = datetime.fromtimestamp(from_ts, timezone.utc).date() if from_ts else None
+    to_date = datetime.fromtimestamp(to_ts, timezone.utc).date() if to_ts else None
+    if countback is not None and countback <= 0:
+        countback = None
+    return from_date, to_date, countback
+
+
 @require_GET
 def indicator_data(request):
     """Compute one indicator's series for a symbol."""
@@ -202,7 +220,8 @@ def indicator_data(request):
     except (TypeError, ValueError):
         length = default_len
 
-    rows = _bars(kind, key, None, None, None)  # full daily history
+    from_date, to_date, countback = _history_window(request)
+    rows = _chart_bars(kind, key, from_date, to_date, countback)
     if not rows or len(rows) < (length + 2):
         return JsonResponse({"s": "no_data"})
 

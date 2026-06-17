@@ -1,11 +1,13 @@
+import json
 import unittest
 from contextlib import ExitStack
-from datetime import date
+from datetime import date, datetime, timezone
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 from django.core.exceptions import ImproperlyConfigured
+from django.test import Client, RequestFactory, SimpleTestCase, TestCase
 
 from core_analysis.services import IMM, msv_strategy
 from core_analysis.services.advanced_market_structure import (
@@ -22,6 +24,118 @@ try:
 except ImproperlyConfigured:  # Allows `python core_analysis/tests.py` outside Django.
     market_insights = None
     nepse_contributors = None
+
+try:
+    from core_analysis import indicator_views, udf_views
+except ImproperlyConfigured:  # Allows `python core_analysis/tests.py` outside Django.
+    indicator_views = None
+    udf_views = None
+
+
+@unittest.skipIf(indicator_views is None, "Django settings unavailable")
+class IndicatorHistoryWindowTests(SimpleTestCase):
+    def test_history_window_parses_udf_dates_and_countback(self):
+        factory = RequestFactory()
+        from_ts = int(datetime(2026, 6, 1, tzinfo=timezone.utc).timestamp())
+        to_ts = int(datetime(2026, 6, 16, tzinfo=timezone.utc).timestamp())
+        request = factory.get(
+            "/chart/indicator",
+            {"from": str(from_ts), "to": str(to_ts), "countback": "5000"},
+        )
+
+        self.assertEqual(
+            indicator_views._history_window(request),
+            (date(2026, 6, 1), date(2026, 6, 16), 5000),
+        )
+
+    def test_indicator_data_uses_windowed_chart_rows(self):
+        factory = RequestFactory()
+        to_ts = int(datetime(2026, 6, 16, tzinfo=timezone.utc).timestamp())
+        rows = [
+            (date(2026, 6, day), 100.0 + day, 102.0 + day, 99.0 + day, 101.0 + day, 1000 + day)
+            for day in range(1, 21)
+        ]
+        captured = {}
+
+        def fake_chart_bars(kind, key, from_date, to_date, countback):
+            captured.update(
+                {
+                    "kind": kind,
+                    "key": key,
+                    "from_date": from_date,
+                    "to_date": to_date,
+                    "countback": countback,
+                }
+            )
+            return rows
+
+        request = factory.get(
+            "/chart/indicator",
+            {"symbol": "NEPSE", "name": "RSI", "to": str(to_ts), "countback": "5000"},
+        )
+
+        with (
+            patch.object(indicator_views, "_resolve", return_value=("index", "NEPSE INDEX")),
+            patch.object(indicator_views, "_chart_bars", side_effect=fake_chart_bars),
+            patch.object(indicator_views.talib, "RSI", return_value=np.arange(len(rows), dtype=float)),
+        ):
+            response = indicator_views.indicator_data(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(captured["kind"], "index")
+        self.assertEqual(captured["key"], "NEPSE INDEX")
+        self.assertEqual(captured["to_date"], date(2026, 6, 16))
+        self.assertEqual(captured["countback"], 5000)
+
+
+@unittest.skipIf(udf_views is None, "Django settings unavailable")
+class UdfChartBarsTests(SimpleTestCase):
+    def test_index_search_returns_all_configured_subindices(self):
+        request = RequestFactory().get(
+            "/insights/udf/search",
+            {"type": "index", "limit": "50"},
+        )
+
+        response = udf_views.udf_search(request)
+        payload = json.loads(response.content)
+
+        self.assertEqual(
+            {row["symbol"] for row in payload},
+            set(udf_views.INDEX_TICKERS),
+        )
+
+    def test_chart_bars_appends_live_index_bar(self):
+        stored = [(date(2026, 6, 15), 1.0, 2.0, 0.5, 1.5, 1000)]
+        live = (date(2026, 6, 16), 2.0, 3.0, 1.5, 2.5, 2000)
+
+        with (
+            patch.object(udf_views, "_bars", return_value=stored) as bars,
+            patch.object(udf_views, "_live_index_bar", return_value=live),
+        ):
+            result = udf_views._chart_bars("index", "NEPSE INDEX", None, date(2026, 6, 16), 5000)
+
+        bars.assert_called_once_with("index", "NEPSE INDEX", None, date(2026, 6, 16), 5000)
+        self.assertEqual(result, stored + [live])
+
+
+class WorkbenchSecurityTests(SimpleTestCase):
+    def test_workbench_routes_redirect_anonymous_users_to_admin_login(self):
+        client = Client()
+        checks = [
+            ("get", "/workbench/"),
+            ("get", "/dashboard/symbols/?q=NABIL"),
+            ("post", "/dashboard/process/"),
+            ("post", "/dashboard/delete/1/"),
+            ("post", "/dashboard/sync/"),
+            ("post", "/dashboard/sync-calculate/"),
+        ]
+
+        for method, path in checks:
+            with self.subTest(path=path):
+                response = getattr(client, method)(path)
+
+                self.assertEqual(response.status_code, 302)
+                self.assertIn("/admin/login/", response["Location"])
 
 
 class FakeTechnicalAnalysis:
@@ -133,6 +247,138 @@ class MarketInsightsHeadlineTests(unittest.TestCase):
         self.assertEqual(payload["overview"]["nepse_pct"], -0.23)
         self.assertEqual(payload["overview"]["turnover"], 1164469269.88)
         self.assertEqual(payload["overview"]["volume"], 2524762)
+
+    def test_stale_live_feed_falls_back_to_eod_for_stock_widgets(self):
+        # The per-scrip live feed serves prior-session quotes (Jun 8) while the
+        # official index headline reports the real trading day (Jun 16). The
+        # heatmap/breadth must reflect the fresher end-of-day DB rows, not the
+        # stale live quotes. Regression for the heatmap showing week-old prices.
+        stale_live_rows = [{
+            "symbol": "CFCL",
+            "securityName": "Central Finance",
+            "closePrice": 641.8,
+            "previousDayClosePrice": 630.0,
+            "openPrice": 630.0,
+            "highPrice": 645.0,
+            "lowPrice": 628.0,
+            "totalTradedQuantity": 1000,
+            "totalTradedValue": 641800.0,
+            "totalTrades": 50,
+            "marketCapitalization": 0.0,
+            "businessDate": "2026-06-08",
+            "lastUpdatedTime": "2026-06-08 15:00:00",
+        }]
+        eod_rows = [{
+            "symbol": "CFCL",
+            "security_name": "Central Finance",
+            "open_price": 689.0,
+            "high_price": 689.0,
+            "low_price": 616.0,
+            "close_price": 620.0,
+            "previous_close": 659.0,
+            "total_traded_quantity": 2000,
+            "total_traded_value": 1240000.0,
+            "total_trades": 80,
+            "market_capitalization": 0.0,
+        }]
+        live_contributors = {
+            "index": {"value": 2699.66, "change": -5.79, "prev_close": 2705.45, "pct": -0.21},
+            "positive": [],
+            "negative": [],
+        }
+        summary = [{
+            "businessDate": "2026-06-16",
+            "totalTurnover": 4047858084.12,
+            "totalTradedShares": 100,
+            "totalTransactions": 0,
+            "tradedScrips": 0,
+        }]
+
+        patches = [
+            patch.object(market_insights.cache, "get", return_value=None),
+            patch.object(market_insights.cache, "set"),
+            patch.object(market_insights, "fetch_live_rows", return_value=stale_live_rows),
+            patch.object(market_insights, "fetch_subindices", return_value=None),
+            patch.object(market_insights, "fetch_market_summary", return_value=summary),
+            patch.object(market_insights, "fetch_contributors", return_value=live_contributors),
+            patch.object(market_insights, "fetch_top_gainers", return_value=None),
+            patch.object(market_insights, "fetch_top_losers", return_value=None),
+            patch.object(market_insights, "fetch_top_active", return_value=None),
+            patch.object(market_insights, "_sector_map", return_value={"CFCL": "Finance"}),
+            patch.object(market_insights, "_latest_stock_rows", return_value=(date(2026, 6, 15), eod_rows)),
+            patch.object(market_insights, "_nepse_history", return_value=[]),
+        ]
+
+        with ExitStack() as stack:
+            for p in patches:
+                stack.enter_context(p)
+            payload = market_insights.build_payload(force=True)
+
+        # Stale live feed must not be badged LIVE, and the stock widgets must use EOD.
+        self.assertFalse(payload["live"])
+        self.assertEqual(payload["source"], "eod")
+        cfcl = next(t for t in payload["heatmap"] if t["symbol"] == "CFCL")
+        self.assertEqual(cfcl["ltp"], 620.0)      # EOD close, not the stale 641.8
+        self.assertEqual(cfcl["pct"], -5.92)      # (620-659)/659, not the stale +1.87
+
+
+@unittest.skipIf(market_insights is None, "Django settings unavailable")
+class SubindexComparisonTests(TestCase):
+    # Eight consecutive NEPSE sessions (Jun 1–8) anchor the window.
+    NEPSE_DATES = [date(2026, 6, d) for d in range(1, 9)]
+
+    @classmethod
+    def setUpTestData(cls):
+        from core_analysis.models import NepseMarketIndex
+        created = datetime(2026, 6, 16, tzinfo=timezone.utc)
+        api_id = 0
+
+        def add(sector, bdate, close):
+            nonlocal api_id
+            api_id += 1
+            NepseMarketIndex.objects.create(
+                api_id=api_id, business_date=bdate, sector_name=sector,
+                open_index=close, high_index=close, low_index=close, close_index=close,
+                absolute_change=0, percentage_change=0,
+                turnover_values=0, turnover_volume=0, total_transaction=0,
+                number_52_weeks_high=close, number_52_weeks_low=close, created_at=created,
+            )
+
+        for i, d in enumerate(cls.NEPSE_DATES):
+            add("NEPSE INDEX", d, 1000.0 + i * 10)
+        # The bucketing is case-insensitive, so store the sub-indices in the DB's
+        # mixed case to prove the upper()-keyed match works regardless of casing.
+        for i, d in enumerate(cls.NEPSE_DATES):
+            add("Banking SubIndex", d, 500.0 + i * 5)
+        # A sparser sub-index that only traded on two of the eight sessions.
+        add("HydroPower Index", cls.NEPSE_DATES[0], 200.0)
+        add("HydroPower Index", cls.NEPSE_DATES[-1], 190.0)
+
+    def test_comparison_aligns_indices_over_window(self):
+        from django.core.cache import cache
+        cache.clear()  # the function caches per-window; isolate this test
+        result = market_insights.subindex_comparison(days=50)
+
+        self.assertEqual(result["start"], "2026-06-01")
+        self.assertEqual(result["sessions"], 8)  # all eight NEPSE dates
+        labels = {s["label"]: s for s in result["series"]}
+        self.assertEqual(set(labels), {"NEPSE", "Banking", "Hydropower"})
+
+        nepse = labels["NEPSE"]["points"]
+        self.assertEqual(nepse[0], ["2026-06-01", 1000.0])  # raw closes, oldest first
+        self.assertEqual(nepse[-1], ["2026-06-08", 1070.0])
+        # Sparser sub-index keeps only the sessions it actually traded.
+        self.assertEqual(len(labels["Hydropower"]["points"]), 2)
+
+    def test_comparison_window_limits_to_recent_sessions(self):
+        from django.core.cache import cache
+        cache.clear()
+        result = market_insights.subindex_comparison(days=5)
+        # Window = the most recent 5 NEPSE sessions (Jun 4–8).
+        self.assertEqual(result["start"], "2026-06-04")
+        self.assertEqual(result["sessions"], 5)
+        nepse = next(s for s in result["series"] if s["label"] == "NEPSE")["points"]
+        self.assertEqual([p[0] for p in nepse], ["2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08"])
 
 
 @unittest.skipIf(nepse_contributors is None, "Django settings unavailable")

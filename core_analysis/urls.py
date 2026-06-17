@@ -10,6 +10,7 @@ from .views import (
 from .insights_views import (
     market_insights_view,
     market_insights_api,
+    subindex_comparison_api,
     floorsheet_view,
     technical_analysis_view,
 )
@@ -28,6 +29,7 @@ urlpatterns = [
     path('', market_insights_view, name='market_insights'),
     path('insights/', market_insights_view),
     path('insights/api/', market_insights_api, name='market_insights_api'),
+    path('insights/subindices/', subindex_comparison_api, name='subindex_comparison_api'),
 
     # Technical Analysis terminal (Lightweight Charts: price + volume + indicators).
     path('chart/', technical_analysis_view, name='technical_analysis'),

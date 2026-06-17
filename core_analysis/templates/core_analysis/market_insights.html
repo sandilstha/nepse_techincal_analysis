@@ -92,19 +92,10 @@
       <span class="mi-stat-value" id="ov-trades">—</span>
       <span class="mi-stat-sub" id="ov-scrips">—</span>
     </article>
-    <article class="mi-stat mi-stat-breadth" data-key="breadth">
-      <span class="mi-stat-label">Market Breadth</span>
-      <div class="mi-breadth-mini" id="ov-breadth">
-        <span class="up" id="ov-adv">0</span>
-        <span class="flat" id="ov-unch">0</span>
-        <span class="down" id="ov-dec">0</span>
-      </div>
-      <div class="mi-breadth-bar"><span id="ov-breadth-bar"></span></div>
-    </article>
   </section>
 
-  <!-- ── Index OHLC (full-width trading view) ─────────────────────────── -->
-  <section class="mi-grid mi-grid-1">
+  <!-- ── Market pulse: Index OHLC + Breadth ───────────────────────────── -->
+  <section class="mi-grid mi-grid-market-pulse mi-market-pulse">
     <article class="mi-card mi-ohlc-card">
       <div class="mi-card-head">
         <h2 class="mi-card-title">Index OHLC</h2>
@@ -131,10 +122,7 @@
         <div class="mi-tv" id="mi-tv-container"></div>
       </div>
     </article>
-  </section>
 
-  <!-- ── Market pulse: Breadth + Sector Turnover (balanced pair) ───────── -->
-  <section class="mi-grid mi-grid-1-1 mi-pulse">
     <article class="mi-card mi-card-breadth">
       <div class="mi-card-head">
         <h2 class="mi-card-title">Market Breadth</h2>
@@ -149,10 +137,31 @@
       </div>
     </article>
 
+  </section>
+
+  <!-- ── Sector comparison + turnover ─────────────────────────────────── -->
+  <section class="mi-grid mi-grid-sector-compare mi-sector-compare-row">
+    <article class="mi-card">
+      <div class="mi-card-head">
+        <h2 class="mi-card-title">Sector Index Comparison</h2>
+        <div class="mi-card-tools">
+          <span class="mi-card-hint">% change from start · click legend to toggle</span>
+          <div class="mi-range" id="compare-range" role="group" aria-label="Comparison range">
+            <button type="button" class="mi-range-btn" data-days="22">1M</button>
+            <button type="button" class="mi-range-btn" data-days="66">3M</button>
+            <button type="button" class="mi-range-btn" data-days="132">6M</button>
+            <button type="button" class="mi-range-btn is-active" data-days="250">1Y</button>
+            <button type="button" class="mi-range-btn" data-days="800">Max</button>
+          </div>
+        </div>
+      </div>
+      <div class="mi-chart mi-chart-compare" id="chart-subindex-compare"></div>
+    </article>
+
     <article class="mi-card mi-sector-card">
       <div class="mi-card-head">
         <h2 class="mi-card-title">Sector Turnover</h2>
-        <span class="mi-card-hint">bar = turnover share</span>
+        <span class="mi-card-hint">column = turnover share</span>
       </div>
       <div class="mi-chart" id="chart-sectors"></div>
     </article>

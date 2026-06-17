@@ -91,6 +91,37 @@ SECTOR_LABELS = {
     "TRADING INDEX": "Trading",
 }
 
+# Full index set for the sub-index comparison chart, in display order: the NEPSE
+# headline first, then the aggregate (sensitive / float) indices, then every
+# sector sub-index. Names are NepseMarketIndex.sector_name values (matched
+# case-insensitively by the DB, like the other index lookups in this module).
+COMPARISON_INDICES = (
+    ("NEPSE INDEX", "NEPSE"),
+    ("SENSITIVE INDEX", "Sensitive"),
+    ("FLOAT INDEX", "Float"),
+    ("SENSITIVE FLOAT INDEX", "Sensitive Float"),
+    ("BANKING SUBINDEX", "Banking"),
+    ("DEVELOPMENT BANK INDEX", "Dev. Bank"),
+    ("FINANCE INDEX", "Finance"),
+    ("HOTELS AND TOURISM INDEX", "Hotels & Tourism"),
+    ("HYDROPOWER INDEX", "Hydropower"),
+    ("INVESTMENT INDEX", "Investment"),
+    ("LIFE INSURANCE", "Life Insurance"),
+    ("MANUFACTURING AND PROCESSING", "Manufacturing"),
+    ("MICROFINANCE INDEX", "Microfinance"),
+    ("MUTUAL FUND", "Mutual Fund"),
+    ("NON LIFE INSURANCE", "Non-Life Insurance"),
+    ("OTHERS INDEX", "Others"),
+    ("TRADING INDEX", "Trading"),
+)
+
+# Default / maximum window (trading sessions) for the comparison chart. The cap
+# keeps the multi-series payload light — 17 indices × this many daily closes.
+COMPARISON_SESSIONS = 250
+COMPARISON_MAX_SESSIONS = 800
+COMPARISON_CACHE_KEY = "market_insights_subindex_compare"
+COMPARISON_CACHE_TTL = 300  # EOD series only change once a day; cache generously.
+
 
 # ── helpers ────────────────────────────────────────────────────────────────
 
@@ -362,13 +393,19 @@ def _contributors_index_metrics(row, fallback=None):
     if pct is None and change is not None and prev and prev > 0:
         pct = (change / prev) * 100.0
 
+    high = _f(row.get("high")) if row.get("high") is not None else fallback.get("high")
+    low = _f(row.get("low")) if row.get("low") is not None else fallback.get("low")
+    if value is not None:
+        high = max(high, value) if high is not None else value
+        low = min(low, value) if low is not None else value
+
     return {
         "value": value,
         "prev": prev,
         "change": change,
         "pct": pct,
-        "high": _f(row.get("high")) if row.get("high") is not None else fallback.get("high"),
-        "low": _f(row.get("low")) if row.get("low") is not None else fallback.get("low"),
+        "high": high,
+        "low": low,
         "turnover": _f(row.get("turnover")) if row.get("turnover") is not None else fallback.get("turnover", 0.0),
         "date": (
             row.get("date")
@@ -559,6 +596,63 @@ def _nepse_history(days=HISTORY_DAYS):
     ]
 
 
+def subindex_comparison(days=COMPARISON_SESSIONS):
+    """Aligned daily-close series for every NEPSE (sub)index, for the comparison chart.
+
+    Returns ``{"start": iso, "sessions": n, "series": [{name, label, points}]}``
+    where ``points`` is ``[[iso_date, close], ...]`` over the most recent ``days``
+    trading sessions. Closes are sent raw — the client normalises each line to
+    % change from its first visible point so all 17 lines share a 0%-baseline.
+
+    Result is cached per window: the underlying rows are end-of-day, so they only
+    change once a day, but several clients may request the same range at once.
+    """
+    days = max(5, min(int(days or COMPARISON_SESSIONS), COMPARISON_MAX_SESSIONS))
+    cache_key = "%s:%d" % (COMPARISON_CACHE_KEY, days)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    # Window = the most recent `days` distinct NEPSE business dates. Anchoring on
+    # the NEPSE index (the longest, densest series) gives every sub-index the same
+    # date span even when a sector has gaps or a shorter history.
+    recent_dates = list(
+        NepseMarketIndex.objects.filter(sector_name=NEPSE_INDEX_NAME)
+        .order_by("-business_date")
+        .values_list("business_date", flat=True)[:days]
+    )
+    if not recent_dates:
+        return {"start": None, "sessions": 0, "series": []}
+    start = recent_dates[-1]
+
+    # Filter by date only: NepseMarketIndex holds exactly the index sector_names,
+    # so this returns every (sub)index without depending on case-folded `__in`.
+    rows = (
+        NepseMarketIndex.objects.filter(business_date__gte=start)
+        .order_by("business_date")
+        .values_list("sector_name", "business_date", "close_index")
+    )
+    order = {name.upper(): i for i, (name, _label) in enumerate(COMPARISON_INDICES)}
+    buckets = {name: [] for name, _label in COMPARISON_INDICES}
+    for sector_name, bdate, close in rows:
+        key = (sector_name or "").upper()
+        if key not in order:
+            continue  # an index not surfaced in the comparison set
+        value = _f(close)
+        if value is None:
+            continue
+        buckets[COMPARISON_INDICES[order[key]][0]].append([bdate.isoformat(), _round(value)])
+
+    series = [
+        {"name": name, "label": label, "points": buckets[name]}
+        for name, label in COMPARISON_INDICES
+        if buckets[name]
+    ]
+    result = {"start": start.isoformat(), "sessions": len(recent_dates), "series": series}
+    cache.set(cache_key, result, COMPARISON_CACHE_TTL)
+    return result
+
+
 # ── public API ─────────────────────────────────────────────────────────────
 
 def build_payload(force=False, cache_only=False):
@@ -631,6 +725,11 @@ def build_payload(force=False, cache_only=False):
         live_feed_date = None
         live_time = None
 
+    # Set when the live per-scrip feed turns out to be stale (older than the
+    # official trading day): the stock-level widgets are then rebuilt from the
+    # end-of-day database below so they don't show prior-session prices.
+    live_stale = False
+
     # Sector performance comes from the NepseSubIndices feed. The NEPSE headline
     # prefers the contributors page below because that source tracks the live
     # exchange headline during the session, while NepseSubIndices has been
@@ -663,6 +762,7 @@ def build_payload(force=False, cache_only=False):
             if is_live and live_feed_date and str(live_feed_date)[:10] < official_date[:10]:
                 is_live = False
                 live_time = None
+                live_stale = True
     else:
         nepse_headline = None  # let _overview fall back to the DB
         index_source = "eod"
@@ -691,17 +791,28 @@ def build_payload(force=False, cache_only=False):
             if is_live and live_feed_date and str(live_feed_date)[:10] < str(as_of)[:10]:
                 is_live = False
                 live_time = None
+                live_stale = True
+
+    # The live per-scrip feed was stale (older than the official trading day).
+    # The headline above is already sourced from the fresh official feeds, but the
+    # stock-level widgets (heatmap, breadth, gainers/losers/most-active) are still
+    # built from the stale live quotes. Rebuild them from the end-of-day database
+    # so they don't show prior-session prices under a current-day "as of" badge.
+    if live_stale:
+        _eod_date, _eod_rows = _latest_stock_rows()
+        if _eod_rows:
+            enriched = _enrich(_eod_rows, sector_map)
 
     # Reconcile sector turnover to the OFFICIAL total: the 13 index sub-sectors
     # only cover indexed scrips, so the remainder (debentures, preference /
-    # promoter shares) is shown as an "Other" row. This makes sector turnover
+    # promoter shares) is shown as a "Non-indexed" row. This makes sector turnover
     # match the headline Total Turnover instead of reading low.
     if sectors and ms_row:
         official_turnover = _f(ms_row.get("totalTurnover"))
         sector_turnover = sum((s.get("turnover") or 0.0) for s in sectors)
         if official_turnover and official_turnover - sector_turnover > 0:
             sectors = sectors + [{
-                "sector": "Other", "raw": "OTHER",
+                "sector": "Non-indexed", "raw": "NON_INDEXED",
                 "index": None, "change": None, "pct": None,
                 "turnover": round(official_turnover - sector_turnover, 2),
             }]

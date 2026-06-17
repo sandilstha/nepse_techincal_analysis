@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -55,27 +57,58 @@ def _env_bool(name, default=False):
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_or_dev_default(name, default):
+    value = os.environ.get(name)
+    if value is not None:
+        return value
+    if DEBUG:
+        return default
+    raise ImproperlyConfigured(f"{name} must be set when DJANGO_DEBUG=0.")
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-# Read from the environment in production; the insecure fallback is dev-only.
-SECRET_KEY = os.environ.get(
-    'DJANGO_SECRET_KEY',
-    'django-insecure-rog4sy4xp-#2c!%f%%yf)8j^@qtf*8&_e9ikcb5(td!q*l2ngb',
-)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Defaults to True for local dev; set DJANGO_DEBUG=0 in production.
 DEBUG = _env_bool('DJANGO_DEBUG', True)
 
+# SECURITY WARNING: keep the secret key used in production secret!
+# Read from the environment in production. The insecure fallback is dev-only and
+# intentionally refused when DJANGO_DEBUG=0.
+SECRET_KEY = _env_or_dev_default(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-rog4sy4xp-#2c!%f%%yf)8j^@qtf*8&_e9ikcb5(td!q*l2ngb',
+)
+
 # Comma-separated list via DJANGO_ALLOWED_HOSTS in production.
+_allowed_hosts_raw = os.environ.get('DJANGO_ALLOWED_HOSTS')
+if not _allowed_hosts_raw:
+    if DEBUG:
+        _allowed_hosts_raw = '127.0.0.1,localhost,192.168.1.31'
+    else:
+        raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must be set when DJANGO_DEBUG=0.")
+
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.environ.get(
-        'DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,192.168.1.31,nepstockswatch.sandilstha.com.np'
-    ).split(',')
+    for host in _allowed_hosts_raw.split(',')
     if host.strip()
+]
+
+# Baseline browser protections that are safe in every environment.
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'same-origin'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+X_FRAME_OPTIONS = 'DENY'
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',')
+    if origin.strip()
 ]
 
 # ── Production security hardening (only enforced when DEBUG is off) ────────────
@@ -88,15 +121,7 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_HSTS_SECONDS', '31536000'))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    X_FRAME_OPTIONS = 'DENY'
-    # Comma-separated origins, e.g. "https://nepse.example.com"
-    CSRF_TRUSTED_ORIGINS = [
-        origin.strip()
-        for origin in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',')
-        if origin.strip()
-    ]
 
 
 # Application definition
@@ -129,6 +154,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'nepse_project.urls'
 
+# The operational workbench is protected with Django's staff check and uses the
+# existing admin login rather than requiring a separate auth UI.
+LOGIN_URL = 'admin:login'
+LOGIN_REDIRECT_URL = 'crud_dashboard'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -155,9 +185,9 @@ WSGI_APPLICATION = 'nepse_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'nepse_database'),
-        'USER': os.environ.get('DB_USER', 'root'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', '1234'),
+        'NAME': _env_or_dev_default('DB_NAME', 'nepse_database'),
+        'USER': _env_or_dev_default('DB_USER', 'root'),
+        'PASSWORD': _env_or_dev_default('DB_PASSWORD', '1234'),
         'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
         'PORT': os.environ.get('DB_PORT', '3306'),
         # Reuse a MySQL connection across requests (persistent connections) instead

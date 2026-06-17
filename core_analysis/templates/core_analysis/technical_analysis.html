@@ -25,6 +25,7 @@
       border-radius: 8px; padding: 5px 8px; font: inherit;
     }
     .ta-input { width: 130px; text-transform: uppercase; }
+    .ta-index-select { min-width: 190px; max-width: 260px; }
     .ta-btn {
       background: var(--accent, #4a90e2); color: #fff; border: 0;
       border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit;
@@ -42,8 +43,46 @@
     }
     .ta-chip button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 14px; line-height: 1; }
 
+    .ta-workspace { display: flex; flex: 1 1 auto; min-height: 0; }
+    .ta-drawbar {
+      flex: 0 0 36px; width: 36px; display: flex; flex-direction: column; align-items: center; gap: 5px;
+      padding: 6px 4px; border-right: 1px solid var(--line, rgba(128,128,128,.25));
+      background: var(--surface, rgba(128,128,128,.06)); overflow-y: auto;
+    }
+    .ta-tool {
+      width: 27px; height: 27px; position: relative; display: inline-grid; place-items: center;
+      color: inherit; border: 1px solid transparent; border-radius: 4px;
+      background: transparent; cursor: pointer; opacity: .82;
+    }
+    .ta-tool:hover, .ta-tool.active {
+      opacity: 1; background: rgba(128,128,128,.16); border-color: var(--line, rgba(128,128,128,.35));
+    }
+    .ta-tool span, .ta-tool span::before, .ta-tool span::after {
+      position: absolute; display: block; content: ""; box-sizing: border-box;
+    }
+    .tool-pointer::before {
+      left: 7px; top: 4px; width: 0; height: 0;
+      border-left: 10px solid currentColor; border-top: 6px solid transparent; border-bottom: 6px solid transparent;
+      transform: rotate(-28deg);
+    }
+    .tool-cross::before { left: 5px; right: 5px; top: 13px; border-top: 1px solid currentColor; }
+    .tool-cross::after { top: 5px; bottom: 5px; left: 13px; border-left: 1px solid currentColor; }
+    .tool-line::before, .tool-ray::before { left: 5px; top: 17px; width: 18px; border-top: 1px solid currentColor; transform: rotate(-38deg); }
+    .tool-ray::after { right: 4px; top: 7px; width: 5px; height: 5px; border-top: 1px solid currentColor; border-right: 1px solid currentColor; transform: rotate(45deg); }
+    .tool-hline::before { left: 5px; right: 5px; top: 13px; border-top: 1px solid currentColor; }
+    .tool-vline::before { top: 5px; bottom: 5px; left: 13px; border-left: 1px solid currentColor; }
+    .tool-rect::before { left: 6px; top: 6px; width: 15px; height: 15px; border: 1px solid currentColor; }
+    .tool-undo::before { left: 7px; top: 7px; width: 13px; height: 13px; border: 1px solid currentColor; border-right-color: transparent; border-radius: 50%; }
+    .tool-undo::after { left: 5px; top: 6px; width: 6px; height: 6px; border-left: 1px solid currentColor; border-top: 1px solid currentColor; transform: rotate(-45deg); }
+    .tool-clear::before, .tool-clear::after { left: 6px; top: 13px; width: 15px; border-top: 1px solid currentColor; }
+    .tool-clear::before { transform: rotate(45deg); }
+    .tool-clear::after { transform: rotate(-45deg); }
+
     .ta-body { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
     #ta-price { flex: 1 1 auto; min-height: 220px; position: relative; }
+    .ta-drawing-canvas { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+    #ta-price.ta-drawing-active .ta-drawing-canvas { pointer-events: auto; cursor: crosshair; }
+    #ta-price.ta-drawing-move .ta-drawing-canvas { cursor: move; }
     #ta-osc-stack { flex: 0 0 auto; }
     .ta-osc-pane { position: relative; height: 150px; border-top: 1px solid var(--line, rgba(128,128,128,.25)); }
     .ta-osc-label {
@@ -55,7 +94,7 @@
       border: 0; background: transparent; color: inherit; font-size: 14px; opacity: .6;
     }
     .ta-osc-close:hover { opacity: 1; }
-    #ta-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: .7; }
+    #ta-loading { position: absolute; inset: 0; z-index: 4; display: flex; align-items: center; justify-content: center; opacity: .7; }
   </style>
 </head>
 <body>
@@ -68,6 +107,9 @@
            placeholder="Symbol" aria-label="Symbol" autocomplete="off">
     <datalist id="ta-symlist"></datalist>
     <button id="ta-go" class="ta-btn ghost" title="Load symbol">Go</button>
+    <select id="ta-index" class="ta-select ta-index-select" aria-label="Index or sub-index">
+      <option value="">Indices</option>
+    </select>
 
     <span class="ta-quote" id="ta-quote">—</span>
 
@@ -87,9 +129,23 @@
     <a href="{% url 'market_insights' %}" class="ta-icon-btn" title="Home" aria-label="Home">🏠</a>
   </header>
 
-  <div class="ta-body">
+  <div class="ta-workspace">
+    <aside class="ta-drawbar" aria-label="Drawing tools">
+      <button type="button" class="ta-tool active" data-tool="select" title="Select / pan" aria-label="Select / pan"><span class="tool-pointer"></span></button>
+      <button type="button" class="ta-tool" data-tool="crosshair" title="Crosshair" aria-label="Crosshair"><span class="tool-cross"></span></button>
+      <button type="button" class="ta-tool" data-tool="line" title="Trend line" aria-label="Trend line"><span class="tool-line"></span></button>
+      <button type="button" class="ta-tool" data-tool="ray" title="Ray" aria-label="Ray"><span class="tool-ray"></span></button>
+      <button type="button" class="ta-tool" data-tool="hline" title="Horizontal line" aria-label="Horizontal line"><span class="tool-hline"></span></button>
+      <button type="button" class="ta-tool" data-tool="vline" title="Vertical line" aria-label="Vertical line"><span class="tool-vline"></span></button>
+      <button type="button" class="ta-tool" data-tool="rect" title="Rectangle" aria-label="Rectangle"><span class="tool-rect"></span></button>
+      <button type="button" class="ta-tool" data-action="undo" title="Undo drawing" aria-label="Undo drawing"><span class="tool-undo"></span></button>
+      <button type="button" class="ta-tool" data-action="clear" title="Clear drawings" aria-label="Clear drawings"><span class="tool-clear"></span></button>
+    </aside>
+
+    <div class="ta-body">
     <div id="ta-price"><div id="ta-loading">Loading {{ symbol }}…</div></div>
-    <div id="ta-osc-stack"></div>
+      <div id="ta-osc-stack"></div>
+    </div>
   </div>
 </div>
 

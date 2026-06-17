@@ -21,7 +21,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
 
-from core_analysis.services.market_insights import build_payload
+from core_analysis.services.market_insights import build_payload, subindex_comparison
 
 logger = logging.getLogger(__name__)
 
@@ -163,6 +163,30 @@ def floorsheet_view(request):
         "core_analysis/floorsheet.html",
         {"asset_version": _asset_version()},
     )
+
+
+@require_GET
+def subindex_comparison_api(request):
+    """JSON multi-series feed for the sub-index comparison chart.
+
+    Accepts ?days=<sessions> (clamped server-side) and returns aligned daily
+    closes for the NEPSE index plus every sub-index. Independent of the main
+    dashboard payload so the heavy historical series isn't re-sent on every
+    15s auto-refresh — the client fetches it once on load and on range change.
+    """
+    try:
+        days = int(request.GET.get("days") or 0)
+    except (TypeError, ValueError):
+        days = 0
+    try:
+        data = subindex_comparison(days) if days else subindex_comparison()
+        data["ok"] = True
+        return JsonResponse(data)
+    except Exception:  # pragma: no cover - defensive
+        logger.exception("Sub-index comparison build failed")
+        return JsonResponse(
+            {"ok": False, "error": "Unable to load sub-index data right now."}, status=500
+        )
 
 
 @require_GET

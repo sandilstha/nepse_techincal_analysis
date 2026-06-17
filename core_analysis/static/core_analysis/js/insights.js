@@ -12,9 +12,22 @@
   var LS_THEME = "mi-theme";
   var LS_INTERVAL = "mi-refresh-interval";
   var LS_HEATMAP_SECTOR = "mi-heatmap-sector";
+  var LS_COMPARE_DAYS = "mi-compare-days";
 
   var HEATMAP_ALL_LIMIT = 60;     // tiles shown for "All sectors"
   var HEATMAP_SECTOR_LIMIT = 80;  // tiles shown when a single sector is picked
+
+  // Endpoint for the sub-index comparison chart (independent of the polled
+  // dashboard payload so its heavy historical series isn't re-fetched every tick).
+  var COMPARE_URL = "/insights/subindices/";
+  var COMPARE_DEFAULT_DAYS = 250;
+  // One distinct colour per series, in the backend's order: NEPSE first (drawn
+  // emphasised below), then the aggregate indices, then the 13 sector sub-indices.
+  var COMPARE_COLORS = [
+    "#e5e7eb", "#94a3b8", "#64748b", "#475569",
+    "#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#a855f7", "#06b6d4",
+    "#ec4899", "#84cc16", "#f97316", "#14b8a6", "#6366f1", "#eab308", "#d946ef"
+  ];
 
   var state = {
     data: null,
@@ -22,7 +35,8 @@
     intervalSec: CONFIG.refreshSeconds,
     inFlight: false,
     charts: {},
-    heatmapSector: "ALL"
+    heatmapSector: "ALL",
+    compare: { days: COMPARE_DEFAULT_DAYS, data: null, inFlight: false }
   };
 
   // ── Formatting helpers ─────────────────────────────────────────────────
@@ -137,24 +151,6 @@
     if (badge) badge.hidden = !d.live;
     if (label) label.textContent = d.live ? "Live" : "As of";
 
-    renderBreadthMini(d.breadth || {});
-  }
-
-  function renderBreadthMini(b) {
-    var adv = b.advancing || 0, dec = b.declining || 0, unch = b.unchanged || 0;
-    el("ov-adv").textContent = fmtNum(adv, 0);
-    el("ov-unch").textContent = fmtNum(unch, 0);
-    el("ov-dec").textContent = fmtNum(dec, 0);
-    var total = adv + dec + unch;
-    var bar = el("ov-breadth-bar");
-    if (!total) { bar.innerHTML = ""; return; }
-    var pa = (adv / total * 100).toFixed(1);
-    var pf = (unch / total * 100).toFixed(1);
-    var pd = (dec / total * 100).toFixed(1);
-    bar.innerHTML =
-      '<i class="up" style="width:' + pa + '%"></i>' +
-      '<i class="flat" style="width:' + pf + '%"></i>' +
-      '<i class="down" style="width:' + pd + '%"></i>';
   }
 
   function symCell(row) {
@@ -239,6 +235,9 @@
     renderSectorChart(d.sectors || []);
     populateHeatmapSectors(d.heatmap || []);
     renderHeatmap();
+    // Comparison chart is fed by its own endpoint; re-paint from cached data so a
+    // theme toggle (which destroys all charts) or a refresh restores it.
+    if (state.compare.data) renderSubindexCompare();
   }
 
   // Build the sector <select> from the tiles present, preserving the current
@@ -277,14 +276,14 @@
     if (node) {
       var t = baseChartOpts();
       var opts = {
-        chart: { type: "donut", height: 230, fontFamily: "Manrope, sans-serif" },
+        chart: { type: "donut", height: 300, parentHeightOffset: 0, fontFamily: "Manrope, sans-serif" },
         series: [b.advancing || 0, b.declining || 0, b.unchanged || 0],
         labels: ["Advancing", "Declining", "Unchanged"],
         colors: [t.up, t.down, t.flat],
         stroke: { width: 0 },
         legend: { show: false },
         dataLabels: { enabled: true, formatter: function (val, o) { return o.w.config.series[o.seriesIndex]; }, style: { fontSize: "11px" } },
-        plotOptions: { pie: { donut: { size: "62%", labels: { show: true, total: { show: true, label: "Scrips", color: t.foreColor, formatter: function (w) { return w.globals.seriesTotals.reduce(function (a, c) { return a + c; }, 0); } } } } } },
+        plotOptions: { pie: { customScale: 1.08, donut: { size: "62%", labels: { show: true, total: { show: true, label: "Scrips", color: t.foreColor, formatter: function (w) { return w.globals.seriesTotals.reduce(function (a, c) { return a + c; }, 0); } } } } } },
         tooltip: { theme: themeName() }
       };
       mountChart("chart-breadth", "breadth", opts);
@@ -375,11 +374,12 @@
       legend: { show: false },
       plotOptions: {
         bar: {
-          horizontal: true,
+          horizontal: false,
           distributed: true,
           borderRadius: 4,
-          barHeight: "62%",
-          dataLabels: { position: "right" }
+          borderRadiusApplication: "end",
+          columnWidth: "58%",
+          dataLabels: { position: "top" }
         }
       },
       dataLabels: {
@@ -387,7 +387,7 @@
         formatter: function (v) {
           return total ? (v / total * 100).toFixed(1) + "%" : "";
         },
-        offsetX: 8,
+        offsetY: -14,
         style: { fontSize: "11px", fontWeight: 700, colors: [t.foreColor] },
         background: { enabled: false },
         dropShadow: { enabled: false }
@@ -395,7 +395,11 @@
       xaxis: {
         categories: labels,
         labels: {
-          formatter: function (v) { return fmtCompact(Number(v)); },
+          rotate: -45,
+          rotateAlways: true,
+          trim: true,
+          hideOverlappingLabels: false,
+          maxHeight: 92,
           style: { colors: t.foreColor, fontSize: "11px" }
         },
         axisBorder: { color: t.grid },
@@ -403,11 +407,11 @@
       },
       yaxis: {
         labels: {
-          maxWidth: 150,
+          formatter: function (v) { return fmtCompact(Number(v)); },
           style: { colors: t.foreColor, fontSize: "11px", fontWeight: 600 }
         }
       },
-      grid: { borderColor: t.grid, strokeDashArray: 3, xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } } },
+      grid: { borderColor: t.grid, strokeDashArray: 3, xaxis: { lines: { show: false } }, yaxis: { lines: { show: true } } },
       tooltip: { theme: themeName(), y: { formatter: function (v) { return fmtMoney(v); } } },
       noData: { text: "No sector turnover available", style: { color: t.foreColor } }
     };
@@ -472,6 +476,63 @@
       }
     };
     mountChart("chart-heatmap", "heatmap", opts);
+  }
+
+  // ── Sub-index comparison chart ─────────────────────────────────────────
+  function fetchCompare(days) {
+    if (state.compare.inFlight) return;
+    state.compare.inFlight = true;
+    state.compare.days = days;
+    var url = COMPARE_URL + "?days=" + encodeURIComponent(days);
+    fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" }, credentials: "same-origin" })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (d) {
+        if (d.ok === false) throw new Error(d.error || "Service error");
+        state.compare.data = d;
+        renderSubindexCompare();
+      })
+      .catch(function (err) {
+        if (window.console) console.warn("Sub-index comparison fetch failed:", err.message);
+      })
+      .finally(function () { state.compare.inFlight = false; });
+  }
+
+  function renderSubindexCompare() {
+    var d = state.compare.data;
+    if (!d || !d.series) return;
+    var t = baseChartOpts();
+    // Normalise each line to % change from its first point so all 17 indices,
+    // whatever their absolute level, share a single 0%-baseline scale.
+    var series = d.series.map(function (s) {
+      var pts = s.points || [];
+      var base = pts.length ? pts[0][1] : 0;
+      var data = pts.map(function (p) {
+        var pct = base ? (p[1] / base - 1) * 100 : 0;
+        return { x: new Date(p[0] + "T00:00:00").getTime(), y: Math.round(pct * 100) / 100 };
+      });
+      return { name: s.label, data: data };
+    });
+
+    var opts = {
+      chart: {
+        type: "line", height: 460, fontFamily: "Manrope, sans-serif",
+        toolbar: { show: true, tools: { download: false, selection: true, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
+        animations: { enabled: false }
+      },
+      series: series,
+      colors: COMPARE_COLORS,
+      // NEPSE (series 0) drawn thicker so the headline stands out from sectors.
+      stroke: { curve: "straight", width: series.map(function (_s, i) { return i === 0 ? 3 : 1.5; }) },
+      legend: { show: true, position: "bottom", labels: { colors: t.foreColor }, fontSize: "12px", itemMargin: { horizontal: 8, vertical: 2 } },
+      xaxis: { type: "datetime", labels: { style: { colors: t.foreColor } }, axisBorder: { color: t.gridColor }, axisTicks: { color: t.gridColor } },
+      yaxis: { labels: { style: { colors: t.foreColor }, formatter: function (v) { return (v > 0 ? "+" : "") + v.toFixed(0) + "%"; } } },
+      grid: { borderColor: t.gridColor, strokeDashArray: 3 },
+      dataLabels: { enabled: false },
+      tooltip: { theme: themeName(), shared: true, x: { format: "dd MMM yyyy" }, y: { formatter: function (v) { return fmtPct(v); } } },
+      markers: { size: 0, hover: { size: 4 } },
+      noData: { text: "No sub-index data available", style: { color: t.foreColor } }
+    };
+    mountChart("chart-subindex-compare", "compare", opts);
   }
 
   function themeName() {
@@ -629,6 +690,25 @@
       });
     }
 
+    // Sub-index comparison range buttons (restore last choice, re-fetch on click).
+    var rangeBox = el("compare-range");
+    if (rangeBox) {
+      var savedDays;
+      try { savedDays = parseInt(localStorage.getItem(LS_COMPARE_DAYS), 10); } catch (e) {}
+      if (savedDays) state.compare.days = savedDays;
+      var btns = rangeBox.querySelectorAll(".mi-range-btn");
+      btns.forEach(function (b) {
+        b.classList.toggle("is-active", parseInt(b.getAttribute("data-days"), 10) === state.compare.days);
+        b.addEventListener("click", function () {
+          var days = parseInt(b.getAttribute("data-days"), 10) || COMPARE_DEFAULT_DAYS;
+          btns.forEach(function (x) { x.classList.remove("is-active"); });
+          b.classList.add("is-active");
+          try { localStorage.setItem(LS_COMPARE_DAYS, String(days)); } catch (e) {}
+          fetchCompare(days);
+        });
+      });
+    }
+
     // Resume promptly when the tab regains focus.
     document.addEventListener("visibilitychange", function () {
       if (!document.hidden && state.intervalSec > 0) refresh(false);
@@ -658,6 +738,9 @@
       setStatus("stale", "Loading…");
       refresh(false);
     }
+    // The comparison chart loads its own historical series, independent of the
+    // dashboard payload, so kick it off once here.
+    fetchCompare(state.compare.days);
     scheduleNext();
   }
 

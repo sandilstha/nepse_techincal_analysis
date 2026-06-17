@@ -30,6 +30,7 @@ from core_analysis.models import (
     NepseDailyStockPrice,
     NepseMarketIndex,
 )
+from core_analysis.services.nepse_contributors import fetch_contributors
 from core_analysis.services.nepse_subindices import fetch_subindices
 
 EXCHANGE = "NEPSE"
@@ -111,11 +112,15 @@ def _live_index_bar(key):
     close = _f(row.get("closingIndex")) or 0.0
     if close <= 0:
         close = _f(row.get("highIndex")) or _f(row.get("openIndex")) or _f(row.get("lowIndex"))
+    if key == "NEPSE INDEX":
+        contributors = fetch_contributors() or {}
+        headline = contributors.get("index") or {}
+        close = _f(headline.get("value")) or close
     if not close or close <= 0:
         return None
     open_ = _f(row.get("openIndex")) or close
-    high = _f(row.get("highIndex")) or close
-    low = _f(row.get("lowIndex")) or close
+    high = max(_f(row.get("highIndex")) or close, close)
+    low = min(_f(row.get("lowIndex")) or close, close)
     volume = _f(row.get("turnoverVolume")) or 0.0
     return (bar_date, open_, high, low, close, volume)
 
@@ -207,6 +212,33 @@ def _bars(kind, key, from_date, to_date, countback):
     if from_date:
         qs = qs.filter(business_date__gte=from_date)
     return list(qs.order_by("business_date").values_list(*fields))
+
+
+def _append_live_index_bar(kind, key, rows, to_date):
+    """Refresh/append today's live index bar using the same rule as UDF history."""
+    if kind != "index":
+        return rows
+
+    live = _live_index_bar(key)
+    if not live or (to_date is not None and live[0] > to_date):
+        return rows
+
+    rows = list(rows)
+    if rows and rows[-1][0] == live[0]:
+        rows[-1] = live          # replace a stale same-day bar
+    elif not rows or live[0] > rows[-1][0]:
+        rows.append(live)        # add today
+    return rows
+
+
+def _chart_bars(kind, key, from_date, to_date, countback):
+    """Rows exactly as chart consumers should see them.
+
+    This wraps the stored daily rows with the live index refresh used by the UDF
+    history endpoint. Indicator endpoints use it too so oscillator values are
+    calculated against the same final bar shown by the candle chart.
+    """
+    return _append_live_index_bar(kind, key, _bars(kind, key, from_date, to_date, countback), to_date)
 
 
 # ── endpoints ──────────────────────────────────────────────────────────────
@@ -308,18 +340,7 @@ def udf_history(request):
     from_date = datetime.fromtimestamp(from_ts, timezone.utc).date() if from_ts else None
     to_date = datetime.fromtimestamp(to_ts, timezone.utc).date() if to_ts else None
 
-    rows = _bars(kind, key, from_date, to_date, countback)
-
-    # Append (or refresh) today's bar from the live index feed so the chart's
-    # last candle reflects the current/official value, not the last EOD row in DB.
-    if kind == "index":
-        live = _live_index_bar(key)
-        if live and (to_date is None or live[0] <= to_date):
-            rows = list(rows)
-            if rows and rows[-1][0] == live[0]:
-                rows[-1] = live          # replace a stale same-day bar
-            elif not rows or live[0] > rows[-1][0]:
-                rows.append(live)        # add today
+    rows = _chart_bars(kind, key, from_date, to_date, countback)
 
     if not rows:
         return JsonResponse({"s": "no_data"})

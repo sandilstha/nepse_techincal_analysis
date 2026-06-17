@@ -18,6 +18,7 @@
   var cfg = window.TA_CONFIG || {};
   var udfHistory = (cfg.udfBase || "/insights/udf") + "/history";
   var udfSearch = (cfg.udfBase || "/insights/udf") + "/search";
+  var HISTORY_COUNTBACK = 5000;
 
   function $(id) { return document.getElementById(id); }
   function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
@@ -60,6 +61,7 @@
     bars: null,        // raw {t,o,h,l,c,v}
     overlays: {},      // name -> [series,...] on main chart
     panes: {},         // name -> {wrap, chart, series:[...]}
+    historyQuery: null,
     syncing: false
   };
 
@@ -133,10 +135,20 @@
     renderPrice();
     // crosshair → live OHLC readout
     state.main.subscribeCrosshairMove(function (param) {
-      if (!param || !param.time || !state.bars) return;
+      if (!state.bars) return;
+      if (!param || !param.time) {
+        updateQuote(state.bars.t.length - 1);
+        return;
+      }
       // find index by date string
       var t = param.time;
-      for (var i = 0; i < state.bars.t.length; i++) { if (tsToDate(state.bars.t[i]) === t) { updateQuote(i); break; } }
+      for (var i = 0; i < state.bars.t.length; i++) {
+        if (tsToDate(state.bars.t[i]) === t) {
+          updateQuote(i);
+          return;
+        }
+      }
+      updateQuote(state.bars.t.length - 1);
     });
   }
 
@@ -154,13 +166,22 @@
 
   function addIndicator(name) {
     if (!name || state.overlays[name] || state.panes[name]) return;
-    var url = cfg.indicatorUrl + "?symbol=" + encodeURIComponent(state.symbol) + "&name=" + encodeURIComponent(name);
+    var params = new URLSearchParams();
+    params.set("symbol", state.symbol);
+    params.set("name", name);
+    if (state.historyQuery) {
+      params.set("to", state.historyQuery.to);
+      params.set("countback", state.historyQuery.countback);
+    }
+    var url = cfg.indicatorUrl + "?" + params.toString();
     fetch(url).then(function (r) { return r.json(); }).then(function (j) {
       if (!j || j.s !== "ok") return;
+      var series = alignIndicatorSeries(j.series || []);
+      if (!series.length) return;
       if (j.pane === "overlay") {
-        state.overlays[name] = j.series.map(function (s) { return lineFrom(state.main, s); });
+        state.overlays[name] = series.map(function (s) { return lineFrom(state.main, s); });
       } else {
-        addOscPane(name, j.label, j.series);
+        addOscPane(name, j.label, series);
       }
       addChip(name, j.label || name);
     }).catch(function () {});
@@ -173,6 +194,22 @@
   function timeAnchor() {
     if (!state.bars) return [];
     return state.bars.t.map(function (ts) { return { time: tsToDate(ts) }; });
+  }
+
+  function barTimeLookup() {
+    var lookup = Object.create(null);
+    if (!state.bars) return lookup;
+    state.bars.t.forEach(function (ts) { lookup[tsToDate(ts)] = true; });
+    return lookup;
+  }
+
+  function alignIndicatorSeries(series) {
+    var validTimes = barTimeLookup();
+    return series.map(function (s) {
+      var copy = Object.assign({}, s);
+      copy.data = (s.data || []).filter(function (d) { return d && validTimes[d.time]; });
+      return copy;
+    }).filter(function (s) { return s.data.length; });
   }
 
   function addOscPane(name, label, series) {
@@ -221,7 +258,8 @@
   // ── data load ──────────────────────────────────────────────────────────────
   function loadBars(sym) {
     var to = Math.floor(Date.now() / 1000) + 86400;
-    var url = udfHistory + "?symbol=" + encodeURIComponent(sym) + "&resolution=1D&from=0&to=" + to + "&countback=5000";
+    state.historyQuery = { to: to, countback: HISTORY_COUNTBACK };
+    var url = udfHistory + "?symbol=" + encodeURIComponent(sym) + "&resolution=1D&from=0&to=" + to + "&countback=" + HISTORY_COUNTBACK;
     return fetch(url).then(function (r) { return r.json(); }).then(function (j) {
       if (!j || j.s !== "ok" || !j.t || !j.t.length) throw new Error("no data");
       state.bars = j;
@@ -243,6 +281,7 @@
     loadBars(sym).then(function () {
       state.symbol = sym;
       $("ta-symbol").value = sym;
+      syncIndexSelect();
       if (loading) loading.style.display = "none";
       buildMain();
       reloadActiveIndicators();
@@ -266,11 +305,40 @@
     }).catch(function () {});
   }
 
+  function syncIndexSelect() {
+    var sel = $("ta-index");
+    if (!sel) return;
+    var hasCurrent = Array.prototype.some.call(sel.options, function (option) {
+      return option.value === state.symbol;
+    });
+    sel.value = hasCurrent ? state.symbol : "";
+  }
+
+  function populateIndices() {
+    var sel = $("ta-index");
+    if (!sel) return;
+    fetch(udfSearch + "?type=index&limit=50").then(function (r) { return r.json(); }).then(function (rows) {
+      sel.textContent = "";
+      var placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Indices";
+      sel.appendChild(placeholder);
+      (rows || []).forEach(function (row) {
+        var option = document.createElement("option");
+        option.value = row.symbol;
+        option.textContent = row.symbol + " - " + (row.description || row.symbol);
+        sel.appendChild(option);
+      });
+      syncIndexSelect();
+    }).catch(function () {});
+  }
+
   function wireControls() {
     $("ta-add").addEventListener("click", function () { addIndicator($("ta-ind").value); });
     $("ta-go").addEventListener("click", function () { loadSymbol($("ta-symbol").value); });
     $("ta-symbol").addEventListener("change", function () { loadSymbol(this.value); });
     $("ta-symbol").addEventListener("keydown", function (e) { if (e.key === "Enter") loadSymbol(this.value); });
+    $("ta-index").addEventListener("change", function () { if (this.value) loadSymbol(this.value); });
     $("ta-symbol").addEventListener("input", function () {
       var q = this.value.trim();
       if (q.length < 1) return;
@@ -300,6 +368,7 @@
   function boot() {
     if (typeof LightweightCharts === "undefined") return;
     populateCatalog();
+    populateIndices();
     wireControls();
     loadSymbol(state.symbol);
   }
