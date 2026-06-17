@@ -85,7 +85,7 @@ SECRET_KEY = _env_or_dev_default(
 _allowed_hosts_raw = os.environ.get('DJANGO_ALLOWED_HOSTS')
 if not _allowed_hosts_raw:
     if DEBUG:
-        _allowed_hosts_raw = '127.0.0.1,localhost,192.168.1.31'
+        _allowed_hosts_raw = '127.0.0.1,localhost,192.168.1.31,nepstockswatch.sandilstha.com.np'
     else:
         raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must be set when DJANGO_DEBUG=0.")
 
