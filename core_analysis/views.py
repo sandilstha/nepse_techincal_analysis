@@ -4,7 +4,14 @@ from decimal import Decimal, InvalidOperation
 
 import numpy as np
 import pandas as pd
-from django.contrib.admin.views.decorators import staff_member_required
+# TEMPORARY: admin-login gate disabled by request. To RESTORE auth, delete the
+# no-op shim below and uncomment the real import on the next line.
+# from django.contrib.admin.views.decorators import staff_member_required
+def staff_member_required(view_func=None, **kwargs):  # noqa: N802 - temp no-op shim
+    """Pass-through stand-in so dashboard/sync views need no admin login."""
+    if view_func is None:
+        return lambda func: func
+    return view_func
 from django.contrib import messages
 from django.contrib.staticfiles import finders
 from django.core.cache import cache

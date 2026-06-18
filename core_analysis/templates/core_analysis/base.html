@@ -76,6 +76,11 @@
       <form method="POST" action="{% url 'trigger_floorsheet_sync' %}" class="d-flex align-items-center gap-2 sync-form">
         {% csrf_token %}
         <span class="sync-row-label">Sync Floorsheet</span>
+        <button type="button" class="btn btn-outline-success btn-sm sync-latest-btn"
+                data-date-range="latest" data-from-id="headerFloorFromDate" data-to-id="headerFloorToDate"
+                title="Set both dates to the latest trading day">
+          Latest
+        </button>
         <input type="text" id="headerFloorFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" autocomplete="off">
         <span class="sync-sep">→</span>
         <input type="text" id="headerFloorToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" autocomplete="off">
