@@ -35,6 +35,7 @@ from core_analysis.services.nepse_top_movers import (
 )
 
 CACHE_KEY = "market_insights_payload"
+FAST_CACHE_KEY = "market_insights_payload_fast_eod"
 CACHE_TTL = 15  # seconds — short so the live feed actually flows through to polls
 
 # Last successful payload, kept for an hour. Served to callers when a rebuild is
@@ -655,7 +656,39 @@ def subindex_comparison(days=COMPARISON_SESSIONS):
 
 # ── public API ─────────────────────────────────────────────────────────────
 
-def build_payload(force=False, cache_only=False):
+def _build_eod_payload():
+    """Build a fast DB-only payload for the first cold browser fetch."""
+    sector_map = _sector_map()
+    eod_date, rows = _latest_stock_rows()
+    enriched = _enrich(rows, sector_map)
+    as_of = eod_date.isoformat() if eod_date else None
+
+    return {
+        "as_of": as_of,
+        "live": False,
+        "index_source": "eod",
+        "source": "eod",
+        "live_time": None,
+        "has_data": bool(enriched),
+        "overview": _overview(enriched, None, None),
+        "breadth": _breadth(enriched),
+        "gainers": _gainers(enriched),
+        "losers": _losers(enriched),
+        "most_active": _most_active(enriched),
+        "sectors": _sectors(),
+        "heatmap": _heatmap(enriched),
+        "heatmap_as_of": as_of,
+        "history": [],
+        "contributors": {
+            "positive": [],
+            "negative": [],
+            "sectors": {"positive": [], "negative": []},
+        },
+        "stock_count": len(enriched),
+    }
+
+
+def build_payload(force=False, cache_only=False, fast=False):
     """Assemble (and cache) the full Market Insights dashboard payload.
 
     Stock-level widgets use the intraday live feed when it is reachable, and
@@ -676,6 +709,15 @@ def build_payload(force=False, cache_only=False):
     # Render path: do not block HTML generation on the external feeds.
     if cache_only:
         return None
+
+    if fast and not force:
+        cached_fast = cache.get(FAST_CACHE_KEY)
+        if cached_fast is not None:
+            return cached_fast
+        last_good = cache.get(CACHE_LAST_GOOD_KEY)
+        payload = last_good if last_good is not None else _build_eod_payload()
+        cache.set(FAST_CACHE_KEY, payload, CACHE_TTL)
+        return payload
 
     # Stampede control: only one cold rebuild runs at a time. Other callers
     # polling just after the 15s cache expired are served the last known-good
@@ -707,6 +749,19 @@ def build_payload(force=False, cache_only=False):
 
     sector_map = _sector_map()
 
+    # Latest end-of-day stock set, reused for the heatmap (always EOD) and as the
+    # fallback when the live feed is missing/stale. Loaded lazily and memoised in
+    # these two vars so we never hit the DB for it twice in one build.
+    eod_date = None
+    eod_enriched = None
+
+    def _eod():
+        nonlocal eod_date, eod_enriched
+        if eod_enriched is None:
+            eod_date, _rows = _latest_stock_rows()
+            eod_enriched = _enrich(_rows, sector_map)
+        return eod_enriched
+
     if live_rows:
         enriched = _enrich_live(live_rows, sector_map)
 
@@ -718,10 +773,9 @@ def build_payload(force=False, cache_only=False):
             (_live_get(r, "lastUpdatedTime", "last_updated_time") or "") for r in live_rows
         ) or None
     else:
-        latest_date, rows = _latest_stock_rows()
-        enriched = _enrich(rows, sector_map)
+        enriched = _eod()
         is_live = False
-        as_of = latest_date.isoformat() if latest_date else None
+        as_of = eod_date.isoformat() if eod_date else None
         live_feed_date = None
         live_time = None
 
@@ -798,10 +852,8 @@ def build_payload(force=False, cache_only=False):
     # stock-level widgets (heatmap, breadth, gainers/losers/most-active) are still
     # built from the stale live quotes. Rebuild them from the end-of-day database
     # so they don't show prior-session prices under a current-day "as of" badge.
-    if live_stale:
-        _eod_date, _eod_rows = _latest_stock_rows()
-        if _eod_rows:
-            enriched = _enrich(_eod_rows, sector_map)
+    if live_stale and _eod():
+        enriched = _eod()
 
     # Reconcile sector turnover to the OFFICIAL total: the 13 index sub-sectors
     # only cover indexed scrips, so the remainder (debentures, preference /
@@ -823,6 +875,15 @@ def build_payload(force=False, cache_only=False):
     losers = top_losers or _losers(enriched)
     most_active = top_active or _most_active(enriched)
 
+    # Heatmap is ALWAYS end-of-day, never the intraday live feed. Its change % is
+    # then the settled close-vs-previous-close move, matching nepalstock's EOD
+    # figures. The live feed can serve a prior session's price under a current-day
+    # badge (the AKJCL-style mismatch); sourcing the heatmap from the uploaded EOD
+    # prices avoids that. `eod_enriched` is reused when the rest of the dashboard
+    # already fell back to EOD, so this adds no extra query in that case.
+    heatmap_tiles = _heatmap(_eod())
+    heatmap_as_of = eod_date.isoformat() if eod_date else None
+
     payload = {
         "as_of": as_of,
         "live": is_live,
@@ -836,7 +897,8 @@ def build_payload(force=False, cache_only=False):
         "losers": losers,
         "most_active": most_active,
         "sectors": sectors,
-        "heatmap": _heatmap(enriched),
+        "heatmap": heatmap_tiles,
+        "heatmap_as_of": heatmap_as_of,
         "history": _nepse_history(),
         "contributors": {
             "positive": contrib["positive"] if contrib else [],
@@ -853,3 +915,4 @@ def build_payload(force=False, cache_only=False):
 
 def invalidate_cache():
     cache.delete(CACHE_KEY)
+    cache.delete(FAST_CACHE_KEY)

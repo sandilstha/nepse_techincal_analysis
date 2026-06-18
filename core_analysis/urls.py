@@ -1,9 +1,11 @@
 from django.urls import path
 from .views import (
     crud_dashboard_view,
+    dashboard_tab_calc,
     crud_operations_handler,
     crud_delete_handler,
     trigger_daily_api_sync_view,
+    trigger_floorsheet_sync_view,
     symbol_autocomplete_view,
     trigger_sync_and_calculate
 )
@@ -11,8 +13,17 @@ from .insights_views import (
     market_insights_view,
     market_insights_api,
     subindex_comparison_api,
-    floorsheet_view,
     technical_analysis_view,
+)
+from .broker_views import (
+    floorsheet_view,
+    broker_meta_api,
+    broker_favorites_api,
+    stock_wise_api,
+    net_holding_api,
+    broker_concentration_api,
+    hotstocks_api,
+    broker_trend_api,
 )
 from .udf_views import (
     udf_config,
@@ -37,14 +48,24 @@ urlpatterns = [
     path('chart/indicator', indicator_data, name='indicator_data'),
     path('chart/<str:symbol>/', technical_analysis_view, name='technical_analysis_symbol'),
 
-    # Floor sheet (placeholder until a trade-level data source is wired up).
+    # Floor sheet — Dalal Street X broker analytics (built on the floorsheet feed).
     path('floorsheet/', floorsheet_view, name='floorsheet'),
+    path('floorsheet/api/meta/', broker_meta_api, name='broker_meta_api'),
+    path('floorsheet/api/favorites/', broker_favorites_api, name='broker_favorites_api'),
+    path('floorsheet/api/stockwise/', stock_wise_api, name='stock_wise_api'),
+    path('floorsheet/api/netholding/', net_holding_api, name='net_holding_api'),
+    path('floorsheet/api/concentration/', broker_concentration_api, name='broker_concentration_api'),
+    path('floorsheet/api/hotstocks/', hotstocks_api, name='hotstocks_api'),
+    path('floorsheet/api/trend/', broker_trend_api, name='broker_trend_api'),
 
     # Analytics workbench (moved off root to /workbench/)
     path('workbench/', crud_dashboard_view, name='crud_dashboard'),
+    # AJAX: run one tab's calculation and return only its results partial.
+    path('workbench/calc/', dashboard_tab_calc, name='dashboard_tab_calc'),
     path('dashboard/process/', crud_operations_handler, name='crud_operations'),
     path('dashboard/delete/<int:pk>/', crud_delete_handler, name='crud_delete'),
     path('dashboard/sync/', trigger_daily_api_sync_view, name='trigger_daily_sync'),
+    path('dashboard/sync-floorsheet/', trigger_floorsheet_sync_view, name='trigger_floorsheet_sync'),
     path('dashboard/sync-calculate/', trigger_sync_and_calculate, name='trigger_sync_and_calculate'),
     # NEW — lightweight autocomplete endpoint for symbol search boxes
     path('dashboard/symbols/', symbol_autocomplete_view, name='symbol_autocomplete'),

@@ -72,6 +72,17 @@
           Sync &amp; Calculate
         </button>
       </form>
+      <!-- Row 3: Sync Floorsheet (trade-level broker feed) -->
+      <form method="POST" action="{% url 'trigger_floorsheet_sync' %}" class="d-flex align-items-center gap-2 sync-form">
+        {% csrf_token %}
+        <span class="sync-row-label">Sync Floorsheet</span>
+        <input type="text" id="headerFloorFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" autocomplete="off">
+        <span class="sync-sep">→</span>
+        <input type="text" id="headerFloorToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" autocomplete="off">
+        <button type="submit" class="btn btn-success btn-sm sync-btn" data-loading-label="Syncing...">
+          Sync Floorsheet
+        </button>
+      </form>
       </div>{# /sync-toolbar #}
     </div>{# /header-actions #}
   </div>

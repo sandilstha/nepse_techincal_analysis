@@ -41,6 +41,8 @@ _ASSET_FILES = (
     "core_analysis/js/ohlc-chart.js",
     "core_analysis/js/tv-chart.js",
     "core_analysis/js/ta-chart.js",
+    "core_analysis/css/floorsheet.css",
+    "core_analysis/js/floorsheet-brokers.js",
 )
 
 
@@ -156,16 +158,6 @@ def technical_analysis_view(request, symbol=None):
 
 
 @require_GET
-def floorsheet_view(request):
-    """Placeholder Floor sheet page (feature pending a trade-level data source)."""
-    return render(
-        request,
-        "core_analysis/floorsheet.html",
-        {"asset_version": _asset_version()},
-    )
-
-
-@require_GET
 def subindex_comparison_api(request):
     """JSON multi-series feed for the sub-index comparison chart.
 
@@ -194,6 +186,7 @@ def market_insights_api(request):
     """JSON snapshot used by the front-end auto-refresh poller."""
     try:
         force = request.GET.get("force") == "1"
+        fast = request.GET.get("fast") == "1"
         # Throttle forced rebuilds so "?force=1" can't be looped to bypass the
         # cache and hammer the DB; serve the cached payload once one fires.
         if force:
@@ -201,7 +194,7 @@ def market_insights_api(request):
                 force = False
             else:
                 cache.set(FORCE_COOLDOWN_KEY, 1, FORCE_COOLDOWN_SECONDS)
-        payload = build_payload(force=force)
+        payload = build_payload(force=force, fast=fast)
         payload["ok"] = True
         return JsonResponse(payload)
     except Exception:  # pragma: no cover - defensive

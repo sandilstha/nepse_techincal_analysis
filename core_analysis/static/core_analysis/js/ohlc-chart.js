@@ -52,6 +52,13 @@
   function themeName() { return document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark"; }
   function pad(n) { return (n < 10 ? "0" : "") + n; }
   function tsToDate(ts) { var d = new Date(ts * 1000); return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()); }
+  function deferInitialFetch(fn) {
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(fn, { timeout: 1800 });
+    } else {
+      window.setTimeout(fn, 1200);
+    }
+  }
 
   function hexToRgba(hex, a) {
     var h = (hex || "").replace("#", "");
@@ -347,7 +354,7 @@
 
     initSymbolSelect();
     initToolbar();
-    fetchBars(state.symbol);
+    deferInitialFetch(function () { fetchBars(state.symbol); });
   }
 
   if (document.readyState === "loading") {

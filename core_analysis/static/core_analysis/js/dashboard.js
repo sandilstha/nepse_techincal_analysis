@@ -841,6 +841,14 @@
     setupFlatpickrSingle('inventoryBusinessDate');
     setupFlatpickrRange('headerSyncFromDate', 'headerSyncToDate', { defaultMonthRange: true });
     setupFlatpickrRange('headerCalcFromDate', 'headerCalcToDate', { defaultMonthRange: true });
+    // Floorsheet is trade-level and very high volume, so default to a single
+    // latest trading day (From == To) rather than a month; the user can widen it.
+    setupFlatpickrRange('headerFloorFromDate', 'headerFloorToDate');
+    (function () {
+      const floorTo = document.getElementById('headerFloorToDate');
+      const floorFrom = document.getElementById('headerFloorFromDate');
+      if (floorTo && floorFrom && floorTo.value) setDateInputValue(floorFrom, floorTo.value);
+    })();
     setupFlatpickrRange('t3FromDate', 't3ToDate');
     setupFlatpickrRange('emaFromDate', 'emaToDate');
     setupFlatpickrRange('cciFromDate', 'cciToDate');
@@ -851,7 +859,9 @@
     setupFlatpickrRange('rrgIndicesFromDate', 'rrgIndicesToDate');
     setupGenericQuickRanges();
     setupTablePagination();
-    setupBottomTableFilters({
+    // Named so the AJAX re-init hook (window.WorkbenchReinit) can rebind these
+    // filters after a tab's results partial is swapped in without a full reload.
+    const IMM_FILTER_CONFIG = {
       tableId: 'immScoringTable',
       dateFromId: 'immFilterDateFrom',
       dateToId: 'immFilterDateTo',
@@ -859,8 +869,8 @@
       closeMaxId: 'immFilterCloseMax',
       scoreMinId: 'immFilterScoreMin',
       scoreMaxId: 'immFilterScoreMax',
-    });
-    setupBottomTableFilters({
+    };
+    const STAGE_FILTER_CONFIG = {
       tableId: 'stageOutputTable',
       dateFromId: 'stageFilterDateFrom',
       dateToId: 'stageFilterDateTo',
@@ -868,7 +878,9 @@
       closeMaxId: 'stageFilterCloseMax',
       scoreMinId: 'stageFilterScoreMin',
       scoreMaxId: 'stageFilterScoreMax',
-    });
+    };
+    setupBottomTableFilters(IMM_FILTER_CONFIG);
+    setupBottomTableFilters(STAGE_FILTER_CONFIG);
 
     const msvForm = document.getElementById('msvForm');
     if (msvForm) {
@@ -1910,4 +1922,29 @@
     drawAdvancedMarketStructureChart();
     setupRrgIndicesToolbar();
     drawRrgIndicesChart();
+
+    // ── AJAX re-init hook ──────────────────────────────────────────────────
+    // workbench-ajax.js swaps a single tab's results partial into the DOM after
+    // the calc endpoint responds; the dynamic widgets in that partial (paginated
+    // tables, bottom-table filters, SVG/Lightweight charts + their toolbars) are
+    // bound here on first load, so they must be re-bound against the fresh nodes.
+    // Each piece is idempotent / guarded, so calling this repeatedly is safe.
+    window.WorkbenchReinit = function (tabKey) {
+      try { setupTablePagination(); } catch (e) { /* never block the swap */ }
+      try {
+        if (tabKey === 'imm_backtest') {
+          setupBottomTableFilters(IMM_FILTER_CONFIG);
+        } else if (tabKey === 'stage_backtest') {
+          setupBottomTableFilters(STAGE_FILTER_CONFIG);
+        } else if (tabKey === 'rrg_backtest') {
+          setupRrgToolbar();
+          drawRrgChart();
+        } else if (tabKey === 'rrg_indices') {
+          setupRrgIndicesToolbar();
+          drawRrgIndicesChart();
+        } else if (tabKey === 'support_resistance') {
+          drawAdvancedMarketStructureChart();
+        }
+      } catch (e) { /* a chart failure must not break the rest of the page */ }
+    };
   });

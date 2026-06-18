@@ -123,6 +123,24 @@
     el("mi-last-updated").textContent = "Updated " + d.toLocaleTimeString("en-US");
   }
 
+  function setPayloadStatus(d) {
+    if (d && d.live) {
+      setStatus("live", "Live");
+    } else if (d && d.has_data) {
+      setStatus("live", "EOD ready");
+    } else {
+      setStatus("stale", "No data");
+    }
+  }
+
+  function deferNonCritical(fn, timeout) {
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(fn, { timeout: timeout || 2000 });
+    } else {
+      window.setTimeout(fn, timeout || 1200);
+    }
+  }
+
   // ── Renderers ──────────────────────────────────────────────────────────
   function renderOverview(d) {
     var ov = d.overview || {};
@@ -433,6 +451,13 @@
     // Tile SIZE = turnover (liquidity), tile COLOUR = daily change % via a
     // per-point fillColor. Grouped by sector so related scrips sit together.
     // Honours the sector filter dropdown (state.heatmapSector).
+    // The heatmap is always end-of-day (settled close-vs-prev-close change %),
+    // so it carries its own "As of <date>" label rather than the live badge.
+    var asofEl = el("heatmap-asof");
+    if (asofEl) {
+      var hAsOf = state.data && state.data.heatmap_as_of;
+      asofEl.textContent = hAsOf ? "EOD · as of " + hAsOf : "";
+    }
     var tiles = filteredHeatmap();
     var bySector = {};
     tiles.forEach(function (tile) {
@@ -613,14 +638,18 @@
   }
 
   // ── Polling ────────────────────────────────────────────────────────────
-  function refresh(manual) {
+  function refresh(manual, options) {
+    options = options || {};
     if (state.inFlight) return;
     state.inFlight = true;
     var btn = el("mi-refresh-btn");
     if (manual && btn) btn.classList.add("is-spinning");
 
     // A manual refresh forces a fresh server build (bypasses the short payload cache).
-    var url = CONFIG.apiUrl + (manual ? (CONFIG.apiUrl.indexOf("?") >= 0 ? "&" : "?") + "force=1" : "");
+    var params = [];
+    if (manual) params.push("force=1");
+    if (options.fast && !manual) params.push("fast=1");
+    var url = CONFIG.apiUrl + (params.length ? (CONFIG.apiUrl.indexOf("?") >= 0 ? "&" : "?") + params.join("&") : "");
     // Abort a hung request so it can't pin inFlight=true and stall auto-refresh.
     var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
     var timeoutId = ctrl ? setTimeout(function () { ctrl.abort(); }, 12000) : null;
@@ -638,8 +667,11 @@
         var banner = el("mi-load-banner");
         if (banner && d.has_data) banner.style.display = "none";
         renderAll(d);
-        setStatus("live", "Live");
+        setPayloadStatus(d);
         stamp();
+        if (options.fast && !manual && !d.live) {
+          deferNonCritical(function () { refresh(false); }, 2500);
+        }
       })
       .catch(function (err) {
         setStatus("stale", "Stale — retrying");
@@ -728,7 +760,7 @@
     if (initial && initial.has_data) {
       // Warm cache: server embedded a ready payload — paint it, no fetch needed.
       renderAll(initial);
-      setStatus("live", "Live");
+      setPayloadStatus(initial);
       stamp();
     } else {
       // Cold cache: the server shipped the shell instantly without touching the
@@ -736,11 +768,11 @@
       // on demand so the page is interactive immediately and data fills in.
       if (initial) renderAll(initial);
       setStatus("stale", "Loading…");
-      refresh(false);
+      refresh(false, { fast: true });
     }
     // The comparison chart loads its own historical series, independent of the
     // dashboard payload, so kick it off once here.
-    fetchCompare(state.compare.days);
+    deferNonCritical(function () { fetchCompare(state.compare.days); }, 1600);
     scheduleNext();
   }
 

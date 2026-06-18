@@ -4,11 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEPSE Floor sheet</title>
+  <title>Floorsheet Analytics Desk</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/floorsheet.css' %}?v={{ asset_version }}">
 </head>
 <body>
 <div class="mi-shell">
@@ -16,13 +17,16 @@
   <!-- ── Top bar ──────────────────────────────────────────────────────── -->
   <header class="mi-topbar">
     <div class="mi-brand">
-      <span class="mi-logo">NEPSE</span>
+      <span class="mi-logo">FS</span>
       <div>
-        <h1 class="mi-title">Floor sheet</h1>
-        <p class="mi-subtitle">Trade-level floorsheet data</p>
+        <h1 class="mi-title">Floorsheet Analytics Desk</h1>
+        <p class="mi-subtitle">Advanced broker flow and trading activity analysis</p>
       </div>
     </div>
     <div class="mi-controls">
+      <span class="fs-updated" id="fs-updated">
+        {% if meta.latest_date %}Last Updated On {{ meta.latest_date }}{% endif %}
+      </span>
       <a href="{% url 'market_insights' %}" class="mi-icon-btn mi-home-link" title="Home" aria-label="Home">🏠</a>
       <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
       <a href="{% url 'crud_dashboard' %}" class="mi-icon-btn" title="Analytics workbench" aria-label="Analytics workbench">⚙</a>
@@ -31,14 +35,179 @@
 
   {% include "core_analysis/includes/_primary_nav.html" with active_section='floorsheet' %}
 
-  <section class="mi-coming-soon">
-    <div class="mi-coming-soon-icon">🚧</div>
-    <h2 class="mi-coming-soon-title">Floor sheet — coming soon</h2>
-    <p class="mi-coming-soon-text">
-      Trade-level floorsheet data (buyer/seller broker, quantity, rate, amount per
-      transaction) will appear here once a floorsheet data source is connected.
-    </p>
-    <a href="{% url 'market_insights' %}" class="mi-coming-soon-cta">← Back to Market Insights</a>
+  <!-- ── DSX tab bar ──────────────────────────────────────────────────── -->
+  <nav class="dsx-tabs" id="dsx-tabs">
+    <button class="dsx-tab active" data-tab="favorites">Broker Analysis</button>
+    <button class="dsx-tab" data-tab="stockwise">Script Deep Dive</button>
+    <button class="dsx-tab" data-tab="hotstocks">Market Heatmap</button>
+    <button class="dsx-tab" data-tab="netholding">Net Position Analytics</button>
+    <button class="dsx-tab" data-tab="concentration">Broker Exposure Monitor</button>
+  </nav>
+
+  {% if not meta.ok %}
+  <div class="dsx-banner" id="dsx-banner">Floorsheet feed unavailable — showing no data. It will populate once the feed responds.</div>
+  {% endif %}
+
+  <!-- shared range / view controls (each panel toggles which it shows) -->
+  <section class="dsx-panel active" id="panel-favorites">
+    <div class="dsx-controls">
+      <div class="dsx-field">Choose Broker Number(s)
+        <div class="dsx-multi" id="fav-broker-multi">
+          <button type="button" class="dsx-multi-btn" id="fav-broker-btn">Select brokers ▾</button>
+          <div class="dsx-multi-menu" id="fav-broker-menu" hidden>
+            <input type="text" class="dsx-multi-search" id="fav-broker-search" placeholder="Search broker…">
+            <div class="dsx-multi-actions">
+              <button type="button" data-act="all">Select all</button>
+              <button type="button" data-act="clear">Clear</button>
+            </div>
+            <div class="dsx-multi-list" id="fav-broker-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="dsx-seg" data-group="fav-view">
+        <span class="dsx-seg-label">View By</span>
+        <button class="dsx-pill active" data-val="shares">Shares Traded</button>
+        <button class="dsx-pill" data-val="turnover">Turnover Amount</button>
+      </div>
+      <div class="dsx-seg" data-group="fav-range">
+        <span class="dsx-seg-label">Show Result For</span>
+        <button class="dsx-pill active" data-val="today">Today</button>
+        <button class="dsx-pill" data-val="1w">1 Week</button>
+        <button class="dsx-pill" data-val="1m">1 Month</button>
+        <button class="dsx-pill" data-val="3m">3 Months</button>
+      </div>
+    </div>
+    <div class="dsx-grid-2">
+      <div class="dsx-card">
+        <div class="dsx-card-head buy">BROKER TOP BUY</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="fav-buy"></table></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head sell">BROKER TOP SELL</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="fav-sell"></table></div>
+      </div>
+    </div>
+    <div class="dsx-trend">
+      <div class="dsx-trend-head">
+        <span>Last 90 Days Trend — <b id="fav-trend-sym">—</b></span>
+        <div class="dsx-seg" data-group="fav-trend-side">
+          <button class="dsx-pill active" data-val="buy">Buy</button>
+          <button class="dsx-pill" data-val="sell">Sell</button>
+        </div>
+      </div>
+      <canvas id="fav-trend-chart" height="90"></canvas>
+    </div>
+  </section>
+
+  <section class="dsx-panel" id="panel-stockwise">
+    <div class="dsx-controls">
+      <label class="dsx-field">Choose Ticker
+        <select id="sw-symbol" class="dsx-select"></select>
+      </label>
+      <div class="dsx-seg" data-group="sw-view">
+        <span class="dsx-seg-label">View By</span>
+        <button class="dsx-pill active" data-val="shares">Shares Traded</button>
+        <button class="dsx-pill" data-val="turnover">Turnover Amount</button>
+      </div>
+      <div class="dsx-seg" data-group="sw-range">
+        <span class="dsx-seg-label">Show Result For</span>
+        <button class="dsx-pill active" data-val="today">Today</button>
+        <button class="dsx-pill" data-val="1w">1 Week</button>
+        <button class="dsx-pill" data-val="1m">1 Month</button>
+        <button class="dsx-pill" data-val="3m">3 Months</button>
+      </div>
+    </div>
+    <div class="dsx-grid-3">
+      <div class="dsx-card">
+        <div class="dsx-card-head buy">BROKER TOP BUY</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="sw-buy"></table></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head sell">BROKER TOP SELL</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="sw-sell"></table></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head hold">BROKER TOP HOLDINGS</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="sw-hold"></table></div>
+      </div>
+    </div>
+    <div class="dsx-trend">
+      <div class="dsx-trend-head">
+        <span>Last 90 Days Trend — <b id="sw-trend-sym">—</b></span>
+        <div class="dsx-seg" data-group="sw-trend-side">
+          <button class="dsx-pill active" data-val="buy">Buy</button>
+          <button class="dsx-pill" data-val="sell">Sell</button>
+        </div>
+      </div>
+      <canvas id="sw-trend-chart" height="90"></canvas>
+    </div>
+  </section>
+
+  <section class="dsx-panel" id="panel-hotstocks">
+    <div class="dsx-controls">
+      <div class="dsx-seg" data-group="hot-view">
+        <span class="dsx-seg-label">View By</span>
+        <button class="dsx-pill active" data-val="shares">Shares Traded</button>
+        <button class="dsx-pill" data-val="turnover">Turnover Amount</button>
+      </div>
+      <div class="dsx-seg" data-group="hot-range">
+        <span class="dsx-seg-label">Show Result For</span>
+        <button class="dsx-pill active" data-val="today">Today</button>
+        <button class="dsx-pill" data-val="1w">1 Week</button>
+        <button class="dsx-pill" data-val="1m">1 Month</button>
+        <button class="dsx-pill" data-val="3m">3 Months</button>
+      </div>
+      <label class="dsx-field">Choose Sector
+        <select id="hot-sector" class="dsx-select dsx-sector"></select>
+      </label>
+    </div>
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral">HOT STOCKS — MOST ACTIVE</div>
+      <div class="dsx-table-wrap"><table class="dsx-table" id="hot-table"></table></div>
+    </div>
+  </section>
+
+  <section class="dsx-panel" id="panel-netholding">
+    <div class="dsx-controls">
+      <label class="dsx-field">Net Holding For Broker
+        <select id="nh-broker" class="dsx-select"></select>
+      </label>
+      <div class="dsx-seg" data-group="nh-range">
+        <span class="dsx-seg-label">Show Result For</span>
+        <button class="dsx-pill active" data-val="today">Today</button>
+        <button class="dsx-pill" data-val="1w">1 Week</button>
+        <button class="dsx-pill" data-val="1m">1 Month</button>
+        <button class="dsx-pill" data-val="3m">3 Months</button>
+      </div>
+      <label class="dsx-check"><input type="checkbox" id="nh-exclude-mf"> Exclude Mutual Funds</label>
+      <label class="dsx-field">Choose Sector
+        <select id="nh-sector" class="dsx-select dsx-sector"></select>
+      </label>
+    </div>
+    <div class="dsx-legend">
+      <span><i class="dot buy"></i> Net Buy</span>
+      <span><i class="dot sell"></i> Net Sell</span>
+    </div>
+    <div class="dsx-treemap" id="nh-treemap"></div>
+  </section>
+
+  <section class="dsx-panel" id="panel-concentration">
+    <div class="dsx-controls">
+      <span class="dsx-blurb">Broker activity concentration in each stock based on % of total transactions</span>
+      <div class="dsx-seg" data-group="conc-range">
+        <span class="dsx-seg-label">Show Result For</span>
+        <button class="dsx-pill active" data-val="today">Today</button>
+        <button class="dsx-pill" data-val="1w">1 Week</button>
+        <button class="dsx-pill" data-val="1m">1 Month</button>
+        <button class="dsx-pill" data-val="3m">3 Months</button>
+      </div>
+      <label class="dsx-field">Choose Sector
+        <select id="conc-sector" class="dsx-select dsx-sector"></select>
+      </label>
+    </div>
+    <div class="dsx-card">
+      <div class="dsx-table-wrap"><table class="dsx-table dsx-conc" id="conc-table"></table></div>
+    </div>
   </section>
 
 </div>
@@ -50,14 +219,18 @@
     try { saved = localStorage.getItem('mi-theme'); } catch (e) {}
     if (saved) document.documentElement.setAttribute('data-theme', saved);
     var btn = document.getElementById('mi-theme-btn');
-    if (btn) {
-      btn.addEventListener('click', function () {
-        var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', next);
-        try { localStorage.setItem('mi-theme', next); } catch (e) {}
-      });
-    }
+    if (btn) btn.addEventListener('click', function () {
+      var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('mi-theme', next); } catch (e) {}
+    });
   })();
 </script>
+{{ meta|json_script:"dsx-meta-json" }}
+<script>
+  try { window.DSX_BOOTSTRAP = JSON.parse(document.getElementById('dsx-meta-json').textContent); }
+  catch (e) { window.DSX_BOOTSTRAP = null; }
+</script>
+<script src="{% static 'core_analysis/js/floorsheet-brokers.js' %}?v={{ asset_version }}"></script>
 </body>
 </html>

@@ -133,3 +133,41 @@ class NepseMarketIndex(models.Model):
 
     def __str__(self):
         return f"{self.sector_name} - {self.business_date}"
+
+
+class NepseFloorsheet(models.Model):
+    """
+    Table: nepse_floorsheet
+    Stores trade-level floorsheet rows (one row per executed trade) from
+    /api/nepse-data/api/floorsheet/. This is a high-volume table — tens of
+    millions of rows — so it is synced day-by-day filtered on calculation_date.
+    """
+    api_id = models.BigIntegerField(unique=True, help_text="Maps to JSON 'id'")
+    contract_no = models.CharField(max_length=32, db_index=True, help_text="Maps to JSON 'contract_no'")
+    business_date = models.DateField(db_index=True, help_text="Maps to JSON 'calculation_date'")
+    stock_symbol = models.CharField(max_length=20, db_index=True)
+    sector = models.CharField(max_length=100, null=True, blank=True)
+
+    # Counterparties (broker numbers).
+    buyer = models.IntegerField(db_index=True)
+    seller = models.IntegerField(db_index=True)
+
+    # Trade economics.
+    quantity = models.BigIntegerField()
+    rate = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = models.DecimalField(max_digits=18, decimal_places=2)
+
+    # Execution clock time (HH:MM:SS), nullable for malformed rows.
+    trade_time = models.TimeField(null=True, blank=True, help_text="Maps to JSON 'time'")
+
+    class Meta:
+        db_table = 'nepse_floorsheet'
+        ordering = ['-business_date', 'stock_symbol']
+        indexes = [
+            models.Index(fields=['business_date', 'stock_symbol']),
+            models.Index(fields=['business_date', 'buyer']),
+            models.Index(fields=['business_date', 'seller']),
+        ]
+
+    def __str__(self):
+        return f"{self.contract_no} - {self.stock_symbol} - {self.business_date}"

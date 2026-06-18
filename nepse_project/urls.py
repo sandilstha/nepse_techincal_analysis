@@ -19,6 +19,8 @@ from django.urls import path,include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Read-only JSON Data API over every DB table (DRF router).
+    path('api/v1/', include('core_analysis.api_urls')),
     path('', include('core_analysis.urls')),
-   
+
 ]

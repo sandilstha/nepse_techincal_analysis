@@ -10,8 +10,9 @@ from django.contrib.staticfiles import finders
 from django.core.cache import cache
 from django.db import IntegrityError
 from django.db.models import Max, OuterRef, Q, Subquery
-from django.http import JsonResponse
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.core.management import call_command
 from django.views.decorators.http import require_GET, require_POST
 
@@ -63,13 +64,17 @@ def trigger_sync_and_calculate(request):
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _dashboard_asset_version():
-    """Cache-bust token for dashboard.js: its file mtime, so a changed script is
-    fetched fresh by the browser without a manual hard-refresh."""
-    path = finders.find("core_analysis/js/dashboard.js")
-    try:
-        return int(os.path.getmtime(path)) if path else 1
-    except OSError:
-        return 1
+    """Cache-bust token for the dashboard scripts: the latest mtime across them,
+    so a changed script is fetched fresh by the browser without a hard-refresh."""
+    latest = 0
+    for rel in ("core_analysis/js/dashboard.js", "core_analysis/js/workbench-ajax.js"):
+        path = finders.find(rel)
+        try:
+            if path:
+                latest = max(latest, int(os.path.getmtime(path)))
+        except OSError:
+            pass
+    return latest or 1
 
 
 def _safe_float(value, default):
@@ -444,6 +449,18 @@ def symbol_autocomplete_view(request):
 
 @staff_member_required
 def crud_dashboard_view(request):
+    """Render the analytics workbench shell (full page).
+
+    Every heavy per-tab computation lives in build_dashboard_context() so the
+    exact same logic backs both this full-page render and the AJAX calc
+    endpoint (dashboard_tab_calc). The page therefore no longer needs a full
+    reload to refresh a single tab's results — the form posts to the calc
+    endpoint and only that tab's results partial is swapped in.
+    """
+    return render(request, "core_analysis/crud_dashboard.html", build_dashboard_context(request))
+
+
+def build_dashboard_context(request):
     """
     OPTIMIZED: Consolidated Dashboard Controller with performance improvements.
 
@@ -938,7 +955,7 @@ def crud_dashboard_view(request):
             )
             rrg_indices_benchmark_points = _build_benchmark_sparkline(bench_df)
 
-    return render(request, "core_analysis/crud_dashboard.html", {
+    return {
         "records": queryset,
 
         # OPTIMIZED: Empty symbol lists (autocomplete handles search)
@@ -1076,7 +1093,45 @@ def crud_dashboard_view(request):
 
         "active_tab": active_tab,
         "dashboard_asset_version": _dashboard_asset_version(),
-    })
+    }
+
+
+# Maps the workbench's active_tab value to the results partial that the AJAX
+# calc endpoint renders. Tabs absent here (e.g. "inventory") have no on-demand
+# computation and are only ever shown via the full-page render.
+TAB_RESULTS_PARTIALS = {
+    "backtest":            "core_analysis/includes/_t3ma_results.html",
+    "ema_backtest":        "core_analysis/includes/_ema_results.html",
+    "cci_backtest":        "core_analysis/includes/_cci_results.html",
+    "rsi_backtest":        "core_analysis/includes/_rsi_results.html",
+    "msv_backtest":        "core_analysis/includes/_msv_results.html",
+    "imm_backtest":        "core_analysis/includes/_imm_results.html",
+    "stage_backtest":      "core_analysis/includes/_stage_results.html",
+    "support_resistance":  "core_analysis/includes/_support_resistance_results.html",
+    "rrg_backtest":        "core_analysis/includes/_rrg_results.html",
+    "rrg_indices":         "core_analysis/includes/_rrg_indices_results.html",
+}
+
+
+@staff_member_required
+@require_GET
+def dashboard_tab_calc(request):
+    """Run one workbench tab's calculation and return ONLY its results partial.
+
+    The page's strategy forms post here (GET, same params they always used) via
+    fetch(); the returned HTML fragment is swapped into that tab's results
+    container without a full-page reload. Reuses build_dashboard_context() so
+    the computation is byte-for-byte identical to the full-page path — the only
+    difference is we render the single tab's results template instead of the
+    whole dashboard shell.
+    """
+    active_tab = request.GET.get("active_tab", "")
+    partial = TAB_RESULTS_PARTIALS.get(active_tab)
+    if not partial:
+        return HttpResponseBadRequest("Unknown or non-computable tab.")
+    context = build_dashboard_context(request)
+    html = render_to_string(partial, context, request=request)
+    return HttpResponse(html)
 
 
 # ── CRUD handlers (unchanged) ─────────────────────────────────────────────────
@@ -1185,5 +1240,39 @@ def trigger_daily_api_sync_view(request):
         )
     except Exception as e:
         messages.error(request, f"Price sync failed: {str(e)}")
+
+    return redirect("crud_dashboard")
+
+
+@staff_member_required
+@require_POST
+def trigger_floorsheet_sync_view(request):
+    """
+    On-demand floorsheet sync endpoint. POST-only so the heavy trade-level pull
+    cannot be triggered by a GET. Walks the given date range day by day; an empty
+    range falls back to the latest upstream trading day.
+    """
+    from_date_raw = (request.POST.get("from_date") or "").strip()
+    to_date_raw = (request.POST.get("to_date") or "").strip()
+    try:
+        from_date = date.fromisoformat(from_date_raw) if from_date_raw else None
+        to_date = date.fromisoformat(to_date_raw) if to_date_raw else None
+    except ValueError:
+        messages.error(request, "Invalid floorsheet sync date format. Use YYYY-MM-DD.")
+        return redirect("crud_dashboard")
+
+    try:
+        kwargs = {}
+        if from_date:
+            kwargs["from_date"] = from_date
+        if to_date:
+            kwargs["to_date"] = to_date
+        call_command("sync_floorsheet", **kwargs)
+        messages.success(
+            request,
+            f"Floorsheet sync completed (from={from_date_raw or 'latest'}, to={to_date_raw or 'latest'}).",
+        )
+    except Exception as e:
+        messages.error(request, f"Floorsheet sync failed: {str(e)}")
 
     return redirect("crud_dashboard")
