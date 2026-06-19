@@ -86,7 +86,12 @@
   function applyTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
     var btn = el("mi-theme-btn");
-    if (btn) btn.textContent = theme === "light" ? "☀" : "🌙";
+    if (btn) {
+      var nextTheme = theme === "light" ? "dark" : "light";
+      btn.textContent = nextTheme === "light" ? "Light" : "Dark";
+      btn.title = "Switch to " + nextTheme + " theme";
+      btn.setAttribute("aria-label", btn.title);
+    }
     try { localStorage.setItem(LS_THEME, theme); } catch (e) {}
   }
 

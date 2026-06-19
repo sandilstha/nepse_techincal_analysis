@@ -1,16 +1,16 @@
 # Graph Report - nepse_analytics_platform  (2026-06-19)
 
 ## Corpus Check
-- 62 files · ~78,361 words
+- 62 files · ~78,375 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1896 nodes · 4749 edges · 99 communities (57 shown, 42 thin omitted)
+- 1896 nodes · 4749 edges · 102 communities (59 shown, 43 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 129 edges (avg confidence: 0.53)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `dc42b30a`
+- Built from commit: `269ab16d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -78,6 +78,7 @@
 - [[_COMMUNITY_Community 67|Community 67]]
 - [[_COMMUNITY_Community 68|Community 68]]
 - [[_COMMUNITY_Community 69|Community 69]]
+- [[_COMMUNITY_Community 70|Community 70]]
 - [[_COMMUNITY_Community 72|Community 72]]
 - [[_COMMUNITY_Community 74|Community 74]]
 - [[_COMMUNITY_Community 76|Community 76]]
@@ -131,7 +132,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (99 total, 42 thin omitted)
+## Communities (102 total, 43 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.05
@@ -221,10 +222,6 @@ Nodes (16): a(), c(), d(), e(), f(), g(), h(), i() (+8 more)
 Cohesion: 0.11
 Nodes (4): ai, ei, hi(), li()
 
-### Community 37 - "Community 37"
-Cohesion: 0.21
-Nodes (3): ds(), T(), Ts()
-
 ### Community 40 - "Community 40"
 Cohesion: 0.17
 Nodes (15): _asset_version(), _empty_payload(), market_insights_api(), market_insights_view(), insights_views.py — view layer for the Market Insights dashboard.  Two endpoints, Render the dashboard shell instantly.      The payload is embedded ONLY if it is, MetaStock-style charting terminal (Lightweight Charts).      Renders price (OHLC, JSON multi-series feed for the sub-index comparison chart.      Accepts ?days=<s (+7 more)
@@ -234,8 +231,8 @@ Cohesion: 0.28
 Nodes (15): $(), applyColors(), buildSeries(), chartOptions(), cssVar(), deferInitialFetch(), DrawingLayer(), fetchBars() (+7 more)
 
 ### Community 44 - "Community 44"
-Cohesion: 0.09
-Nodes (9): bi(), Et, H, kt, te(), vi(), X(), xt() (+1 more)
+Cohesion: 0.13
+Nodes (5): bi(), kt, te(), vi(), xt()
 
 ### Community 45 - "Community 45"
 Cohesion: 0.18
@@ -254,8 +251,16 @@ Cohesion: 0.14
 Nodes (3): Cn, nt, on
 
 ### Community 53 - "Community 53"
-Cohesion: 0.18
-Nodes (4): bn, mn, vt(), wn()
+Cohesion: 0.16
+Nodes (3): bn, vt(), wn()
+
+### Community 54 - "Community 54"
+Cohesion: 0.10
+Nodes (3): gn, mn, T()
+
+### Community 55 - "Community 55"
+Cohesion: 0.29
+Nodes (4): Et, H, X(), Z()
 
 ### Community 56 - "Community 56"
 Cohesion: 0.11
@@ -272,10 +277,6 @@ Nodes (5): ci(), ji, oi(), qi(), ui()
 ### Community 62 - "Community 62"
 Cohesion: 0.18
 Nodes (3): kn, qt, vs()
-
-### Community 67 - "Community 67"
-Cohesion: 0.12
-Nodes (3): hs(), jn(), se()
 
 ### Community 68 - "Community 68"
 Cohesion: 0.29
@@ -320,16 +321,16 @@ Nodes (3): fetch_live_index_rows(), live_index.py — intraday live NEPSE index 
 ## Knowledge Gaps
 - **7 isolated node(s):** `Migration`, `Migration`, `Migration`, `Migration`, `Meta` (+2 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **42 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **43 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `_()` connect `Community 7` to `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 15`, `Community 16`, `Community 18`, `Community 22`, `Community 23`, `Community 25`, `Community 26`, `Community 27`, `Community 28`, `Community 29`, `Community 30`, `Community 31`, `Community 33`, `Community 34`, `Community 36`, `Community 37`, `Community 38`, `Community 43`, `Community 44`, `Community 45`, `Community 46`, `Community 47`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 57`, `Community 58`, `Community 60`, `Community 61`, `Community 62`, `Community 64`, `Community 65`, `Community 66`, `Community 67`, `Community 68`, `Community 72`, `Community 76`, `Community 88`, `Community 89`, `Community 93`, `Community 111`?**
+- **Why does `_()` connect `Community 7` to `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 15`, `Community 16`, `Community 18`, `Community 22`, `Community 23`, `Community 25`, `Community 26`, `Community 27`, `Community 28`, `Community 29`, `Community 30`, `Community 31`, `Community 33`, `Community 34`, `Community 36`, `Community 37`, `Community 38`, `Community 43`, `Community 44`, `Community 45`, `Community 46`, `Community 47`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 57`, `Community 58`, `Community 60`, `Community 61`, `Community 62`, `Community 64`, `Community 65`, `Community 66`, `Community 67`, `Community 68`, `Community 70`, `Community 72`, `Community 76`, `Community 88`, `Community 89`, `Community 93`, `Community 111`?**
   _High betweenness centrality (0.200) - this node is a cross-community bridge._
-- **Why does `vn` connect `Community 111` to `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 18`, `Community 21`, `Community 22`, `Community 23`, `Community 26`, `Community 28`, `Community 31`, `Community 34`, `Community 36`, `Community 37`, `Community 39`, `Community 42`, `Community 43`, `Community 49`, `Community 51`, `Community 55`, `Community 58`, `Community 64`, `Community 66`, `Community 67`, `Community 72`, `Community 73`?**
+- **Why does `vn` connect `Community 111` to `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 15`, `Community 18`, `Community 21`, `Community 22`, `Community 23`, `Community 26`, `Community 28`, `Community 31`, `Community 34`, `Community 36`, `Community 37`, `Community 39`, `Community 43`, `Community 49`, `Community 51`, `Community 53`, `Community 58`, `Community 66`, `Community 70`, `Community 72`, `Community 73`?**
   _High betweenness centrality (0.038) - this node is a cross-community bridge._
-- **Why does `sn()` connect `Community 64` to `Community 67`, `Community 68`, `Community 37`, `Community 7`, `Community 73`, `Community 42`, `Community 11`, `Community 49`, `Community 18`, `Community 51`, `Community 53`, `Community 54`, `Community 23`, `Community 28`?**
+- **Why does `sn()` connect `Community 64` to `Community 67`, `Community 68`, `Community 37`, `Community 7`, `Community 73`, `Community 42`, `Community 11`, `Community 49`, `Community 18`, `Community 51`, `Community 53`, `Community 54`, `Community 23`, `Community 28`, `Community 63`?**
   _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **What connects `api_urls.py — router for the read-only Data API (mounted at /api/v1/).  Kept sep`, `api_views.py — read-only Data API over every database table.  Each model is expo`, `Page-number pagination with a caller-tunable, hard-capped page size.      The pr` to the rest of the system?**
   _171 weakly-connected nodes found - possible documentation gaps or missing edges._

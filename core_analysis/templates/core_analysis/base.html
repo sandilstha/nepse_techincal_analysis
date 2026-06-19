@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'core_analysis/css/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/dashboard.css' %}?v={{ dashboard_asset_version|default:1 }}">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -40,9 +40,9 @@
     </div>
     <div class="header-actions">
       <div class="theme-control-cluster">
-        <a href="{% url 'market_insights' %}" class="ui-icon-btn" title="Home" aria-label="Home">🏠</a>
-        <button type="button" id="themeToggleBtn" class="ui-icon-btn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
-        <a href="{% url 'market_insights' %}" class="ui-icon-btn" title="Market Insights dashboard" aria-label="Market Insights dashboard">⚙</a>
+        <a href="{% url 'market_insights' %}" class="ui-icon-btn" title="Home" aria-label="Home">Home</a>
+        <button type="button" id="themeToggleBtn" class="ui-icon-btn" title="Switch to light theme" aria-label="Switch to light theme">Light</button>
+        <a href="{% url 'market_insights' %}" class="ui-icon-btn" title="Market Insights dashboard" aria-label="Market Insights dashboard">Insights</a>
       </div>
       <div class="d-flex flex-column gap-2 sync-toolbar">
       <!-- Row 1: Sync Price Data -->
@@ -113,7 +113,11 @@
     const themeBtn = document.getElementById('themeToggleBtn');
     function syncThemeIcon() {
       const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-      if (themeBtn) themeBtn.textContent = isLight ? '☀' : '🌙';
+      if (themeBtn) {
+        themeBtn.textContent = isLight ? 'Dark' : 'Light';
+        themeBtn.title = isLight ? 'Switch to dark theme' : 'Switch to light theme';
+        themeBtn.setAttribute('aria-label', themeBtn.title);
+      }
     }
     syncThemeIcon();
     if (themeBtn) {

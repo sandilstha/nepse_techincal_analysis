@@ -71,10 +71,13 @@ def trigger_sync_and_calculate(request):
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _dashboard_asset_version():
-    """Cache-bust token for the dashboard scripts: the latest mtime across them,
-    so a changed script is fetched fresh by the browser without a hard-refresh."""
+    """Cache-bust token for dashboard assets so changed UI files load fresh."""
     latest = 0
-    for rel in ("core_analysis/js/dashboard.js", "core_analysis/js/workbench-ajax.js"):
+    for rel in (
+        "core_analysis/css/dashboard.css",
+        "core_analysis/js/dashboard.js",
+        "core_analysis/js/workbench-ajax.js",
+    ):
         path = finders.find(rel)
         try:
             if path:

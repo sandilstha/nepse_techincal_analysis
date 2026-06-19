@@ -235,8 +235,12 @@ body {
 }
 .mi-icon-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px;
-  font-size: 1rem; text-decoration: none;
+  min-width: 36px; height: 36px;
+  width: auto;
+  padding: 0 0.72rem;
+  font-size: 0.78rem; font-weight: 700; line-height: 1; text-decoration: none;
+  letter-spacing: 0;
+  white-space: nowrap;
   color: var(--ink-1);
   background: var(--surface-2);
   border: 1px solid var(--line);
@@ -245,8 +249,11 @@ body {
   transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
 }
 .mi-icon-btn:hover { border-color: var(--accent); transform: translateY(-1px); }
-#mi-refresh-btn.is-spinning { animation: mi-spin 0.7s linear infinite; }
-@keyframes mi-spin { to { transform: rotate(360deg); } }
+#mi-refresh-btn.is-spinning {
+  border-color: var(--accent);
+  color: var(--accent);
+  opacity: 0.78;
+}
 
 .mi-banner {
   padding: 0.8rem 1rem;

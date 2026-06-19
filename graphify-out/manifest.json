@@ -225,9 +225,9 @@
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/insights.js": {
-    "mtime": 1781691484.1072605,
-    "ast_hash": "c7c35785d1d15a1573eb16d45ee591c6",
-    "semantic_hash": "c7c35785d1d15a1573eb16d45ee591c6"
+    "mtime": 1781855448.5021472,
+    "ast_hash": "dd32ab28dc540fd1e0f3197f496c1b41",
+    "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/ohlc-chart.js": {
     "mtime": 1781691260.3676322,
@@ -275,9 +275,9 @@
     "semantic_hash": ""
   },
   "core_analysis/views.py": {
-    "mtime": 1781768232.20419,
-    "ast_hash": "01d1ea5ebab1f5621cc629abf8d7926a",
-    "semantic_hash": "01d1ea5ebab1f5621cc629abf8d7926a"
+    "mtime": 1781855952.9232614,
+    "ast_hash": "bd72ebcd776ed87ba801aa7ad43e7df3",
+    "semantic_hash": ""
   },
   "manage.py": {
     "mtime": 1779103954.701162,

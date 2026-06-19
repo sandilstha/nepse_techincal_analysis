@@ -27,9 +27,9 @@
       <span class="fs-updated" id="fs-updated">
         {% if meta.latest_date %}Last Updated On {{ meta.latest_date }}{% endif %}
       </span>
-      <a href="{% url 'market_insights' %}" class="mi-icon-btn mi-home-link" title="Home" aria-label="Home">🏠</a>
-      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
-      <a href="{% url 'crud_dashboard' %}" class="mi-icon-btn" title="Analytics workbench" aria-label="Analytics workbench">⚙</a>
+      <a href="{% url 'market_insights' %}" class="mi-icon-btn mi-home-link" title="Home" aria-label="Home">Home</a>
+      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch to light theme" aria-label="Switch to light theme">Light</button>
+      <a href="{% url 'crud_dashboard' %}" class="mi-icon-btn" title="Analytics workbench" aria-label="Analytics workbench">Workbench</a>
     </div>
   </header>
 
@@ -261,10 +261,19 @@
     try { saved = localStorage.getItem('mi-theme'); } catch (e) {}
     if (saved) document.documentElement.setAttribute('data-theme', saved);
     var btn = document.getElementById('mi-theme-btn');
+    function syncThemeButton() {
+      if (!btn) return;
+      var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      btn.textContent = isLight ? 'Dark' : 'Light';
+      btn.title = isLight ? 'Switch to dark theme' : 'Switch to light theme';
+      btn.setAttribute('aria-label', btn.title);
+    }
+    syncThemeButton();
     if (btn) btn.addEventListener('click', function () {
       var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
       document.documentElement.setAttribute('data-theme', next);
       try { localStorage.setItem('mi-theme', next); } catch (e) {}
+      syncThemeButton();
     });
   })();
 </script>
