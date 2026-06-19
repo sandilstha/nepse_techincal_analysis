@@ -96,6 +96,22 @@ def broker_persistence_api(request):
 
 
 @require_GET
+def broker_signals_api(request):
+    # Bundles the four research-desk signals (divergence / breadth / two-sided /
+    # sector rotation). Uses the shared date-window contract like the other desks
+    # (range preset or custom start/end).
+    raw = request.GET.get("brokers") or request.GET.get("broker") or ""
+    brokers = [b for b in (s.strip() for s in raw.split(",")) if b]
+    return _safe(
+        ba.broker_signals,
+        brokers,
+        sector=request.GET.get("sector", "All"),
+        exclude_mf=request.GET.get("exclude_mf") in ("1", "true", "yes"),
+        **_window(request),
+    )
+
+
+@require_GET
 def stock_wise_api(request):
     return _safe(
         ba.stock_wise,
@@ -107,9 +123,12 @@ def stock_wise_api(request):
 
 @require_GET
 def net_holding_api(request):
+    # Accept "brokers=1,2,3" (multi-select) and fall back to single "broker".
+    raw = request.GET.get("brokers") or request.GET.get("broker") or ""
+    brokers = [b for b in (s.strip() for s in raw.split(",")) if b]
     return _safe(
         ba.net_holding,
-        request.GET.get("broker"),
+        brokers,
         exclude_mf=request.GET.get("exclude_mf") in ("1", "true", "yes"),
         sector=request.GET.get("sector", "All"),
         **_window(request),

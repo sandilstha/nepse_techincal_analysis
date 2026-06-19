@@ -117,7 +117,7 @@
   // read-only Start/End and apply immediately; "Custom Range" enables the inputs
   // and applies on Analyze. params() yields the query params for the request.
   var _dateRanges = [];
-  function dateRange(prefix, onApply) {
+  function dateRange(prefix, onApply, defaultRange) {
     var preset = el(prefix + "-preset"),
         startI = el(prefix + "-start"),
         endI = el(prefix + "-end"),
@@ -175,8 +175,10 @@
       onApply();
     });
 
+    var def = defaultRange || "today";
+    if (preset && def !== "today") preset.value = def;   // reflect non-default preset in the dropdown
     setMax();
-    apply("today", false);      // seed defaults; caller fires the first load
+    apply(def, false);          // seed defaults; caller fires the first load
 
     var ctrl = {
       refresh: function () { setMax(); if (state.range !== "custom") apply(state.range, false); },
@@ -383,7 +385,7 @@
   // ─────────────────────────────────────────────────────────────────────
   // TAB: Broker Favorites
   // ─────────────────────────────────────────────────────────────────────
-  var favState = { brokers: [], trendSide: "buy", trendSym: null, dr: null };
+  var favState = { brokers: [], trendSide: "buy", trendSym: null, dr: null, persistSide: "all", persistData: null, persistSort: null };
   var TABS = {};
 
   TABS.favorites = {
@@ -391,8 +393,33 @@
       // Multi-select brokers: default to the first broker selected.
       var first = (META.brokers || [])[0];
       favState.brokers = first != null ? [String(first)] : [];
-      buildBrokerMulti(function () { TABS.favorites.load(); });
+      buildBrokerMulti("fav", favState, function () { TABS.favorites.load(); });
       favState.dr = dateRange("fav", function () { TABS.favorites.load(); });
+      // Sector filter for the persistence card (reloads just that card).
+      var psec = el("fav-persist-sector");
+      if (psec) {
+        fillSectors(psec);
+        psec.addEventListener("change", function () { TABS.favorites.loadPersistence(); });
+      }
+      // Side filter (All / Accumulating / Distributing) — client-side, no refetch.
+      segGroup("fav-persist-side", function (v) { favState.persistSide = v; drawPersistence(); });
+      // Click column titles to sort the persistence rows.
+      var cols = el("fav-ad-cols");
+      if (cols) cols.addEventListener("click", function (e) {
+        var h = e.target.closest ? e.target.closest("[data-sort]") : null;
+        if (!h || !cols.contains(h)) return;
+        var key = h.getAttribute("data-sort"), type = h.getAttribute("data-type") || "num";
+        var cur = favState.persistSort;
+        favState.persistSort = (cur && cur.key === key)
+          ? { key: key, dir: cur.dir === "asc" ? "desc" : "asc", type: type }
+          : { key: key, dir: type === "num" ? "desc" : "asc", type: type };
+        var dir = favState.persistSort.dir;
+        cols.querySelectorAll("[data-sort]").forEach(function (s) { s.classList.remove("sorted-asc", "sorted-desc"); });
+        cols.querySelectorAll('[data-sort="' + key + '"]').forEach(function (s) {
+          s.classList.add(dir === "asc" ? "sorted-asc" : "sorted-desc");
+        });
+        drawPersistence();
+      });
       segGroup("fav-trend-side", function (v) { favState.trendSide = v; TABS.favorites.loadTrend(); });
       // Row click selects that ticker for the trend (delegated so it survives
       // table re-renders from sorting).
@@ -432,7 +459,11 @@
       var box = el("fav-ad");
       if (!box) return;
       box.innerHTML = '<div class="dsx-loading">Loading…</div>';
-      getJSON("persistence/", { brokers: favState.brokers.join(","), lookback: "1m" }, "fav-persist")
+      var psec = el("fav-persist-sector");
+      getJSON("persistence/", {
+        brokers: favState.brokers.join(","), lookback: "1m",
+        sector: psec ? psec.value : "All"
+      }, "fav-persist")
         .then(renderPersistence)
         .catch(function (err) { if (isAbort(err)) return; box.innerHTML = '<div class="dsx-empty">Error</div>'; });
     },
@@ -493,11 +524,25 @@
   // selected desk, with a conviction streak (consecutive same-side sessions) and
   // an all-broker concentration read (HHI). Diverging bar = cumulative net qty.
   function renderPersistence(d) {
+    favState.persistData = d || { rows: [] };
+    drawPersistence();
+  }
+  function drawPersistence() {
     var box = el("fav-ad"), sub = el("fav-ad-sub");
     if (!box) return;
-    var rows = (d && d.rows) || [];
-    if (sub) sub.textContent = d && d.days ? ("Last " + d.days + " sessions · click a row to chart it") : "";
-    if (!rows.length) { box.innerHTML = "<div class='dsx-empty'>No multi-day positions</div>"; return; }
+    var d = favState.persistData || { rows: [] };
+    var side = favState.persistSide || "all";
+    var all = d.rows || [];
+    var rows = side === "all" ? all : all.filter(function (r) { return r.side === side; });
+    var ps = favState.persistSort;
+    if (ps) rows = sortRows(rows, ps.key, ps.dir, ps.type);
+    if (sub) sub.textContent = d.days ? ("Last " + d.days + " sessions · click a row to chart it") : "";
+    if (!rows.length) {
+      box.innerHTML = "<div class='dsx-empty'>" +
+        (all.length ? "No " + (side === "buy" ? "accumulating" : "distributing") + " names" : "No multi-day positions") +
+        "</div>";
+      return;
+    }
     var maxAbs = rows.reduce(function (m, r) { return Math.max(m, Math.abs(r.cum_net || 0)); }, 0) || 1;
     box.innerHTML = rows.map(function (r) {
       var pos = r.cum_net >= 0;
@@ -518,37 +563,150 @@
     }).join("");
   }
 
-  // Multi-select broker checklist (button + searchable checkbox menu).
-  function buildBrokerMulti(onChange) {
-    var btn = el("fav-broker-btn"), menu = el("fav-broker-menu"),
-        list = el("fav-broker-list"), search = el("fav-broker-search");
+  // ── research-desk signals (divergence / sector / breadth / two-sided) ──
+  function sigEmpty(id, msg) {
+    var box = el(id); if (box) box.innerHTML = "<div class='dsx-empty'>" + (msg || "Nothing flagged") + "</div>";
+  }
+  function renderSignals(d) {
+    d = d || {};
+    renderDivergence(d.divergence || []);
+    renderSectorRotation(d.sectors || []);
+    renderBreadth(d.breadth || []);
+    renderTwoSided(d.two_sided || []);
+  }
+
+  // Price–flow divergence: desk net flow disagrees with the window price move.
+  function renderDivergence(rows) {
+    if (!rows.length) { sigEmpty("sig-div", "No divergences"); return; }
+    el("sig-div").innerHTML = "<table class='dsx-sig-tbl'>" + rows.map(function (r) {
+      var accum = r.type === "accum_weak";
+      var tag = accum
+        ? "<span class='dsx-tag buy' title='Net buying while price fell'>ACCUM ↓px</span>"
+        : "<span class='dsx-tag sell' title='Net selling into a rising price'>DISTRIB ↑px</span>";
+      var pcCls = r.price_chg >= 0 ? "num-pos" : "num-neg";
+      var netCls = r.net >= 0 ? "num-pos" : "num-neg";
+      return "<tr><td class='l tkr'>" + r.symbol + "</td><td class='l'>" + tag + "</td>" +
+        "<td class='" + netCls + "'>" + (r.net >= 0 ? "+" : "") + fmtQty(r.net) + "</td>" +
+        "<td class='" + pcCls + "'>" + (r.price_chg >= 0 ? "+" : "") + fmtPct(r.price_chg) + "</td></tr>";
+    }).join("") + "</table>";
+  }
+
+  // Sector rotation: desk net quantity by sector (diverging bars).
+  function renderSectorRotation(rows) {
+    if (!rows.length) { sigEmpty("sig-sec", "No sector flow"); return; }
+    var maxAbs = rows.reduce(function (m, r) { return Math.max(m, Math.abs(r.net || 0)); }, 0) || 1;
+    el("sig-sec").innerHTML = rows.map(function (r) {
+      var pos = r.net >= 0;
+      var w = (50 * Math.abs(r.net || 0) / maxAbs).toFixed(2);
+      var fill = "<span class='dsx-ad-fill " + (pos ? "buy" : "sell") + "' style='width:" + w + "%'></span>";
+      return "<div class='dsx-sec-row'><span class='dsx-sec-name' title='" + r.sector + "'>" + r.sector + "</span>" +
+        "<span class='dsx-ad-track'>" + fill + "</span>" +
+        "<span class='dsx-ad-net " + (pos ? "num-pos" : "num-neg") + "'>" + (pos ? "+" : "") + fmtQty(r.net) + "</span></div>";
+    }).join("");
+  }
+
+  // Buyer/seller breadth: distinct brokers net-buying vs net-selling (all brokers).
+  function renderBreadth(rows) {
+    if (!rows.length) { sigEmpty("sig-breadth"); return; }
+    el("sig-breadth").innerHTML = "<table class='dsx-sig-tbl'>" +
+      "<thead><tr><th class='l'>Ticker</th><th>Buyers</th><th>Sellers</th><th>Net</th></tr></thead>" +
+      rows.map(function (r) {
+        var tot = (r.buyers + r.sellers) || 1;
+        var bw = (100 * r.buyers / tot).toFixed(1);
+        var split = "<span class='dsx-split'><i class='buy' style='width:" + bw + "%'></i></span>";
+        var netCls = r.net > 0 ? "num-pos" : r.net < 0 ? "num-neg" : "";
+        return "<tr><td class='l tkr'>" + r.symbol + "</td><td class='num-pos'>" + r.buyers +
+          "</td><td class='num-neg'>" + r.sellers + "</td><td class='" + netCls + "'>" +
+          (r.net > 0 ? "+" : "") + r.net + " " + split + "</td></tr>";
+      }).join("") + "</table>";
+  }
+
+  // Two-sided activity: desk both bought and sold the same name (churn %).
+  function renderTwoSided(rows) {
+    if (!rows.length) { sigEmpty("sig-two", "No two-sided names"); return; }
+    el("sig-two").innerHTML = "<table class='dsx-sig-tbl'>" +
+      "<thead><tr><th class='l'>Ticker</th><th>Buy</th><th>Sell</th><th>Churn</th></tr></thead>" +
+      rows.map(function (r) {
+        return "<tr><td class='l tkr'>" + r.symbol + "</td><td class='num-pos'>" + fmtQty(r.buy) +
+          "</td><td class='num-neg'>" + fmtQty(r.sell) + "</td><td><span class='dsx-churn' title='" +
+          fmtQty(r.two_sided) + " shares two-sided'>" + r.churn.toFixed(0) + "%</span></td></tr>";
+      }).join("") + "</table>";
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // TAB: Signal Desk (the four research-desk signals, own broker selection)
+  // ─────────────────────────────────────────────────────────────────────
+  var sigState = { brokers: [], dr: null };
+  var SIG_IDS = ["sig-div", "sig-sec", "sig-breadth", "sig-two"];
+  function sigSetAll(html) { SIG_IDS.forEach(function (id) { if (el(id)) el(id).innerHTML = html; }); }
+  TABS.signals = {
+    init: function () {
+      var first = (META.brokers || [])[0];
+      sigState.brokers = first != null ? [String(first)] : [];
+      buildBrokerMulti("sig", sigState, function () { TABS.signals.load(); });
+      // Signals are inherently multi-day; default to Last 1 Month so Price–Flow
+      // Divergence (needs ≥2 sessions) isn't empty on open.
+      sigState.dr = dateRange("sig", function () { TABS.signals.load(); }, "1m");
+    },
+    load: function () {
+      if (!sigState.brokers.length) { sigSetAll('<div class="dsx-empty">Select a broker</div>'); return; }
+      sigSetAll('<div class="dsx-loading">Loading…</div>');
+      getJSON("signals/", assign({ brokers: sigState.brokers.join(",") }, sigState.dr.params()), "signals")
+        .then(renderSignals)
+        .catch(function (err) { if (isAbort(err)) return; sigSetAll('<div class="dsx-empty">Error</div>'); });
+    }
+  };
+
+  // Multi-select broker checklist (button + searchable checkbox menu). `prefix`
+  // namespaces the element ids (fav-/sig-) and `state.brokers` holds the picks,
+  // so each tab gets its own independent selector.
+  function buildBrokerMulti(prefix, state, onChange) {
+    var btn = el(prefix + "-broker-btn"), menu = el(prefix + "-broker-menu"),
+        list = el(prefix + "-broker-list"), search = el(prefix + "-broker-search");
     if (!btn || !menu || !list) return;
 
     function syncLabel() {
-      var n = favState.brokers.length;
+      var n = state.brokers.length;
       btn.textContent = (n === 0 ? "Select brokers"
-        : n === 1 ? "Broker " + favState.brokers[0]
+        : n === 1 ? "Broker " + state.brokers[0]
         : n + " brokers selected") + " ▾";
+    }
+    // Live "N of M selected" line, created once just above the chip grid.
+    var countEl = menu.querySelector(".dsx-multi-count");
+    if (!countEl) {
+      countEl = document.createElement("div");
+      countEl.className = "dsx-multi-count";
+      list.parentNode.insertBefore(countEl, list);
+    }
+    function updateCount() {
+      countEl.textContent = state.brokers.length + " of " + (META.brokers || []).length + " selected";
     }
     function render(filter) {
       list.innerHTML = "";
+      var shown = 0;
       (META.brokers || []).forEach(function (b) {
         var bs = String(b);
         if (filter && bs.indexOf(filter) === -1) return;
-        var lbl = document.createElement("label");
-        lbl.className = "dsx-multi-opt";
-        var cb = document.createElement("input");
-        cb.type = "checkbox"; cb.value = bs;
-        cb.checked = favState.brokers.indexOf(bs) !== -1;
-        cb.addEventListener("change", function () {
-          if (cb.checked) { if (favState.brokers.indexOf(bs) === -1) favState.brokers.push(bs); }
-          else { favState.brokers = favState.brokers.filter(function (x) { return x !== bs; }); }
-          syncLabel(); onChange();
+        shown++;
+        var on = state.brokers.indexOf(bs) !== -1;
+        var chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "dsx-broker-chip" + (on ? " on" : "");
+        chip.textContent = bs;
+        chip.setAttribute("aria-pressed", on ? "true" : "false");
+        chip.addEventListener("click", function () {
+          var idx = state.brokers.indexOf(bs);
+          if (idx === -1) state.brokers.push(bs);
+          else state.brokers = state.brokers.filter(function (x) { return x !== bs; });
+          var sel = state.brokers.indexOf(bs) !== -1;
+          chip.classList.toggle("on", sel);
+          chip.setAttribute("aria-pressed", sel ? "true" : "false");
+          syncLabel(); updateCount(); onChange();
         });
-        lbl.appendChild(cb);
-        lbl.appendChild(document.createTextNode(" " + bs));
-        list.appendChild(lbl);
+        list.appendChild(chip);
       });
+      if (!shown) list.innerHTML = "<div class='dsx-multi-none'>No match</div>";
+      updateCount();
     }
 
     btn.addEventListener("click", function (e) {
@@ -562,9 +720,9 @@
     menu.querySelectorAll(".dsx-multi-actions button").forEach(function (b) {
       b.addEventListener("click", function () {
         if (b.dataset.act === "all") {
-          favState.brokers = (META.brokers || []).map(String);
+          state.brokers = (META.brokers || []).map(String);
         } else {
-          favState.brokers = [];
+          state.brokers = [];
         }
         render(search.value.trim()); syncLabel(); onChange();
       });
@@ -655,13 +813,13 @@
   // ─────────────────────────────────────────────────────────────────────
   // TAB: Net Holding (treemap)
   // ─────────────────────────────────────────────────────────────────────
-  var nhState = { broker: null, excludeMf: false, sector: "All", dr: null };
+  var nhState = { brokers: [], excludeMf: false, sector: "All", dr: null };
   TABS.netholding = {
     init: function () {
-      fillBrokers(el("nh-broker"));
+      var first = (META.brokers || [])[0];
+      nhState.brokers = first != null ? [String(first)] : [];
+      buildBrokerMulti("nh", nhState, function () { TABS.netholding.load(); });
       fillSectors(el("nh-sector"));
-      nhState.broker = el("nh-broker").value || (META.brokers || [])[0];
-      el("nh-broker").addEventListener("change", function () { nhState.broker = this.value; TABS.netholding.load(); });
       el("nh-sector").addEventListener("change", function () { nhState.sector = this.value; TABS.netholding.load(); });
       el("nh-exclude-mf").addEventListener("change", function () { nhState.excludeMf = this.checked; TABS.netholding.load(); });
       nhState.dr = dateRange("nh", function () { TABS.netholding.load(); });
@@ -669,9 +827,9 @@
     load: function () {
       var box = el("nh-treemap");
       box.innerHTML = '<div class="dsx-loading">Loading…</div>';
-      if (!nhState.broker) { box.innerHTML = '<div class="dsx-empty">No brokers</div>'; return; }
+      if (!nhState.brokers.length) { box.innerHTML = '<div class="dsx-empty">Select a broker</div>'; return; }
       getJSON("netholding/", assign({
-        broker: nhState.broker,
+        brokers: nhState.brokers.join(","),
         exclude_mf: nhState.excludeMf ? 1 : 0, sector: nhState.sector
       }, nhState.dr.params()), "netholding").then(function (d) {
         renderTreemap(box, (d.items || []));

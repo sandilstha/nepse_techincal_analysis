@@ -434,10 +434,20 @@
       "norm_label": "broker_persistence_api()"
     },
     {
-      "label": "stock_wise_api()",
+      "label": "broker_signals_api()",
       "file_type": "code",
       "source_file": "core_analysis/broker_views.py",
       "source_location": "L99",
+      "_origin": "ast",
+      "id": "core_analysis_broker_views_broker_signals_api",
+      "community": 13,
+      "norm_label": "broker_signals_api()"
+    },
+    {
+      "label": "stock_wise_api()",
+      "file_type": "code",
+      "source_file": "core_analysis/broker_views.py",
+      "source_location": "L115",
       "_origin": "ast",
       "id": "core_analysis_broker_views_stock_wise_api",
       "community": 13,
@@ -447,7 +457,7 @@
       "label": "net_holding_api()",
       "file_type": "code",
       "source_file": "core_analysis/broker_views.py",
-      "source_location": "L109",
+      "source_location": "L125",
       "_origin": "ast",
       "id": "core_analysis_broker_views_net_holding_api",
       "community": 13,
@@ -457,7 +467,7 @@
       "label": "broker_concentration_api()",
       "file_type": "code",
       "source_file": "core_analysis/broker_views.py",
-      "source_location": "L120",
+      "source_location": "L139",
       "_origin": "ast",
       "id": "core_analysis_broker_views_broker_concentration_api",
       "community": 13,
@@ -467,7 +477,7 @@
       "label": "hotstocks_api()",
       "file_type": "code",
       "source_file": "core_analysis/broker_views.py",
-      "source_location": "L129",
+      "source_location": "L148",
       "_origin": "ast",
       "id": "core_analysis_broker_views_hotstocks_api",
       "community": 13,
@@ -477,7 +487,7 @@
       "label": "broker_trend_api()",
       "file_type": "code",
       "source_file": "core_analysis/broker_views.py",
-      "source_location": "L139",
+      "source_location": "L158",
       "_origin": "ast",
       "id": "core_analysis_broker_views_broker_trend_api",
       "community": 13,
@@ -730,7 +740,7 @@
       "source_location": "L179",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_indicator_catalog",
-      "community": 76,
+      "community": 13,
       "norm_label": "indicator_catalog()"
     },
     {
@@ -790,7 +800,7 @@
       "source_location": "L180",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_rationale_180",
-      "community": 76,
+      "community": 13,
       "norm_label": "list available indicators for the dropdown."
     },
     {
@@ -2987,7 +2997,7 @@
       "label": "_is_mutual_fund()",
       "file_type": "code",
       "source_file": "core_analysis/services/broker_analytics.py",
-      "source_location": "L684",
+      "source_location": "L694",
       "_origin": "ast",
       "id": "services_broker_analytics_is_mutual_fund",
       "community": 4,
@@ -2997,7 +3007,7 @@
       "label": "broker_concentration()",
       "file_type": "code",
       "source_file": "core_analysis/services/broker_analytics.py",
-      "source_location": "L689",
+      "source_location": "L699",
       "_origin": "ast",
       "id": "services_broker_analytics_broker_concentration",
       "community": 4,
@@ -3007,7 +3017,7 @@
       "label": "hotstocks()",
       "file_type": "code",
       "source_file": "core_analysis/services/broker_analytics.py",
-      "source_location": "L729",
+      "source_location": "L739",
       "_origin": "ast",
       "id": "services_broker_analytics_hotstocks",
       "community": 4,
@@ -3017,17 +3027,37 @@
       "label": "broker_persistence()",
       "file_type": "code",
       "source_file": "core_analysis/services/broker_analytics.py",
-      "source_location": "L775",
+      "source_location": "L785",
       "_origin": "ast",
       "id": "services_broker_analytics_broker_persistence",
       "community": 4,
       "norm_label": "broker_persistence()"
     },
     {
+      "label": "_window_close_changes()",
+      "file_type": "code",
+      "source_file": "core_analysis/services/broker_analytics.py",
+      "source_location": "L890",
+      "_origin": "ast",
+      "id": "services_broker_analytics_window_close_changes",
+      "community": 4,
+      "norm_label": "_window_close_changes()"
+    },
+    {
+      "label": "broker_signals()",
+      "file_type": "code",
+      "source_file": "core_analysis/services/broker_analytics.py",
+      "source_location": "L926",
+      "_origin": "ast",
+      "id": "services_broker_analytics_broker_signals",
+      "community": 4,
+      "norm_label": "broker_signals()"
+    },
+    {
       "label": "trend()",
       "file_type": "code",
       "source_file": "core_analysis/services/broker_analytics.py",
-      "source_location": "L883",
+      "source_location": "L1040",
       "_origin": "ast",
       "id": "services_broker_analytics_trend",
       "community": 4,
@@ -3254,22 +3284,22 @@
       "norm_label": "top buy / sell / holding brokers for one stock (stock wise details tab)."
     },
     {
-      "label": "Per-stock net position for one broker (Net Holding treemap).",
+      "label": "Per-stock net position for one or more brokers (Net Holding treemap).      When",
       "file_type": "rationale",
       "source_file": "core_analysis/services/broker_analytics.py",
       "source_location": "L658",
       "_origin": "ast",
       "id": "services_broker_analytics_rationale_658",
       "community": 4,
-      "norm_label": "per-stock net position for one broker (net holding treemap)."
+      "norm_label": "per-stock net position for one or more brokers (net holding treemap).      when"
     },
     {
       "label": "Per-stock top-3 broker concentration on each side (Broker Concentration).",
       "file_type": "rationale",
       "source_file": "core_analysis/services/broker_analytics.py",
-      "source_location": "L690",
+      "source_location": "L700",
       "_origin": "ast",
-      "id": "services_broker_analytics_rationale_690",
+      "id": "services_broker_analytics_rationale_700",
       "community": 4,
       "norm_label": "per-stock top-3 broker concentration on each side (broker concentration)."
     },
@@ -3277,9 +3307,9 @@
       "label": "Most-active stocks with their dominant brokers (Hotstocks tab).",
       "file_type": "rationale",
       "source_file": "core_analysis/services/broker_analytics.py",
-      "source_location": "L730",
+      "source_location": "L740",
       "_origin": "ast",
-      "id": "services_broker_analytics_rationale_730",
+      "id": "services_broker_analytics_rationale_740",
       "community": 4,
       "norm_label": "most-active stocks with their dominant brokers (hotstocks tab)."
     },
@@ -3287,19 +3317,39 @@
       "label": "Multi-day persistence + concentration for a desk (Broker Flow headline).      Wa",
       "file_type": "rationale",
       "source_file": "core_analysis/services/broker_analytics.py",
-      "source_location": "L777",
+      "source_location": "L787",
       "_origin": "ast",
-      "id": "services_broker_analytics_rationale_777",
+      "id": "services_broker_analytics_rationale_787",
       "community": 4,
       "norm_label": "multi-day persistence + concentration for a desk (broker flow headline).      wa"
+    },
+    {
+      "label": "% price change over the window for each symbol (first vs last close in it).",
+      "file_type": "rationale",
+      "source_file": "core_analysis/services/broker_analytics.py",
+      "source_location": "L891",
+      "_origin": "ast",
+      "id": "services_broker_analytics_rationale_891",
+      "community": 4,
+      "norm_label": "% price change over the window for each symbol (first vs last close in it)."
+    },
+    {
+      "label": "Four research-desk signals for a broker selection, one window pass.      All der",
+      "file_type": "rationale",
+      "source_file": "core_analysis/services/broker_analytics.py",
+      "source_location": "L927",
+      "_origin": "ast",
+      "id": "services_broker_analytics_rationale_927",
+      "community": 4,
+      "norm_label": "four research-desk signals for a broker selection, one window pass.      all der"
     },
     {
       "label": "Daily traded quantity (from cached day aggregates) + closing price (DB).      Wh",
       "file_type": "rationale",
       "source_file": "core_analysis/services/broker_analytics.py",
-      "source_location": "L884",
+      "source_location": "L1041",
       "_origin": "ast",
-      "id": "services_broker_analytics_rationale_884",
+      "id": "services_broker_analytics_rationale_1041",
       "community": 4,
       "norm_label": "daily traded quantity (from cached day aggregates) + closing price (db).      wh"
     },
@@ -5220,7 +5270,7 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch",
-      "community": 5,
+      "community": 35,
       "norm_label": "autocompletesearch"
     },
     {
@@ -5230,7 +5280,7 @@
       "source_location": "L95",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_constructor",
-      "community": 5,
+      "community": 35,
       "norm_label": ".constructor()"
     },
     {
@@ -5240,7 +5290,7 @@
       "source_location": "L117",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_init",
-      "community": 5,
+      "community": 35,
       "norm_label": ".init()"
     },
     {
@@ -5250,7 +5300,7 @@
       "source_location": "L144",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_handleinput",
-      "community": 5,
+      "community": 35,
       "norm_label": ".handleinput()"
     },
     {
@@ -5260,7 +5310,7 @@
       "source_location": "L175",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_performsearch",
-      "community": 5,
+      "community": 35,
       "norm_label": ".performsearch()"
     },
     {
@@ -5270,7 +5320,7 @@
       "source_location": "L216",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_showhint",
-      "community": 5,
+      "community": 35,
       "norm_label": ".showhint()"
     },
     {
@@ -5280,7 +5330,7 @@
       "source_location": "L221",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_showloading",
-      "community": 5,
+      "community": 35,
       "norm_label": ".showloading()"
     },
     {
@@ -5290,7 +5340,7 @@
       "source_location": "L226",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_showresults",
-      "community": 5,
+      "community": 35,
       "norm_label": ".showresults()"
     },
     {
@@ -5300,7 +5350,7 @@
       "source_location": "L281",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_hidedropdown",
-      "community": 5,
+      "community": 35,
       "norm_label": ".hidedropdown()"
     },
     {
@@ -5310,7 +5360,7 @@
       "source_location": "L286",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_selectitem",
-      "community": 5,
+      "community": 35,
       "norm_label": ".selectitem()"
     },
     {
@@ -5320,7 +5370,7 @@
       "source_location": "L309",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_handlekeydown",
-      "community": 5,
+      "community": 35,
       "norm_label": ".handlekeydown()"
     },
     {
@@ -5330,7 +5380,7 @@
       "source_location": "L336",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_updateactiveitem",
-      "community": 5,
+      "community": 35,
       "norm_label": ".updateactiveitem()"
     },
     {
@@ -5527,7 +5577,7 @@
       "label": "refreshDateRanges()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L192",
+      "source_location": "L194",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_refreshdateranges",
       "community": 5,
@@ -5537,7 +5587,7 @@
       "label": "activateTab()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L196",
+      "source_location": "L198",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_activatetab",
       "community": 5,
@@ -5547,7 +5597,7 @@
       "label": "sortRows()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L214",
+      "source_location": "L216",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_sortrows",
       "community": 5,
@@ -5557,7 +5607,7 @@
       "label": "sortableHead()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L228",
+      "source_location": "L230",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_sortablehead",
       "community": 5,
@@ -5567,7 +5617,7 @@
       "label": "_sortMark()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L243",
+      "source_location": "L245",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_sortmark",
       "community": 5,
@@ -5577,7 +5627,7 @@
       "label": "_drawTable()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L249",
+      "source_location": "L251",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_drawtable",
       "community": 5,
@@ -5587,7 +5637,7 @@
       "label": "showTable()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L256",
+      "source_location": "L258",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_showtable",
       "community": 5,
@@ -5597,7 +5647,7 @@
       "label": "buildFavTable()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L286",
+      "source_location": "L288",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_buildfavtable",
       "community": 5,
@@ -5607,7 +5657,7 @@
       "label": "buildBrokerTable()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L307",
+      "source_location": "L309",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_buildbrokertable",
       "community": 5,
@@ -5617,7 +5667,7 @@
       "label": "buildHoldTable()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L322",
+      "source_location": "L324",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_buildholdtable",
       "community": 5,
@@ -5627,7 +5677,7 @@
       "label": "ensureChart()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L335",
+      "source_location": "L337",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_ensurechart",
       "community": 5,
@@ -5637,7 +5687,7 @@
       "label": "renderTrend()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L348",
+      "source_location": "L350",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_rendertrend",
       "community": 5,
@@ -5647,7 +5697,7 @@
       "label": "wireFavSelect()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L447",
+      "source_location": "L478",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_wirefavselect",
       "community": 5,
@@ -5657,7 +5707,7 @@
       "label": "renderFavKpis()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L462",
+      "source_location": "L493",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_renderfavkpis",
       "community": 5,
@@ -5667,17 +5717,97 @@
       "label": "renderPersistence()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L495",
+      "source_location": "L526",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_renderpersistence",
       "community": 5,
       "norm_label": "renderpersistence()"
     },
     {
+      "label": "drawPersistence()",
+      "file_type": "code",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L530",
+      "_origin": "ast",
+      "id": "js_floorsheet_brokers_drawpersistence",
+      "community": 5,
+      "norm_label": "drawpersistence()"
+    },
+    {
+      "label": "sigEmpty()",
+      "file_type": "code",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L567",
+      "_origin": "ast",
+      "id": "js_floorsheet_brokers_sigempty",
+      "community": 5,
+      "norm_label": "sigempty()"
+    },
+    {
+      "label": "renderSignals()",
+      "file_type": "code",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L570",
+      "_origin": "ast",
+      "id": "js_floorsheet_brokers_rendersignals",
+      "community": 5,
+      "norm_label": "rendersignals()"
+    },
+    {
+      "label": "renderDivergence()",
+      "file_type": "code",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L579",
+      "_origin": "ast",
+      "id": "js_floorsheet_brokers_renderdivergence",
+      "community": 5,
+      "norm_label": "renderdivergence()"
+    },
+    {
+      "label": "renderSectorRotation()",
+      "file_type": "code",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L595",
+      "_origin": "ast",
+      "id": "js_floorsheet_brokers_rendersectorrotation",
+      "community": 5,
+      "norm_label": "rendersectorrotation()"
+    },
+    {
+      "label": "renderBreadth()",
+      "file_type": "code",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L609",
+      "_origin": "ast",
+      "id": "js_floorsheet_brokers_renderbreadth",
+      "community": 5,
+      "norm_label": "renderbreadth()"
+    },
+    {
+      "label": "renderTwoSided()",
+      "file_type": "code",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L625",
+      "_origin": "ast",
+      "id": "js_floorsheet_brokers_rendertwosided",
+      "community": 5,
+      "norm_label": "rendertwosided()"
+    },
+    {
+      "label": "sigSetAll()",
+      "file_type": "code",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L641",
+      "_origin": "ast",
+      "id": "js_floorsheet_brokers_sigsetall",
+      "community": 5,
+      "norm_label": "sigsetall()"
+    },
+    {
       "label": "buildBrokerMulti()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L522",
+      "source_location": "L663",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_buildbrokermulti",
       "community": 5,
@@ -5687,7 +5817,7 @@
       "label": "buildHotTable()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L642",
+      "source_location": "L800",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_buildhottable",
       "community": 5,
@@ -5697,7 +5827,7 @@
       "label": "renderTreemap()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L683",
+      "source_location": "L841",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_rendertreemap",
       "community": 5,
@@ -5707,7 +5837,7 @@
       "label": "drawCell()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L728",
+      "source_location": "L886",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_drawcell",
       "community": 5,
@@ -5717,7 +5847,7 @@
       "label": "mountTreemapTip()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L751",
+      "source_location": "L909",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_mounttreemaptip",
       "community": 5,
@@ -5727,7 +5857,7 @@
       "label": "buildConcTable()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L814",
+      "source_location": "L972",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_buildconctable",
       "community": 5,
@@ -5737,7 +5867,7 @@
       "label": "start()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L847",
+      "source_location": "L1005",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_start",
       "community": 5,
@@ -5747,7 +5877,7 @@
       "label": "hasUsableMeta()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L858",
+      "source_location": "L1016",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_hasusablemeta",
       "community": 5,
@@ -5757,7 +5887,7 @@
       "label": "refreshMeta()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
-      "source_location": "L862",
+      "source_location": "L1020",
       "_origin": "ast",
       "id": "js_floorsheet_brokers_refreshmeta",
       "community": 5,
@@ -6960,7 +7090,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c",
-      "community": 70,
+      "community": 26,
       "norm_label": "c()"
     },
     {
@@ -6980,7 +7110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_f",
-      "community": 70,
+      "community": 43,
       "norm_label": "f()"
     },
     {
@@ -7040,7 +7170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_y",
-      "community": 107,
+      "community": 36,
       "norm_label": "y()"
     },
     {
@@ -7050,7 +7180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c_constructor",
-      "community": 70,
+      "community": 26,
       "norm_label": ".constructor()"
     },
     {
@@ -7060,7 +7190,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c_l",
-      "community": 35,
+      "community": 26,
       "norm_label": ".l()"
     },
     {
@@ -7070,7 +7200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c_v",
-      "community": 48,
+      "community": 30,
       "norm_label": ".v()"
     },
     {
@@ -7100,7 +7230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c_s",
-      "community": 70,
+      "community": 26,
       "norm_label": ".s()"
     },
     {
@@ -7110,7 +7240,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_t",
-      "community": 68,
+      "community": 37,
       "norm_label": "t()"
     },
     {
@@ -7140,7 +7270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_o",
-      "community": 65,
+      "community": 7,
       "norm_label": "o()"
     },
     {
@@ -7170,7 +7300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_i",
-      "community": 8,
+      "community": 36,
       "norm_label": "i"
     },
     {
@@ -7180,7 +7310,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_i_constructor",
-      "community": 8,
+      "community": 36,
       "norm_label": ".constructor()"
     },
     {
@@ -7190,7 +7320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_i_w",
-      "community": 8,
+      "community": 36,
       "norm_label": ".w()"
     },
     {
@@ -7200,7 +7330,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_i_u",
-      "community": 8,
+      "community": 36,
       "norm_label": ".u()"
     },
     {
@@ -7210,7 +7340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_i_j",
-      "community": 8,
+      "community": 36,
       "norm_label": ".j()"
     },
     {
@@ -7220,7 +7350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_i_h",
-      "community": 8,
+      "community": 36,
       "norm_label": ".h()"
     },
     {
@@ -7290,7 +7420,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_f_constructor",
-      "community": 70,
+      "community": 43,
       "norm_label": ".constructor()"
     },
     {
@@ -7300,7 +7430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_f_j",
-      "community": 70,
+      "community": 43,
       "norm_label": ".j()"
     },
     {
@@ -7310,7 +7440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_f_k",
-      "community": 70,
+      "community": 43,
       "norm_label": ".k()"
     },
     {
@@ -7330,7 +7460,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_h",
-      "community": 22,
+      "community": 44,
       "norm_label": "h"
     },
     {
@@ -7340,7 +7470,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_h_constructor",
-      "community": 57,
+      "community": 44,
       "norm_label": ".constructor()"
     },
     {
@@ -7350,7 +7480,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_h_bt",
-      "community": 22,
+      "community": 44,
       "norm_label": ".bt()"
     },
     {
@@ -7420,7 +7550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_u_mt",
-      "community": 8,
+      "community": 22,
       "norm_label": ".mt()"
     },
     {
@@ -7440,7 +7570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_z",
-      "community": 57,
+      "community": 44,
       "norm_label": "z()"
     },
     {
@@ -7450,7 +7580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_x",
-      "community": 57,
+      "community": 44,
       "norm_label": "x()"
     },
     {
@@ -7520,7 +7650,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j",
-      "community": 49,
+      "community": 27,
       "norm_label": "j"
     },
     {
@@ -7530,7 +7660,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_constructor",
-      "community": 49,
+      "community": 27,
       "norm_label": ".constructor()"
     },
     {
@@ -7540,7 +7670,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_kt",
-      "community": 49,
+      "community": 27,
       "norm_label": ".kt()"
     },
     {
@@ -7550,7 +7680,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_ki",
-      "community": 49,
+      "community": 27,
       "norm_label": ".ki()"
     },
     {
@@ -7560,7 +7690,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_bt",
-      "community": 49,
+      "community": 27,
       "norm_label": ".bt()"
     },
     {
@@ -7570,7 +7700,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_at",
-      "community": 49,
+      "community": 27,
       "norm_label": ".at()"
     },
     {
@@ -7580,7 +7710,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_oi",
-      "community": 49,
+      "community": 27,
       "norm_label": ".oi()"
     },
     {
@@ -7590,7 +7720,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_bi",
-      "community": 49,
+      "community": 27,
       "norm_label": ".bi()"
     },
     {
@@ -7600,7 +7730,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_vi",
-      "community": 49,
+      "community": 27,
       "norm_label": ".vi()"
     },
     {
@@ -7610,7 +7740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_ai",
-      "community": 49,
+      "community": 27,
       "norm_label": ".ai()"
     },
     {
@@ -7620,7 +7750,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_gt",
-      "community": 49,
+      "community": 27,
       "norm_label": ".gt()"
     },
     {
@@ -7630,7 +7760,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_zi",
-      "community": 49,
+      "community": 27,
       "norm_label": ".zi()"
     },
     {
@@ -7640,7 +7770,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_di",
-      "community": 49,
+      "community": 27,
       "norm_label": ".di()"
     },
     {
@@ -7660,7 +7790,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_q_ei",
-      "community": 8,
+      "community": 28,
       "norm_label": ".ei()"
     },
     {
@@ -7750,7 +7880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nt_mt",
-      "community": 36,
+      "community": 42,
       "norm_label": ".mt()"
     },
     {
@@ -7760,7 +7890,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st",
-      "community": 66,
+      "community": 47,
       "norm_label": "st"
     },
     {
@@ -7770,7 +7900,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_constructor",
-      "community": 66,
+      "community": 47,
       "norm_label": ".constructor()"
     },
     {
@@ -7780,7 +7910,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_xi",
-      "community": 29,
+      "community": 43,
       "norm_label": ".xi()"
     },
     {
@@ -7790,7 +7920,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_ki",
-      "community": 66,
+      "community": 47,
       "norm_label": ".ki()"
     },
     {
@@ -7800,7 +7930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_dt",
-      "community": 66,
+      "community": 47,
       "norm_label": ".dt()"
     },
     {
@@ -7810,7 +7940,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_gi",
-      "community": 66,
+      "community": 47,
       "norm_label": ".gi()"
     },
     {
@@ -7820,7 +7950,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_ji",
-      "community": 66,
+      "community": 47,
       "norm_label": ".ji()"
     },
     {
@@ -7830,7 +7960,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_qi",
-      "community": 66,
+      "community": 47,
       "norm_label": ".qi()"
     },
     {
@@ -7840,7 +7970,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_yt",
-      "community": 66,
+      "community": 47,
       "norm_label": ".yt()"
     },
     {
@@ -7920,7 +8050,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_kn",
-      "community": 82,
+      "community": 16,
       "norm_label": ".kn()"
     },
     {
@@ -7940,7 +8070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_yt",
-      "community": 15,
+      "community": 39,
       "norm_label": ".yt()"
     },
     {
@@ -7950,7 +8080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_zt",
-      "community": 15,
+      "community": 39,
       "norm_label": ".zt()"
     },
     {
@@ -8030,7 +8160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_on",
-      "community": 42,
+      "community": 66,
       "norm_label": ".on()"
     },
     {
@@ -8040,7 +8170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_bn",
-      "community": 21,
+      "community": 28,
       "norm_label": ".bn()"
     },
     {
@@ -8050,7 +8180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_yn",
-      "community": 34,
+      "community": 16,
       "norm_label": ".yn()"
     },
     {
@@ -8060,7 +8190,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_vn",
-      "community": 21,
+      "community": 28,
       "norm_label": ".vn()"
     },
     {
@@ -8090,7 +8220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ht",
-      "community": 66,
+      "community": 47,
       "norm_label": "ht()"
     },
     {
@@ -8120,7 +8250,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_lt_nn",
-      "community": 73,
+      "community": 10,
       "norm_label": ".nn()"
     },
     {
@@ -8140,7 +8270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_lt_hn",
-      "community": 43,
+      "community": 67,
       "norm_label": ".hn()"
     },
     {
@@ -8220,7 +8350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_lt_ts",
-      "community": 70,
+      "community": 23,
       "norm_label": ".ts()"
     },
     {
@@ -8300,7 +8430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_t_hs",
-      "community": 68,
+      "community": 37,
       "norm_label": ".hs()"
     },
     {
@@ -8350,7 +8480,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ct",
-      "community": 18,
+      "community": 56,
       "norm_label": "ct"
     },
     {
@@ -8360,7 +8490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ct_constructor",
-      "community": 18,
+      "community": 56,
       "norm_label": ".constructor()"
     },
     {
@@ -8370,7 +8500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ct_format",
-      "community": 59,
+      "community": 111,
       "norm_label": ".format()"
     },
     {
@@ -8380,7 +8510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ct_us",
-      "community": 18,
+      "community": 56,
       "norm_label": ".us()"
     },
     {
@@ -8390,7 +8520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_dt",
-      "community": 18,
+      "community": 56,
       "norm_label": "dt()"
     },
     {
@@ -8410,7 +8540,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pt",
-      "community": 18,
+      "community": 56,
       "norm_label": "pt()"
     },
     {
@@ -8420,7 +8550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mt",
-      "community": 18,
+      "community": 56,
       "norm_label": "mt()"
     },
     {
@@ -8470,7 +8600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wt_k",
-      "community": 18,
+      "community": 56,
       "norm_label": ".k()"
     },
     {
@@ -8500,7 +8630,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_bs",
-      "community": 66,
+      "community": 52,
       "norm_label": ".bs()"
     },
     {
@@ -8550,7 +8680,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ct_j",
-      "community": 18,
+      "community": 56,
       "norm_label": ".j()"
     },
     {
@@ -8560,7 +8690,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ct_k",
-      "community": 18,
+      "community": 56,
       "norm_label": ".k()"
     },
     {
@@ -8670,7 +8800,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zt",
-      "community": 55,
+      "community": 45,
       "norm_label": "zt"
     },
     {
@@ -8680,7 +8810,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zt_constructor",
-      "community": 55,
+      "community": 45,
       "norm_label": ".constructor()"
     },
     {
@@ -8700,7 +8830,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zt_te",
-      "community": 55,
+      "community": 45,
       "norm_label": ".te()"
     },
     {
@@ -8710,7 +8840,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zt_qs",
-      "community": 81,
+      "community": 25,
       "norm_label": ".qs()"
     },
     {
@@ -8750,7 +8880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_et_gs",
-      "community": 21,
+      "community": 8,
       "norm_label": ".gs()"
     },
     {
@@ -8760,7 +8890,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_it_k",
-      "community": 65,
+      "community": 7,
       "norm_label": ".k()"
     },
     {
@@ -8800,7 +8930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_lt_qs",
-      "community": 81,
+      "community": 25,
       "norm_label": ".qs()"
     },
     {
@@ -8820,7 +8950,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nt_gs",
-      "community": 21,
+      "community": 8,
       "norm_label": ".gs()"
     },
     {
@@ -8890,7 +9020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_jt_ne",
-      "community": 44,
+      "community": 57,
       "norm_label": ".ne()"
     },
     {
@@ -8900,7 +9030,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_jt_gs",
-      "community": 21,
+      "community": 8,
       "norm_label": ".gs()"
     },
     {
@@ -8910,7 +9040,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ht_constructor",
-      "community": 66,
+      "community": 47,
       "norm_label": ".constructor()"
     },
     {
@@ -8920,7 +9050,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ht_j",
-      "community": 66,
+      "community": 47,
       "norm_label": ".j()"
     },
     {
@@ -8930,7 +9060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ht_k",
-      "community": 66,
+      "community": 47,
       "norm_label": ".k()"
     },
     {
@@ -8940,7 +9070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ht_ve",
-      "community": 66,
+      "community": 47,
       "norm_label": ".ve()"
     },
     {
@@ -8950,7 +9080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ht_ze",
-      "community": 66,
+      "community": 47,
       "norm_label": ".ze()"
     },
     {
@@ -8960,7 +9090,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ht_ae",
-      "community": 66,
+      "community": 47,
       "norm_label": ".ae()"
     },
     {
@@ -8970,7 +9100,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ht_ee",
-      "community": 66,
+      "community": 47,
       "norm_label": ".ee()"
     },
     {
@@ -8990,7 +9120,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_t_gs",
-      "community": 21,
+      "community": 8,
       "norm_label": ".gs()"
     },
     {
@@ -9050,7 +9180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_qt_qs",
-      "community": 81,
+      "community": 25,
       "norm_label": ".qs()"
     },
     {
@@ -9080,7 +9210,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zt_j",
-      "community": 55,
+      "community": 45,
       "norm_label": ".j()"
     },
     {
@@ -9090,7 +9220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zt_k",
-      "community": 55,
+      "community": 45,
       "norm_label": ".k()"
     },
     {
@@ -9100,7 +9230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zt_ue",
-      "community": 55,
+      "community": 45,
       "norm_label": ".ue()"
     },
     {
@@ -9130,7 +9260,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xt_gs",
-      "community": 21,
+      "community": 8,
       "norm_label": ".gs()"
     },
     {
@@ -9150,7 +9280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_kt_gs",
-      "community": 21,
+      "community": 8,
       "norm_label": ".gs()"
     },
     {
@@ -9220,7 +9350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ti",
-      "community": 34,
+      "community": 76,
       "norm_label": "ti"
     },
     {
@@ -9230,7 +9360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ti_constructor",
-      "community": 34,
+      "community": 76,
       "norm_label": ".constructor()"
     },
     {
@@ -9240,7 +9370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ti_gt",
-      "community": 34,
+      "community": 11,
       "norm_label": ".gt()"
     },
     {
@@ -9300,7 +9430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ni",
-      "community": 22,
+      "community": 76,
       "norm_label": "ni"
     },
     {
@@ -9310,7 +9440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ni_constructor",
-      "community": 22,
+      "community": 76,
       "norm_label": ".constructor()"
     },
     {
@@ -9320,7 +9450,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ni_bt",
-      "community": 22,
+      "community": 76,
       "norm_label": ".bt()"
     },
     {
@@ -9330,7 +9460,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ni_gt",
-      "community": 8,
+      "community": 76,
       "norm_label": ".gt()"
     },
     {
@@ -9340,7 +9470,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_si",
-      "community": 21,
+      "community": 28,
       "norm_label": "si"
     },
     {
@@ -9350,7 +9480,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_si_constructor",
-      "community": 21,
+      "community": 28,
       "norm_label": ".constructor()"
     },
     {
@@ -9360,7 +9490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_si_kr",
-      "community": 21,
+      "community": 28,
       "norm_label": ".kr()"
     },
     {
@@ -9370,7 +9500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ei",
-      "community": 109,
+      "community": 33,
       "norm_label": "ei"
     },
     {
@@ -9380,7 +9510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ei_constructor",
-      "community": 109,
+      "community": 33,
       "norm_label": ".constructor()"
     },
     {
@@ -9390,7 +9520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ei_j",
-      "community": 109,
+      "community": 33,
       "norm_label": ".j()"
     },
     {
@@ -9410,7 +9540,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ei_k",
-      "community": 109,
+      "community": 33,
       "norm_label": ".k()"
     },
     {
@@ -9420,7 +9550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hi",
-      "community": 110,
+      "community": 33,
       "norm_label": "hi()"
     },
     {
@@ -9430,7 +9560,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_li",
-      "community": 110,
+      "community": 33,
       "norm_label": "li()"
     },
     {
@@ -9460,7 +9590,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ai_jr",
-      "community": 42,
+      "community": 33,
       "norm_label": ".jr()"
     },
     {
@@ -9470,7 +9600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ai_hr",
-      "community": 33,
+      "community": 66,
       "norm_label": ".hr()"
     },
     {
@@ -9530,7 +9660,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ai_mt",
-      "community": 21,
+      "community": 28,
       "norm_label": ".mt()"
     },
     {
@@ -9590,7 +9720,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_di",
-      "community": 67,
+      "community": 27,
       "norm_label": "di()"
     },
     {
@@ -9600,7 +9730,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fi",
-      "community": 107,
+      "community": 28,
       "norm_label": "fi()"
     },
     {
@@ -9620,7 +9750,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pi",
-      "community": 107,
+      "community": 28,
       "norm_label": "pi()"
     },
     {
@@ -9630,7 +9760,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi",
-      "community": 37,
+      "community": 27,
       "norm_label": "mi"
     },
     {
@@ -9640,7 +9770,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_constructor",
-      "community": 37,
+      "community": 27,
       "norm_label": ".constructor()"
     },
     {
@@ -9650,7 +9780,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_j",
-      "community": 37,
+      "community": 27,
       "norm_label": ".j()"
     },
     {
@@ -9660,7 +9790,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_ar",
-      "community": 37,
+      "community": 11,
       "norm_label": ".ar()"
     },
     {
@@ -9670,7 +9800,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_br",
-      "community": 107,
+      "community": 27,
       "norm_label": ".br()"
     },
     {
@@ -9700,7 +9830,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wi",
-      "community": 107,
+      "community": 27,
       "norm_label": "wi()"
     },
     {
@@ -9710,7 +9840,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gi",
-      "community": 37,
+      "community": 8,
       "norm_label": "gi()"
     },
     {
@@ -9720,7 +9850,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_bt",
-      "community": 37,
+      "community": 27,
       "norm_label": ".bt()"
     },
     {
@@ -9730,7 +9860,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_gt",
-      "community": 37,
+      "community": 8,
       "norm_label": ".gt()"
     },
     {
@@ -9740,7 +9870,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_h",
-      "community": 37,
+      "community": 27,
       "norm_label": "._h()"
     },
     {
@@ -9750,7 +9880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_dh",
-      "community": 37,
+      "community": 27,
       "norm_label": ".dh()"
     },
     {
@@ -9760,7 +9890,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_oh",
-      "community": 37,
+      "community": 8,
       "norm_label": ".oh()"
     },
     {
@@ -9770,7 +9900,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi",
-      "community": 8,
+      "community": 29,
       "norm_label": "xi"
     },
     {
@@ -9780,7 +9910,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi_constructor",
-      "community": 8,
+      "community": 29,
       "norm_label": ".constructor()"
     },
     {
@@ -9790,7 +9920,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi_kr",
-      "community": 8,
+      "community": 29,
       "norm_label": ".kr()"
     },
     {
@@ -9800,7 +9930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_si_ei",
-      "community": 21,
+      "community": 28,
       "norm_label": ".ei()"
     },
     {
@@ -9810,7 +9940,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_si_wh",
-      "community": 21,
+      "community": 28,
       "norm_label": ".wh()"
     },
     {
@@ -9820,7 +9950,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_si_bh",
-      "community": 21,
+      "community": 28,
       "norm_label": ".bh()"
     },
     {
@@ -9830,7 +9960,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ki",
-      "community": 21,
+      "community": 8,
       "norm_label": "ki()"
     },
     {
@@ -9870,7 +10000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_ch",
-      "community": 10,
+      "community": 18,
       "norm_label": ".ch()"
     },
     {
@@ -9880,7 +10010,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_th",
-      "community": 31,
+      "community": 18,
       "norm_label": ".th()"
     },
     {
@@ -9890,7 +10020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_ph",
-      "community": 31,
+      "community": 18,
       "norm_label": ".ph()"
     },
     {
@@ -9920,7 +10050,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_ts",
-      "community": 31,
+      "community": 18,
       "norm_label": ".ts()"
     },
     {
@@ -9930,7 +10060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_dh",
-      "community": 68,
+      "community": 9,
       "norm_label": ".dh()"
     },
     {
@@ -9940,7 +10070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_oh",
-      "community": 68,
+      "community": 9,
       "norm_label": ".oh()"
     },
     {
@@ -10010,7 +10140,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ci_vh",
-      "community": 108,
+      "community": 61,
       "norm_label": ".vh()"
     },
     {
@@ -10020,7 +10150,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ti_kr",
-      "community": 8,
+      "community": 76,
       "norm_label": ".kr()"
     },
     {
@@ -10030,7 +10160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pi_constructor",
-      "community": 107,
+      "community": 28,
       "norm_label": ".constructor()"
     },
     {
@@ -10040,7 +10170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pi_ei",
-      "community": 107,
+      "community": 28,
       "norm_label": ".ei()"
     },
     {
@@ -10050,7 +10180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pi_fh",
-      "community": 21,
+      "community": 28,
       "norm_label": ".fh()"
     },
     {
@@ -10060,7 +10190,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri",
-      "community": 42,
+      "community": 66,
       "norm_label": "ri"
     },
     {
@@ -10070,7 +10200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri_constructor",
-      "community": 42,
+      "community": 66,
       "norm_label": ".constructor()"
     },
     {
@@ -10080,7 +10210,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri_hh",
-      "community": 42,
+      "community": 66,
       "norm_label": ".hh()"
     },
     {
@@ -10090,7 +10220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri_w",
-      "community": 42,
+      "community": 66,
       "norm_label": ".w()"
     },
     {
@@ -10100,7 +10230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri_uh",
-      "community": 42,
+      "community": 66,
       "norm_label": ".uh()"
     },
     {
@@ -10110,7 +10240,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri_qh",
-      "community": 42,
+      "community": 66,
       "norm_label": ".qh()"
     },
     {
@@ -10130,7 +10260,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri_bt",
-      "community": 42,
+      "community": 66,
       "norm_label": ".bt()"
     },
     {
@@ -10140,7 +10270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri_nh",
-      "community": 21,
+      "community": 28,
       "norm_label": ".nh()"
     },
     {
@@ -10150,7 +10280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_di_constructor",
-      "community": 67,
+      "community": 27,
       "norm_label": ".constructor()"
     },
     {
@@ -10160,7 +10290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_di_t",
-      "community": 67,
+      "community": 27,
       "norm_label": ".$t()"
     },
     {
@@ -10170,7 +10300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_bi_constructor",
-      "community": 28,
+      "community": 44,
       "norm_label": ".constructor()"
     },
     {
@@ -10270,7 +10400,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zi_kh",
-      "community": 54,
+      "community": 27,
       "norm_label": ".kh()"
     },
     {
@@ -10440,7 +10570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_li_constructor",
-      "community": 110,
+      "community": 33,
       "norm_label": ".constructor()"
     },
     {
@@ -10450,7 +10580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_li_gt",
-      "community": 110,
+      "community": 33,
       "norm_label": ".gt()"
     },
     {
@@ -10460,7 +10590,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_li_xl",
-      "community": 110,
+      "community": 33,
       "norm_label": ".xl()"
     },
     {
@@ -10470,7 +10600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fi_constructor",
-      "community": 107,
+      "community": 28,
       "norm_label": ".constructor()"
     },
     {
@@ -10480,7 +10610,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fi_gt",
-      "community": 36,
+      "community": 28,
       "norm_label": ".gt()"
     },
     {
@@ -10490,7 +10620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wi_constructor",
-      "community": 107,
+      "community": 27,
       "norm_label": ".constructor()"
     },
     {
@@ -10640,7 +10770,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_yr",
-      "community": 21,
+      "community": 28,
       "norm_label": ".yr()"
     },
     {
@@ -10660,7 +10790,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_hh",
-      "community": 29,
+      "community": 9,
       "norm_label": ".hh()"
     },
     {
@@ -10670,7 +10800,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_j",
-      "community": 29,
+      "community": 66,
       "norm_label": ".j()"
     },
     {
@@ -10680,7 +10810,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_ia",
-      "community": 29,
+      "community": 66,
       "norm_label": ".ia()"
     },
     {
@@ -10690,7 +10820,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_na",
-      "community": 28,
+      "community": 25,
       "norm_label": ".na()"
     },
     {
@@ -10700,7 +10830,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_uh",
-      "community": 37,
+      "community": 27,
       "norm_label": ".uh()"
     },
     {
@@ -10710,7 +10840,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_sa",
-      "community": 68,
+      "community": 66,
       "norm_label": ".sa()"
     },
     {
@@ -10720,7 +10850,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_ea",
-      "community": 44,
+      "community": 66,
       "norm_label": ".ea()"
     },
     {
@@ -10730,7 +10860,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_jh",
-      "community": 28,
+      "community": 25,
       "norm_label": ".jh()"
     },
     {
@@ -10770,7 +10900,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_fh",
-      "community": 54,
+      "community": 9,
       "norm_label": ".fh()"
     },
     {
@@ -10860,7 +10990,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_qi",
-      "community": 59,
+      "community": 111,
       "norm_label": ".qi()"
     },
     {
@@ -10870,7 +11000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_al",
-      "community": 108,
+      "community": 9,
       "norm_label": ".al()"
     },
     {
@@ -10880,7 +11010,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_pa",
-      "community": 10,
+      "community": 18,
       "norm_label": ".pa()"
     },
     {
@@ -10900,7 +11030,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_on",
-      "community": 42,
+      "community": 66,
       "norm_label": ".on()"
     },
     {
@@ -10910,7 +11040,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_dt",
-      "community": 9,
+      "community": 43,
       "norm_label": ".dt()"
     },
     {
@@ -10920,7 +11050,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_kt",
-      "community": 54,
+      "community": 9,
       "norm_label": ".kt()"
     },
     {
@@ -10930,7 +11060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_mh",
-      "community": 21,
+      "community": 28,
       "norm_label": ".mh()"
     },
     {
@@ -10940,7 +11070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_yt",
-      "community": 8,
+      "community": 28,
       "norm_label": ".yt()"
     },
     {
@@ -10950,7 +11080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_ka",
-      "community": 28,
+      "community": 25,
       "norm_label": ".ka()"
     },
     {
@@ -10980,7 +11110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_va",
-      "community": 108,
+      "community": 9,
       "norm_label": ".va()"
     },
     {
@@ -10990,7 +11120,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_wa",
-      "community": 54,
+      "community": 9,
       "norm_label": ".wa()"
     },
     {
@@ -11000,7 +11130,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_ga",
-      "community": 54,
+      "community": 9,
       "norm_label": ".ga()"
     },
     {
@@ -11010,7 +11140,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_xa",
-      "community": 54,
+      "community": 9,
       "norm_label": ".xa()"
     },
     {
@@ -11030,7 +11160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_jl",
-      "community": 29,
+      "community": 66,
       "norm_label": ".jl()"
     },
     {
@@ -11060,7 +11190,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zi_oa",
-      "community": 21,
+      "community": 34,
       "norm_label": ".oa()"
     },
     {
@@ -11070,7 +11200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi_j",
-      "community": 21,
+      "community": 8,
       "norm_label": ".j()"
     },
     {
@@ -11080,7 +11210,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi_k",
-      "community": 8,
+      "community": 29,
       "norm_label": ".k()"
     },
     {
@@ -11090,7 +11220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ki_constructor",
-      "community": 21,
+      "community": 8,
       "norm_label": ".constructor()"
     },
     {
@@ -11100,7 +11230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ki_bt",
-      "community": 21,
+      "community": 8,
       "norm_label": ".bt()"
     },
     {
@@ -11110,7 +11240,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ki_gt",
-      "community": 21,
+      "community": 8,
       "norm_label": ".gt()"
     },
     {
@@ -11120,7 +11250,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gi_constructor",
-      "community": 37,
+      "community": 8,
       "norm_label": ".constructor()"
     },
     {
@@ -11130,7 +11260,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gi_uh",
-      "community": 46,
+      "community": 21,
       "norm_label": ".uh()"
     },
     {
@@ -11140,7 +11270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_tn",
-      "community": 31,
+      "community": 18,
       "norm_label": "tn()"
     },
     {
@@ -11150,7 +11280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nn",
-      "community": 21,
+      "community": 68,
       "norm_label": "nn()"
     },
     {
@@ -11160,7 +11290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn",
-      "community": 36,
+      "community": 64,
       "norm_label": "sn()"
     },
     {
@@ -11170,7 +11300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_en",
-      "community": 7,
+      "community": 31,
       "norm_label": "en()"
     },
     {
@@ -11180,7 +11310,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rn",
-      "community": 31,
+      "community": 18,
       "norm_label": "rn()"
     },
     {
@@ -11190,7 +11320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hn",
-      "community": 31,
+      "community": 18,
       "norm_label": "hn()"
     },
     {
@@ -11200,7 +11330,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ln",
-      "community": 31,
+      "community": 18,
       "norm_label": "ln()"
     },
     {
@@ -11210,7 +11340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_an",
-      "community": 31,
+      "community": 18,
       "norm_label": "an()"
     },
     {
@@ -11220,7 +11350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_on",
-      "community": 71,
+      "community": 52,
       "norm_label": "on"
     },
     {
@@ -11230,7 +11360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_on_constructor",
-      "community": 71,
+      "community": 52,
       "norm_label": ".constructor()"
     },
     {
@@ -11240,7 +11370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_on_za",
-      "community": 71,
+      "community": 52,
       "norm_label": ".za()"
     },
     {
@@ -11300,7 +11430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_un",
-      "community": 29,
+      "community": 10,
       "norm_label": "un()"
     },
     {
@@ -11310,7 +11440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn",
-      "community": 10,
+      "community": 111,
       "norm_label": "vn"
     },
     {
@@ -11320,7 +11450,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_constructor",
-      "community": 10,
+      "community": 111,
       "norm_label": ".constructor()"
     },
     {
@@ -11330,7 +11460,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ta",
-      "community": 70,
+      "community": 9,
       "norm_label": ".ta()"
     },
     {
@@ -11340,7 +11470,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_w",
-      "community": 10,
+      "community": 111,
       "norm_label": ".w()"
     },
     {
@@ -11350,7 +11480,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_hh",
-      "community": 10,
+      "community": 111,
       "norm_label": ".hh()"
     },
     {
@@ -11360,7 +11490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_do",
-      "community": 73,
+      "community": 10,
       "norm_label": ".do()"
     },
     {
@@ -11380,7 +11510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_gh",
-      "community": 10,
+      "community": 18,
       "norm_label": ".gh()"
     },
     {
@@ -11390,7 +11520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_oo",
-      "community": 10,
+      "community": 18,
       "norm_label": ".oo()"
     },
     {
@@ -11400,7 +11530,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_yr",
-      "community": 10,
+      "community": 111,
       "norm_label": ".yr()"
     },
     {
@@ -11410,7 +11540,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_po",
-      "community": 10,
+      "community": 18,
       "norm_label": ".po()"
     },
     {
@@ -11420,7 +11550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_zo",
-      "community": 34,
+      "community": 26,
       "norm_label": ".zo()"
     },
     {
@@ -11430,7 +11560,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_p",
-      "community": 10,
+      "community": 111,
       "norm_label": ".p()"
     },
     {
@@ -11440,7 +11570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_at",
-      "community": 10,
+      "community": 111,
       "norm_label": ".at()"
     },
     {
@@ -11470,7 +11600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_vo",
-      "community": 10,
+      "community": 18,
       "norm_label": ".vo()"
     },
     {
@@ -11480,7 +11610,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ni",
-      "community": 10,
+      "community": 111,
       "norm_label": ".ni()"
     },
     {
@@ -11500,7 +11630,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_rt",
-      "community": 21,
+      "community": 28,
       "norm_label": ".rt()"
     },
     {
@@ -11530,7 +11660,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_pn",
-      "community": 10,
+      "community": 111,
       "norm_label": ".pn()"
     },
     {
@@ -11540,7 +11670,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ho",
-      "community": 10,
+      "community": 111,
       "norm_label": ".ho()"
     },
     {
@@ -11550,7 +11680,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ba",
-      "community": 10,
+      "community": 111,
       "norm_label": ".ba()"
     },
     {
@@ -11560,7 +11690,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_o",
-      "community": 29,
+      "community": 10,
       "norm_label": ".$o()"
     },
     {
@@ -11570,7 +11700,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_uo",
-      "community": 10,
+      "community": 18,
       "norm_label": ".uo()"
     },
     {
@@ -11580,7 +11710,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_yo",
-      "community": 10,
+      "community": 18,
       "norm_label": ".yo()"
     },
     {
@@ -11590,7 +11720,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ct",
-      "community": 21,
+      "community": 28,
       "norm_label": ".ct()"
     },
     {
@@ -11630,7 +11760,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ko",
-      "community": 10,
+      "community": 18,
       "norm_label": ".ko()"
     },
     {
@@ -11640,7 +11770,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_go",
-      "community": 10,
+      "community": 18,
       "norm_label": ".go()"
     },
     {
@@ -11650,7 +11780,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_jo",
-      "community": 10,
+      "community": 18,
       "norm_label": ".jo()"
     },
     {
@@ -11660,7 +11790,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_qo",
-      "community": 70,
+      "community": 10,
       "norm_label": ".qo()"
     },
     {
@@ -11680,7 +11810,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_i",
-      "community": 73,
+      "community": 10,
       "norm_label": ".i_()"
     },
     {
@@ -11690,7 +11820,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ma",
-      "community": 59,
+      "community": 111,
       "norm_label": ".ma()"
     },
     {
@@ -11700,7 +11830,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_fi",
-      "community": 59,
+      "community": 111,
       "norm_label": ".fi()"
     },
     {
@@ -11710,7 +11840,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_so",
-      "community": 59,
+      "community": 111,
       "norm_label": ".so()"
     },
     {
@@ -11720,7 +11850,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ql",
-      "community": 59,
+      "community": 111,
       "norm_label": ".ql()"
     },
     {
@@ -11730,7 +11860,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_yl",
-      "community": 59,
+      "community": 111,
       "norm_label": ".yl()"
     },
     {
@@ -11740,7 +11870,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_e",
-      "community": 34,
+      "community": 10,
       "norm_label": ".e_()"
     },
     {
@@ -11760,7 +11890,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_on",
-      "community": 10,
+      "community": 111,
       "norm_label": ".on()"
     },
     {
@@ -11770,7 +11900,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_pa",
-      "community": 10,
+      "community": 18,
       "norm_label": ".pa()"
     },
     {
@@ -11780,7 +11910,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_s",
-      "community": 59,
+      "community": 18,
       "norm_label": ".s_()"
     },
     {
@@ -11820,7 +11950,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ro",
-      "community": 31,
+      "community": 111,
       "norm_label": ".ro()"
     },
     {
@@ -11860,7 +11990,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_h",
-      "community": 31,
+      "community": 18,
       "norm_label": ".h_()"
     },
     {
@@ -11870,7 +12000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_l",
-      "community": 59,
+      "community": 111,
       "norm_label": ".l_()"
     },
     {
@@ -11880,7 +12010,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_fh",
-      "community": 59,
+      "community": 111,
       "norm_label": ".fh()"
     },
     {
@@ -11890,7 +12020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_n",
-      "community": 59,
+      "community": 111,
       "norm_label": ".n_()"
     },
     {
@@ -11910,7 +12040,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_constructor",
-      "community": 34,
+      "community": 26,
       "norm_label": ".constructor()"
     },
     {
@@ -11920,7 +12050,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_m",
-      "community": 34,
+      "community": 18,
       "norm_label": ".m_()"
     },
     {
@@ -11930,7 +12060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_b",
-      "community": 75,
+      "community": 49,
       "norm_label": ".b_()"
     },
     {
@@ -11940,7 +12070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_s",
-      "community": 34,
+      "community": 26,
       "norm_label": ".s()"
     },
     {
@@ -11960,7 +12090,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_t",
-      "community": 34,
+      "community": 10,
       "norm_label": ".$t()"
     },
     {
@@ -12010,7 +12140,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_ba",
-      "community": 21,
+      "community": 34,
       "norm_label": ".ba()"
     },
     {
@@ -12020,7 +12150,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_dr",
-      "community": 34,
+      "community": 11,
       "norm_label": ".dr()"
     },
     {
@@ -12030,7 +12160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_uo",
-      "community": 29,
+      "community": 43,
       "norm_label": ".uo()"
     },
     {
@@ -12040,7 +12170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_yo",
-      "community": 70,
+      "community": 43,
       "norm_label": ".yo()"
     },
     {
@@ -12080,7 +12210,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_d",
-      "community": 75,
+      "community": 49,
       "norm_label": ".d_()"
     },
     {
@@ -12090,7 +12220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_o",
-      "community": 29,
+      "community": 10,
       "norm_label": ".o_()"
     },
     {
@@ -12100,7 +12230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_v",
-      "community": 75,
+      "community": 73,
       "norm_label": ".v_()"
     },
     {
@@ -12110,7 +12240,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_a",
-      "community": 34,
+      "community": 73,
       "norm_label": ".a_()"
     },
     {
@@ -12120,7 +12250,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_z",
-      "community": 75,
+      "community": 49,
       "norm_label": ".z_()"
     },
     {
@@ -12130,7 +12260,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_vn",
-      "community": 21,
+      "community": 34,
       "norm_label": ".vn()"
     },
     {
@@ -12140,7 +12270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_vr",
-      "community": 34,
+      "community": 11,
       "norm_label": ".vr()"
     },
     {
@@ -12160,7 +12290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_l",
-      "community": 34,
+      "community": 67,
       "norm_label": ".l_()"
     },
     {
@@ -12190,7 +12320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_w",
-      "community": 46,
+      "community": 21,
       "norm_label": ".w_()"
     },
     {
@@ -12200,7 +12330,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_e",
-      "community": 34,
+      "community": 10,
       "norm_label": ".e_()"
     },
     {
@@ -12210,7 +12340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_y",
-      "community": 29,
+      "community": 43,
       "norm_label": ".y_()"
     },
     {
@@ -12220,7 +12350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_c",
-      "community": 66,
+      "community": 47,
       "norm_label": ".c_()"
     },
     {
@@ -12230,7 +12360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mn",
-      "community": 87,
+      "community": 53,
       "norm_label": "mn"
     },
     {
@@ -12240,7 +12370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mn_constructor",
-      "community": 87,
+      "community": 53,
       "norm_label": ".constructor()"
     },
     {
@@ -12250,7 +12380,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mn_q",
-      "community": 87,
+      "community": 54,
       "norm_label": ".q_()"
     },
     {
@@ -12270,7 +12400,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_bn_constructor",
-      "community": 70,
+      "community": 26,
       "norm_label": ".constructor()"
     },
     {
@@ -12300,7 +12430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_bn_k",
-      "community": 64,
+      "community": 53,
       "norm_label": ".k_()"
     },
     {
@@ -12310,7 +12440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_bn_xr",
-      "community": 53,
+      "community": 42,
       "norm_label": ".xr()"
     },
     {
@@ -12330,7 +12460,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wn",
-      "community": 87,
+      "community": 53,
       "norm_label": "wn()"
     },
     {
@@ -12340,7 +12470,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn",
-      "community": 39,
+      "community": 54,
       "norm_label": "gn"
     },
     {
@@ -12350,7 +12480,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_constructor",
-      "community": 39,
+      "community": 54,
       "norm_label": ".constructor()"
     },
     {
@@ -12360,7 +12490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_q",
-      "community": 87,
+      "community": 54,
       "norm_label": ".q_()"
     },
     {
@@ -12370,7 +12500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_tu",
-      "community": 39,
+      "community": 54,
       "norm_label": ".tu()"
     },
     {
@@ -12380,7 +12510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_nu",
-      "community": 39,
+      "community": 54,
       "norm_label": ".nu()"
     },
     {
@@ -12390,7 +12520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_iu",
-      "community": 39,
+      "community": 54,
       "norm_label": ".iu()"
     },
     {
@@ -12400,7 +12530,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_eu",
-      "community": 39,
+      "community": 54,
       "norm_label": ".eu()"
     },
     {
@@ -12420,7 +12550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mn_lu",
-      "community": 87,
+      "community": 53,
       "norm_label": ".lu()"
     },
     {
@@ -12430,7 +12560,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mn_au",
-      "community": 87,
+      "community": 54,
       "norm_label": ".au()"
     },
     {
@@ -12450,7 +12580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_constructor",
-      "community": 87,
+      "community": 54,
       "norm_label": ".constructor()"
     },
     {
@@ -12460,7 +12590,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_w",
-      "community": 36,
+      "community": 64,
       "norm_label": ".w()"
     },
     {
@@ -12470,7 +12600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ku",
-      "community": 39,
+      "community": 37,
       "norm_label": ".ku()"
     },
     {
@@ -12480,7 +12610,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_hh",
-      "community": 63,
+      "community": 64,
       "norm_label": ".hh()"
     },
     {
@@ -12490,7 +12620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_mn",
-      "community": 53,
+      "community": 42,
       "norm_label": ".mn()"
     },
     {
@@ -12500,7 +12630,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ui",
-      "community": 36,
+      "community": 42,
       "norm_label": ".ui()"
     },
     {
@@ -12510,7 +12640,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_da",
-      "community": 36,
+      "community": 23,
       "norm_label": ".da()"
     },
     {
@@ -12520,7 +12650,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ni",
-      "community": 36,
+      "community": 28,
       "norm_label": ".ni()"
     },
     {
@@ -12530,7 +12660,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ra",
-      "community": 36,
+      "community": 64,
       "norm_label": ".ra()"
     },
     {
@@ -12550,7 +12680,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ru",
-      "community": 87,
+      "community": 53,
       "norm_label": ".ru()"
     },
     {
@@ -12570,7 +12700,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ou",
-      "community": 36,
+      "community": 64,
       "norm_label": ".ou()"
     },
     {
@@ -12580,7 +12710,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_au",
-      "community": 36,
+      "community": 23,
       "norm_label": ".au()"
     },
     {
@@ -12590,7 +12720,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_hi",
-      "community": 36,
+      "community": 42,
       "norm_label": ".hi()"
     },
     {
@@ -12600,7 +12730,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_x",
-      "community": 87,
+      "community": 64,
       "norm_label": ".x_()"
     },
     {
@@ -12610,7 +12740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_zt",
-      "community": 36,
+      "community": 28,
       "norm_label": ".zt()"
     },
     {
@@ -12620,7 +12750,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_js",
-      "community": 36,
+      "community": 42,
       "norm_label": ".js()"
     },
     {
@@ -12630,7 +12760,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_lu",
-      "community": 36,
+      "community": 42,
       "norm_label": ".lu()"
     },
     {
@@ -12650,7 +12780,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_he",
-      "community": 36,
+      "community": 64,
       "norm_label": ".he()"
     },
     {
@@ -12670,7 +12800,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ju",
-      "community": 63,
+      "community": 42,
       "norm_label": ".ju()"
     },
     {
@@ -12680,7 +12810,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ja",
-      "community": 36,
+      "community": 11,
       "norm_label": ".ja()"
     },
     {
@@ -12690,7 +12820,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_uu",
-      "community": 70,
+      "community": 23,
       "norm_label": ".uu()"
     },
     {
@@ -12700,7 +12830,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_qu",
-      "community": 53,
+      "community": 64,
       "norm_label": ".qu()"
     },
     {
@@ -12710,7 +12840,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_yu",
-      "community": 36,
+      "community": 42,
       "norm_label": ".yu()"
     },
     {
@@ -12720,7 +12850,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ko",
-      "community": 75,
+      "community": 49,
       "norm_label": ".ko()"
     },
     {
@@ -12730,7 +12860,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_go",
-      "community": 70,
+      "community": 64,
       "norm_label": ".go()"
     },
     {
@@ -12740,7 +12870,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_jo",
-      "community": 75,
+      "community": 49,
       "norm_label": ".jo()"
     },
     {
@@ -12750,7 +12880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_qo",
-      "community": 75,
+      "community": 73,
       "norm_label": ".qo()"
     },
     {
@@ -12760,7 +12890,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_t",
-      "community": 64,
+      "community": 73,
       "norm_label": ".t_()"
     },
     {
@@ -12770,7 +12900,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_i",
-      "community": 75,
+      "community": 49,
       "norm_label": ".i_()"
     },
     {
@@ -12780,7 +12910,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_gu",
-      "community": 39,
+      "community": 37,
       "norm_label": ".gu()"
     },
     {
@@ -12790,7 +12920,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_bt",
-      "community": 39,
+      "community": 64,
       "norm_label": ".bt()"
     },
     {
@@ -12820,7 +12950,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_sc",
-      "community": 43,
+      "community": 67,
       "norm_label": ".sc()"
     },
     {
@@ -12830,7 +12960,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_iu",
-      "community": 36,
+      "community": 42,
       "norm_label": ".iu()"
     },
     {
@@ -12850,7 +12980,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_rc",
-      "community": 36,
+      "community": 64,
       "norm_label": ".rc()"
     },
     {
@@ -12870,7 +13000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_qi",
-      "community": 36,
+      "community": 42,
       "norm_label": ".qi()"
     },
     {
@@ -12880,7 +13010,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_hu",
-      "community": 36,
+      "community": 11,
       "norm_label": ".hu()"
     },
     {
@@ -12890,7 +13020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_bu",
-      "community": 36,
+      "community": 64,
       "norm_label": ".bu()"
     },
     {
@@ -12900,7 +13030,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_vu",
-      "community": 36,
+      "community": 64,
       "norm_label": ".vu()"
     },
     {
@@ -12910,7 +13040,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_lc",
-      "community": 36,
+      "community": 42,
       "norm_label": ".lc()"
     },
     {
@@ -12920,7 +13050,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_nu",
-      "community": 36,
+      "community": 42,
       "norm_label": ".nu()"
     },
     {
@@ -12940,7 +13070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_pu",
-      "community": 87,
+      "community": 53,
       "norm_label": ".pu()"
     },
     {
@@ -12950,7 +13080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_zu",
-      "community": 63,
+      "community": 64,
       "norm_label": ".zu()"
     },
     {
@@ -12960,7 +13090,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_c",
-      "community": 63,
+      "community": 64,
       "norm_label": "._c()"
     },
     {
@@ -12980,7 +13110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_cc",
-      "community": 36,
+      "community": 64,
       "norm_label": ".cc()"
     },
     {
@@ -13000,7 +13130,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_xu",
-      "community": 75,
+      "community": 49,
       "norm_label": ".xu()"
     },
     {
@@ -13010,7 +13140,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_u",
-      "community": 36,
+      "community": 42,
       "norm_label": ".$u()"
     },
     {
@@ -13020,7 +13150,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_dc",
-      "community": 39,
+      "community": 54,
       "norm_label": ".dc()"
     },
     {
@@ -13030,7 +13160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_oc",
-      "community": 87,
+      "community": 53,
       "norm_label": ".oc()"
     },
     {
@@ -13040,7 +13170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ac",
-      "community": 64,
+      "community": 53,
       "norm_label": ".ac()"
     },
     {
@@ -13050,7 +13180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_su",
-      "community": 39,
+      "community": 54,
       "norm_label": ".su()"
     },
     {
@@ -13060,7 +13190,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_cu",
-      "community": 53,
+      "community": 64,
       "norm_label": ".cu()"
     },
     {
@@ -13070,7 +13200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_tu",
-      "community": 63,
+      "community": 64,
       "norm_label": ".tu()"
     },
     {
@@ -13120,7 +13250,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yn",
-      "community": 82,
+      "community": 16,
       "norm_label": "yn"
     },
     {
@@ -13130,7 +13260,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yn_constructor",
-      "community": 82,
+      "community": 16,
       "norm_label": ".constructor()"
     },
     {
@@ -13140,7 +13270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yn_k",
-      "community": 107,
+      "community": 36,
       "norm_label": ".k()"
     },
     {
@@ -13150,7 +13280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yn_fc",
-      "community": 82,
+      "community": 16,
       "norm_label": ".fc()"
     },
     {
@@ -13160,7 +13290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yn_bc",
-      "community": 82,
+      "community": 16,
       "norm_label": ".bc()"
     },
     {
@@ -13170,7 +13300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yn_sc",
-      "community": 82,
+      "community": 16,
       "norm_label": ".sc()"
     },
     {
@@ -13180,7 +13310,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_cn",
-      "community": 66,
+      "community": 52,
       "norm_label": "cn"
     },
     {
@@ -13190,7 +13320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_cn_constructor",
-      "community": 66,
+      "community": 52,
       "norm_label": ".constructor()"
     },
     {
@@ -13200,7 +13330,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_cn_bt",
-      "community": 66,
+      "community": 52,
       "norm_label": ".bt()"
     },
     {
@@ -13210,7 +13340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_cn_gt",
-      "community": 66,
+      "community": 52,
       "norm_label": ".gt()"
     },
     {
@@ -13230,7 +13360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_tn_constructor",
-      "community": 31,
+      "community": 18,
       "norm_label": ".constructor()"
     },
     {
@@ -13240,7 +13370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_tn_rn",
-      "community": 11,
+      "community": 18,
       "norm_label": ".rn()"
     },
     {
@@ -13250,7 +13380,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_tn_pn",
-      "community": 15,
+      "community": 55,
       "norm_label": ".pn()"
     },
     {
@@ -13260,7 +13390,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_tn_w",
-      "community": 31,
+      "community": 18,
       "norm_label": ".w()"
     },
     {
@@ -13270,7 +13400,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_tn_on",
-      "community": 34,
+      "community": 10,
       "norm_label": ".on()"
     },
     {
@@ -13280,7 +13410,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_xl",
-      "community": 73,
+      "community": 10,
       "norm_label": ".xl()"
     },
     {
@@ -13300,7 +13430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_kl",
-      "community": 29,
+      "community": 66,
       "norm_label": ".kl()"
     },
     {
@@ -13310,7 +13440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_fc",
-      "community": 15,
+      "community": 21,
       "norm_label": ".fc()"
     },
     {
@@ -13320,7 +13450,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_wc",
-      "community": 29,
+      "community": 55,
       "norm_label": ".wc()"
     },
     {
@@ -13330,7 +13460,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_hc",
-      "community": 47,
+      "community": 111,
       "norm_label": ".hc()"
     },
     {
@@ -13340,7 +13470,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_c",
-      "community": 47,
+      "community": 111,
       "norm_label": ".$c()"
     },
     {
@@ -13350,7 +13480,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_st",
-      "community": 21,
+      "community": 8,
       "norm_label": ".st()"
     },
     {
@@ -13360,7 +13490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_uc",
-      "community": 43,
+      "community": 67,
       "norm_label": ".uc()"
     },
     {
@@ -13370,7 +13500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_qc",
-      "community": 75,
+      "community": 73,
       "norm_label": ".qc()"
     },
     {
@@ -13380,7 +13510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_yc",
-      "community": 15,
+      "community": 39,
       "norm_label": ".yc()"
     },
     {
@@ -13390,7 +13520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_zc",
-      "community": 10,
+      "community": 111,
       "norm_label": ".zc()"
     },
     {
@@ -13420,7 +13550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ac",
-      "community": 73,
+      "community": 10,
       "norm_label": ".ac()"
     },
     {
@@ -13430,7 +13560,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_d",
-      "community": 11,
+      "community": 111,
       "norm_label": ".d_()"
     },
     {
@@ -13440,7 +13570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_b",
-      "community": 73,
+      "community": 10,
       "norm_label": ".b_()"
     },
     {
@@ -13450,7 +13580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_v",
-      "community": 73,
+      "community": 10,
       "norm_label": ".v_()"
     },
     {
@@ -13460,7 +13590,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_a",
-      "community": 73,
+      "community": 10,
       "norm_label": ".a_()"
     },
     {
@@ -13470,7 +13600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_z",
-      "community": 73,
+      "community": 10,
       "norm_label": ".z_()"
     },
     {
@@ -13480,7 +13610,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_gc",
-      "community": 75,
+      "community": 49,
       "norm_label": ".gc()"
     },
     {
@@ -13490,7 +13620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_jc",
-      "community": 36,
+      "community": 42,
       "norm_label": ".jc()"
     },
     {
@@ -13500,7 +13630,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ed",
-      "community": 70,
+      "community": 64,
       "norm_label": ".ed()"
     },
     {
@@ -13520,7 +13650,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_td",
-      "community": 75,
+      "community": 73,
       "norm_label": ".td()"
     },
     {
@@ -13530,7 +13660,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_nd",
-      "community": 64,
+      "community": 73,
       "norm_label": ".nd()"
     },
     {
@@ -13540,7 +13670,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_sd",
-      "community": 75,
+      "community": 73,
       "norm_label": ".sd()"
     },
     {
@@ -13560,7 +13690,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_hd",
-      "community": 21,
+      "community": 34,
       "norm_label": ".hd()"
     },
     {
@@ -13570,7 +13700,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ld",
-      "community": 21,
+      "community": 28,
       "norm_label": ".ld()"
     },
     {
@@ -13580,7 +13710,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ad",
-      "community": 10,
+      "community": 55,
       "norm_label": ".ad()"
     },
     {
@@ -13590,7 +13720,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_gl",
-      "community": 29,
+      "community": 10,
       "norm_label": ".gl()"
     },
     {
@@ -13600,7 +13730,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_od",
-      "community": 53,
+      "community": 42,
       "norm_label": ".od()"
     },
     {
@@ -13610,7 +13740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_cr",
-      "community": 29,
+      "community": 66,
       "norm_label": ".cr()"
     },
     {
@@ -13630,7 +13760,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_mr",
-      "community": 34,
+      "community": 11,
       "norm_label": ".mr()"
     },
     {
@@ -13640,7 +13770,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ud",
-      "community": 10,
+      "community": 111,
       "norm_label": ".ud()"
     },
     {
@@ -13650,7 +13780,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_fd",
-      "community": 70,
+      "community": 43,
       "norm_label": ".fd()"
     },
     {
@@ -13660,7 +13790,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_zl",
-      "community": 29,
+      "community": 43,
       "norm_label": ".zl()"
     },
     {
@@ -13700,7 +13830,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_gn",
-      "community": 70,
+      "community": 23,
       "norm_label": ".gn()"
     },
     {
@@ -13710,7 +13840,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_jn",
-      "community": 58,
+      "community": 37,
       "norm_label": ".jn()"
     },
     {
@@ -13740,7 +13870,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_pd",
-      "community": 10,
+      "community": 111,
       "norm_label": ".pd()"
     },
     {
@@ -13750,7 +13880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_md",
-      "community": 107,
+      "community": 36,
       "norm_label": ".md()"
     },
     {
@@ -13760,7 +13890,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_q",
-      "community": 107,
+      "community": 36,
       "norm_label": ".q()"
     },
     {
@@ -13770,7 +13900,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_vt",
-      "community": 107,
+      "community": 28,
       "norm_label": ".vt()"
     },
     {
@@ -13780,7 +13910,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_kc",
-      "community": 73,
+      "community": 10,
       "norm_label": ".kc()"
     },
     {
@@ -13790,7 +13920,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_nc",
-      "community": 29,
+      "community": 66,
       "norm_label": ".nc()"
     },
     {
@@ -13800,7 +13930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_lc",
-      "community": 73,
+      "community": 10,
       "norm_label": ".lc()"
     },
     {
@@ -13810,7 +13940,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_dd",
-      "community": 10,
+      "community": 111,
       "norm_label": ".dd()"
     },
     {
@@ -13820,7 +13950,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ec",
-      "community": 10,
+      "community": 111,
       "norm_label": ".ec()"
     },
     {
@@ -13830,7 +13960,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zn",
-      "community": 81,
+      "community": 25,
       "norm_label": "zn()"
     },
     {
@@ -13850,7 +13980,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ln_constructor",
-      "community": 31,
+      "community": 18,
       "norm_label": ".constructor()"
     },
     {
@@ -13870,7 +14000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nn_constructor",
-      "community": 21,
+      "community": 68,
       "norm_label": ".constructor()"
     },
     {
@@ -13890,7 +14020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wn_constructor",
-      "community": 87,
+      "community": 53,
       "norm_label": ".constructor()"
     },
     {
@@ -13900,7 +14030,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wn_q",
-      "community": 36,
+      "community": 42,
       "norm_label": ".q_()"
     },
     {
@@ -13910,7 +14040,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_jn",
-      "community": 43,
+      "community": 67,
       "norm_label": "jn()"
     },
     {
@@ -13930,7 +14060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_options",
-      "community": 39,
+      "community": 54,
       "norm_label": ".options()"
     },
     {
@@ -13940,7 +14070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_setoptions",
-      "community": 39,
+      "community": 54,
       "norm_label": ".setoptions()"
     },
     {
@@ -13950,7 +14080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_preprocessdata",
-      "community": 25,
+      "community": 23,
       "norm_label": ".preprocessdata()"
     },
     {
@@ -13980,7 +14110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_cachekey",
-      "community": 87,
+      "community": 54,
       "norm_label": ".cachekey()"
     },
     {
@@ -14000,7 +14130,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_updateformatter",
-      "community": 39,
+      "community": 54,
       "norm_label": ".updateformatter()"
     },
     {
@@ -14010,7 +14140,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_formathorzitem",
-      "community": 36,
+      "community": 42,
       "norm_label": ".formathorzitem()"
     },
     {
@@ -14020,7 +14150,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_formattickmark",
-      "community": 39,
+      "community": 54,
       "norm_label": ".formattickmark()"
     },
     {
@@ -14030,7 +14160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_maxtickmarkweight",
-      "community": 39,
+      "community": 54,
       "norm_label": ".maxtickmarkweight()"
     },
     {
@@ -14050,7 +14180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_ad",
-      "community": 68,
+      "community": 37,
       "norm_label": ".ad()"
     },
     {
@@ -14070,7 +14200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_es",
-      "community": 73,
+      "community": 10,
       "norm_label": "es()"
     },
     {
@@ -14080,7 +14210,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs",
-      "community": 43,
+      "community": 67,
       "norm_label": "hs()"
     },
     {
@@ -14110,7 +14240,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_os",
-      "community": 70,
+      "community": 38,
       "norm_label": "os()"
     },
     {
@@ -14120,7 +14250,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_us",
-      "community": 70,
+      "community": 38,
       "norm_label": "us"
     },
     {
@@ -14130,7 +14260,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_us_constructor",
-      "community": 70,
+      "community": 38,
       "norm_label": ".constructor()"
     },
     {
@@ -14140,7 +14270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_us_qd",
-      "community": 70,
+      "community": 38,
       "norm_label": ".qd()"
     },
     {
@@ -14150,7 +14280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_us_dr",
-      "community": 70,
+      "community": 38,
       "norm_label": ".dr()"
     },
     {
@@ -14160,7 +14290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_us_qu",
-      "community": 70,
+      "community": 38,
       "norm_label": ".qu()"
     },
     {
@@ -14170,7 +14300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_us_ju",
-      "community": 70,
+      "community": 38,
       "norm_label": ".ju()"
     },
     {
@@ -14180,7 +14310,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_us_yd",
-      "community": 70,
+      "community": 38,
       "norm_label": ".yd()"
     },
     {
@@ -14190,7 +14320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_cs",
-      "community": 66,
+      "community": 46,
       "norm_label": "cs"
     },
     {
@@ -14200,7 +14330,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_cs_constructor",
-      "community": 66,
+      "community": 46,
       "norm_label": ".constructor()"
     },
     {
@@ -14210,7 +14340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_cs_bt",
-      "community": 66,
+      "community": 46,
       "norm_label": ".bt()"
     },
     {
@@ -14220,7 +14350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_cs_tf",
-      "community": 66,
+      "community": 46,
       "norm_label": ".tf()"
     },
     {
@@ -14230,7 +14360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_cs_if",
-      "community": 66,
+      "community": 46,
       "norm_label": ".if()"
     },
     {
@@ -14240,7 +14370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_cs_sf",
-      "community": 66,
+      "community": 46,
       "norm_label": ".sf()"
     },
     {
@@ -14250,7 +14380,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_cs_nf",
-      "community": 66,
+      "community": 46,
       "norm_label": ".nf()"
     },
     {
@@ -14260,7 +14390,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_cs_ef",
-      "community": 66,
+      "community": 46,
       "norm_label": ".ef()"
     },
     {
@@ -14270,7 +14400,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_cs_qd",
-      "community": 66,
+      "community": 46,
       "norm_label": ".qd()"
     },
     {
@@ -14280,7 +14410,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ds",
-      "community": 58,
+      "community": 37,
       "norm_label": "ds()"
     },
     {
@@ -14310,7 +14440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ps",
-      "community": 49,
+      "community": 27,
       "norm_label": "ps()"
     },
     {
@@ -14640,7 +14770,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ys",
-      "community": 15,
+      "community": 55,
       "norm_label": "ys()"
     },
     {
@@ -14650,7 +14780,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ts",
-      "community": 58,
+      "community": 37,
       "norm_label": "ts()"
     },
     {
@@ -14670,7 +14800,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_constructor",
-      "community": 58,
+      "community": 37,
       "norm_label": ".constructor()"
     },
     {
@@ -14740,7 +14870,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_cp",
-      "community": 38,
+      "community": 58,
       "norm_label": ".cp()"
     },
     {
@@ -14760,7 +14890,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_dt",
-      "community": 21,
+      "community": 28,
       "norm_label": ".dt()"
     },
     {
@@ -14800,7 +14930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_xp",
-      "community": 38,
+      "community": 58,
       "norm_label": ".xp()"
     },
     {
@@ -14870,7 +15000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_sp",
-      "community": 10,
+      "community": 11,
       "norm_label": ".sp()"
     },
     {
@@ -14890,7 +15020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_pp",
-      "community": 107,
+      "community": 36,
       "norm_label": ".pp()"
     },
     {
@@ -14930,7 +15060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_kp",
-      "community": 11,
+      "community": 8,
       "norm_label": ".kp()"
     },
     {
@@ -14970,7 +15100,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_op",
-      "community": 22,
+      "community": 11,
       "norm_label": ".op()"
     },
     {
@@ -14980,7 +15110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_constructor",
-      "community": 58,
+      "community": 37,
       "norm_label": ".constructor()"
     },
     {
@@ -15050,7 +15180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_zp",
-      "community": 42,
+      "community": 66,
       "norm_label": ".zp()"
     },
     {
@@ -15070,7 +15200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_m",
-      "community": 10,
+      "community": 15,
       "norm_label": ".m_()"
     },
     {
@@ -15090,7 +15220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_mv",
-      "community": 15,
+      "community": 39,
       "norm_label": ".mv()"
     },
     {
@@ -15100,7 +15230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_qf",
-      "community": 15,
+      "community": 55,
       "norm_label": ".qf()"
     },
     {
@@ -15150,7 +15280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_uv",
-      "community": 15,
+      "community": 38,
       "norm_label": ".uv()"
     },
     {
@@ -15180,7 +15310,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_tv",
-      "community": 15,
+      "community": 55,
       "norm_label": ".tv()"
     },
     {
@@ -15210,7 +15340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_xv",
-      "community": 15,
+      "community": 39,
       "norm_label": ".xv()"
     },
     {
@@ -15220,7 +15350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_vv",
-      "community": 15,
+      "community": 39,
       "norm_label": ".vv()"
     },
     {
@@ -15240,7 +15370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_ov",
-      "community": 11,
+      "community": 15,
       "norm_label": ".ov()"
     },
     {
@@ -15250,7 +15380,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_br",
-      "community": 15,
+      "community": 55,
       "norm_label": ".br()"
     },
     {
@@ -15280,7 +15410,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_mp",
-      "community": 15,
+      "community": 21,
       "norm_label": ".mp()"
     },
     {
@@ -15290,7 +15420,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_xp",
-      "community": 38,
+      "community": 58,
       "norm_label": ".xp()"
     },
     {
@@ -15300,7 +15430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_fp",
-      "community": 15,
+      "community": 21,
       "norm_label": ".fp()"
     },
     {
@@ -15310,7 +15440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_bm",
-      "community": 38,
+      "community": 58,
       "norm_label": ".bm()"
     },
     {
@@ -15320,7 +15450,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_wm",
-      "community": 38,
+      "community": 58,
       "norm_label": ".wm()"
     },
     {
@@ -15360,7 +15490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_pp",
-      "community": 107,
+      "community": 36,
       "norm_label": ".pp()"
     },
     {
@@ -15370,7 +15500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_fm",
-      "community": 46,
+      "community": 21,
       "norm_label": ".fm()"
     },
     {
@@ -15380,7 +15510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_vm",
-      "community": 15,
+      "community": 21,
       "norm_label": ".vm()"
     },
     {
@@ -15390,7 +15520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_pm",
-      "community": 15,
+      "community": 21,
       "norm_label": ".pm()"
     },
     {
@@ -15400,7 +15530,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_dm",
-      "community": 15,
+      "community": 21,
       "norm_label": ".dm()"
     },
     {
@@ -15410,7 +15540,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_gm",
-      "community": 15,
+      "community": 21,
       "norm_label": ".gm()"
     },
     {
@@ -15450,7 +15580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_sm",
-      "community": 15,
+      "community": 39,
       "norm_label": ".sm()"
     },
     {
@@ -15470,7 +15600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_rm",
-      "community": 15,
+      "community": 55,
       "norm_label": ".rm()"
     },
     {
@@ -15490,7 +15620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_i",
-      "community": 15,
+      "community": 39,
       "norm_label": ".$i()"
     },
     {
@@ -15500,7 +15630,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_nm",
-      "community": 11,
+      "community": 38,
       "norm_label": ".nm()"
     },
     {
@@ -15510,7 +15640,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_gp",
-      "community": 15,
+      "community": 39,
       "norm_label": ".gp()"
     },
     {
@@ -15540,7 +15670,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zs_constructor",
-      "community": 58,
+      "community": 37,
       "norm_label": ".constructor()"
     },
     {
@@ -15610,7 +15740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zs_xp",
-      "community": 38,
+      "community": 58,
       "norm_label": ".xp()"
     },
     {
@@ -15660,7 +15790,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_hp",
-      "community": 43,
+      "community": 67,
       "norm_label": ".hp()"
     },
     {
@@ -15780,7 +15910,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_jf",
-      "community": 22,
+      "community": 11,
       "norm_label": ".jf()"
     },
     {
@@ -15790,7 +15920,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_tv",
-      "community": 22,
+      "community": 11,
       "norm_label": ".tv()"
     },
     {
@@ -15840,7 +15970,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_bt",
-      "community": 42,
+      "community": 66,
       "norm_label": ".bt()"
     },
     {
@@ -15850,7 +15980,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_mp",
-      "community": 38,
+      "community": 58,
       "norm_label": ".mp()"
     },
     {
@@ -15860,7 +15990,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_xp",
-      "community": 38,
+      "community": 58,
       "norm_label": ".xp()"
     },
     {
@@ -15890,7 +16020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_pp",
-      "community": 107,
+      "community": 36,
       "norm_label": ".pp()"
     },
     {
@@ -15920,7 +16050,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_qm",
-      "community": 8,
+      "community": 29,
       "norm_label": ".qm()"
     },
     {
@@ -15980,7 +16110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_sp",
-      "community": 22,
+      "community": 11,
       "norm_label": ".sp()"
     },
     {
@@ -16000,7 +16130,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_constructor",
-      "community": 43,
+      "community": 67,
       "norm_label": ".constructor()"
     },
     {
@@ -16020,7 +16150,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_w",
-      "community": 8,
+      "community": 11,
       "norm_label": ".w()"
     },
     {
@@ -16040,7 +16170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_cb",
-      "community": 43,
+      "community": 45,
       "norm_label": ".cb()"
     },
     {
@@ -16050,7 +16180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_s",
-      "community": 43,
+      "community": 67,
       "norm_label": ".s()"
     },
     {
@@ -16060,7 +16190,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_ob",
-      "community": 73,
+      "community": 10,
       "norm_label": ".ob()"
     },
     {
@@ -16070,7 +16200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_fp",
-      "community": 43,
+      "community": 67,
       "norm_label": ".fp()"
     },
     {
@@ -16080,7 +16210,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_hh",
-      "community": 43,
+      "community": 67,
       "norm_label": ".hh()"
     },
     {
@@ -16090,7 +16220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_hm",
-      "community": 43,
+      "community": 67,
       "norm_label": ".hm()"
     },
     {
@@ -16100,7 +16230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_lm",
-      "community": 43,
+      "community": 67,
       "norm_label": ".lm()"
     },
     {
@@ -16110,7 +16240,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_zc",
-      "community": 43,
+      "community": 67,
       "norm_label": ".zc()"
     },
     {
@@ -16120,7 +16250,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_bb",
-      "community": 38,
+      "community": 67,
       "norm_label": ".bb()"
     },
     {
@@ -16130,7 +16260,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_gb",
-      "community": 38,
+      "community": 58,
       "norm_label": ".gb()"
     },
     {
@@ -16150,7 +16280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_kb",
-      "community": 43,
+      "community": 67,
       "norm_label": ".kb()"
     },
     {
@@ -16160,7 +16290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_jp",
-      "community": 43,
+      "community": 67,
       "norm_label": ".jp()"
     },
     {
@@ -16170,7 +16300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_yb",
-      "community": 43,
+      "community": 67,
       "norm_label": ".yb()"
     },
     {
@@ -16180,7 +16310,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_mb",
-      "community": 43,
+      "community": 11,
       "norm_label": ".mb()"
     },
     {
@@ -16190,7 +16320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_wb",
-      "community": 38,
+      "community": 58,
       "norm_label": ".wb()"
     },
     {
@@ -16210,7 +16340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_rb",
-      "community": 43,
+      "community": 67,
       "norm_label": ".rb()"
     },
     {
@@ -16220,7 +16350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_pb",
-      "community": 43,
+      "community": 67,
       "norm_label": ".pb()"
     },
     {
@@ -16230,7 +16360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_eb",
-      "community": 43,
+      "community": 67,
       "norm_label": ".eb()"
     },
     {
@@ -16240,7 +16370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_db",
-      "community": 43,
+      "community": 67,
       "norm_label": ".db()"
     },
     {
@@ -16250,7 +16380,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_ns",
-      "community": 70,
+      "community": 23,
       "norm_label": ".ns()"
     },
     {
@@ -16260,7 +16390,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_dc",
-      "community": 43,
+      "community": 10,
       "norm_label": ".dc()"
     },
     {
@@ -16270,7 +16400,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_b",
-      "community": 43,
+      "community": 67,
       "norm_label": "._b()"
     },
     {
@@ -16310,7 +16440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_ub",
-      "community": 43,
+      "community": 67,
       "norm_label": ".ub()"
     },
     {
@@ -16320,7 +16450,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_xb",
-      "community": 38,
+      "community": 58,
       "norm_label": ".xb()"
     },
     {
@@ -16330,7 +16460,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_fb",
-      "community": 43,
+      "community": 67,
       "norm_label": ".fb()"
     },
     {
@@ -16340,7 +16470,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_qs",
-      "community": 45,
+      "community": 7,
       "norm_label": "qs()"
     },
     {
@@ -16370,7 +16500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ie",
-      "community": 81,
+      "community": 25,
       "norm_label": "ie()"
     },
     {
@@ -16390,7 +16520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_se",
-      "community": 25,
+      "community": 67,
       "norm_label": "se()"
     },
     {
@@ -16420,7 +16550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_he",
-      "community": 25,
+      "community": 8,
       "norm_label": "he"
     },
     {
@@ -16430,7 +16560,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_he_constructor",
-      "community": 25,
+      "community": 8,
       "norm_label": ".constructor()"
     },
     {
@@ -16440,7 +16570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_he_s",
-      "community": 25,
+      "community": 8,
       "norm_label": ".s()"
     },
     {
@@ -16460,7 +16590,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_he_fd",
-      "community": 25,
+      "community": 22,
       "norm_label": ".fd()"
     },
     {
@@ -16550,7 +16680,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ae",
-      "community": 65,
+      "community": 7,
       "norm_label": "ae()"
     },
     {
@@ -16560,7 +16690,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_oe",
-      "community": 65,
+      "community": 7,
       "norm_label": "oe()"
     },
     {
@@ -16570,7 +16700,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ue",
-      "community": 65,
+      "community": 7,
       "norm_label": "ue()"
     },
     {
@@ -16610,7 +16740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ve",
-      "community": 81,
+      "community": 25,
       "norm_label": "ve()"
     },
     {
@@ -16620,7 +16750,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe",
-      "community": 28,
+      "community": 25,
       "norm_label": "pe()"
     },
     {
@@ -16670,7 +16800,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ke_width",
-      "community": 38,
+      "community": 47,
       "norm_label": ".width()"
     },
     {
@@ -16690,7 +16820,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ye",
-      "community": 45,
+      "community": 7,
       "norm_label": "ye()"
     },
     {
@@ -16730,7 +16860,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_te_ow",
-      "community": 44,
+      "community": 66,
       "norm_label": ".ow()"
     },
     {
@@ -16740,7 +16870,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_constructor",
-      "community": 28,
+      "community": 25,
       "norm_label": ".constructor()"
     },
     {
@@ -16750,7 +16880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_s",
-      "community": 28,
+      "community": 25,
       "norm_label": ".s()"
     },
     {
@@ -16760,7 +16890,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_priceformatter",
-      "community": 28,
+      "community": 25,
       "norm_label": ".priceformatter()"
     },
     {
@@ -16770,7 +16900,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_pricetocoordinate",
-      "community": 21,
+      "community": 28,
       "norm_label": ".pricetocoordinate()"
     },
     {
@@ -16780,7 +16910,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_coordinatetoprice",
-      "community": 21,
+      "community": 28,
       "norm_label": ".coordinatetoprice()"
     },
     {
@@ -16800,7 +16930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_setdata",
-      "community": 28,
+      "community": 25,
       "norm_label": ".setdata()"
     },
     {
@@ -16810,7 +16940,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_update",
-      "community": 28,
+      "community": 25,
       "norm_label": ".update()"
     },
     {
@@ -16820,7 +16950,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_databyindex",
-      "community": 81,
+      "community": 25,
       "norm_label": ".databyindex()"
     },
     {
@@ -16830,7 +16960,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_data",
-      "community": 81,
+      "community": 25,
       "norm_label": ".data()"
     },
     {
@@ -16840,7 +16970,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_subscribedatachanged",
-      "community": 35,
+      "community": 26,
       "norm_label": ".subscribedatachanged()"
     },
     {
@@ -16850,7 +16980,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_unsubscribedatachanged",
-      "community": 48,
+      "community": 30,
       "norm_label": ".unsubscribedatachanged()"
     },
     {
@@ -16860,7 +16990,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_setmarkers",
-      "community": 28,
+      "community": 25,
       "norm_label": ".setmarkers()"
     },
     {
@@ -16870,7 +17000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_markers",
-      "community": 28,
+      "community": 25,
       "norm_label": ".markers()"
     },
     {
@@ -16880,7 +17010,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_applyoptions",
-      "community": 43,
+      "community": 67,
       "norm_label": ".applyoptions()"
     },
     {
@@ -16890,7 +17020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_options",
-      "community": 28,
+      "community": 25,
       "norm_label": ".options()"
     },
     {
@@ -16900,7 +17030,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_pricescale",
-      "community": 28,
+      "community": 30,
       "norm_label": ".pricescale()"
     },
     {
@@ -16910,7 +17040,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_createpriceline",
-      "community": 68,
+      "community": 66,
       "norm_label": ".createpriceline()"
     },
     {
@@ -16920,7 +17050,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_removepriceline",
-      "community": 44,
+      "community": 66,
       "norm_label": ".removepriceline()"
     },
     {
@@ -16930,7 +17060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_seriestype",
-      "community": 81,
+      "community": 25,
       "norm_label": ".seriestype()"
     },
     {
@@ -16940,7 +17070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_attachprimitive",
-      "community": 28,
+      "community": 25,
       "norm_label": ".attachprimitive()"
     },
     {
@@ -16950,7 +17080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_detachprimitive",
-      "community": 28,
+      "community": 25,
       "norm_label": ".detachprimitive()"
     },
     {
@@ -16960,7 +17090,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_pw",
-      "community": 28,
+      "community": 25,
       "norm_label": ".pw()"
     },
     {
@@ -16990,7 +17120,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_scrollposition",
-      "community": 63,
+      "community": 26,
       "norm_label": ".scrollposition()"
     },
     {
@@ -17000,7 +17130,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_scrolltoposition",
-      "community": 39,
+      "community": 37,
       "norm_label": ".scrolltoposition()"
     },
     {
@@ -17040,7 +17170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_getvisiblelogicalrange",
-      "community": 53,
+      "community": 26,
       "norm_label": ".getvisiblelogicalrange()"
     },
     {
@@ -17050,7 +17180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_setvisiblelogicalrange",
-      "community": 23,
+      "community": 26,
       "norm_label": ".setvisiblelogicalrange()"
     },
     {
@@ -17060,7 +17190,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_resettimescale",
-      "community": 26,
+      "community": 23,
       "norm_label": ".resettimescale()"
     },
     {
@@ -17080,7 +17210,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_logicaltocoordinate",
-      "community": 36,
+      "community": 28,
       "norm_label": ".logicaltocoordinate()"
     },
     {
@@ -17090,7 +17220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_coordinatetological",
-      "community": 36,
+      "community": 42,
       "norm_label": ".coordinatetological()"
     },
     {
@@ -17100,7 +17230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_timetocoordinate",
-      "community": 36,
+      "community": 23,
       "norm_label": ".timetocoordinate()"
     },
     {
@@ -17110,7 +17240,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_coordinatetotime",
-      "community": 36,
+      "community": 42,
       "norm_label": ".coordinatetotime()"
     },
     {
@@ -17140,7 +17270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_subscribevisibletimerangechange",
-      "community": 35,
+      "community": 26,
       "norm_label": ".subscribevisibletimerangechange()"
     },
     {
@@ -17150,7 +17280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_unsubscribevisibletimerangechange",
-      "community": 48,
+      "community": 30,
       "norm_label": ".unsubscribevisibletimerangechange()"
     },
     {
@@ -17160,7 +17290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_subscribevisiblelogicalrangechange",
-      "community": 35,
+      "community": 26,
       "norm_label": ".subscribevisiblelogicalrangechange()"
     },
     {
@@ -17170,7 +17300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_unsubscribevisiblelogicalrangechange",
-      "community": 48,
+      "community": 30,
       "norm_label": ".unsubscribevisiblelogicalrangechange()"
     },
     {
@@ -17180,7 +17310,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_subscribesizechange",
-      "community": 35,
+      "community": 26,
       "norm_label": ".subscribesizechange()"
     },
     {
@@ -17190,7 +17320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_unsubscribesizechange",
-      "community": 48,
+      "community": 30,
       "norm_label": ".unsubscribesizechange()"
     },
     {
@@ -17200,7 +17330,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_applyoptions",
-      "community": 43,
+      "community": 67,
       "norm_label": ".applyoptions()"
     },
     {
@@ -17210,7 +17340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_options",
-      "community": 26,
+      "community": 11,
       "norm_label": ".options()"
     },
     {
@@ -17260,7 +17390,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_constructor",
-      "community": 43,
+      "community": 67,
       "norm_label": ".constructor()"
     },
     {
@@ -17270,7 +17400,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_remove",
-      "community": 43,
+      "community": 67,
       "norm_label": ".remove()"
     },
     {
@@ -17360,7 +17490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_removeseries",
-      "community": 45,
+      "community": 22,
       "norm_label": ".removeseries()"
     },
     {
@@ -17370,7 +17500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_fw",
-      "community": 28,
+      "community": 25,
       "norm_label": ".fw()"
     },
     {
@@ -17380,7 +17510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_mw",
-      "community": 28,
+      "community": 25,
       "norm_label": ".mw()"
     },
     {
@@ -17390,7 +17520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_subscribeclick",
-      "community": 35,
+      "community": 26,
       "norm_label": ".subscribeclick()"
     },
     {
@@ -17400,7 +17530,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_unsubscribeclick",
-      "community": 48,
+      "community": 30,
       "norm_label": ".unsubscribeclick()"
     },
     {
@@ -17410,7 +17540,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_subscribecrosshairmove",
-      "community": 35,
+      "community": 26,
       "norm_label": ".subscribecrosshairmove()"
     },
     {
@@ -17420,7 +17550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_unsubscribecrosshairmove",
-      "community": 48,
+      "community": 30,
       "norm_label": ".unsubscribecrosshairmove()"
     },
     {
@@ -17430,7 +17560,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_subscribedblclick",
-      "community": 35,
+      "community": 26,
       "norm_label": ".subscribedblclick()"
     },
     {
@@ -17440,7 +17570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_unsubscribedblclick",
-      "community": 48,
+      "community": 30,
       "norm_label": ".unsubscribedblclick()"
     },
     {
@@ -17450,7 +17580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_pricescale",
-      "community": 28,
+      "community": 30,
       "norm_label": ".pricescale()"
     },
     {
@@ -17470,7 +17600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_applyoptions",
-      "community": 43,
+      "community": 67,
       "norm_label": ".applyoptions()"
     },
     {
@@ -17480,7 +17610,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_options",
-      "community": 81,
+      "community": 25,
       "norm_label": ".options()"
     },
     {
@@ -17490,7 +17620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_takescreenshot",
-      "community": 38,
+      "community": 67,
       "norm_label": ".takescreenshot()"
     },
     {
@@ -17510,7 +17640,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_chartelement",
-      "community": 43,
+      "community": 67,
       "norm_label": ".chartelement()"
     },
     {
@@ -17530,7 +17660,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_setcrosshairposition",
-      "community": 21,
+      "community": 22,
       "norm_label": ".setcrosshairposition()"
     },
     {
@@ -17560,7 +17690,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_ow",
-      "community": 64,
+      "community": 42,
       "norm_label": ".ow()"
     },
     {
@@ -18470,7 +18600,7 @@
       "source_location": "L321",
       "_origin": "ast",
       "id": "core_analysis_views_symbol_autocomplete_view",
-      "community": 13,
+      "community": 48,
       "norm_label": "symbol_autocomplete_view()"
     },
     {
@@ -18510,7 +18640,7 @@
       "source_location": "L1148",
       "_origin": "ast",
       "id": "core_analysis_views_crud_operations_handler",
-      "community": 13,
+      "community": 20,
       "norm_label": "crud_operations_handler()"
     },
     {
@@ -18520,7 +18650,7 @@
       "source_location": "L1210",
       "_origin": "ast",
       "id": "core_analysis_views_crud_delete_handler",
-      "community": 13,
+      "community": 20,
       "norm_label": "crud_delete_handler()"
     },
     {
@@ -18530,7 +18660,7 @@
       "source_location": "L1219",
       "_origin": "ast",
       "id": "core_analysis_views_trigger_daily_api_sync_view",
-      "community": 13,
+      "community": 20,
       "norm_label": "trigger_daily_api_sync_view()"
     },
     {
@@ -18540,7 +18670,7 @@
       "source_location": "L1256",
       "_origin": "ast",
       "id": "core_analysis_views_trigger_floorsheet_sync_view",
-      "community": 13,
+      "community": 20,
       "norm_label": "trigger_floorsheet_sync_view()"
     },
     {
@@ -18590,7 +18720,7 @@
       "source_location": "L322",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_322",
-      "community": 13,
+      "community": 48,
       "norm_label": "optimized: lightweight json endpoint for the search-as-you-type dropdown.     th"
     },
     {
@@ -18630,7 +18760,7 @@
       "source_location": "L1149",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_1149",
-      "community": 13,
+      "community": 20,
       "norm_label": "create & update operations handler via html form actions."
     },
     {
@@ -18640,7 +18770,7 @@
       "source_location": "L1211",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_1211",
-      "community": 13,
+      "community": 20,
       "norm_label": "delete operation route (post only, csrf-protected)."
     },
     {
@@ -18650,7 +18780,7 @@
       "source_location": "L1220",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_1220",
-      "community": 13,
+      "community": 20,
       "norm_label": "on-demand daily sync engine endpoint. post-only so the heavy external sync     c"
     },
     {
@@ -18660,7 +18790,7 @@
       "source_location": "L1257",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_1257",
-      "community": 13,
+      "community": 20,
       "norm_label": "on-demand floorsheet sync endpoint. post-only so the heavy trade-level pull"
     },
     {
@@ -20186,9 +20316,19 @@
       "source_file": "core_analysis/broker_views.py",
       "source_location": "L81",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_broker_views",
-      "target": "core_analysis_broker_views_broker_persistence_api",
-      "confidence_score": 1.0
+      "target": "core_analysis_broker_views_broker_persistence_api"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/broker_views.py",
+      "source_location": "L99",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_analysis_broker_views",
+      "target": "core_analysis_broker_views_broker_signals_api"
     },
     {
       "relation": "contains",
@@ -20373,6 +20513,17 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/broker_views.py",
+      "source_location": "L110",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_analysis_broker_views_broker_signals_api",
+      "target": "core_analysis_broker_views_window"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/broker_views.py",
       "source_location": "L116",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -20451,9 +20602,20 @@
       "source_file": "core_analysis/broker_views.py",
       "source_location": "L89",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_broker_views_broker_persistence_api",
-      "target": "core_analysis_broker_views_safe",
-      "confidence_score": 1.0
+      "target": "core_analysis_broker_views_safe"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/broker_views.py",
+      "source_location": "L106",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_analysis_broker_views_broker_signals_api",
+      "target": "core_analysis_broker_views_safe"
     },
     {
       "relation": "calls",
@@ -20528,9 +20690,20 @@
       "source_file": "core_analysis/urls.py",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_urls",
-      "target": "core_analysis_broker_views_broker_persistence_api",
-      "confidence_score": 1.0
+      "target": "core_analysis_broker_views_broker_persistence_api"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/urls.py",
+      "source_location": "L18",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_analysis_urls",
+      "target": "core_analysis_broker_views_broker_signals_api"
     },
     {
       "relation": "imports",
@@ -26249,9 +26422,19 @@
       "source_file": "core_analysis/services/broker_analytics.py",
       "source_location": "L775",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_broker_analytics",
-      "target": "services_broker_analytics_broker_persistence",
-      "confidence_score": 1.0
+      "target": "services_broker_analytics_broker_persistence"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/services/broker_analytics.py",
+      "source_location": "L916",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "services_broker_analytics",
+      "target": "services_broker_analytics_broker_signals"
     },
     {
       "relation": "contains",
@@ -26574,6 +26757,16 @@
       "target": "services_broker_analytics_window_aggregate"
     },
     {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/services/broker_analytics.py",
+      "source_location": "L880",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "services_broker_analytics",
+      "target": "services_broker_analytics_window_close_changes"
+    },
+    {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/services/broker_analytics.py",
@@ -26785,9 +26978,9 @@
       "source_file": "core_analysis/services/broker_analytics.py",
       "source_location": "L814",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_broker_analytics_broker_persistence",
-      "target": "services_broker_analytics_get_day_aggregate",
-      "confidence_score": 1.0
+      "target": "services_broker_analytics_get_day_aggregate"
     },
     {
       "relation": "calls",
@@ -27019,9 +27212,20 @@
       "source_file": "core_analysis/services/broker_analytics.py",
       "source_location": "L796",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_broker_analytics_broker_persistence",
-      "target": "services_broker_analytics_window_aggregate",
-      "confidence_score": 1.0
+      "target": "services_broker_analytics_window_aggregate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/services/broker_analytics.py",
+      "source_location": "L930",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "services_broker_analytics_broker_signals",
+      "target": "services_broker_analytics_window_aggregate"
     },
     {
       "relation": "calls",
@@ -27254,9 +27458,20 @@
       "source_file": "core_analysis/services/broker_analytics.py",
       "source_location": "L800",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_broker_analytics_broker_persistence",
-      "target": "services_broker_analytics_typed_broker",
-      "confidence_score": 1.0
+      "target": "services_broker_analytics_typed_broker"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/services/broker_analytics.py",
+      "source_location": "L934",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "services_broker_analytics_broker_signals",
+      "target": "services_broker_analytics_typed_broker"
     },
     {
       "relation": "calls",
@@ -27338,49 +27553,80 @@
       "source_file": "core_analysis/services/broker_analytics.py",
       "source_location": "L829",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_broker_analytics_broker_persistence",
-      "target": "services_broker_analytics_is_mutual_fund",
-      "confidence_score": 1.0
+      "target": "services_broker_analytics_is_mutual_fund"
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/services/broker_analytics.py",
-      "source_location": "L690",
+      "source_location": "L700",
       "weight": 1.0,
       "confidence_score": 1.0,
-      "source": "services_broker_analytics_rationale_690",
+      "source": "services_broker_analytics_rationale_700",
       "target": "services_broker_analytics_broker_concentration"
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/services/broker_analytics.py",
-      "source_location": "L730",
+      "source_location": "L740",
       "weight": 1.0,
       "confidence_score": 1.0,
-      "source": "services_broker_analytics_rationale_730",
+      "source": "services_broker_analytics_rationale_740",
       "target": "services_broker_analytics_hotstocks"
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/services/broker_analytics.py",
-      "source_location": "L777",
+      "source_location": "L787",
       "weight": 1.0,
-      "source": "services_broker_analytics_rationale_777",
-      "target": "services_broker_analytics_broker_persistence",
-      "confidence_score": 1.0
+      "confidence_score": 1.0,
+      "source": "services_broker_analytics_rationale_787",
+      "target": "services_broker_analytics_broker_persistence"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/services/broker_analytics.py",
+      "source_location": "L1001",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "services_broker_analytics_broker_signals",
+      "target": "services_broker_analytics_window_close_changes"
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/services/broker_analytics.py",
-      "source_location": "L884",
+      "source_location": "L891",
       "weight": 1.0,
-      "source": "services_broker_analytics_rationale_884",
-      "target": "services_broker_analytics_trend",
-      "confidence_score": 1.0
+      "confidence_score": 1.0,
+      "source": "services_broker_analytics_rationale_891",
+      "target": "services_broker_analytics_window_close_changes"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/services/broker_analytics.py",
+      "source_location": "L927",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "services_broker_analytics_rationale_927",
+      "target": "services_broker_analytics_broker_signals"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/services/broker_analytics.py",
+      "source_location": "L1041",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "services_broker_analytics_rationale_1041",
+      "target": "services_broker_analytics_trend"
     },
     {
       "relation": "contains",
@@ -32074,6 +32320,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L528",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers",
+      "target": "js_floorsheet_brokers_drawpersistence"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
       "source_location": "L242",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -32274,6 +32530,26 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L581",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers",
+      "target": "js_floorsheet_brokers_renderbreadth"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L551",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers",
+      "target": "js_floorsheet_brokers_renderdivergence"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
       "source_location": "L451",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -32286,9 +32562,29 @@
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
       "source_location": "L495",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "js_floorsheet_brokers",
-      "target": "js_floorsheet_brokers_renderpersistence",
-      "confidence_score": 1.0
+      "target": "js_floorsheet_brokers_renderpersistence"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L567",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers",
+      "target": "js_floorsheet_brokers_rendersectorrotation"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L542",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers",
+      "target": "js_floorsheet_brokers_rendersignals"
     },
     {
       "relation": "contains",
@@ -32314,6 +32610,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L597",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers",
+      "target": "js_floorsheet_brokers_rendertwosided"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
       "source_location": "L85",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -32329,6 +32635,26 @@
       "confidence_score": 1.0,
       "source": "js_floorsheet_brokers",
       "target": "js_floorsheet_brokers_showtable"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L539",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers",
+      "target": "js_floorsheet_brokers_sigempty"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L639",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers",
+      "target": "js_floorsheet_brokers_sigsetall"
     },
     {
       "relation": "contains",
@@ -32396,6 +32722,17 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L553",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_drawpersistence",
+      "target": "js_floorsheet_brokers_nf"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
       "source_location": "L15",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -32431,9 +32768,9 @@
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
       "source_location": "L512",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "js_floorsheet_brokers_renderpersistence",
-      "target": "js_floorsheet_brokers_nf",
-      "confidence_score": 1.0
+      "target": "js_floorsheet_brokers_nf"
     },
     {
       "relation": "calls",
@@ -32495,6 +32832,17 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L558",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_drawpersistence",
+      "target": "js_floorsheet_brokers_fmtqty"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
       "source_location": "L665",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -32506,11 +32854,44 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L561",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_renderdivergence",
+      "target": "js_floorsheet_brokers_fmtqty"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
       "source_location": "L517",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "js_floorsheet_brokers_renderpersistence",
-      "target": "js_floorsheet_brokers_fmtqty",
-      "confidence_score": 1.0
+      "target": "js_floorsheet_brokers_fmtqty"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L576",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_rendersectorrotation",
+      "target": "js_floorsheet_brokers_fmtqty"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L602",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_rendertwosided",
+      "target": "js_floorsheet_brokers_fmtqty"
     },
     {
       "relation": "calls",
@@ -32649,6 +33030,28 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L551",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_drawpersistence",
+      "target": "js_floorsheet_brokers_fmtpct"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L562",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_renderdivergence",
+      "target": "js_floorsheet_brokers_fmtpct"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
       "source_location": "L477",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -32662,9 +33065,9 @@
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
       "source_location": "L510",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "js_floorsheet_brokers_renderpersistence",
-      "target": "js_floorsheet_brokers_fmtpct",
-      "confidence_score": 1.0
+      "target": "js_floorsheet_brokers_fmtpct"
     },
     {
       "relation": "calls",
@@ -32704,10 +33107,43 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L529",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_drawpersistence",
+      "target": "js_floorsheet_brokers_el"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
       "source_location": "L769",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "js_floorsheet_brokers_refreshmeta",
+      "target": "js_floorsheet_brokers_el"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L583",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_renderbreadth",
+      "target": "js_floorsheet_brokers_el"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L553",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_renderdivergence",
       "target": "js_floorsheet_brokers_el"
     },
     {
@@ -32728,9 +33164,20 @@
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
       "source_location": "L496",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "js_floorsheet_brokers_renderpersistence",
-      "target": "js_floorsheet_brokers_el",
-      "confidence_score": 1.0
+      "target": "js_floorsheet_brokers_el"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L570",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_rendersectorrotation",
+      "target": "js_floorsheet_brokers_el"
     },
     {
       "relation": "calls",
@@ -32741,6 +33188,39 @@
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "js_floorsheet_brokers_rendertrend",
+      "target": "js_floorsheet_brokers_el"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L599",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_rendertwosided",
+      "target": "js_floorsheet_brokers_el"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L540",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_sigempty",
+      "target": "js_floorsheet_brokers_el"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L639",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_sigsetall",
       "target": "js_floorsheet_brokers_el"
     },
     {
@@ -32847,6 +33327,17 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L553",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_drawpersistence",
+      "target": "js_floorsheet_brokers_sortrows"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
       "source_location": "L244",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -32929,6 +33420,105 @@
       "confidence_score": 1.0,
       "source": "js_floorsheet_brokers_rendertrend",
       "target": "js_floorsheet_brokers_ensurechart"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L526",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_renderpersistence",
+      "target": "js_floorsheet_brokers_drawpersistence"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L582",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_renderbreadth",
+      "target": "js_floorsheet_brokers_sigempty"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L552",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_renderdivergence",
+      "target": "js_floorsheet_brokers_sigempty"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L568",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_rendersectorrotation",
+      "target": "js_floorsheet_brokers_sigempty"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L598",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_rendertwosided",
+      "target": "js_floorsheet_brokers_sigempty"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L546",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_rendersignals",
+      "target": "js_floorsheet_brokers_renderbreadth"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L544",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_rendersignals",
+      "target": "js_floorsheet_brokers_renderdivergence"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L545",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_rendersignals",
+      "target": "js_floorsheet_brokers_rendersectorrotation"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/static/core_analysis/js/floorsheet-brokers.js",
+      "source_location": "L547",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "js_floorsheet_brokers_rendersignals",
+      "target": "js_floorsheet_brokers_rendertwosided"
     },
     {
       "relation": "calls",
@@ -68677,5 +69267,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "086682e29cbf57f0f8adfb7218a4e92fb23afa8b"
+  "built_at_commit": "dc42b30a7bcf44e4055ecdc336d8739c5992f52b"
 }

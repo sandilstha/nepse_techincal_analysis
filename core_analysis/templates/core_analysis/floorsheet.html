@@ -38,6 +38,7 @@
   <!-- ── DSX tab bar ──────────────────────────────────────────────────── -->
   <nav class="dsx-tabs" id="dsx-tabs">
     <button class="dsx-tab active" data-tab="favorites">Broker Analysis</button>
+    <button class="dsx-tab" data-tab="signals">Signal Desk</button>
     <button class="dsx-tab" data-tab="stockwise">Script Deep Dive</button>
     <button class="dsx-tab" data-tab="hotstocks">Market Heatmap</button>
     <button class="dsx-tab" data-tab="netholding">Net Position Analytics</button>
@@ -71,17 +72,6 @@
     <!-- KPI strip: the desk's stance at a glance (derived from favorites/) -->
     <div class="dsx-kpis" id="fav-kpis"></div>
 
-    <!-- Persistent Accumulation / Distribution: multi-session net per stock with
-         conviction streak + all-broker concentration (HHI). Broker-tagged data
-         (NEPSE floorsheet) makes the streak computable; HHI reads supply control. -->
-    <div class="dsx-card dsx-ad-card">
-      <div class="dsx-card-head neutral dsx-ad-head">
-        <span>PERSISTENT ACCUMULATION / DISTRIBUTION</span>
-        <span class="dsx-ad-sub" id="fav-ad-sub"></span>
-      </div>
-      <div class="dsx-ad" id="fav-ad"></div>
-    </div>
-
     <div class="dsx-grid-2">
       <div class="dsx-card">
         <div class="dsx-card-head buy">BROKER TOP BUY</div>
@@ -92,6 +82,34 @@
         <div class="dsx-table-wrap"><table class="dsx-table" id="fav-sell"></table></div>
       </div>
     </div>
+
+    <!-- Persistent Accumulation / Distribution: multi-session net per stock with
+         conviction streak + all-broker concentration (HHI). Broker-tagged data
+         (NEPSE floorsheet) makes the streak computable; HHI reads supply control. -->
+    <div class="dsx-card dsx-ad-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span>PERSISTENT ACCUMULATION / DISTRIBUTION</span>
+        <span class="dsx-ad-sub" id="fav-ad-sub"></span>
+      </div>
+      <div class="dsx-ad-filter">
+        <label for="fav-persist-sector">Sector</label>
+        <select id="fav-persist-sector" class="dsx-mini-select dsx-sector"></select>
+        <div class="dsx-seg" data-group="fav-persist-side">
+          <button type="button" class="dsx-pill active" data-val="all">All</button>
+          <button type="button" class="dsx-pill" data-val="buy">Accumulating</button>
+          <button type="button" class="dsx-pill" data-val="sell">Distributing</button>
+        </div>
+      </div>
+      <div class="dsx-ad-cols" id="fav-ad-cols">
+        <span class="sortable" data-sort="symbol" data-type="str">Ticker</span>
+        <span class="sortable" data-sort="streak" data-type="num">Streak</span>
+        <span class="dsx-ad-cols-bar sortable" data-sort="cum_net" data-type="num">Distribution ◂ Net flow ▸ Accumulation</span>
+        <span class="r sortable" data-sort="cum_net" data-type="num">Net Qty</span>
+        <span class="r sortable" data-sort="hhi" data-type="num" title="Herfindahl concentration of all-broker trading (0 fragmented · 10000 single broker)">Conc. (HHI)</span>
+      </div>
+      <div class="dsx-ad" id="fav-ad"></div>
+    </div>
+
     <div class="dsx-trend">
       <div class="dsx-trend-head">
         <span>Last 90 Days Trend — <b id="fav-trend-sym">—</b></span>
@@ -101,6 +119,45 @@
         </div>
       </div>
       <canvas id="fav-trend-chart" height="90"></canvas>
+    </div>
+  </section>
+
+  <!-- ── Signal Desk: research-desk signals for the selected broker(s) ─────── -->
+  <section class="dsx-panel" id="panel-signals">
+    <div class="dsx-controls">
+      <div class="dsx-field">Choose Broker Number(s)
+        <div class="dsx-multi" id="sig-broker-multi">
+          <button type="button" class="dsx-multi-btn" id="sig-broker-btn">Select brokers ▾</button>
+          <div class="dsx-multi-menu" id="sig-broker-menu" hidden>
+            <input type="text" class="dsx-multi-search" id="sig-broker-search" placeholder="Search broker…">
+            <div class="dsx-multi-actions">
+              <button type="button" data-act="all">Select all</button>
+              <button type="button" data-act="clear">Clear</button>
+            </div>
+            <div class="dsx-multi-list" id="sig-broker-list"></div>
+          </div>
+        </div>
+      </div>
+      {% include "core_analysis/includes/_date_range.html" with prefix="sig" %}
+      <button type="button" id="sig-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+    <div class="dsx-grid-2 dsx-signals">
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral">PRICE–FLOW DIVERGENCE · DESK</div>
+        <div class="dsx-sig" id="sig-div"></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral">SECTOR ROTATION · DESK NET</div>
+        <div class="dsx-sig" id="sig-sec"></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral">BUYER / SELLER BREADTH · ALL BROKERS</div>
+        <div class="dsx-sig" id="sig-breadth"></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral">TWO-SIDED ACTIVITY · DESK</div>
+        <div class="dsx-sig" id="sig-two"></div>
+      </div>
     </div>
   </section>
 
@@ -154,9 +211,19 @@
 
   <section class="dsx-panel" id="panel-netholding">
     <div class="dsx-controls">
-      <label class="dsx-field">Net Holding For Broker
-        <select id="nh-broker" class="dsx-select"></select>
-      </label>
+      <div class="dsx-field">Net Holding For Broker(s)
+        <div class="dsx-multi" id="nh-broker-multi">
+          <button type="button" class="dsx-multi-btn" id="nh-broker-btn">Select brokers ▾</button>
+          <div class="dsx-multi-menu" id="nh-broker-menu" hidden>
+            <input type="text" class="dsx-multi-search" id="nh-broker-search" placeholder="Search broker…">
+            <div class="dsx-multi-actions">
+              <button type="button" data-act="all">Select all</button>
+              <button type="button" data-act="clear">Clear</button>
+            </div>
+            <div class="dsx-multi-list" id="nh-broker-list"></div>
+          </div>
+        </div>
+      </div>
       {% include "core_analysis/includes/_date_range.html" with prefix="nh" %}
       <label class="dsx-check"><input type="checkbox" id="nh-exclude-mf"> Exclude Mutual Funds</label>
       <label class="dsx-field">Choose Sector

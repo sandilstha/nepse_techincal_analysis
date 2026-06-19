@@ -654,12 +654,22 @@ def stock_wise(symbol, range_key="today", view="shares", start=None, end=None):
     }
 
 
-def net_holding(broker, range_key="today", exclude_mf=False, sector="All", start=None, end=None):
-    """Per-stock net position for one broker (Net Holding treemap)."""
+def net_holding(brokers, range_key="today", exclude_mf=False, sector="All", start=None, end=None):
+    """Per-stock net position for one or more brokers (Net Holding treemap).
+
+    When several brokers are given their flow is pooled (qty summed per stock),
+    matching the combined-desk behaviour of the Broker Analysis tab.
+    """
     agg = _window_aggregate(range_key, start, end)
     if not agg:
         return {"ok": False, "items": []}
-    broker = _typed_broker(broker)
+    if isinstance(brokers, (list, tuple, set)):
+        sel = {_typed_broker(b) for b in brokers}
+    else:
+        sel = {_typed_broker(brokers)}
+    sel.discard(None)
+    if not sel:
+        return {"ok": True, "items": []}
     items = []
     symbols = set(agg["buy"]) | set(agg["sell"])
     for sym in symbols:
@@ -667,8 +677,8 @@ def net_holding(broker, range_key="today", exclude_mf=False, sector="All", start
             continue
         if exclude_mf and _is_mutual_fund(sym):
             continue
-        bq = agg["buy"].get(sym, {}).get(broker, [0, 0])[0]
-        sq = agg["sell"].get(sym, {}).get(broker, [0, 0])[0]
+        bq = sum(agg["buy"].get(sym, {}).get(b, [0, 0])[0] for b in sel)
+        sq = sum(agg["sell"].get(sym, {}).get(b, [0, 0])[0] for b in sel)
         net = bq - sq
         if net == 0:
             continue
@@ -875,6 +885,153 @@ def broker_persistence(brokers, range_key="1w", sector="All", exclude_mf=False,
     # Strongest current conviction first, then by size of net position.
     rows.sort(key=lambda r: (r["streak"], abs(r["cum_net"])), reverse=True)
     return {"ok": True, "days": n_days, "rows": rows[:40]}
+
+
+def _window_close_changes(symbols, dates):
+    """% price change over the window for each symbol (first vs last close in it).
+
+    Reads the local EOD table (NepseDailyStockPrice), the same authoritative
+    source the trend line uses. Returns {symbol: pct_change}; symbols without two
+    priced sessions are simply omitted.
+    """
+    if not symbols or not dates:
+        return {}
+    try:
+        from core_analysis.models import NepseDailyStockPrice
+
+        d0 = datetime.strptime(min(dates), "%Y-%m-%d").date()
+        d1 = datetime.strptime(max(dates), "%Y-%m-%d").date()
+        qs = (
+            NepseDailyStockPrice.objects.filter(
+                symbol__in=list(symbols), business_date__gte=d0, business_date__lte=d1
+            )
+            .values_list("symbol", "business_date", "close_price")
+        )
+    except Exception:  # pragma: no cover - DB optional for this overlay
+        return {}
+    series = {}
+    for sym, bd, cp in qs:
+        series.setdefault(sym, []).append((bd, float(cp)))
+    out = {}
+    for sym, arr in series.items():
+        if len(arr) < 2:
+            continue
+        arr.sort()
+        first, last = arr[0][1], arr[-1][1]
+        if first:
+            out[sym] = 100.0 * (last - first) / first
+    return out
+
+
+def broker_signals(brokers, range_key="1m", sector="All", exclude_mf=False, start=None, end=None):
+    """Four research-desk signals for a broker selection, one window pass.
+
+    All derive from the broker-tagged floorsheet (+ local closes for divergence);
+    every field is a factual roll-up, never a prediction:
+
+    * ``divergence`` — desk net flow disagrees with price: net-buying while price
+      fell ('accum_weak') or net-selling into a rising price ('distrib_strong').
+    * ``breadth``    — market-wide count of distinct brokers net-buying vs
+      net-selling each stock (consensus; complements the HHI concentration read).
+    * ``two_sided``  — stocks the *selected desk* both bought and sold heavily
+      (churn %: 100 = perfectly balanced two-siding / market-making).
+    * ``sectors``    — the desk's net flow rolled up by sector (rotation).
+    """
+    agg = _window_aggregate(range_key, start, end)
+    if not agg:
+        return {"ok": False, "divergence": [], "breadth": [], "two_sided": [], "sectors": []}
+    if isinstance(brokers, (list, tuple, set)):
+        sel = {_typed_broker(b) for b in brokers}
+    else:
+        sel = {_typed_broker(brokers)}
+    sel.discard(None)
+    if not sel:
+        return {"ok": True, "divergence": [], "breadth": [], "two_sided": [], "sectors": []}
+
+    buy, sell, secmap = agg["buy"], agg["sell"], agg["sector"]
+
+    def passes(sym):
+        if sector and sector != "All" and secmap.get(sym) != sector:
+            return False
+        if exclude_mf and _is_mutual_fund(sym):
+            return False
+        return True
+
+    symbols = [s for s in (set(buy) | set(sell)) if passes(s)]
+
+    # Desk net per stock (drives divergence, two-sided, sector rotation).
+    desk = {}
+    for sym in symbols:
+        bq = sum(buy.get(sym, {}).get(b, (0, 0))[0] for b in sel)
+        sq = sum(sell.get(sym, {}).get(b, (0, 0))[0] for b in sel)
+        if bq or sq:
+            desk[sym] = (bq, sq)
+
+    # Breadth: distinct net-buying vs net-selling brokers per stock (all brokers).
+    breadth = []
+    for sym in symbols:
+        bb, sb = buy.get(sym, {}), sell.get(sym, {})
+        nb = ns = 0
+        for b in set(bb) | set(sb):
+            net = bb.get(b, (0, 0))[0] - sb.get(b, (0, 0))[0]
+            if net > 0:
+                nb += 1
+            elif net < 0:
+                ns += 1
+        if nb or ns:
+            breadth.append({
+                "symbol": sym, "buyers": nb, "sellers": ns, "net": nb - ns,
+                "total": round(sum(q for q, _a in bb.values())),
+            })
+    breadth.sort(key=lambda r: r["total"], reverse=True)
+
+    # Two-sided: desk both bought and sold the name. churn = 2·min/(buy+sell)·100
+    # (100 = perfectly balanced). Require churn ≥ 33 (at least a 1:2 split) so a
+    # token opposite leg isn't flagged, then rank by genuinely two-sided volume
+    # (the smaller side) — not by churn, else tiny balanced trades dominate.
+    two_sided = []
+    for sym, (bq, sq) in desk.items():
+        if bq > 0 and sq > 0:
+            churn = round(200.0 * min(bq, sq) / (bq + sq), 1)
+            if churn >= 33:
+                two_sided.append({
+                    "symbol": sym, "buy": round(bq), "sell": round(sq),
+                    "net": round(bq - sq), "churn": churn, "two_sided": round(min(bq, sq)),
+                })
+    two_sided.sort(key=lambda r: r["two_sided"], reverse=True)
+
+    # Sector rotation: desk net qty by sector.
+    sec_net = {}
+    for sym, (bq, sq) in desk.items():
+        sec_net[secmap.get(sym) or "—"] = sec_net.get(secmap.get(sym) or "—", 0) + (bq - sq)
+    sectors = [{"sector": k, "net": round(v)} for k, v in sec_net.items() if v]
+    sectors.sort(key=lambda r: abs(r["net"]), reverse=True)
+
+    # Divergence: desk net vs window price change.
+    price_chg = _window_close_changes(list(desk.keys()), agg.get("dates") or [])
+    divergence = []
+    for sym, (bq, sq) in desk.items():
+        net = bq - sq
+        pc = price_chg.get(sym)
+        if not net or pc is None:
+            continue
+        if net > 0 and pc < 0:
+            typ = "accum_weak"
+        elif net < 0 and pc > 0:
+            typ = "distrib_strong"
+        else:
+            continue
+        divergence.append({"symbol": sym, "net": round(net), "price_chg": round(pc, 2), "type": typ})
+    divergence.sort(key=lambda r: abs(r["net"]), reverse=True)
+
+    return {
+        "ok": True,
+        "days": len(agg.get("dates") or []),
+        "divergence": divergence[:15],
+        "breadth": breadth[:15],
+        "two_sided": two_sided[:15],
+        "sectors": sectors[:15],
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
