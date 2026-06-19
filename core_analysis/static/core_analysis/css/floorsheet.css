@@ -75,6 +75,41 @@
 }
 .dsx-sector { min-width: 160px; }
 
+/* shared date-range panel (Date Range preset + custom start/end + Analyze) */
+.dsx-dr-preset { min-width: 160px; }
+.dsx-date-input {
+  min-width: 150px;
+  background: var(--surface-2);
+  color: var(--ink-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font: 500 14px/1 'Manrope', sans-serif;
+  color-scheme: dark light;
+}
+.dsx-date-input:hover:not(:disabled) { border-color: var(--accent); }
+.dsx-date-input:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  background: var(--surface);
+}
+.dsx-analyze {
+  align-self: flex-end;
+  margin-left: auto;
+  appearance: none;
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 9px 26px;
+  font: 700 13px/1 'Manrope', sans-serif;
+  letter-spacing: .02em;
+  cursor: pointer;
+  transition: filter .15s;
+}
+.dsx-analyze:hover { filter: brightness(1.08); }
+.dsx-analyze:active { filter: brightness(.95); }
+
 /* multi-select broker checklist */
 .dsx-multi { position: relative; }
 .dsx-multi-btn {
@@ -161,6 +196,119 @@
   border-color: var(--accent);
 }
 
+/* ── KPI strip (Broker Analysis) ─────────────────────────────────────── */
+.dsx-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+@media (max-width: 1100px) { .dsx-kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px)  { .dsx-kpis { grid-template-columns: 1fr; } }
+.dsx-kpi {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 13px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dsx-kpi-label {
+  font: 600 10.5px/1 'Manrope', sans-serif;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.dsx-kpi-val {
+  font: 700 19px/1.1 'JetBrains Mono', monospace;
+  color: var(--ink-1);
+}
+.dsx-kpi-sub {
+  font: 500 11px/1.2 'Manrope', sans-serif;
+  color: var(--ink-3);
+}
+.dsx-kpi-val.num-pos { color: var(--up); }
+.dsx-kpi-val.num-neg { color: var(--down); }
+
+/* ── Persistent Accumulation / Distribution (multi-day net + streak + HHI) ── */
+.dsx-ad-card { margin-bottom: 16px; }
+.dsx-ad-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+}
+.dsx-ad-sub {
+  font: 500 11px/1 'Manrope', sans-serif;
+  text-transform: none; letter-spacing: 0; color: var(--ink-3);
+}
+.dsx-ad { padding: 12px 16px 14px; max-height: 420px; overflow: auto; }
+.dsx-ad-row {
+  display: grid;
+  grid-template-columns: 62px 60px 1fr 96px 64px;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 0;
+  cursor: pointer;
+}
+@media (max-width: 700px) { .dsx-ad-row { grid-template-columns: 54px 52px 1fr 78px; } .dsx-ad-row .dsx-hhi { display: none; } }
+.dsx-ad-row:hover { background: var(--surface-2); }
+.dsx-ad-sym {
+  font: 700 13px/1 'JetBrains Mono', monospace;
+  color: var(--accent);
+}
+/* conviction streak badge (consecutive same-side sessions) */
+.dsx-streak {
+  font: 700 11px/1 'JetBrains Mono', monospace;
+  text-align: center;
+  padding: 3px 0; border-radius: 5px;
+  border: 1px solid var(--line);
+}
+.dsx-streak.buy  { color: var(--up);   background: var(--up-soft); }
+.dsx-streak.sell { color: var(--down); background: var(--down-soft); }
+.dsx-streak.flat { color: var(--ink-3); }
+/* concentration (HHI) chip, coloured by risk band */
+.dsx-hhi {
+  font: 700 11px/1 'JetBrains Mono', monospace;
+  text-align: center;
+  padding: 3px 4px; border-radius: 5px;
+  cursor: help;
+}
+.dsx-hhi.risk-low      { color: var(--ink-3); background: var(--surface-2); }
+.dsx-hhi.risk-moderate { color: #d8941f; background: rgba(216,148,31,.14); }
+.dsx-hhi.risk-high     { color: var(--down); background: var(--down-soft); }
+.dsx-ad-track {
+  position: relative;
+  height: 18px;
+  background: var(--surface-2);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.dsx-ad-track::before {           /* centre zero line */
+  content: ""; position: absolute; left: 50%; top: 0; bottom: 0;
+  width: 1px; background: var(--line);
+}
+.dsx-ad-fill {
+  position: absolute; top: 0; bottom: 0;
+  border-radius: 5px;
+}
+.dsx-ad-fill.buy  { left: 50%;  background: linear-gradient(90deg, #15c08a, #1fae7e); }
+.dsx-ad-fill.sell { right: 50%; background: linear-gradient(90deg, #ff6e72, #e0575b); }
+.dsx-ad-net {
+  text-align: right;
+  font: 700 13px/1 'JetBrains Mono', monospace;
+}
+.dsx-ad-net.num-pos { color: var(--up); }
+.dsx-ad-net.num-neg { color: var(--down); }
+
+/* inline %-of-total bar inside the favorites table's last column */
+.dsx-pctcell { position: relative; }
+.dsx-pctcell .dsx-pctbar {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  height: 6px; border-radius: 3px; background: var(--accent-soft);
+  pointer-events: none;
+}
+.dsx-pctcell .dsx-pctnum { position: relative; }
+
 /* ── card grids ──────────────────────────────────────────────────────── */
 .dsx-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .dsx-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
@@ -218,6 +366,27 @@
 .dsx-table .tkr { color: var(--accent); font-weight: 700; }
 .dsx-table .num-pos { color: var(--up); }
 .dsx-table .num-neg { color: var(--down); }
+
+/* The 3-up grid (Script Deep Dive: Buy / Sell / Holdings) packs 4–5 numeric
+   columns into a narrow card. Compact font + padding so every column fits and
+   the table no longer needs horizontal scrolling. */
+.dsx-grid-3 .dsx-table { font-size: 12px; }
+.dsx-grid-3 .dsx-table thead th {
+  padding: 9px 6px;
+  font-size: 10px;
+  letter-spacing: .01em;
+}
+.dsx-grid-3 .dsx-table tbody td { padding: 8px 6px; }
+
+/* sortable column headers */
+.dsx-table thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color .12s, background .12s;
+}
+.dsx-table thead th.sortable:hover { color: var(--ink-1); background: var(--surface); }
+.dsx-table thead th.sorted { color: var(--accent); }
+.dsx-table thead th .dsx-arrow { font-size: 9px; }
 .dsx-empty { padding: 28px; text-align: center; color: var(--ink-3); font-family: 'Manrope', sans-serif; }
 
 /* concentration heat cells */
@@ -270,5 +439,33 @@
 .dsx-tm-cell.buy  { background: #5ec98f; }
 .dsx-tm-cell.sell { background: #e06b6e; color: #fff; }
 .dsx-tm-label { pointer-events: none; }
+
+/* treemap hover/tap tooltip (Buy / Sell / Net) */
+.dsx-tm-tip {
+  position: absolute;
+  z-index: 50;
+  pointer-events: none;
+  min-width: 140px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  box-shadow: var(--shadow);
+  padding: 9px 11px;
+  font: 600 12px/1.35 'Manrope', sans-serif;
+  color: var(--ink-1);
+}
+.dsx-tm-tip[hidden] { display: none; }
+.dsx-tm-tip-sym {
+  font: 800 13px/1 'Manrope', sans-serif;
+  color: var(--accent);
+  margin-bottom: 5px;
+}
+.dsx-tm-tip-row { display: flex; justify-content: space-between; gap: 18px; }
+.dsx-tm-tip-row span { color: var(--ink-3); }
+.dsx-tm-tip-row b { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+.dsx-tm-tip-row.net {
+  margin-top: 4px; padding-top: 4px;
+  border-top: 1px solid var(--line-soft);
+}
 
 .dsx-loading { padding: 30px; text-align: center; color: var(--ink-3); font-family: 'Manrope', sans-serif; }

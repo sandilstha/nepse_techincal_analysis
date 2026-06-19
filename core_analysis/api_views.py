@@ -14,6 +14,8 @@ Routes (wired in api_urls.py under /api/v1/):
     GET /api/v1/price-adjustments/         adjusted price rows   (?symbol=, ?date_from=, ?date_to=)
     GET /api/v1/daily-prices/              raw daily price rows  (?symbol=, ?date_from=, ?date_to=)
     GET /api/v1/indices/                   index rows            (?sector=, ?date_from=, ?date_to=)
+    GET /api/v1/floorsheet/                trade-level rows      (?symbol=, ?sector=, ?buyer=, ?seller=, ?date_from=, ?date_to=)
+    GET /api/v1/floorsheet/<id>/           one trade
 """
 from __future__ import annotations
 
@@ -27,12 +29,14 @@ from rest_framework.pagination import PageNumberPagination
 from core_analysis.models import (
     CompanyProfile,
     NepseDailyStockPrice,
+    NepseFloorsheet,
     NepseMarketIndex,
     StockPriceAdjustment,
 )
 from core_analysis.serializers import (
     CompanyProfileSerializer,
     NepseDailyStockPriceSerializer,
+    NepseFloorsheetSerializer,
     NepseMarketIndexSerializer,
     StockPriceAdjustmentSerializer,
 )
@@ -152,4 +156,47 @@ class NepseMarketIndexViewSet(_DateRangeFilterMixin, viewsets.ReadOnlyModelViewS
         sector = (self.request.query_params.get("sector") or "").strip().upper()
         if sector:
             qs = qs.filter(sector_name__iexact=sector)
+        return self.filter_date_range(qs)
+
+
+def _parse_int(raw, param_name):
+    """Parse an integer query param, raising a clean 400 on bad input."""
+    raw = (raw or "").strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        raise ValidationError({param_name: "Expected an integer."})
+
+
+class NepseFloorsheetViewSet(_DateRangeFilterMixin, viewsets.ReadOnlyModelViewSet):
+    """Trade-level floorsheet rows. ?symbol=, ?sector=, ?buyer=, ?seller=, ?date_from=, ?date_to=.
+
+    This is a very large table (one row per executed trade), so a ?date_from /
+    ?date_to window — or at least a ?symbol / ?buyer / ?seller filter — is
+    strongly recommended; pagination otherwise walks the whole feed page by page.
+    """
+
+    serializer_class = NepseFloorsheetSerializer
+    pagination_class = StandardPagination
+    filter_backends = [OrderingFilter]
+    ordering_fields = ["business_date", "stock_symbol", "amount", "quantity", "trade_time"]
+    ordering = ["-business_date", "stock_symbol"]
+
+    def get_queryset(self):
+        qs = NepseFloorsheet.objects.all()
+        params = self.request.query_params
+        symbol = (params.get("symbol") or "").strip().upper()
+        sector = (params.get("sector") or "").strip()
+        buyer = _parse_int(params.get("buyer"), "buyer")
+        seller = _parse_int(params.get("seller"), "seller")
+        if symbol:
+            qs = qs.filter(stock_symbol=symbol)
+        if sector:
+            qs = qs.filter(sector__iexact=sector)
+        if buyer is not None:
+            qs = qs.filter(buyer=buyer)
+        if seller is not None:
+            qs = qs.filter(seller=seller)
         return self.filter_date_range(qs)

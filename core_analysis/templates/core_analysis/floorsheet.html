@@ -64,19 +64,24 @@
           </div>
         </div>
       </div>
-      <div class="dsx-seg" data-group="fav-view">
-        <span class="dsx-seg-label">View By</span>
-        <button class="dsx-pill active" data-val="shares">Shares Traded</button>
-        <button class="dsx-pill" data-val="turnover">Turnover Amount</button>
-      </div>
-      <div class="dsx-seg" data-group="fav-range">
-        <span class="dsx-seg-label">Show Result For</span>
-        <button class="dsx-pill active" data-val="today">Today</button>
-        <button class="dsx-pill" data-val="1w">1 Week</button>
-        <button class="dsx-pill" data-val="1m">1 Month</button>
-        <button class="dsx-pill" data-val="3m">3 Months</button>
-      </div>
+      {% include "core_analysis/includes/_date_range.html" with prefix="fav" %}
+      <button type="button" id="fav-analyze" class="dsx-analyze">Analyze</button>
     </div>
+
+    <!-- KPI strip: the desk's stance at a glance (derived from favorites/) -->
+    <div class="dsx-kpis" id="fav-kpis"></div>
+
+    <!-- Persistent Accumulation / Distribution: multi-session net per stock with
+         conviction streak + all-broker concentration (HHI). Broker-tagged data
+         (NEPSE floorsheet) makes the streak computable; HHI reads supply control. -->
+    <div class="dsx-card dsx-ad-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span>PERSISTENT ACCUMULATION / DISTRIBUTION</span>
+        <span class="dsx-ad-sub" id="fav-ad-sub"></span>
+      </div>
+      <div class="dsx-ad" id="fav-ad"></div>
+    </div>
+
     <div class="dsx-grid-2">
       <div class="dsx-card">
         <div class="dsx-card-head buy">BROKER TOP BUY</div>
@@ -104,18 +109,8 @@
       <label class="dsx-field">Choose Ticker
         <select id="sw-symbol" class="dsx-select"></select>
       </label>
-      <div class="dsx-seg" data-group="sw-view">
-        <span class="dsx-seg-label">View By</span>
-        <button class="dsx-pill active" data-val="shares">Shares Traded</button>
-        <button class="dsx-pill" data-val="turnover">Turnover Amount</button>
-      </div>
-      <div class="dsx-seg" data-group="sw-range">
-        <span class="dsx-seg-label">Show Result For</span>
-        <button class="dsx-pill active" data-val="today">Today</button>
-        <button class="dsx-pill" data-val="1w">1 Week</button>
-        <button class="dsx-pill" data-val="1m">1 Month</button>
-        <button class="dsx-pill" data-val="3m">3 Months</button>
-      </div>
+      {% include "core_analysis/includes/_date_range.html" with prefix="sw" %}
+      <button type="button" id="sw-analyze" class="dsx-analyze">Analyze</button>
     </div>
     <div class="dsx-grid-3">
       <div class="dsx-card">
@@ -145,21 +140,11 @@
 
   <section class="dsx-panel" id="panel-hotstocks">
     <div class="dsx-controls">
-      <div class="dsx-seg" data-group="hot-view">
-        <span class="dsx-seg-label">View By</span>
-        <button class="dsx-pill active" data-val="shares">Shares Traded</button>
-        <button class="dsx-pill" data-val="turnover">Turnover Amount</button>
-      </div>
-      <div class="dsx-seg" data-group="hot-range">
-        <span class="dsx-seg-label">Show Result For</span>
-        <button class="dsx-pill active" data-val="today">Today</button>
-        <button class="dsx-pill" data-val="1w">1 Week</button>
-        <button class="dsx-pill" data-val="1m">1 Month</button>
-        <button class="dsx-pill" data-val="3m">3 Months</button>
-      </div>
+      {% include "core_analysis/includes/_date_range.html" with prefix="hot" %}
       <label class="dsx-field">Choose Sector
         <select id="hot-sector" class="dsx-select dsx-sector"></select>
       </label>
+      <button type="button" id="hot-analyze" class="dsx-analyze">Analyze</button>
     </div>
     <div class="dsx-card">
       <div class="dsx-card-head neutral">HOT STOCKS — MOST ACTIVE</div>
@@ -172,17 +157,12 @@
       <label class="dsx-field">Net Holding For Broker
         <select id="nh-broker" class="dsx-select"></select>
       </label>
-      <div class="dsx-seg" data-group="nh-range">
-        <span class="dsx-seg-label">Show Result For</span>
-        <button class="dsx-pill active" data-val="today">Today</button>
-        <button class="dsx-pill" data-val="1w">1 Week</button>
-        <button class="dsx-pill" data-val="1m">1 Month</button>
-        <button class="dsx-pill" data-val="3m">3 Months</button>
-      </div>
+      {% include "core_analysis/includes/_date_range.html" with prefix="nh" %}
       <label class="dsx-check"><input type="checkbox" id="nh-exclude-mf"> Exclude Mutual Funds</label>
       <label class="dsx-field">Choose Sector
         <select id="nh-sector" class="dsx-select dsx-sector"></select>
       </label>
+      <button type="button" id="nh-analyze" class="dsx-analyze">Analyze</button>
     </div>
     <div class="dsx-legend">
       <span><i class="dot buy"></i> Net Buy</span>
@@ -194,16 +174,11 @@
   <section class="dsx-panel" id="panel-concentration">
     <div class="dsx-controls">
       <span class="dsx-blurb">Broker activity concentration in each stock based on % of total transactions</span>
-      <div class="dsx-seg" data-group="conc-range">
-        <span class="dsx-seg-label">Show Result For</span>
-        <button class="dsx-pill active" data-val="today">Today</button>
-        <button class="dsx-pill" data-val="1w">1 Week</button>
-        <button class="dsx-pill" data-val="1m">1 Month</button>
-        <button class="dsx-pill" data-val="3m">3 Months</button>
-      </div>
+      {% include "core_analysis/includes/_date_range.html" with prefix="conc" %}
       <label class="dsx-field">Choose Sector
         <select id="conc-sector" class="dsx-select dsx-sector"></select>
       </label>
+      <button type="button" id="conc-analyze" class="dsx-analyze">Analyze</button>
     </div>
     <div class="dsx-card">
       <div class="dsx-table-wrap"><table class="dsx-table dsx-conc" id="conc-table"></table></div>

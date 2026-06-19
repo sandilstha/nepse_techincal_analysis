@@ -1,0 +1,33 @@
+# Ignore documentation files because no LLM API key is configured
+*.md
+*.mdx
+*.txt
+*.rst
+*.pdf
+*.docx
+*.xlsx
+*.csv
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+
+# Ignore config/text files that Graphify may treat as docs
+*.html
+*.htm
+*.xml
+*.yaml
+*.yml
+*.toml
+*.ini
+
+# Ignore folders
+node_modules/
+dist/
+build/
+.venv/
+venv/
+__pycache__/
+.git/
+graphify-out/

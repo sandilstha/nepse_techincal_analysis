@@ -33,6 +33,20 @@ def floorsheet_view(request):
     )
 
 
+def _window(request):
+    """Extract the shared date-range selection (range + optional custom dates).
+
+    Returns a kwargs dict (``range_key`` always; ``start`` / ``end`` only when a
+    'custom' range supplies them) to splat into any analytics builder.
+    """
+    range_key = request.GET.get("range", "today")
+    kw = {"range_key": range_key}
+    if range_key == "custom":
+        kw["start"] = request.GET.get("start_date") or request.GET.get("start")
+        kw["end"] = request.GET.get("end_date") or request.GET.get("end")
+    return kw
+
+
 def _safe(builder, *args, **kwargs):
     try:
         data = builder(*args, **kwargs)
@@ -58,8 +72,26 @@ def broker_favorites_api(request):
     return _safe(
         ba.broker_favorites,
         brokers,
-        request.GET.get("range", "today"),
-        request.GET.get("view", "shares"),
+        view=request.GET.get("view", "shares"),
+        **_window(request),
+    )
+
+
+@require_GET
+def broker_persistence_api(request):
+    # Same broker multi-select contract as favorites. Persistence is inherently a
+    # multi-session lens, so it owns its own lookback (default 1 month, floored at
+    # 1 week) rather than collapsing to one day when the tab is on "Current Day".
+    raw = request.GET.get("brokers") or request.GET.get("broker") or ""
+    brokers = [b for b in (s.strip() for s in raw.split(",")) if b]
+    rk = request.GET.get("lookback", "1m")
+    rk = rk if rk in ("1w", "1m", "3m") else "1m"
+    return _safe(
+        ba.broker_persistence,
+        brokers,
+        range_key=rk,
+        sector=request.GET.get("sector", "All"),
+        exclude_mf=request.GET.get("exclude_mf") in ("1", "true", "yes"),
     )
 
 
@@ -68,8 +100,8 @@ def stock_wise_api(request):
     return _safe(
         ba.stock_wise,
         request.GET.get("symbol"),
-        request.GET.get("range", "today"),
-        request.GET.get("view", "shares"),
+        view=request.GET.get("view", "shares"),
+        **_window(request),
     )
 
 
@@ -78,9 +110,9 @@ def net_holding_api(request):
     return _safe(
         ba.net_holding,
         request.GET.get("broker"),
-        request.GET.get("range", "today"),
-        request.GET.get("exclude_mf") in ("1", "true", "yes"),
-        request.GET.get("sector", "All"),
+        exclude_mf=request.GET.get("exclude_mf") in ("1", "true", "yes"),
+        sector=request.GET.get("sector", "All"),
+        **_window(request),
     )
 
 
@@ -88,8 +120,8 @@ def net_holding_api(request):
 def broker_concentration_api(request):
     return _safe(
         ba.broker_concentration,
-        request.GET.get("range", "today"),
-        request.GET.get("sector", "All"),
+        sector=request.GET.get("sector", "All"),
+        **_window(request),
     )
 
 
@@ -97,9 +129,9 @@ def broker_concentration_api(request):
 def hotstocks_api(request):
     return _safe(
         ba.hotstocks,
-        request.GET.get("range", "today"),
-        request.GET.get("view", "shares"),
-        request.GET.get("sector", "All"),
+        view=request.GET.get("view", "shares"),
+        sector=request.GET.get("sector", "All"),
+        **_window(request),
     )
 
 
@@ -109,4 +141,5 @@ def broker_trend_api(request):
         ba.trend,
         request.GET.get("symbol"),
         request.GET.get("side", "buy"),
+        broker=request.GET.get("broker"),
     )

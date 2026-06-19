@@ -137,36 +137,53 @@ class NepseMarketIndex(models.Model):
 
 class NepseFloorsheet(models.Model):
     """
-    Table: nepse_floorsheet
+    Table: floorsheet_raw
     Stores trade-level floorsheet rows (one row per executed trade) from
     /api/nepse-data/api/floorsheet/. This is a high-volume table — tens of
     millions of rows — so it is synced day-by-day filtered on calculation_date.
+
+    The upstream JSON 'id' is used directly as this table's primary key (it is a
+    stable, globally-unique trade id), so there is no separate surrogate key and
+    no `api_id` column. Most trade-economics columns are nullable to mirror the
+    raw feed, which occasionally omits them.
     """
-    api_id = models.BigIntegerField(unique=True, help_text="Maps to JSON 'id'")
-    contract_no = models.CharField(max_length=32, db_index=True, help_text="Maps to JSON 'contract_no'")
-    business_date = models.DateField(db_index=True, help_text="Maps to JSON 'calculation_date'")
-    stock_symbol = models.CharField(max_length=20, db_index=True)
-    sector = models.CharField(max_length=100, null=True, blank=True)
+    # Source 'id' is the primary key (not auto-generated locally).
+    id = models.BigIntegerField(primary_key=True, help_text="Maps to JSON 'id'")
+    contract_no = models.CharField(
+        max_length=255, null=True, blank=True, db_index=True, help_text="Maps to JSON 'contract_no'"
+    )
+    stock_symbol = models.CharField(max_length=50, db_index=True)
 
     # Counterparties (broker numbers).
-    buyer = models.IntegerField(db_index=True)
-    seller = models.IntegerField(db_index=True)
+    buyer = models.IntegerField(null=True, blank=True, db_index=True)
+    seller = models.IntegerField(null=True, blank=True, db_index=True)
 
     # Trade economics.
-    quantity = models.BigIntegerField()
-    rate = models.DecimalField(max_digits=12, decimal_places=2)
-    amount = models.DecimalField(max_digits=18, decimal_places=2)
+    quantity = models.IntegerField(null=True, blank=True)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    amount = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
 
-    # Execution clock time (HH:MM:SS), nullable for malformed rows.
-    trade_time = models.TimeField(null=True, blank=True, help_text="Maps to JSON 'time'")
+    sector = models.CharField(max_length=100, null=True, blank=True, db_index=True)
+
+    # DB column is `calculation_date`; kept as `business_date` in Python for
+    # parity with the other NEPSE models and the analytics layer.
+    business_date = models.DateField(
+        db_column='calculation_date', db_index=True, help_text="Maps to JSON 'calculation_date'"
+    )
+
+    # Execution clock time (HH:MM:SS.ffffff), nullable for malformed rows.
+    trade_time = models.TimeField(
+        db_column='time', null=True, blank=True, help_text="Maps to JSON 'time'"
+    )
 
     class Meta:
-        db_table = 'nepse_floorsheet'
+        db_table = 'floorsheet_raw'
         ordering = ['-business_date', 'stock_symbol']
         indexes = [
-            models.Index(fields=['business_date', 'stock_symbol']),
+            models.Index(fields=['stock_symbol', 'business_date']),
             models.Index(fields=['business_date', 'buyer']),
             models.Index(fields=['business_date', 'seller']),
+            models.Index(fields=['business_date', 'sector']),
         ]
 
     def __str__(self):

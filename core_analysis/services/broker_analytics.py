@@ -2,7 +2,7 @@
 broker_analytics.py — "Dalal Street X" style broker analytics built on top of
 the trade-level floorsheet feed.
 
-The floorsheet lives in the local ``nepse_floorsheet`` table (model
+The floorsheet lives in the local ``floorsheet_raw`` table (model
 ``NepseFloorsheet``), populated by the ``sync_floorsheet`` management command.
 Each row is one executed trade with the fields:
 
@@ -38,7 +38,7 @@ from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
-# Floorsheet is read from the local nepse_floorsheet table (populated by the
+# Floorsheet is read from the local floorsheet_raw table (populated by the
 # `sync_floorsheet` management command). Per-day aggregates are still cached so
 # repeated dashboard hits don't re-run the aggregation over a day of trade rows.
 
@@ -305,6 +305,110 @@ def get_range_aggregate(range_key):
     return merged
 
 
+# Hard cap on a custom window so a runaway start/end can't fan out to thousands
+# of day-aggregate builds.
+CUSTOM_RANGE_MAX_DAYS = int(os.environ.get("NEPSE_FLOORSHEET_CUSTOM_MAX_DAYS", "366"))
+
+
+def _valid_date(raw):
+    """Return a date object if ``raw`` is a valid ISO 'YYYY-MM-DD', else None."""
+    raw = (str(raw).strip() if raw is not None else "")
+    if not raw:
+        return None
+    try:
+        return datetime.strptime(raw, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _custom_trading_dates(start, end):
+    """Trading-day strings within [start, end] inclusive, from the local EOD table.
+
+    Uses NepseDailyStockPrice (one row per stock per session) as the cheap,
+    authoritative calendar of trading days — far lighter than scanning the
+    multi-million-row floorsheet for distinct dates.
+    """
+    key = f"fs_custom_dates_{start}_{end}"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+    dates = []
+    try:
+        from core_analysis.models import NepseDailyStockPrice
+
+        qs = (
+            NepseDailyStockPrice.objects.filter(
+                business_date__gte=start, business_date__lte=end
+            )
+            .order_by("-business_date")
+            .values_list("business_date", flat=True)
+            .distinct()
+        )
+        dates = [d.isoformat() for d in qs]
+    except Exception:  # pragma: no cover - DB optional for this overlay
+        dates = []
+    cache.set(key, dates, META_TTL)
+    return dates
+
+
+def get_custom_range_aggregate(start, end):
+    """Sum of every day aggregate in an explicit [start, end] window (inclusive).
+
+    ``start`` / ``end`` are ``date`` objects. Returns the same {buy, sell,
+    sector, dates} shape as :func:`get_range_aggregate`, or None when the window
+    holds no trading days / no data.
+    """
+    if start > end:
+        start, end = end, start
+    span = (end - start).days + 1
+    if span > CUSTOM_RANGE_MAX_DAYS:
+        start = end - timedelta(days=CUSTOM_RANGE_MAX_DAYS - 1)
+
+    key = f"fs_custom_{start}_{end}_{get_latest_trading_date()}"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached or None
+
+    dates = _custom_trading_dates(start, end)
+    if not dates:
+        cache.set(key, {}, FAIL_TTL)
+        return None
+
+    buy, sell, sector = {}, {}, {}
+    for ds in dates:
+        agg = get_day_aggregate(ds)
+        if not agg:
+            continue
+        _merge_into(buy, agg["buy"])
+        _merge_into(sell, agg["sell"])
+        for sym, sec in agg["sector"].items():
+            sector.setdefault(sym, sec)
+
+    if not buy and not sell:
+        cache.set(key, {}, FAIL_TTL)
+        return None
+
+    merged = {"range": "custom", "dates": dates, "buy": buy, "sell": sell, "sector": sector}
+    cache.set(key, merged, RANGE_TTL)
+    return merged
+
+
+def _window_aggregate(range_key, start=None, end=None):
+    """Resolve the aggregate for a tab's date selection.
+
+    ``range_key`` == 'custom' with valid ``start`` / ``end`` (YYYY-MM-DD strings)
+    selects that explicit window; anything else uses the rolling preset windows
+    ('today', '1w', '1m', '3m') anchored at the latest trading day. An invalid
+    custom window falls back to 'today' so a tab never breaks on bad input.
+    """
+    if range_key == "custom":
+        s, e = _valid_date(start), _valid_date(end)
+        if s and e:
+            return get_custom_range_aggregate(s, e)
+        return get_range_aggregate("today")
+    return get_range_aggregate(range_key)
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Derived helpers
 # ─────────────────────────────────────────────────────────────────────────────
@@ -457,14 +561,16 @@ def _typed_broker(broker):
         return broker
 
 
-def broker_favorites(brokers, range_key="today", view="shares"):
-    """Top buy / top sell stocks for one or more brokers (Broker Favorites tab).
+def broker_favorites(brokers, range_key="today", view="shares", start=None, end=None):
+    """Top buy / top sell stocks for one or more brokers (Broker Analysis tab).
 
     ``brokers`` may be a single value or a list/iterable of broker numbers; when
     several are given their flow is pooled (qty/amount summed per stock) so the
-    tables show the combined favourites of the selected desk.
+    tables show the combined favourites of the selected desk. Pass
+    ``range_key='custom'`` with ``start`` / ``end`` (YYYY-MM-DD) to scope the
+    result to an explicit date window.
     """
-    agg = get_range_aggregate(range_key)
+    agg = _window_aggregate(range_key, start, end)
     if not agg:
         return {"ok": False, "buy": [], "sell": []}
     if isinstance(brokers, (list, tuple, set)):
@@ -499,9 +605,9 @@ def broker_favorites(brokers, range_key="today", view="shares"):
     return {"ok": True, "buy": side(agg["buy"]), "sell": side(agg["sell"])}
 
 
-def stock_wise(symbol, range_key="today", view="shares"):
+def stock_wise(symbol, range_key="today", view="shares", start=None, end=None):
     """Top buy / sell / holding brokers for one stock (Stock Wise Details tab)."""
-    agg = get_range_aggregate(range_key)
+    agg = _window_aggregate(range_key, start, end)
     if not agg or not symbol:
         return {"ok": False, "buy": [], "sell": [], "holdings": []}
     mi = _metric_index(view)
@@ -517,7 +623,8 @@ def stock_wise(symbol, range_key="today", view="shares"):
         rows.sort(key=lambda r: r["amount"] if mi else r["quantity"], reverse=True)
         return rows[:TOP_N]
 
-    # Holdings = net position per broker (buy qty - sell qty), with avg buy/sell.
+    # Holdings = positive net position per broker (buy qty - sell qty), with
+    # net amount and avg buy/sell, matching the Dalal Street X stock-wise table.
     buy_b = agg["buy"].get(symbol, {})
     sell_b = agg["sell"].get(symbol, {})
     holdings = []
@@ -525,18 +632,18 @@ def stock_wise(symbol, range_key="today", view="shares"):
         bq, ba = buy_b.get(broker, [0, 0])
         sq, sa = sell_b.get(broker, [0, 0])
         net = bq - sq
-        if net == 0:
+        if net <= 0:
             continue
         holdings.append(
             {
                 "key": broker,
                 "quantity": round(net),
-                "amount": round(ba, 2),
+                "amount": round(ba - sa, 2),
                 "avg_buy": round(ba / bq, 2) if bq else 0.0,
                 "avg_sell": round(sa / sq, 2) if sq else 0.0,
             }
         )
-    holdings.sort(key=lambda r: abs(r["quantity"]), reverse=True)
+    holdings.sort(key=lambda r: r["quantity"], reverse=True)
 
     return {
         "ok": True,
@@ -547,9 +654,9 @@ def stock_wise(symbol, range_key="today", view="shares"):
     }
 
 
-def net_holding(broker, range_key="today", exclude_mf=False, sector="All"):
+def net_holding(broker, range_key="today", exclude_mf=False, sector="All", start=None, end=None):
     """Per-stock net position for one broker (Net Holding treemap)."""
-    agg = get_range_aggregate(range_key)
+    agg = _window_aggregate(range_key, start, end)
     if not agg:
         return {"ok": False, "items": []}
     broker = _typed_broker(broker)
@@ -567,7 +674,8 @@ def net_holding(broker, range_key="today", exclude_mf=False, sector="All"):
             continue
         items.append(
             {"symbol": sym, "net": round(net), "size": abs(round(net)),
-             "side": "buy" if net > 0 else "sell"}
+             "side": "buy" if net > 0 else "sell",
+             "buy": round(bq), "sell": round(sq)}
         )
     items.sort(key=lambda x: x["size"], reverse=True)
     return {"ok": True, "items": items}
@@ -578,9 +686,9 @@ def _is_mutual_fund(symbol):
     return symbol.endswith("MF") or (len(symbol) > 2 and symbol[-1].isdigit() and "MF" in symbol)
 
 
-def broker_concentration(range_key="today", sector="All"):
+def broker_concentration(range_key="today", sector="All", start=None, end=None):
     """Per-stock top-3 broker concentration on each side (Broker Concentration)."""
-    agg = get_range_aggregate(range_key)
+    agg = _window_aggregate(range_key, start, end)
     if not agg:
         return {"ok": False, "rows": []}
     rows = []
@@ -618,9 +726,9 @@ def broker_concentration(range_key="today", sector="All"):
     return {"ok": True, "rows": rows}
 
 
-def hotstocks(range_key="today", view="shares", sector="All"):
+def hotstocks(range_key="today", view="shares", sector="All", start=None, end=None):
     """Most-active stocks with their dominant brokers (Hotstocks tab)."""
-    agg = get_range_aggregate(range_key)
+    agg = _window_aggregate(range_key, start, end)
     if not agg:
         return {"ok": False, "rows": []}
     rows = []
@@ -658,16 +766,133 @@ def hotstocks(range_key="today", view="shares", sector="All"):
     return {"ok": True, "rows": rows[:50]}
 
 
+# HHI concentration bands (0–10000 scale). Aligned with the DOJ/FTC merger
+# guidelines so the label is a recognised market-structure read, not invented.
+HHI_MODERATE = 1500
+HHI_HIGH = 2500
+
+
+def broker_persistence(brokers, range_key="1w", sector="All", exclude_mf=False,
+                       start=None, end=None):
+    """Multi-day persistence + concentration for a desk (Broker Flow headline).
+
+    Walks every trading day in the window and tracks the selected broker(s)'
+    pooled net position (buy qty − sell qty) per stock, then surfaces, per stock:
+
+    * ``streak``  — consecutive most-recent sessions the desk stayed on one side
+      (its current conviction run; 0 if flat on the latest session),
+    * ``side``    — buy / sell / flat for that current run,
+    * ``cum_net`` — net shares accumulated/distributed across the whole window,
+    * ``buy_days`` / ``sell_days`` / ``active_days`` — how the window split,
+    * ``hhi``     — Herfindahl–Hirschman concentration of *all-broker* trading in
+      the stock over the window (0 = fragmented … 10000 = a single broker), with
+      a ``risk`` band (low / moderate / high),
+    * ``dominant``— the single most-active broker in the stock and its share %.
+
+    streak / cum_net are broker-specific — only NEPSE's broker-tagged floorsheet
+    makes them computable. HHI is a market-structure read on the same stocks.
+    Both are factual roll-ups: no predictive "smart money"/"success" labelling.
+    """
+    agg = _window_aggregate(range_key, start, end)
+    if not agg:
+        return {"ok": False, "rows": []}
+    if isinstance(brokers, (list, tuple, set)):
+        sel = {_typed_broker(b) for b in brokers}
+    else:
+        sel = {_typed_broker(brokers)}
+    sel.discard(None)
+    if not sel:
+        return {"ok": True, "rows": []}
+
+    # Newest-first sessions so the streak walk starts at the latest day.
+    dates = sorted(agg.get("dates") or [], reverse=True)
+    n_days = len(dates)
+
+    # Per-day pooled net for the desk: {symbol: {day_index: net_qty}}, day 0 = latest.
+    per_day = {}
+    for di, ds in enumerate(dates):
+        day = get_day_aggregate(ds)
+        if not day:
+            continue
+        buy_m, sell_m = day.get("buy", {}), day.get("sell", {})
+        for sym in set(buy_m) | set(sell_m):
+            bq = sum(buy_m.get(sym, {}).get(b, (0, 0))[0] for b in sel)
+            sq = sum(sell_m.get(sym, {}).get(b, (0, 0))[0] for b in sel)
+            net = bq - sq
+            if net:
+                per_day.setdefault(sym, {})[di] = net
+
+    rows = []
+    for sym, day_nets in per_day.items():
+        if sector and sector != "All" and agg["sector"].get(sym) != sector:
+            continue
+        if exclude_mf and _is_mutual_fund(sym):
+            continue
+
+        # Streak: consecutive most-recent sessions on one side (break on a flat
+        # or opposite session). day index 0 == latest trading day.
+        streak, run_side = 0, None
+        for di in range(n_days):
+            net = day_nets.get(di, 0)
+            if not net:
+                break
+            s = 1 if net > 0 else -1
+            if run_side is None:
+                run_side = s
+            elif s != run_side:
+                break
+            streak += 1
+
+        # HHI over every broker trading this stock in the window (buy side; buy
+        # qty == sell qty in aggregate). share_i in 0..1 → squared → ×10000.
+        cells = agg["buy"].get(sym, {})
+        total_q = sum(q for q, _a in cells.values())
+        hhi, dominant = 0.0, None
+        if total_q > 0:
+            top_b, top_q = None, 0.0
+            for b, (q, _a) in cells.items():
+                share = q / total_q
+                hhi += share * share
+                if q > top_q:
+                    top_q, top_b = q, b
+            hhi *= 10000.0
+            dominant = {"broker": top_b, "pct": round(100.0 * top_q / total_q, 2)}
+        risk = "high" if hhi >= HHI_HIGH else "moderate" if hhi >= HHI_MODERATE else "low"
+
+        rows.append({
+            "symbol": sym,
+            "side": "buy" if run_side == 1 else "sell" if run_side == -1 else "flat",
+            "streak": streak,
+            "cum_net": round(sum(day_nets.values())),
+            "active_days": len(day_nets),
+            "buy_days": sum(1 for v in day_nets.values() if v > 0),
+            "sell_days": sum(1 for v in day_nets.values() if v < 0),
+            "hhi": round(hhi),
+            "risk": risk,
+            "dominant": dominant,
+        })
+
+    # Strongest current conviction first, then by size of net position.
+    rows.sort(key=lambda r: (r["streak"], abs(r["cum_net"])), reverse=True)
+    return {"ok": True, "days": n_days, "rows": rows[:40]}
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 90-day trend (bars: floorsheet qty for selected ticker; line: closing price)
 # ─────────────────────────────────────────────────────────────────────────────
-def trend(symbol, side="buy", days=90):
-    """Daily traded quantity (from cached day aggregates) + closing price (DB)."""
+def trend(symbol, side="buy", days=90, broker=None):
+    """Daily traded quantity (from cached day aggregates) + closing price (DB).
+
+    When ``broker`` is supplied, quantity is scoped to that broker. ``side`` can
+    be buy, sell, or all; all means buy + sell activity for the selected broker.
+    """
     if not symbol:
         return {"ok": False, "points": []}
     latest = get_latest_trading_date()
     if not latest:
         return {"ok": False, "points": []}
+    broker = _typed_broker(broker) if broker not in (None, "") else None
+    side = "all" if side == "all" else ("sell" if side == "sell" else "buy")
 
     # Closing prices from the local end-of-day table (cheap, authoritative).
     closes = {}
@@ -691,11 +916,21 @@ def trend(symbol, side="buy", days=90):
         cached = cache.get(f"fs_agg_{d}")
         qty = None
         if cached and cached != FAIL_SENTINEL:
-            side_map = cached.get("buy" if side != "sell" else "sell", {})
-            qty = round(sum(q for q, _a in side_map.get(symbol, {}).values()))
+            if side == "all":
+                maps = (cached.get("buy", {}), cached.get("sell", {}))
+            else:
+                maps = (cached.get(side, {}),)
+            total_qty = 0.0
+            for side_map in maps:
+                symbol_cells = side_map.get(symbol, {})
+                if broker is None:
+                    total_qty += sum(q for q, _a in symbol_cells.values())
+                else:
+                    total_qty += symbol_cells.get(broker, [0, 0])[0]
+            qty = round(total_qty)
         close = closes.get(d)
         if qty is None and close is None:
             continue
         points.append({"date": d, "quantity": qty or 0, "close": close})
     points.sort(key=lambda p: p["date"])
-    return {"ok": True, "symbol": symbol, "side": side, "points": points}
+    return {"ok": True, "symbol": symbol, "side": side, "broker": broker, "points": points}

@@ -37,7 +37,7 @@ FLOORSHEET_PATH = "/api/nepse-data/api/floorsheet/"
 
 
 class Command(BaseCommand):
-    help = "Sync trade-level NEPSE floorsheet rows into the local nepse_floorsheet table, day by day."
+    help = "Sync trade-level NEPSE floorsheet rows into the local floorsheet_raw table, day by day."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -170,7 +170,7 @@ class Command(BaseCommand):
             {"format": "json", "calculation_date": day.isoformat(), "page_size": page_size},
         )
         batch = []
-        seen_api_ids = set()
+        seen_ids = set()
         pages = 0
         processed = 0
         skipped_invalid = 0
@@ -179,35 +179,35 @@ class Command(BaseCommand):
             pages += 1
             payload, url = _fetch_page(session, url)
             for item in payload.get("results", []):
-                api_id = _clean_int(item.get("id"))
+                row_id = _clean_int(item.get("id"))
                 business_date = _clean_date(item.get("calculation_date"))
                 symbol = _clean_text(item.get("stock_symbol")).upper()
-                buyer = _clean_int(item.get("buyer"))
-                seller = _clean_int(item.get("seller"))
 
-                if api_id is None or business_date is None or not symbol or buyer is None or seller is None:
+                # The source 'id' is the primary key; symbol and date are NOT NULL
+                # in the table. Everything else mirrors the feed and may be null.
+                if row_id is None or business_date is None or not symbol:
                     skipped_invalid += 1
                     continue
-                if api_id in seen_api_ids:
+                if row_id in seen_ids:
                     skipped_invalid += 1
                     continue
 
                 batch.append(
                     NepseFloorsheet(
-                        api_id=api_id,
-                        contract_no=_clean_text(item.get("contract_no")),
+                        id=row_id,
+                        contract_no=_clean_text(item.get("contract_no")) or None,
                         business_date=business_date,
                         stock_symbol=symbol,
                         sector=_clean_text(item.get("sector")) or None,
-                        buyer=buyer,
-                        seller=seller,
-                        quantity=_clean_int(item.get("quantity"), default=0),
-                        rate=_clean_decimal(item.get("rate")),
-                        amount=_clean_decimal(item.get("amount")),
+                        buyer=_clean_int(item.get("buyer")),
+                        seller=_clean_int(item.get("seller")),
+                        quantity=_clean_int(item.get("quantity")),
+                        rate=_clean_decimal(item.get("rate"), default=None),
+                        amount=_clean_decimal(item.get("amount"), default=None),
                         trade_time=_clean_time(item.get("time")),
                     )
                 )
-                seen_api_ids.add(api_id)
+                seen_ids.add(row_id)
 
                 if len(batch) >= batch_size:
                     if not dry_run:

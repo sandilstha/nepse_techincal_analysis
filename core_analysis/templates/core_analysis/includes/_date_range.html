@@ -1,0 +1,22 @@
+{% comment %}
+Reusable date-range control for the Floorsheet tabs: a preset dropdown
+(Current Day / Last Week / Month / 3 Months / Custom Range) plus Start/End date
+inputs and an Analyze button. Pass `prefix` (e.g. "fav", "sw", "hot", "nh",
+"conc") to namespace the element IDs per tab; the frontend (floorsheet-brokers.js)
+wires each prefix with the shared `dateRange()` controller.
+{% endcomment %}
+<div class="dsx-field">Date Range
+  <select id="{{ prefix }}-preset" class="dsx-select dsx-dr-preset">
+    <option value="today">Current Day</option>
+    <option value="1w">Last 1 Week</option>
+    <option value="1m">Last 1 Month</option>
+    <option value="3m">Last 3 Months</option>
+    <option value="custom">Custom Range</option>
+  </select>
+</div>
+<div class="dsx-field">Start Date
+  <input type="date" id="{{ prefix }}-start" class="dsx-date-input dsx-dr-date" disabled>
+</div>
+<div class="dsx-field">End Date
+  <input type="date" id="{{ prefix }}-end" class="dsx-date-input dsx-dr-date" disabled>
+</div>

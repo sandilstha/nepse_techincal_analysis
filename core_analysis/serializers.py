@@ -13,6 +13,7 @@ from rest_framework import serializers
 from core_analysis.models import (
     CompanyProfile,
     NepseDailyStockPrice,
+    NepseFloorsheet,
     NepseMarketIndex,
     StockPriceAdjustment,
 )
@@ -73,6 +74,24 @@ class NepseDailyStockPriceSerializer(serializers.ModelSerializer):
             "fifty_two_week_high",
             "fifty_two_week_low",
             "last_updated_time",
+        ]
+
+
+class NepseFloorsheetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NepseFloorsheet
+        fields = [
+            "id",
+            "contract_no",
+            "business_date",
+            "stock_symbol",
+            "sector",
+            "buyer",
+            "seller",
+            "quantity",
+            "rate",
+            "amount",
+            "trade_time",
         ]
 
 
