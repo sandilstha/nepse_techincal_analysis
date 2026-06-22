@@ -6387,7 +6387,7 @@
       "label": "renderBreadthDetail()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L338",
+      "source_location": "L326",
       "_origin": "ast",
       "id": "js_insights_renderbreadthdetail",
       "community": 6,
@@ -6397,7 +6397,7 @@
       "label": "greedBand()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L401",
+      "source_location": "L396",
       "_origin": "ast",
       "id": "js_insights_greedband",
       "community": 6,
@@ -6407,7 +6407,7 @@
       "label": "greedComponents()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L406",
+      "source_location": "L401",
       "_origin": "ast",
       "id": "js_insights_greedcomponents",
       "community": 6,
@@ -6417,7 +6417,7 @@
       "label": "computeGreed()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L421",
+      "source_location": "L416",
       "_origin": "ast",
       "id": "js_insights_computegreed",
       "community": 6,
@@ -6427,7 +6427,7 @@
       "label": "gaugePt()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L432",
+      "source_location": "L427",
       "_origin": "ast",
       "id": "js_insights_gaugept",
       "community": 6,
@@ -6437,7 +6437,7 @@
       "label": "gaugeArc()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L436",
+      "source_location": "L431",
       "_origin": "ast",
       "id": "js_insights_gaugearc",
       "community": 6,
@@ -6447,7 +6447,7 @@
       "label": "scoreAngle()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L441",
+      "source_location": "L436",
       "_origin": "ast",
       "id": "js_insights_scoreangle",
       "community": 6,
@@ -6457,7 +6457,7 @@
       "label": "gaugeSVG()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L442",
+      "source_location": "L437",
       "_origin": "ast",
       "id": "js_insights_gaugesvg",
       "community": 6,
@@ -6467,7 +6467,7 @@
       "label": "renderGreedHistory()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L482",
+      "source_location": "L477",
       "_origin": "ast",
       "id": "js_insights_rendergreedhistory",
       "community": 6,
@@ -6477,7 +6477,7 @@
       "label": "renderGreedMeter()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L497",
+      "source_location": "L492",
       "_origin": "ast",
       "id": "js_insights_rendergreedmeter",
       "community": 6,
@@ -6487,7 +6487,7 @@
       "label": "renderSectorChart()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L532",
+      "source_location": "L527",
       "_origin": "ast",
       "id": "js_insights_rendersectorchart",
       "community": 6,
@@ -6497,7 +6497,7 @@
       "label": "pctColor()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L591",
+      "source_location": "L586",
       "_origin": "ast",
       "id": "js_insights_pctcolor",
       "community": 6,
@@ -6507,7 +6507,7 @@
       "label": "renderHeatmap()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L602",
+      "source_location": "L597",
       "_origin": "ast",
       "id": "js_insights_renderheatmap",
       "community": 6,
@@ -6517,7 +6517,7 @@
       "label": "fetchCompare()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L659",
+      "source_location": "L654",
       "_origin": "ast",
       "id": "js_insights_fetchcompare",
       "community": 6,
@@ -6527,7 +6527,7 @@
       "label": "renderSubindexCompare()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L677",
+      "source_location": "L672",
       "_origin": "ast",
       "id": "js_insights_rendersubindexcompare",
       "community": 6,
@@ -6537,7 +6537,7 @@
       "label": "themeName()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L715",
+      "source_location": "L710",
       "_origin": "ast",
       "id": "js_insights_themename",
       "community": 6,
@@ -6547,7 +6547,7 @@
       "label": "mountChart()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L719",
+      "source_location": "L714",
       "_origin": "ast",
       "id": "js_insights_mountchart",
       "community": 6,
@@ -6557,7 +6557,7 @@
       "label": "renderContributors()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L730",
+      "source_location": "L725",
       "_origin": "ast",
       "id": "js_insights_rendercontributors",
       "community": 6,
@@ -6567,7 +6567,7 @@
       "label": "renderContribList()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L738",
+      "source_location": "L733",
       "_origin": "ast",
       "id": "js_insights_rendercontriblist",
       "community": 6,
@@ -6577,7 +6577,7 @@
       "label": "renderSectorMoverList()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L761",
+      "source_location": "L756",
       "_origin": "ast",
       "id": "js_insights_rendersectormoverlist",
       "community": 6,
@@ -6587,7 +6587,7 @@
       "label": "renderAll()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L778",
+      "source_location": "L773",
       "_origin": "ast",
       "id": "js_insights_renderall",
       "community": 6,
@@ -6597,7 +6597,7 @@
       "label": "refresh()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L793",
+      "source_location": "L788",
       "_origin": "ast",
       "id": "js_insights_refresh",
       "community": 6,
@@ -6607,7 +6607,7 @@
       "label": "scheduleNext()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L840",
+      "source_location": "L835",
       "_origin": "ast",
       "id": "js_insights_schedulenext",
       "community": 6,
@@ -6617,7 +6617,7 @@
       "label": "initControls()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L850",
+      "source_location": "L845",
       "_origin": "ast",
       "id": "js_insights_initcontrols",
       "community": 6,
@@ -6627,7 +6627,7 @@
       "label": "init()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
-      "source_location": "L903",
+      "source_location": "L898",
       "_origin": "ast",
       "id": "js_insights_init",
       "community": 6,
@@ -8390,7 +8390,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_yt",
-      "community": 43,
+      "community": 16,
       "norm_label": ".yt()"
     },
     {
@@ -8400,7 +8400,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_zt",
-      "community": 16,
+      "community": 43,
       "norm_label": ".zt()"
     },
     {
@@ -10160,7 +10160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gi",
-      "community": 70,
+      "community": 71,
       "norm_label": "gi()"
     },
     {
@@ -10210,7 +10210,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_oh",
-      "community": 70,
+      "community": 71,
       "norm_label": ".oh()"
     },
     {
@@ -11570,7 +11570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gi_constructor",
-      "community": 70,
+      "community": 71,
       "norm_label": ".constructor()"
     },
     {
@@ -13170,7 +13170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ko",
-      "community": 71,
+      "community": 107,
       "norm_label": ".ko()"
     },
     {
@@ -13930,7 +13930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_gc",
-      "community": 71,
+      "community": 107,
       "norm_label": ".gc()"
     },
     {
@@ -28457,9 +28457,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L518",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights",
-      "target": "services_market_insights_greed_history",
-      "confidence_score": 1.0
+      "target": "services_market_insights_greed_history"
     },
     {
       "relation": "contains",
@@ -28778,9 +28778,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L564",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_greed_history",
-      "target": "services_market_insights_f",
-      "confidence_score": 1.0
+      "target": "services_market_insights_f"
     },
     {
       "relation": "calls",
@@ -28832,9 +28832,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L131",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_131",
-      "target": "services_market_insights_f",
-      "confidence_score": 1.0
+      "target": "services_market_insights_f"
     },
     {
       "relation": "calls",
@@ -28898,9 +28898,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L564",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_greed_history",
-      "target": "services_market_insights_round",
-      "confidence_score": 1.0
+      "target": "services_market_insights_round"
     },
     {
       "relation": "calls",
@@ -28974,9 +28974,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L146",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_146",
-      "target": "services_market_insights_latest_stock_rows",
-      "confidence_score": 1.0
+      "target": "services_market_insights_latest_stock_rows"
     },
     {
       "relation": "calls",
@@ -29006,9 +29006,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L169",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_169",
-      "target": "services_market_insights_sector_map",
-      "confidence_score": 1.0
+      "target": "services_market_insights_sector_map"
     },
     {
       "relation": "calls",
@@ -29071,9 +29071,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L177",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_177",
-      "target": "services_market_insights_live_get",
-      "confidence_score": 1.0
+      "target": "services_market_insights_live_get"
     },
     {
       "relation": "calls",
@@ -29092,9 +29092,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L185",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_185",
-      "target": "services_market_insights_live_close",
-      "confidence_score": 1.0
+      "target": "services_market_insights_live_close"
     },
     {
       "relation": "calls",
@@ -29113,9 +29113,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L200",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_200",
-      "target": "services_market_insights_enrich_live",
-      "confidence_score": 1.0
+      "target": "services_market_insights_enrich_live"
     },
     {
       "relation": "calls",
@@ -29134,9 +29134,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L232",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_232",
-      "target": "services_market_insights_enrich",
-      "confidence_score": 1.0
+      "target": "services_market_insights_enrich"
     },
     {
       "relation": "rationale_for",
@@ -29144,9 +29144,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L265",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_265",
-      "target": "services_market_insights_live_index_metrics",
-      "confidence_score": 1.0
+      "target": "services_market_insights_live_index_metrics"
     },
     {
       "relation": "calls",
@@ -29165,9 +29165,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L303",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_303",
-      "target": "services_market_insights_live_index_by_name",
-      "confidence_score": 1.0
+      "target": "services_market_insights_live_index_by_name"
     },
     {
       "relation": "calls",
@@ -29186,9 +29186,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L313",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_313",
-      "target": "services_market_insights_sectors_live",
-      "confidence_score": 1.0
+      "target": "services_market_insights_sectors_live"
     },
     {
       "relation": "calls",
@@ -29207,9 +29207,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L334",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_334",
-      "target": "services_market_insights_subindex_metrics",
-      "confidence_score": 1.0
+      "target": "services_market_insights_subindex_metrics"
     },
     {
       "relation": "calls",
@@ -29239,9 +29239,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L373",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_373",
-      "target": "services_market_insights_contributors_index_metrics",
-      "confidence_score": 1.0
+      "target": "services_market_insights_contributors_index_metrics"
     },
     {
       "relation": "calls",
@@ -29260,9 +29260,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L422",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_422",
-      "target": "services_market_insights_sectors_from_subindices",
-      "confidence_score": 1.0
+      "target": "services_market_insights_sectors_from_subindices"
     },
     {
       "relation": "calls",
@@ -29315,9 +29315,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L739",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_build_eod_payload",
-      "target": "services_market_insights_greed_history",
-      "confidence_score": 1.0
+      "target": "services_market_insights_greed_history"
     },
     {
       "relation": "calls",
@@ -29326,9 +29326,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L961",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_build_payload",
-      "target": "services_market_insights_greed_history",
-      "confidence_score": 1.0
+      "target": "services_market_insights_greed_history"
     },
     {
       "relation": "rationale_for",
@@ -29336,9 +29336,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L519",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_519",
-      "target": "services_market_insights_greed_history",
-      "confidence_score": 1.0
+      "target": "services_market_insights_greed_history"
     },
     {
       "relation": "calls",
@@ -29445,9 +29445,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L587",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_587",
-      "target": "services_market_insights_slim",
-      "confidence_score": 1.0
+      "target": "services_market_insights_slim"
     },
     {
       "relation": "calls",
@@ -29499,9 +29499,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L628",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_628",
-      "target": "services_market_insights_heatmap",
-      "confidence_score": 1.0
+      "target": "services_market_insights_heatmap"
     },
     {
       "relation": "calls",
@@ -29520,9 +29520,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L665",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_665",
-      "target": "services_market_insights_subindex_comparison",
-      "confidence_score": 1.0
+      "target": "services_market_insights_subindex_comparison"
     },
     {
       "relation": "calls",
@@ -29541,9 +29541,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L724",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_724",
-      "target": "services_market_insights_build_eod_payload",
-      "confidence_score": 1.0
+      "target": "services_market_insights_build_eod_payload"
     },
     {
       "relation": "rationale_for",
@@ -29551,9 +29551,9 @@
       "source_file": "core_analysis/services/market_insights.py",
       "source_location": "L757",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_market_insights_rationale_757",
-      "target": "services_market_insights_build_payload",
-      "confidence_score": 1.0
+      "target": "services_market_insights_build_payload"
     },
     {
       "relation": "contains",
@@ -34720,9 +34720,9 @@
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
       "source_location": "L482",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "js_insights",
-      "target": "js_insights_rendergreedhistory",
-      "confidence_score": 1.0
+      "target": "js_insights_rendergreedhistory"
     },
     {
       "relation": "contains",
@@ -35431,9 +35431,9 @@
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
       "source_location": "L483",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "js_insights_rendergreedhistory",
-      "target": "js_insights_el",
-      "confidence_score": 1.0
+      "target": "js_insights_el"
     },
     {
       "relation": "calls",
@@ -35948,9 +35948,9 @@
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
       "source_location": "L488",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "js_insights_rendergreedhistory",
-      "target": "js_insights_greedband",
-      "confidence_score": 1.0
+      "target": "js_insights_greedband"
     },
     {
       "relation": "calls",
@@ -35992,9 +35992,9 @@
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
       "source_location": "L486",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "js_insights_rendergreedhistory",
-      "target": "js_insights_computegreed",
-      "confidence_score": 1.0
+      "target": "js_insights_computegreed"
     },
     {
       "relation": "calls",
@@ -36069,9 +36069,9 @@
       "source_file": "core_analysis/static/core_analysis/js/insights.js",
       "source_location": "L505",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "js_insights_rendergreedmeter",
-      "target": "js_insights_rendergreedhistory",
-      "confidence_score": 1.0
+      "target": "js_insights_rendergreedhistory"
     },
     {
       "relation": "calls",
@@ -70472,5 +70472,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "04f2d85efb0d761b0eaabfa7b5c53f673e8acff3"
+  "built_at_commit": "a99ab27fb086e435eb34f949663cc327c79f25f3"
 }

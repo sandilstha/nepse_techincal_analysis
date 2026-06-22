@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/insights.js": {
-    "mtime": 1782113527.022537,
-    "ast_hash": "f17e742b9c4fbe35af59db4a4171b885",
+    "mtime": 1782115855.5098352,
+    "ast_hash": "8e310dc7b527308e79b2f3e4f7209b6d",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/ohlc-chart.js": {
@@ -317,6 +317,16 @@
   "core_analysis/migrations/0005_broker.py": {
     "mtime": 1781864346.5363984,
     "ast_hash": "099387b7e525f3d9e5466005b0df8ac0",
+    "semantic_hash": ""
+  },
+  ".tmp-breadth-profile/component_crx_cache/metadata.json": {
+    "mtime": 1782116004.766919,
+    "ast_hash": "2aa9e263ee3796d9ce358460a2451b4c",
+    "semantic_hash": ""
+  },
+  ".tmp-breadth-profile/extensions_crx_cache/metadata.json": {
+    "mtime": 1782116004.8595657,
+    "ast_hash": "2aa9e263ee3796d9ce358460a2451b4c",
     "semantic_hash": ""
   }
 }
