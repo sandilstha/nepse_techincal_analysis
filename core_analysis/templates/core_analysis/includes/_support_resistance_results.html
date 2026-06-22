@@ -136,6 +136,74 @@
           {% endwith %}
           {% endif %}
 
+          {% if institutional_analysis_rows %}
+            <div class="panel-outer mb-4">
+              <div class="p-3 bg-raised border-bottom">
+                <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Institutional Multi-Framework Analysis</h6>
+              </div>
+              {% if institutional_analysis_rows.0.alert %}
+                <div class="alert alert-warning border-0 rounded-0 m-0 py-2 small">{{ institutional_analysis_rows.0.alert }}</div>
+              {% endif %}
+              <div class="imm-scroll-wrap">
+                <table class="minimal-table institutional-table">
+                  <thead class="">
+                    <tr>
+                      <th>System</th>
+                      <th>Bias</th>
+                      <th>Institutional Logic</th>
+                      <th>Price Sentiment</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in institutional_analysis_rows %}
+                    <tr>
+                      <td class="institutional-system">
+                        <span>{{ row.system }}</span>
+                        {% if row.detail_sections %}
+                          <button class="institutional-help-btn" type="button" data-bs-toggle="collapse" data-bs-target="#institutionalDetail{{ forloop.counter }}" aria-expanded="false" aria-controls="institutionalDetail{{ forloop.counter }}">?</button>
+                        {% endif %}
+                      </td>
+                      <td class="td-num">
+                        <span class="fw-bold {% if row.signal == 'Bullish' %}text-success-custom{% elif row.signal == 'Bearish' %}text-danger-custom{% else %}text-muted{% endif %}">{{ row.signal|default:"Neutral" }}</span>
+                        {% if row.confidence %}<div class="small text-muted">{{ row.confidence }}%</div>{% endif %}
+                      </td>
+                      <td class="institutional-rule">{{ row.institutional_logic|linebreaksbr }}</td>
+                      <td class="institutional-rule">{{ row.price_sentiment|linebreaksbr }}</td>
+                      <td class="fw-semibold text-light">{{ row.status }}</td>
+                    </tr>
+                    {% if row.detail_sections %}
+                    <tr class="institutional-detail-row collapse" id="institutionalDetail{{ forloop.counter }}">
+                      <td></td>
+                      <td colspan="4">
+                        <div class="institutional-detail">
+                          <div class="institutional-detail-title">{{ row.detail_title|default:"View Rules" }}</div>
+                          <div class="institutional-detail-grid">
+                            {% for section in row.detail_sections %}
+                              <div class="institutional-rule-card">
+                                <div class="institutional-rule-title">{{ section.title }}</div>
+                                <ul>
+                                  {% for item in section.items %}
+                                    <li>{{ item }}</li>
+                                  {% endfor %}
+                                </ul>
+                              </div>
+                            {% endfor %}
+                          </div>
+                          {% if row.pseudocode %}
+                            <pre class="institutional-code"><code>{{ row.pseudocode }}</code></pre>
+                          {% endif %}
+                        </div>
+                      </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          {% endif %}
+
           {% if support_resistance_metrics.confluence_resistances or support_resistance_metrics.confluence_supports %}
           <div class="panel-outer mb-4">
             <div class="p-3 bg-raised border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -205,74 +273,6 @@
               </div>
             </div>
           </div>
-
-          {% if institutional_analysis_rows %}
-            <div class="panel-outer mb-4">
-              <div class="p-3 bg-raised border-bottom">
-                <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Institutional Multi-Framework Analysis</h6>
-              </div>
-              {% if institutional_analysis_rows.0.alert %}
-                <div class="alert alert-warning border-0 rounded-0 m-0 py-2 small">{{ institutional_analysis_rows.0.alert }}</div>
-              {% endif %}
-              <div class="imm-scroll-wrap">
-                <table class="minimal-table institutional-table">
-                  <thead class="">
-                    <tr>
-                      <th>System</th>
-                      <th>Bias</th>
-                      <th>Institutional Logic</th>
-                      <th>Price Sentiment</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for row in institutional_analysis_rows %}
-                    <tr>
-                      <td class="institutional-system">
-                        <span>{{ row.system }}</span>
-                        {% if row.detail_sections %}
-                          <button class="institutional-help-btn" type="button" data-bs-toggle="collapse" data-bs-target="#institutionalDetail{{ forloop.counter }}" aria-expanded="false" aria-controls="institutionalDetail{{ forloop.counter }}">?</button>
-                        {% endif %}
-                      </td>
-                      <td class="td-num">
-                        <span class="fw-bold {% if row.signal == 'Bullish' %}text-success-custom{% elif row.signal == 'Bearish' %}text-danger-custom{% else %}text-muted{% endif %}">{{ row.signal|default:"Neutral" }}</span>
-                        {% if row.confidence %}<div class="small text-muted">{{ row.confidence }}%</div>{% endif %}
-                      </td>
-                      <td class="institutional-rule">{{ row.institutional_logic|linebreaksbr }}</td>
-                      <td class="institutional-rule">{{ row.price_sentiment|linebreaksbr }}</td>
-                      <td class="fw-semibold text-light">{{ row.status }}</td>
-                    </tr>
-                    {% if row.detail_sections %}
-                    <tr class="institutional-detail-row collapse" id="institutionalDetail{{ forloop.counter }}">
-                      <td></td>
-                      <td colspan="4">
-                        <div class="institutional-detail">
-                          <div class="institutional-detail-title">{{ row.detail_title|default:"View Rules" }}</div>
-                          <div class="institutional-detail-grid">
-                            {% for section in row.detail_sections %}
-                              <div class="institutional-rule-card">
-                                <div class="institutional-rule-title">{{ section.title }}</div>
-                                <ul>
-                                  {% for item in section.items %}
-                                    <li>{{ item }}</li>
-                                  {% endfor %}
-                                </ul>
-                              </div>
-                            {% endfor %}
-                          </div>
-                          {% if row.pseudocode %}
-                            <pre class="institutional-code"><code>{{ row.pseudocode }}</code></pre>
-                          {% endif %}
-                        </div>
-                      </td>
-                    </tr>
-                    {% endif %}
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          {% endif %}
 
           <div class="row g-3 align-items-start">
             <div class="col-xl-8">

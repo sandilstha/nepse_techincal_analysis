@@ -1,7 +1,7 @@
 # Graph Report - nepse_analytics_platform  (2026-06-22)
 
 ## Corpus Check
-- 64 files · ~81,619 words
+- 66 files · ~81,577 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `04f2d85e`
+- Built from commit: `a99ab27f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -297,9 +297,9 @@ Nodes (3): d(), hs(), jn()
 Cohesion: 0.36
 Nodes (7): DataFrame, _prepare_price_frame(), Calculates Relative Rotation Graph (RRG) coordinates (RS-Ratio and RS-Momentum), run_rrg_simulation(), _format_date(), ordered_nepse_indices(), run_rrg_indices_simulation()
 
-### Community 70 - "Community 70"
-Cohesion: 0.20
-Nodes (3): gi(), mi, R()
+### Community 71 - "Community 71"
+Cohesion: 0.13
+Nodes (3): gi(), he, nt
 
 ### Community 72 - "Community 72"
 Cohesion: 0.29
