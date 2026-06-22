@@ -44,51 +44,7 @@
         <button type="button" id="themeToggleBtn" class="ui-icon-btn" title="Switch to light theme" aria-label="Switch to light theme">Light</button>
         <a href="{% url 'market_insights' %}" class="ui-icon-btn" title="Market Insights dashboard" aria-label="Market Insights dashboard">Insights</a>
       </div>
-      <div class="d-flex flex-column gap-2 sync-toolbar">
-      <!-- Row 1: Sync Price Data -->
-      <form method="POST" action="{% url 'trigger_daily_sync' %}" class="d-flex align-items-center gap-2 sync-form">
-        {% csrf_token %}
-        <span class="sync-row-label">Sync Price</span>
-        <input type="text" id="headerSyncFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" autocomplete="off">
-        <span class="sync-sep">→</span>
-        <input type="text" id="headerSyncToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" autocomplete="off">
-        <select name="source" class="form-control form-control-sm sync-scope-input">
-          <option value="both">Stocks + Indices</option>
-          <option value="stocks">Stocks Only</option>
-          <option value="indices">Indices Only</option>
-        </select>
-        <button type="submit" class="btn btn-dark btn-sm sync-btn" data-loading-label="Syncing...">
-          Sync Price Data
-        </button>
-      </form>
-      <!-- Row 2: Sync & Calculate -->
-      <form method="POST" action="{% url 'trigger_sync_and_calculate' %}" class="d-flex align-items-center gap-2 sync-form">
-        {% csrf_token %}
-        <span class="sync-row-label">Sync &amp; Calc</span>
-        <input type="text" id="headerCalcFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" autocomplete="off">
-        <span class="sync-sep">→</span>
-        <input type="text" id="headerCalcToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" autocomplete="off">
-        <button type="submit" class="btn btn-primary btn-sm sync-btn" data-loading-label="Calculating...">
-          Sync &amp; Calculate
-        </button>
-      </form>
-      <!-- Row 3: Sync Floorsheet (trade-level broker feed) -->
-      <form method="POST" action="{% url 'trigger_floorsheet_sync' %}" class="d-flex align-items-center gap-2 sync-form">
-        {% csrf_token %}
-        <span class="sync-row-label">Sync Floorsheet</span>
-        <button type="button" class="btn btn-outline-success btn-sm sync-latest-btn"
-                data-date-range="latest" data-from-id="headerFloorFromDate" data-to-id="headerFloorToDate"
-                title="Set both dates to the latest trading day">
-          Latest
-        </button>
-        <input type="text" id="headerFloorFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" autocomplete="off">
-        <span class="sync-sep">→</span>
-        <input type="text" id="headerFloorToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" autocomplete="off">
-        <button type="submit" class="btn btn-success btn-sm sync-btn" data-loading-label="Syncing...">
-          Sync Floorsheet
-        </button>
-      </form>
-      </div>{# /sync-toolbar #}
+      {# Data-sync toolbar now lives inside the Raw Inventory Manager tab (see includes/_inventory_tab.html). #}
     </div>{# /header-actions #}
   </div>
 

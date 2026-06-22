@@ -20,8 +20,9 @@ from core_analysis.services.support_resistance import (
 )
 
 try:
-    from core_analysis.services import market_insights, nepse_contributors
+    from core_analysis.services import broker_analytics, market_insights, nepse_contributors
 except ImproperlyConfigured:  # Allows `python core_analysis/tests.py` outside Django.
+    broker_analytics = None
     market_insights = None
     nepse_contributors = None
 
@@ -403,6 +404,35 @@ class NepseContributorsParserTests(unittest.TestCase):
         self.assertEqual(movers["positive"][1], {"sector": "Finance", "points": 0.18})
         self.assertEqual(movers["negative"][0], {"sector": "Microfinance", "points": -0.94})
         self.assertEqual(movers["negative"][1], {"sector": "Commercial Banks", "points": -0.74})
+
+
+@unittest.skipIf(broker_analytics is None, "Django settings unavailable")
+class BrokerFlowRadarTests(SimpleTestCase):
+    def test_broker_flow_radar_ranks_and_labels_flow(self):
+        agg = {
+            "dates": ["2026-06-19"],
+            "buy": {
+                "AAA": {1: [100, 1000.0], 2: [20, 300.0]},
+                "BBB": {1: [10, 200.0], 3: [50, 500.0]},
+            },
+            "sell": {
+                "AAA": {1: [30, 450.0], 2: [50, 800.0]},
+                "CCC": {2: [20, 700.0], 3: [10, 150.0]},
+            },
+            "sector": {},
+        }
+
+        with patch.object(broker_analytics, "_window_aggregate", return_value=agg):
+            result = broker_analytics.broker_flow_radar()
+
+        rows = result["rows"]
+        self.assertTrue(result["ok"])
+        self.assertEqual([row["broker"] for row in rows], [2, 1, 3])
+        self.assertEqual(rows[0]["total_amount"], 1800.0)
+        self.assertEqual(rows[0]["difference"], -1200.0)
+        self.assertEqual(rows[0]["matching_amount"], 300.0)
+        self.assertEqual(rows[0]["stance"], "Distributing")
+        self.assertEqual(rows[1]["stance"], "Accumulating")
 
 
 def make_price_frame(close_values):

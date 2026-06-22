@@ -98,7 +98,10 @@
   <section class="mi-grid mi-grid-market-pulse mi-market-pulse">
     <article class="mi-card mi-ohlc-card">
       <div class="mi-card-head">
-        <h2 class="mi-card-title">Index OHLC</h2>
+        <div>
+          <h2 class="mi-card-title">Index Price &amp; Volume</h2>
+          <p class="mi-card-subtitle">Daily OHLC candles · drag to pan · scroll to zoom</p>
+        </div>
         <div class="mi-card-tools">
           <select id="ohlc-symbol" class="mi-select" aria-label="Chart symbol"></select>
           <span class="mi-card-hint" id="ohlc-sessions">— sessions</span>
@@ -125,15 +128,36 @@
 
     <article class="mi-card mi-card-breadth">
       <div class="mi-card-head">
-        <h2 class="mi-card-title">Market Breadth</h2>
+        <div>
+          <h2 class="mi-card-title">Market Sentiment</h2>
+          <p class="mi-card-subtitle">Composite mood and participation at a glance</p>
+        </div>
         <span class="mi-pill" id="breadth-sentiment">—</span>
       </div>
       <div class="mi-breadth-layout">
-        <div class="mi-breadth-donut">
+        <section class="mi-pulse-widget mi-greed-widget" aria-labelledby="greed-title">
+          <div class="mi-widget-head">
+            <div>
+              <h3 class="mi-widget-title" id="greed-title">Fear &amp; Greed Meter</h3>
+              <p class="mi-widget-subtitle">65% breadth · 35% daily momentum</p>
+            </div>
+          </div>
+          <div class="mi-greed" id="greed-meter" title="NEPSE market fear and greed gauge"></div>
+          <div class="mi-greed-components" id="greed-components" aria-label="Fear and greed score components"></div>
+          <div class="mi-greed-history" id="greed-history" aria-label="Historical fear and greed readings"></div>
+          <p class="mi-widget-note">Indicative composite, not an official NEPSE index</p>
+        </section>
+        <section class="mi-pulse-widget mi-breadth-widget" aria-labelledby="breadth-title">
+          <div class="mi-widget-head">
+            <div>
+              <h3 class="mi-widget-title" id="breadth-title">Market Breadth</h3>
+              <p class="mi-widget-subtitle">Advancers vs decliners across traded scrips</p>
+            </div>
+          </div>
           <div class="mi-chart mi-chart-donut" id="chart-breadth"></div>
           <div class="mi-breadth-legend" id="breadth-legend"></div>
-        </div>
-        <div class="mi-breadth-detail" id="breadth-detail"></div>
+          <div class="mi-breadth-metrics" id="breadth-metrics" aria-label="Market breadth summary"></div>
+        </section>
       </div>
     </article>
 

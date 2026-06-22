@@ -5,13 +5,6 @@
 <ul class="nav nav-tabs mb-4 {% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' %}nav-section-strategy{% elif active_tab == 'msv_backtest' or active_tab == 'imm_backtest' or active_tab == 'stage_backtest' or active_tab == 'support_resistance' %}nav-section-advanced{% elif active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}nav-section-rrg{% else %}nav-section-inventory{% endif %}" id="workspaceTabs" role="tablist">
 
     <li class="nav-item primary-menu-item">
-      <button class="nav-link primary-menu-tab {% if active_tab == 'inventory' %}active{% endif %}"
-              data-primary-section="inventory"
-              data-bs-target="#inventory-pane"
-              type="button" role="tab"
-              aria-selected="{% if active_tab == 'inventory' %}true{% else %}false{% endif %}">Raw Inventory Manager</button>
-    </li>
-    <li class="nav-item primary-menu-item">
       <button type="button"
               class="primary-menu-tab {% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' %}active{% endif %}"
               id="strategyMenuToggle"
@@ -37,6 +30,13 @@
               aria-expanded="{% if active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}true{% else %}false{% endif %}">
         RRG Chart
       </button>
+    </li>
+    <li class="nav-item primary-menu-item">
+      <button class="nav-link primary-menu-tab {% if active_tab == 'inventory' %}active{% endif %}"
+              data-primary-section="inventory"
+              data-bs-target="#inventory-pane"
+              type="button" role="tab"
+              aria-selected="{% if active_tab == 'inventory' %}true{% else %}false{% endif %}">Raw Inventory Manager</button>
     </li>
     <li class="nav-row-break" aria-hidden="true"></li>
     <li class="nav-item strategy-card-item">

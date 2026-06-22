@@ -1,5 +1,33 @@
 from django.db import models
 
+class Broker(models.Model):
+    """
+    Table: nepse_brokers
+    Reference list of NEPSE stock brokers (and stock dealers), keyed by the
+    broker number that appears as ``buyer`` / ``seller`` in the floorsheet feed.
+    Used to resolve a broker number to a human-readable name across the broker
+    analytics dashboard (Floor sheet page).
+    """
+    broker_number = models.IntegerField(
+        primary_key=True, help_text="NEPSE broker code; matches floorsheet buyer/seller"
+    )
+    name = models.CharField(max_length=255)
+    contact_person = models.CharField(max_length=255, null=True, blank=True)
+    contact_number = models.CharField(max_length=255, null=True, blank=True)
+    status = models.CharField(max_length=20, default="ACTIVE", db_index=True)
+    tms_link = models.CharField(max_length=255, null=True, blank=True)
+    is_dealer = models.BooleanField(
+        default=False, help_text="True if the firm also operates as a NEPSE stock dealer"
+    )
+
+    class Meta:
+        db_table = 'nepse_brokers'
+        ordering = ['broker_number']
+
+    def __str__(self):
+        return f"{self.broker_number} - {self.name}"
+
+
 class CompanyProfile(models.Model):
     """
     Table: nepse_company_profiles

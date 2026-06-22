@@ -17,6 +17,7 @@
 
   var cfg = window.MI_CONFIG || {};
   var udfBase = cfg.udfBase || "/insights/udf";
+  var DASHBOARD_SESSION_COUNT = 320;
 
   var SYMBOLS = [
     { t: "NEPSE", l: "NEPSE Index" },
@@ -121,9 +122,31 @@
     buildSeries(); // recolour volume bars
   }
 
+  function fitDashboardRange() {
+    if (!state.chart || !state.bars || !state.bars.t || !state.bars.t.length) return;
+    var host = $("ohlc-chart");
+    var width = host ? host.clientWidth : 800;
+    var visible = width < 560 ? 120 : (width < 800 ? 200 : 280);
+    var count = state.bars.t.length;
+    if (count <= visible) {
+      state.chart.timeScale().fitContent();
+      return;
+    }
+    state.chart.timeScale().setVisibleLogicalRange({
+      from: count - visible,
+      to: count + 4
+    });
+  }
+
   function fetchBars(symbol) {
     var now = Math.floor(Date.now() / 1000);
-    var url = udfBase + "/history?symbol=" + encodeURIComponent(symbol) + "&resolution=1D&from=0&to=" + now;
+    // This is a dashboard overview, not the full charting terminal. Loading the
+    // entire index history (1997+) inflated the response and compressed every
+    // candle into an unreadable strip. A bounded countback keeps it fast and
+    // leaves roughly one market cycle visible; the Technical Analysis desk is
+    // still available for deeper history.
+    var url = udfBase + "/history?symbol=" + encodeURIComponent(symbol) +
+      "&resolution=1D&countback=" + DASHBOARD_SESSION_COUNT + "&to=" + now;
     var sess = $("ohlc-sessions");
     if (sess) sess.textContent = "loading…";
     return fetch(url, { credentials: "same-origin" })
@@ -132,7 +155,7 @@
         if (d.s !== "ok" || !d.t || !d.t.length) { if (sess) sess.textContent = "no data"; return; }
         state.bars = d;
         buildSeries();
-        state.chart.timeScale().fitContent();
+        fitDashboardRange();
         if (window.MIDraw) window.MIDraw.redraw();
       })
       .catch(function () { if (sess) sess.textContent = "load failed"; });
