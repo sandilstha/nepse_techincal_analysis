@@ -713,7 +713,7 @@
         if (table.dataset.paginationReady === '1') return;
 
         const rows = getTableDataRows(table);
-        const defaultPageSize = parseInt(table.dataset.defaultPageSize || '10', 10) || 10;
+        const defaultPageSize = parseInt(table.dataset.defaultPageSize || '5', 10) || 5;
         if (rows.length <= defaultPageSize) return;
 
         const toolbar = document.createElement('div');
