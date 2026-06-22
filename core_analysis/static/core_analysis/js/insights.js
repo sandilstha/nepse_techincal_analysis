@@ -254,7 +254,8 @@
 
   function renderCharts(d) {
     // The NEPSE Index card is now the Lightweight Charts OHLC chart (ohlc-chart.js).
-    renderBreadthChart(d.breadth || {}, d.live);
+    renderBreadthChart(d.breadth || {}, d.live, d.source);
+    renderGreedMeter(d.breadth || {}, d.overview || {}, d.live, d.source, d.greed_history || []);
     renderSectorChart(d.sectors || []);
     populateHeatmapSectors(d.heatmap || []);
     renderHeatmap();
@@ -292,56 +293,61 @@
     return all.filter(function (t) { return (t.sector || "Other") === sel; }).slice(0, HEATMAP_SECTOR_LIMIT);
   }
 
-  function renderBreadthChart(b, live) {
-    // Donut for the Market Breadth card; detail rows beside it carry the exact
-    // counts and stale-feed note.
+  function renderBreadthChart(b, live, source) {
+    // Compact participation donut. The visible legend carries exact counts and
+    // shares so the chart remains useful without relying on hover tooltips.
     var node = el("chart-breadth");
     if (node) {
       var t = baseChartOpts();
       var opts = {
-        chart: { type: "donut", height: 300, parentHeightOffset: 0, fontFamily: "Manrope, sans-serif" },
+        chart: { type: "donut", height: 225, parentHeightOffset: 0, fontFamily: "Manrope, sans-serif" },
         series: [b.advancing || 0, b.declining || 0, b.unchanged || 0],
         labels: ["Advancing", "Declining", "Unchanged"],
         colors: [t.up, t.down, t.flat],
         stroke: { width: 0 },
         legend: { show: false },
         dataLabels: { enabled: true, formatter: function (val, o) { return o.w.config.series[o.seriesIndex]; }, style: { fontSize: "11px" } },
-        plotOptions: { pie: { customScale: 1.08, donut: { size: "62%", labels: { show: true, total: { show: true, label: "Scrips", color: t.foreColor, formatter: function (w) { return w.globals.seriesTotals.reduce(function (a, c) { return a + c; }, 0); } } } } } },
-        tooltip: { theme: themeName() }
+        plotOptions: { pie: { customScale: 1, donut: { size: "64%", labels: { show: true, total: { show: true, label: "Scrips", color: t.foreColor, formatter: function (w) { return w.globals.seriesTotals.reduce(function (a, c) { return a + c; }, 0); } } } } } },
+        tooltip: {
+          theme: themeName(),
+          y: { formatter: function (val, o) {
+            var tot = o.w.globals.seriesTotals.reduce(function (a, c) { return a + c; }, 0) || 1;
+            return fmtNum(val, 0) + " · " + (val / tot * 100).toFixed(1) + "%";
+          } }
+        }
       };
       mountChart("chart-breadth", "breadth", opts);
       var legend = el("breadth-legend");
       if (legend) {
+        var values = [b.advancing || 0, b.declining || 0, b.unchanged || 0];
+        var total = values.reduce(function (sum, value) { return sum + value; }, 0);
+        function item(color, shortLabel, value) {
+          var share = total ? (value / total * 100).toFixed(1) : "0.0";
+          return '<span title="' + shortLabel + ': ' + share + '%"><i style="background:' + color +
+            '"></i><b>' + fmtNum(value, 0) + '</b> ' + shortLabel + '</span>';
+        }
         legend.innerHTML =
-          '<span><i style="background:' + t.up + '"></i>Advancing</span>' +
-          '<span><i style="background:' + t.down + '"></i>Declining</span>' +
-          '<span><i style="background:' + t.flat + '"></i>Unchanged</span>';
+          item(t.up, "Adv", values[0]) + item(t.down, "Dec", values[1]) + item(t.flat, "Flat", values[2]);
       }
     }
-    renderBreadthDetail(b, live);
+    renderBreadthDetail(b, live, source);
   }
 
-  function renderBreadthDetail(b, live) {
-    var box = el("breadth-detail");
-    if (!box) return;
+  // Sets the headline breadth signal and reports whether it is intraday or a
+  // valid end-of-day close. EOD data is not stale data and must not be faded.
+  function renderBreadthDetail(b, live, source) {
     var adv = b.advancing || 0, dec = b.declining || 0, unch = b.unchanged || 0;
     var total = adv + dec + unch;
     var chip = el("breadth-sentiment");
+    var metrics = el("breadth-metrics");
 
-    // Breadth is counted per-scrip from the live feed; when that feed is stale
-    // (not live), these advancing/declining counts are a prior session's and
-    // won't match the official headline totals — so grey the card and badge it
-    // "Delayed" instead of presenting old counts as current.
-    var card = box.closest(".mi-card-breadth");
-    var stale = live === false && total > 0;
-    if (card) card.classList.toggle("is-stale", stale);
+    if (!total) {
+      if (chip) { chip.textContent = "—"; chip.className = "mi-pill"; }
+      if (metrics) metrics.innerHTML = "";
+      return;
+    }
 
-    if (!total) { box.innerHTML = ""; if (chip) { chip.textContent = "—"; chip.className = "mi-pill"; } return; }
-
-    function pct(n) { return (n / total * 100).toFixed(1) + "%"; }
     var ratio = dec > 0 ? adv / dec : (adv > 0 ? Infinity : 0);
-    var ratioTxt = dec > 0 ? ratio.toFixed(2) : (adv > 0 ? "∞" : "0.00");
-
     var label, cls;
     if (Math.abs(adv - dec) <= total * 0.03) { label = "Neutral"; cls = "flat"; }
     else if (ratio >= 1.5) { label = "Strong Bullish"; cls = "up"; }
@@ -350,29 +356,170 @@
     else { label = "Strong Bearish"; cls = "down"; }
 
     if (chip) {
-      // When stale, the sentiment is computed off a prior session — badge it
-      // "Delayed" rather than implying a current bullish/bearish read.
-      chip.textContent = stale ? "Delayed" : label;
-      chip.className = "mi-pill " + (stale ? "mi-pill-stale" : cls === "up" ? "mi-pill-up" : cls === "down" ? "mi-pill-down" : "");
+      var prefix = live ? "Live" : (source === "eod" ? "EOD" : "Close");
+      chip.textContent = prefix + " · " + label;
+      chip.className = "mi-pill " + (cls === "up" ? "mi-pill-up" : cls === "down" ? "mi-pill-down" : "");
     }
-
-    function row(k, v, c) {
-      return '<div class="mi-bd-row"><span class="mi-bd-k">' + k +
-        '</span><span class="mi-bd-v ' + (c || "") + '">' + v + "</span></div>";
+    if (metrics) {
+      var ratioText = dec > 0 ? ratio.toFixed(2) : (adv > 0 ? "∞" : "0.00");
+      var net = adv - dec;
+      metrics.innerHTML =
+        '<div class="mi-breadth-metric"><span>A/D ratio</span><b class="' + (ratio >= 1 ? "up" : "down") + '">' + ratioText + '</b></div>' +
+        '<div class="mi-breadth-metric"><span>Net breadth</span><b class="' + (net > 0 ? "up" : net < 0 ? "down" : "flat") + '">' +
+          (net > 0 ? "+" : "") + fmtNum(net, 0) + '</b></div>';
     }
+  }
 
-    box.innerHTML =
-      (stale ? '<div class="mi-bd-stale-note">Last session — live feed delayed</div>' : "") +
-      '<div class="mi-bd-bar">' +
-        '<i class="up" style="width:' + (adv / total * 100) + '%"></i>' +
-        '<i class="flat" style="width:' + (unch / total * 100) + '%"></i>' +
-        '<i class="down" style="width:' + (dec / total * 100) + '%"></i>' +
-      "</div>" +
-      row("A/D Ratio", ratioTxt, ratio >= 1 ? "up" : "down") +
-      row("Advancing", fmtNum(adv, 0) + " · " + pct(adv), "up") +
-      row("Declining", fmtNum(dec, 0) + " · " + pct(dec), "down") +
-      row("Unchanged", fmtNum(unch, 0) + " · " + pct(unch), "flat") +
-      row("Total scrips", fmtNum(total, 0), "");
+  // ── NEPSE Greed / Fear meter ─────────────────────────────────────────
+  // A 0–100 market-mood score tailored to NEPSE: it blends only the signals the
+  // platform already computes (no CNN-style put/call, junk-bond or options
+  // inputs, which NEPSE doesn't publish). Each component yields 0..1 and is
+  // combined by weight, normalised over whichever components are available — so
+  // dropping in a future signal (e.g. turnover-vs-average) is a one-line add.
+  //
+  // GREED_CONFIG is the single tuning surface; adjust weights / momentum band
+  // here to change sensitivity without touching the render or component code.
+  var GREED_CONFIG = {
+    momentumBandPct: 3,            // NEPSE %-change mapped across ±this → 0..1
+    weights: {
+      breadth: 0.65,              // share of advancing scrips (dominant signal)
+      momentum: 0.35              // NEPSE index daily % change
+      // Future NEPSE inputs (need a small backend add) plug in here, e.g.:
+      // priceStrength: 0.0,      // % of scrips near 52w highs vs lows
+      // volatility: 0.0,         // inverted index ATR / daily range
+      // safeHaven: 0.0,          // defensive sectors vs broad market
+      // turnover: 0.0            // turnover vs recent average
+    }
+  };
+  var GREED_BANDS = [
+    { max: 24, label: "Extreme Fear", color: "#ff5d63" },
+    { max: 44, label: "Fear", color: "#ff9f43" },
+    { max: 55, label: "Neutral", color: "#ffc94d" },
+    { max: 75, label: "Greed", color: "#7ed957" },
+    { max: 100, label: "Extreme Greed", color: "#12d39a" }
+  ];
+  function greedBand(s) {
+    for (var i = 0; i < GREED_BANDS.length; i++) if (s <= GREED_BANDS[i].max) return GREED_BANDS[i];
+    return GREED_BANDS[GREED_BANDS.length - 1];
+  }
+  // Build the available component readings (each value 0..1) with their weights.
+  function greedComponents(b, ov) {
+    var adv = b.advancing || 0, dec = b.declining || 0, unch = b.unchanged || 0;
+    var total = adv + dec + unch;
+    if (!total) return null;
+    var W = GREED_CONFIG.weights, comps = [];
+    comps.push({ key: "breadth", label: "Market Breadth", weight: W.breadth,
+                 value: total ? (adv + unch * 0.5) / total : 0.5 });
+    var pct = ov && isNum(ov.nepse_pct) ? ov.nepse_pct : null;
+    if (pct != null) {
+      var band = GREED_CONFIG.momentumBandPct || 3;
+      comps.push({ key: "momentum", label: "Market Momentum", weight: W.momentum,
+                   value: Math.max(0, Math.min(1, (pct + band) / (2 * band))) });
+    }
+    return comps;
+  }
+  function computeGreed(b, ov) {
+    var comps = greedComponents(b, ov);
+    if (!comps || !comps.length) return null;
+    var wsum = 0, acc = 0;
+    comps.forEach(function (c) { wsum += c.weight; acc += c.weight * c.value; });
+    if (wsum <= 0) return null;
+    return Math.max(0, Math.min(100, Math.round(100 * acc / wsum)));
+  }
+
+  // Gauge geometry (math-angle: 180 = left/0-score, 0 = right/100-score).
+  var GG = { cx: 140, cy: 132, R: 96, w: 22 };
+  function gaugePt(deg, r) {
+    var a = deg * Math.PI / 180;
+    return [GG.cx + r * Math.cos(a), GG.cy - r * Math.sin(a)];
+  }
+  function gaugeArc(a0, a1, r) {
+    var s = gaugePt(a0, r), e = gaugePt(a1, r);
+    return "M" + s[0].toFixed(1) + " " + s[1].toFixed(1) +
+      " A" + r + " " + r + " 0 0 1 " + e[0].toFixed(1) + " " + e[1].toFixed(1);
+  }
+  function scoreAngle(s) { return 180 - (s / 100) * 180; }
+  function gaugeSVG(score, band, foreColor, muted) {
+    var R = GG.R, w = GG.w, cx = GG.cx, cy = GG.cy;
+    var rOut = R + w / 2 + 11, rTick = R - w / 2 - 11, rNeedle = R - w / 2 - 3;
+    var s = "";
+    for (var i = 0; i < 5; i++) {
+      var seg = GREED_BANDS[i];
+      var active = score <= seg.max && (i === 0 || score > GREED_BANDS[i - 1].max);
+      var lo = i === 0 ? 0 : GREED_BANDS[i - 1].max;
+      var hi = seg.max;
+      s += '<path d="' + gaugeArc(scoreAngle(lo), scoreAngle(hi), R) +
+        '" stroke="' + seg.color + '" stroke-width="' + w +
+        '" fill="none" opacity="' + (active ? 1 : 0.3) + '"/>';
+      // Labels use the same non-uniform thresholds as the scoring function, so
+      // a needle can never visually land in a different band than its caption.
+      var mid = scoreAngle((lo + hi) / 2), lp = gaugePt(mid, rOut), rot = (90 - mid).toFixed(1);
+      s += '<text class="mi-greed-seg" x="' + lp[0].toFixed(1) + '" y="' + lp[1].toFixed(1) +
+        '" text-anchor="middle" dominant-baseline="middle" transform="rotate(' + rot + ' ' +
+        lp[0].toFixed(1) + ' ' + lp[1].toFixed(1) + ')" fill="' + (active ? seg.color : muted) +
+        '" opacity="' + (active ? 1 : 0.75) + '">' + seg.label.toUpperCase() + '</text>';
+    }
+    // Scale ticks 0 / 25 / 50 / 75 / 100 just inside the arc.
+    [0, 25, 50, 75, 100].forEach(function (tv) {
+      var tp = gaugePt(scoreAngle(tv), rTick);
+      s += '<text class="mi-greed-tick" x="' + tp[0].toFixed(1) + '" y="' + tp[1].toFixed(1) +
+        '" text-anchor="middle" dominant-baseline="middle" fill="' + muted + '">' + tv + '</text>';
+    });
+    // Needle + hub.
+    var tip = gaugePt(scoreAngle(score), rNeedle);
+    s += '<line x1="' + cx + '" y1="' + cy + '" x2="' + tip[0].toFixed(1) + '" y2="' + tip[1].toFixed(1) +
+      '" stroke="' + foreColor + '" stroke-width="3.5" stroke-linecap="round"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="7" fill="' + foreColor + '"/>';
+    // Score + current band name below the dial.
+    s += '<text class="mi-greed-num" x="' + cx + '" y="' + (cy + 30) + '" text-anchor="middle" fill="' + foreColor + '">' + score + '</text>' +
+      '<text class="mi-greed-band" x="' + cx + '" y="' + (cy + 48) + '" text-anchor="middle" fill="' + band.color + '">' + band.label + '</text>';
+    return '<svg viewBox="0 0 ' + (cx * 2) + ' ' + (cy + 56) + '" role="img" aria-label="NEPSE greed gauge ' +
+      score + ' of 100, ' + band.label + '">' + s + '</svg>';
+  }
+  // Past gauge readings (previous close / 1w / 1m / 1y ago). Each backend entry
+  // carries raw breadth + index momentum; we re-run computeGreed() here so the
+  // historical numbers always match the live gauge's formula exactly.
+  function renderGreedHistory(history) {
+    var hist = el("greed-history");
+    if (!hist) return;
+    var rows = (history || []).map(function (h) {
+      var hs = computeGreed(h.breadth || {}, { nepse_pct: h.nepse_pct });
+      if (hs == null) return "";
+      var hb = greedBand(hs);
+      return '<div class="mi-greed-hist-row" title="' + h.label + ' · ' + (h.date || "") + '">' +
+        '<span class="mi-greed-hist-label">' + h.label + '</span>' +
+        '<span class="mi-greed-hist-score"><b style="color:' + hb.color + '">' + hs + '</b>' +
+        '<span class="mi-greed-hist-band">' + hb.label + '</span></span>' +
+        '</div>';
+    }).join("");
+    hist.innerHTML = rows;
+  }
+  function renderGreedMeter(b, ov, live, source, history) {
+    var node = el("greed-meter");
+    if (!node) return;
+    var score = computeGreed(b, ov);
+    var detail = el("greed-components");
+    if (score == null) {
+      node.innerHTML = '<div class="mi-greed-empty">No data</div>';
+      if (detail) detail.innerHTML = "";
+      renderGreedHistory([]);
+      return;
+    }
+    renderGreedHistory(history);
+    var band = greedBand(score), t = baseChartOpts(), muted = cssVar("--ink-3");
+    node.innerHTML = gaugeSVG(score, band, t.foreColor, muted);
+    var components = greedComponents(b, ov);
+    var parts = components.map(function (c) {
+      return c.label + " " + Math.round(c.value * 100) + " (" + Math.round(c.weight * 100) + "%)";
+    }).join(" · ");
+    if (detail) {
+      detail.innerHTML = components.map(function (c) {
+        var label = c.key === "breadth" ? "Breadth" : "Momentum";
+        return '<span class="mi-greed-component"><b>' + Math.round(c.value * 100) + '</b> ' + label + '</span>';
+      }).join("");
+    }
+    node.setAttribute("title", "NEPSE mood " + score + "/100 · " + band.label +
+      (live ? " (live)" : source === "eod" ? " (end of day)" : "") + " — " + parts);
   }
 
   var SECTOR_COLORS = [

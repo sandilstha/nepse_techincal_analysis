@@ -4,14 +4,36 @@ from decimal import Decimal, InvalidOperation
 
 import numpy as np
 import pandas as pd
-# TEMPORARY: admin-login gate disabled by request. To RESTORE auth, delete the
-# no-op shim below and uncomment the real import on the next line.
-# from django.contrib.admin.views.decorators import staff_member_required
-def staff_member_required(view_func=None, **kwargs):  # noqa: N802 - temp no-op shim
-    """Pass-through stand-in so dashboard/sync views need no admin login."""
+# Workbench / sync / CRUD views are gated behind Django's admin-login check in
+# any real deployment. The gate is relaxed ONLY when DEBUG is True, so local
+# development needs no admin login; with DEBUG False (staging, production, and
+# the test suite, which forces DEBUG False) the real staff_member_required is
+# enforced. DEBUG is checked per request so import order can't bypass the gate.
+from functools import wraps as _wraps
+
+from django.conf import settings as _settings
+from django.contrib.admin.views.decorators import (
+    staff_member_required as _staff_member_required,
+)
+
+
+def staff_member_required(view_func=None, **kwargs):  # noqa: N802
+    """Require admin login except in local DEBUG runs (checked per request)."""
+
+    def decorate(func):
+        gated = _staff_member_required(func, **kwargs)
+
+        @_wraps(func)
+        def wrapper(request, *args, **inner):
+            if _settings.DEBUG:
+                return func(request, *args, **inner)
+            return gated(request, *args, **inner)
+
+        return wrapper
+
     if view_func is None:
-        return lambda func: func
-    return view_func
+        return decorate
+    return decorate(view_func)
 from django.contrib import messages
 from django.contrib.staticfiles import finders
 from django.core.cache import cache
@@ -487,14 +509,15 @@ def build_dashboard_context(request):
     # OPTIMIZED: Pass empty lists - autocomplete will handle search
     db_companies, db_indices = [], []
 
-    # OPTIMIZED: inventory rows only when needed
-    queryset = []
-    if active_tab == "inventory":
-        queryset = list(
-            StockPriceAdjustment.objects
-            .select_related("company")
-            .order_by("-business_date")[:100]
-        )
+    # Inventory rows are always loaded (100 newest) so the Raw Inventory Manager
+    # tab is never blank — including when it's reached via a client-side tab
+    # switch rather than a fresh page load. Capped at 100 rows, so the cost is
+    # negligible even on the strategy-tab AJAX recalcs that also hit this path.
+    queryset = list(
+        StockPriceAdjustment.objects
+        .select_related("company")
+        .order_by("-business_date")[:100]
+    )
 
     # Initialise result vectors
     backtest_metrics = ema_backtest_metrics = cci_backtest_metrics = rsi_backtest_metrics = msv_backtest_metrics = imm_backtest_metrics = stage_backtest_metrics = rrg_backtest_metrics = None

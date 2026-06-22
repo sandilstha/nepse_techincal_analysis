@@ -155,6 +155,11 @@ def hotstocks_api(request):
 
 
 @require_GET
+def broker_flow_radar_api(request):
+    return _safe(ba.broker_flow_radar, **_window(request))
+
+
+@require_GET
 def broker_trend_api(request):
     return _safe(
         ba.trend,

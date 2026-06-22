@@ -15,9 +15,10 @@ from __future__ import annotations
 import math
 
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 
 from django.core.cache import cache
-from django.db.models import Max
+from django.db.models import Max, Count, Q, F
 
 from core_analysis.models import (
     CompanyProfile,
@@ -502,6 +503,69 @@ def _breadth(enriched):
     }
 
 
+# Reference points shown under the Fear & Greed gauge, mirroring the CNN-style
+# "previous close / 1 week / 1 month / 1 year ago" history. Offsets are in
+# calendar days back from the latest trading day; each resolves to the nearest
+# trading session on or before that date.
+GREED_HISTORY_OFFSETS = (
+    ("Previous close", 0),
+    ("1 week ago", 7),
+    ("1 month ago", 30),
+    ("1 year ago", 365),
+)
+
+
+def _greed_history():
+    """Historical Fear & Greed reference points from end-of-day data.
+
+    For each offset we emit the raw breadth (advancers / decliners / unchanged)
+    and the NEPSE index daily % change for that session. The front-end then runs
+    the SAME computeGreed() formula on these as it does for the live gauge, so a
+    historical score can never drift from the live one's methodology.
+    """
+    nepse_dates = list(
+        NepseMarketIndex.objects.filter(sector_name=NEPSE_INDEX_NAME)
+        .order_by("-business_date")
+        .values_list("business_date", flat=True)
+    )
+    if not nepse_dates:
+        return []
+
+    latest = nepse_dates[0]
+    out = []
+    for label, days in GREED_HISTORY_OFFSETS:
+        target = latest - timedelta(days=days)
+        day = next((d for d in nepse_dates if d <= target), None)
+        if day is None:
+            continue
+
+        agg = NepseDailyStockPrice.objects.filter(business_date=day).aggregate(
+            advancing=Count("pk", filter=Q(close_price__gt=F("previous_close"))),
+            declining=Count("pk", filter=Q(close_price__lt=F("previous_close"))),
+            unchanged=Count("pk", filter=Q(close_price=F("previous_close"))),
+        )
+        total = (agg["advancing"] or 0) + (agg["declining"] or 0) + (agg["unchanged"] or 0)
+        if not total:
+            continue
+
+        idx = (
+            NepseMarketIndex.objects.filter(sector_name=NEPSE_INDEX_NAME, business_date=day)
+            .first()
+        )
+        out.append({
+            "label": label,
+            "date": day.isoformat(),
+            "breadth": {
+                "advancing": agg["advancing"] or 0,
+                "declining": agg["declining"] or 0,
+                "unchanged": agg["unchanged"] or 0,
+                "total": total,
+            },
+            "nepse_pct": _round(_f(idx.percentage_change)) if idx else None,
+        })
+    return out
+
+
 def _gainers(enriched, limit=TABLE_LIMIT):
     ranked = [s for s in enriched if s["pct"] is not None]
     ranked.sort(key=lambda s: s["pct"], reverse=True)
@@ -672,6 +736,7 @@ def _build_eod_payload():
         "has_data": bool(enriched),
         "overview": _overview(enriched, None, None),
         "breadth": _breadth(enriched),
+        "greed_history": _greed_history(),
         "gainers": _gainers(enriched),
         "losers": _losers(enriched),
         "most_active": _most_active(enriched),
@@ -893,6 +958,7 @@ def build_payload(force=False, cache_only=False, fast=False):
         "has_data": bool(enriched),
         "overview": _overview(enriched, nepse_headline, ms_row),
         "breadth": _breadth(enriched),
+        "greed_history": _greed_history(),
         "gainers": gainers,
         "losers": losers,
         "most_active": most_active,

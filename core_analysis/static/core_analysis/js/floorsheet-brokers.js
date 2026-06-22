@@ -1,6 +1,6 @@
 /* ============================================================================
    Dalal Street X broker analytics — frontend controller.
-   Reads bootstrap meta (brokers/symbols/sectors), drives 5 tabs, each backed by
+   Reads bootstrap meta (brokers/symbols/sectors), drives 6 tabs, each backed by
    a JSON endpoint under /floorsheet/api/*. Tables + squarified treemap are
    rendered by hand; the 90-day trend uses Chart.js (bar qty + line close).
    ========================================================================== */
@@ -9,6 +9,9 @@
 
   var META = window.DSX_BOOTSTRAP || { brokers: [], symbols: [], sectors: [] };
   var API = "/floorsheet/api/";
+  // Tab registry — declared up front because tab modules (e.g. flowradar) attach
+  // to it well before the favorites block below would otherwise initialise it.
+  var TABS = {};
 
   // ── formatting ───────────────────────────────────────────────────────
   function nf(n) { return (n == null ? 0 : n).toLocaleString("en-IN"); }
@@ -18,6 +21,14 @@
     return "Rs. " + (n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
   function fmtPct(n) { return (n || 0).toFixed(2) + "%"; }
+  function fmtSignedRs(n) {
+    var v = n || 0;
+    return (v > 0 ? "+" : v < 0 ? "-" : "") + fmtRs(Math.abs(v));
+  }
+  function fmtSignedPct(n) {
+    var v = n || 0;
+    return (v > 0 ? "+" : "") + v.toFixed(2) + "%";
+  }
   // Compact Rs in NEPSE numbering (crore / lakh) for KPI tiles.
   function fmtRsCompact(n) {
     var v = Math.round(n || 0), s = v < 0 ? "-" : "", a = Math.abs(v);
@@ -26,6 +37,8 @@
     return fmtRs(v);
   }
   function el(id) { return document.getElementById(id); }
+  // Firm name for a broker number (from bootstrap meta), or "" if unmapped.
+  function brokerName(b) { return (META.broker_names || {})[String(b)] || ""; }
 
   var inflight = {};
   function getJSON(path, params, key) {
@@ -65,7 +78,8 @@
     sel.innerHTML = "";
     (META.brokers || []).forEach(function (b) {
       var o = document.createElement("option");
-      o.value = b; o.textContent = b;
+      var nm = brokerName(b);
+      o.value = b; o.textContent = nm ? b + " — " + nm : b;
       sel.appendChild(o);
     });
   }
@@ -331,7 +345,50 @@
     table.innerHTML = sortableHead(table.id, HOLD_COLS) + "<tbody>" + body + "</tbody>";
   }
 
-  // ── trend chart (shared) ──────────────────────────────────────────────
+  // Broker Flow Radar.
+  var flowState = { dr: null };
+  TABS.flowradar = {
+    init: function () {
+      flowState.dr = dateRange("flow", function () { TABS.flowradar.load(); });
+    },
+    load: function () {
+      var t = el("flow-table");
+      loading(t, 11);
+      getJSON("flow-radar/", flowState.dr.params(), "flow-radar")
+        .then(function (d) { showTable(t, d.rows || [], buildFlowTable); })
+        .catch(function (err) { if (isAbort(err)) return; empty(t, 11, "Error"); });
+    }
+  };
+
+  var FLOW_COLS = [
+    { label: "S.N." },
+    { label: "Broker No.", key: "broker", type: "num", cls: "l" },
+    { label: "Broker Name", key: "broker_name", type: "str", cls: "l" },
+    { label: "Buy Amount (Rs)", key: "buy_amount", type: "num" },
+    { label: "Sell Amount (Rs)", key: "sell_amount", type: "num" },
+    { label: "Total Amount (Rs)", key: "total_amount", type: "num" },
+    { label: "Difference (Rs)", key: "difference", type: "num" },
+    { label: "Matching Amount (Rs)", key: "matching_amount", type: "num" },
+    { label: "Bias", key: "bias_pct", type: "num" },
+    { label: "Match", key: "matching_pct", type: "num" },
+    { label: "Stance", key: "stance", type: "str" }
+  ];
+  function buildFlowTable(table, rows) {
+    if (!rows || !rows.length) { empty(table, 11); return; }
+    var body = rows.map(function (r, i) {
+      var diffCls = r.difference >= 0 ? "num-pos" : "num-neg";
+      var stanceCls = r.stance === "Accumulating" ? "buy" : r.stance === "Distributing" ? "sell" : "flat";
+      return "<tr><td>" + (i + 1) + "</td><td class='l tkr'>" + r.broker + "</td><td class='l'>" +
+        (r.broker_name || "—") + "</td><td>" + fmtRs(r.buy_amount) + "</td><td>" +
+        fmtRs(r.sell_amount) + "</td><td>" + fmtRs(r.total_amount) + "</td><td class='" + diffCls + "'>" +
+        fmtSignedRs(r.difference) + "</td><td>" + fmtRs(r.matching_amount) + "</td><td class='" + diffCls + "'>" +
+        fmtSignedPct(r.bias_pct) + "</td><td>" + fmtPct(r.matching_pct) + "</td><td>" +
+        "<span class='dsx-tag " + stanceCls + "'>" + r.stance + "</span></td></tr>";
+    }).join("");
+    table.innerHTML = sortableHead(table.id, FLOW_COLS) + "<tbody>" + body + "</tbody>";
+  }
+
+  // Trend chart shared by broker analysis and script deep-dive tabs.
   var charts = {};
   var chartLoader = null;
   function ensureChart() {
@@ -386,13 +443,10 @@
   // TAB: Broker Favorites
   // ─────────────────────────────────────────────────────────────────────
   var favState = { brokers: [], trendSide: "buy", trendSym: null, dr: null, persistSide: "all", persistData: null, persistSort: null };
-  var TABS = {};
 
   TABS.favorites = {
     init: function () {
-      // Multi-select brokers: default to the first broker selected.
-      var first = (META.brokers || [])[0];
-      favState.brokers = first != null ? [String(first)] : [];
+      favState.brokers = [];
       buildBrokerMulti("fav", favState, function () { TABS.favorites.load(); });
       favState.dr = dateRange("fav", function () { TABS.favorites.load(); });
       // Sector filter for the persistence card (reloads just that card).
@@ -641,8 +695,7 @@
   function sigSetAll(html) { SIG_IDS.forEach(function (id) { if (el(id)) el(id).innerHTML = html; }); }
   TABS.signals = {
     init: function () {
-      var first = (META.brokers || [])[0];
-      sigState.brokers = first != null ? [String(first)] : [];
+      sigState.brokers = [];
       buildBrokerMulti("sig", sigState, function () { TABS.signals.load(); });
       // Signals are inherently multi-day; default to Last 1 Month so Price–Flow
       // Divergence (needs ≥2 sessions) isn't empty on open.
@@ -667,8 +720,11 @@
 
     function syncLabel() {
       var n = state.brokers.length;
+      var one = n === 1 ? (brokerName(state.brokers[0])
+        ? "Broker " + state.brokers[0] + " — " + brokerName(state.brokers[0])
+        : "Broker " + state.brokers[0]) : "";
       btn.textContent = (n === 0 ? "Select brokers"
-        : n === 1 ? "Broker " + state.brokers[0]
+        : n === 1 ? one
         : n + " brokers selected") + " ▾";
     }
     // Live "N of M selected" line, created once just above the chip grid.
@@ -684,15 +740,18 @@
     function render(filter) {
       list.innerHTML = "";
       var shown = 0;
+      var f = (filter || "").toLowerCase();
       (META.brokers || []).forEach(function (b) {
         var bs = String(b);
-        if (filter && bs.indexOf(filter) === -1) return;
+        var nm = brokerName(bs);
+        if (f && bs.indexOf(f) === -1 && nm.toLowerCase().indexOf(f) === -1) return;
         shown++;
         var on = state.brokers.indexOf(bs) !== -1;
         var chip = document.createElement("button");
         chip.type = "button";
         chip.className = "dsx-broker-chip" + (on ? " on" : "");
         chip.textContent = bs;
+        if (nm) chip.title = bs + " — " + nm;
         chip.setAttribute("aria-pressed", on ? "true" : "false");
         chip.addEventListener("click", function () {
           var idx = state.brokers.indexOf(bs);
@@ -816,8 +875,7 @@
   var nhState = { brokers: [], excludeMf: false, sector: "All", dr: null };
   TABS.netholding = {
     init: function () {
-      var first = (META.brokers || [])[0];
-      nhState.brokers = first != null ? [String(first)] : [];
+      nhState.brokers = [];
       buildBrokerMulti("nh", nhState, function () { TABS.netholding.load(); });
       fillSectors(el("nh-sector"));
       el("nh-sector").addEventListener("change", function () { nhState.sector = this.value; TABS.netholding.load(); });
@@ -1007,7 +1065,7 @@
     if (upd && META.latest_date) upd.textContent = "Last Updated On " + META.latest_date;
     var banner = el("dsx-banner");
     if (banner && META.ok) banner.hidden = true;
-    activateTab("favorites");
+    activateTab("flowradar");
   }
 
   // If the page was served before today's aggregate was built (cache cold), the

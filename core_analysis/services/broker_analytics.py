@@ -20,8 +20,9 @@ per-day *aggregate*:
       'sector': { symbol: 'Commercial Banks' },
     }
 
-Every tab (Broker Favorites, Stock Wise Details, Hotstocks, Net Holding, Broker
-Concentration) is derived from this structure. Multi-day ranges (1W / 1M / 3M)
+Every tab (Broker Favorites, Broker Flow Radar, Stock Wise Details, Hotstocks,
+Net Holding, Broker Concentration) is derived from this structure. Multi-day
+ranges (1W / 1M / 3M)
 are just the element-wise sum of several cached day aggregates, so once a day is
 built it is reused everywhere. Day aggregates are cached long (immutable history)
 except the latest/most-recent day, which gets a short TTL because it still moves
@@ -467,6 +468,29 @@ def _company_meta():
     return out
 
 
+def broker_names():
+    """Map of broker number (str) -> firm name, from the nepse_brokers table.
+
+    Keyed by string so it lines up with the string broker codes the frontend
+    sends and the dropdown uses. Cached for META_TTL; empty dict if the table is
+    unseeded (run ``manage.py load_brokers``) so callers degrade to bare numbers.
+    """
+    cached = cache.get("fs_broker_names")
+    if cached is not None:
+        return cached
+    names = {}
+    try:
+        from core_analysis.models import Broker
+
+        for number, name in Broker.objects.values_list("broker_number", "name"):
+            if number is not None and name:
+                names[str(number)] = name
+    except Exception:  # pragma: no cover - DB optional for this overlay
+        names = {}
+    cache.set("fs_broker_names", names, META_TTL)
+    return names
+
+
 def _fallback_brokers():
     cached = cache.get("fs_default_brokers")
     if cached is not None:
@@ -499,11 +523,13 @@ def _build_meta(latest, agg=None):
 
     company_meta = _company_meta()
     names = {row["symbol"]: row["name"] for row in company_meta["symbols"]}
+    bnames = broker_names()
     if not symbols:
         return {
             "ok": bool(latest),
             "latest_date": latest,
             "brokers": _fallback_brokers(),
+            "broker_names": bnames,
             "symbols": company_meta["symbols"],
             "sectors": company_meta["sectors"],
             "exact": False,
@@ -513,6 +539,7 @@ def _build_meta(latest, agg=None):
         "ok": True,
         "latest_date": latest,
         "brokers": sorted(brokers, key=_broker_sort_key),
+        "broker_names": bnames,
         "symbols": [{"symbol": s, "name": names.get(s, s)} for s in sorted(symbols)],
         "sectors": sorted(sectors),
         "exact": True,
@@ -776,7 +803,78 @@ def hotstocks(range_key="today", view="shares", sector="All", start=None, end=No
     return {"ok": True, "rows": rows[:50]}
 
 
-# HHI concentration bands (0–10000 scale). Aligned with the DOJ/FTC merger
+def broker_flow_radar(range_key="today", start=None, end=None):
+    """Broker-wide flow ranking for the full market.
+
+    This extends a basic "Top Brokers" table with actionable but factual flow
+    reads: gross activity, net direction, two-sided matching, and bias.
+    """
+    agg = _window_aggregate(range_key, start, end)
+    if not agg:
+        return {"ok": False, "rows": []}
+
+    bnames = broker_names()
+    brokers = {}
+
+    def cell_for(broker):
+        return brokers.setdefault(
+            broker,
+            {
+                "broker": broker,
+                "broker_name": "",
+                "buy_qty": 0.0,
+                "sell_qty": 0.0,
+                "buy_amount": 0.0,
+                "sell_amount": 0.0,
+            },
+        )
+
+    for side_name, side_map in (("buy", agg["buy"]), ("sell", agg["sell"])):
+        for _sym, broker_cells in side_map.items():
+            for broker, (qty, amt) in broker_cells.items():
+                row = cell_for(broker)
+                if side_name == "buy":
+                    row["buy_qty"] += qty
+                    row["buy_amount"] += amt
+                else:
+                    row["sell_qty"] += qty
+                    row["sell_amount"] += amt
+
+    rows = []
+    for row in brokers.values():
+        buy_amt = row["buy_amount"]
+        sell_amt = row["sell_amount"]
+        total_amt = buy_amt + sell_amt
+        if total_amt <= 0:
+            continue
+        diff = buy_amt - sell_amt
+        bias_pct = 100.0 * diff / total_amt
+        if bias_pct >= 10:
+            stance = "Accumulating"
+        elif bias_pct <= -10:
+            stance = "Distributing"
+        else:
+            stance = "Balanced"
+        rows.append({
+            "broker": row["broker"],
+            "broker_name": bnames.get(str(row["broker"]), row["broker_name"]),
+            "buy_quantity": round(row["buy_qty"]),
+            "sell_quantity": round(row["sell_qty"]),
+            "buy_amount": round(buy_amt, 2),
+            "sell_amount": round(sell_amt, 2),
+            "total_amount": round(total_amt, 2),
+            "difference": round(diff, 2),
+            "matching_amount": round(min(buy_amt, sell_amt), 2),
+            "matching_pct": round(200.0 * min(buy_amt, sell_amt) / total_amt, 2),
+            "bias_pct": round(bias_pct, 2),
+            "stance": stance,
+        })
+
+    rows.sort(key=lambda r: r["total_amount"], reverse=True)
+    return {"ok": True, "days": len(agg.get("dates") or []), "rows": rows}
+
+
+# HHI concentration bands (0-10000 scale). Aligned with the DOJ/FTC merger
 # guidelines so the label is a recognised market-structure read, not invented.
 HHI_MODERATE = 1500
 HHI_HIGH = 2500

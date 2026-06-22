@@ -37,7 +37,8 @@
 
   <!-- ── DSX tab bar ──────────────────────────────────────────────────── -->
   <nav class="dsx-tabs" id="dsx-tabs">
-    <button class="dsx-tab active" data-tab="favorites">Broker Analysis</button>
+    <button class="dsx-tab active" data-tab="flowradar">Broker Flow Radar</button>
+    <button class="dsx-tab" data-tab="favorites">Broker Analysis</button>
     <button class="dsx-tab" data-tab="signals">Signal Desk</button>
     <button class="dsx-tab" data-tab="stockwise">Script Deep Dive</button>
     <button class="dsx-tab" data-tab="hotstocks">Market Heatmap</button>
@@ -50,7 +51,7 @@
   {% endif %}
 
   <!-- shared range / view controls (each panel toggles which it shows) -->
-  <section class="dsx-panel active" id="panel-favorites">
+  <section class="dsx-panel" id="panel-favorites">
     <div class="dsx-controls">
       <div class="dsx-field">Choose Broker Number(s)
         <div class="dsx-multi" id="fav-broker-multi">
@@ -122,7 +123,23 @@
     </div>
   </section>
 
-  <!-- ── Signal Desk: research-desk signals for the selected broker(s) ─────── -->
+  <!-- Broker Flow Radar: market-wide broker activity ranking -->
+  <section class="dsx-panel active" id="panel-flowradar">
+    <div class="dsx-controls">
+      {% include "core_analysis/includes/_date_range.html" with prefix="flow" %}
+      <button type="button" id="flow-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-flow-head">
+        <span>Broker Flow Radar</span>
+        <span>Ranks brokers by gross activity, directional pressure, and two-sided matching flow.</span>
+      </div>
+      <div class="dsx-table-wrap dsx-flow-wrap">
+        <table class="dsx-table dsx-flow-table" id="flow-table"></table>
+      </div>
+    </div>
+  </section>
+
   <section class="dsx-panel" id="panel-signals">
     <div class="dsx-controls">
       <div class="dsx-field">Choose Broker Number(s)

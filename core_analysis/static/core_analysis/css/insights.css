@@ -299,7 +299,7 @@ body {
 .mi-grid-1-2  { grid-template-columns: 1fr 2fr; }
 .mi-grid-1-1  { grid-template-columns: 1fr 1fr; }
 .mi-grid-market-pulse {
-  grid-template-columns: minmax(520px, 1.55fr) minmax(300px, 0.85fr);
+  grid-template-columns: minmax(520px, 3fr) minmax(430px, 2fr);
   align-items: stretch;
 }
 .mi-grid-sector-compare {
@@ -323,6 +323,12 @@ body {
   margin: 0; font-family: 'Poppins', sans-serif;
   font-size: 1.08rem; font-weight: 600; letter-spacing: -0.01em;
 }
+.mi-card-subtitle {
+  margin: 0.2rem 0 0;
+  color: var(--ink-3);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
 .mi-card-hint { font-size: 0.7rem; color: var(--ink-3); }
 .mi-card-tools { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; justify-content: flex-end; }
 .mi-card-tools .mi-select { padding: 0.3rem 0.5rem; font-size: 0.74rem; }
@@ -332,7 +338,6 @@ body {
 }
 .mi-pill-up { background: var(--up-soft); color: var(--up); }
 .mi-pill-down { background: var(--down-soft); color: var(--down); }
-.mi-pill-stale { background: var(--flat-soft); color: var(--ink-3); }
 
 .mi-chart { width: 100%; min-height: 260px; }
 .mi-chart-donut { min-height: 230px; }
@@ -386,24 +391,16 @@ body {
 .mi-market-pulse > .mi-card { display: flex; flex-direction: column; }
 .mi-market-pulse .mi-card-head { gap: 0.75rem; flex-wrap: wrap; }
 .mi-market-pulse .mi-ohlc-wrap {
-  min-height: clamp(310px, 34vh, 430px);
+  min-height: clamp(285px, 30vh, 340px);
 }
 .mi-market-pulse .mi-draw-toolbar {
   gap: 0.45rem;
   margin-bottom: 0.5rem;
 }
 .mi-market-pulse .mi-draw-hint { display: none; }
-.mi-market-pulse .mi-breadth-layout {
-  grid-template-columns: 1fr;
-  gap: 0.65rem;
-  align-items: stretch;
-}
-.mi-market-pulse .mi-card-breadth .mi-chart-donut {
-  min-height: 300px;
-}
 .mi-market-pulse .mi-breadth-legend {
   flex-wrap: wrap;
-  gap: 0.45rem 0.75rem;
+  gap: 0.35rem 0.65rem;
 }
 .mi-sector-compare-row > .mi-card { display: flex; flex-direction: column; }
 .mi-sector-compare-row .mi-chart-compare {
@@ -441,60 +438,133 @@ body {
 
 .mi-empty { padding: 1.2rem 0.5rem; text-align: center; color: var(--ink-3); font-size: 0.82rem; }
 
-/* ── Breadth legend + detail ──────────────────────────────────────────── */
-.mi-breadth-legend { display: flex; justify-content: center; gap: 1rem; margin-top: 0.3rem; font-size: 0.78rem; }
-.mi-breadth-legend span { display: flex; align-items: center; gap: 0.35rem; color: var(--ink-2); }
+/* ── Market sentiment: Fear & Greed + breadth ─────────────────────────── */
+.mi-breadth-legend { display: flex; justify-content: center; gap: 1rem; margin-top: 0.15rem; font-size: 0.72rem; }
+.mi-breadth-legend span { display: flex; align-items: center; gap: 0.3rem; color: var(--ink-2); white-space: nowrap; }
+.mi-breadth-legend b { color: var(--ink-1); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; }
 .mi-breadth-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.mi-breadth-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-top: auto;
+  padding-top: 0.55rem;
+}
+.mi-breadth-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  padding: 0.38rem 0.42rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.mi-breadth-metric span { color: var(--ink-3); font-size: 0.58rem; }
+.mi-breadth-metric b { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; }
 
 .mi-card-breadth { display: flex; flex-direction: column; }
 .mi-breadth-layout {
   display: grid;
-  grid-template-columns: minmax(210px, 0.9fr) minmax(220px, 1fr);
-  gap: 1rem;
-  align-items: center;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 0.7rem;
   flex: 1 1 auto;
 }
-.mi-breadth-donut { min-width: 0; }
+.mi-pulse-widget {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 0.7rem 0.65rem;
+  background: var(--line-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.mi-widget-head { min-height: 3.1rem; }
+.mi-widget-title {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.mi-widget-subtitle,
+.mi-widget-note {
+  margin: 0.15rem 0 0;
+  color: var(--ink-3);
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+.mi-widget-note { margin-top: auto; padding-top: 0.35rem; text-align: center; }
 .mi-card-breadth .mi-chart-donut {
   flex: 0 0 auto;
-  min-height: 220px;
+  min-height: 225px;
 }
-.mi-breadth-detail { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
-.mi-bd-bar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: var(--flat-soft); margin-bottom: 0.5rem; }
-.mi-bd-bar i { display: block; height: 100%; }
-.mi-bd-bar i.up { background: var(--up); }
-.mi-bd-bar i.down { background: var(--down); }
-.mi-bd-bar i.flat { background: var(--flat); }
-.mi-bd-row {
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: 0.8rem; padding: 0.32rem 0; border-bottom: 1px solid var(--line-soft);
-}
-.mi-bd-row:last-child { border-bottom: none; }
-.mi-bd-k { color: var(--ink-3); }
-.mi-bd-v { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--ink-1); }
-.mi-bd-v.up { color: var(--up); }
-.mi-bd-v.down { color: var(--down); }
-.mi-bd-v.flat { color: var(--ink-2); }
 
-/* Stale breadth: the per-scrip live feed is delayed, so these counts are a
-   prior session's and don't match the official headline. Grey out the figures
-   and surface a "last session" note so the old data isn't read as current. */
-.mi-bd-stale-note {
-  font-size: 0.72rem; color: var(--ink-3); margin-bottom: 0.45rem;
-  display: flex; align-items: center; gap: 0.35rem;
+/* ── NEPSE Greed / Fear gauge ─────────────────────────────────────────── */
+.mi-greed { width: 100%; min-width: 0; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.mi-greed svg { width: 100%; max-width: 270px; height: auto; display: block; margin: 0 auto; }
+.mi-greed-seg { font-size: 7.2px; font-weight: 700; letter-spacing: 0.025em; }
+.mi-greed-tick { font-size: 8.5px; font-family: 'JetBrains Mono', monospace; opacity: 0.8; }
+.mi-greed-num { font-size: 30px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+.mi-greed-band { font-size: 12px; font-weight: 700; letter-spacing: 0.03em; }
+.mi-greed-cap { fill: var(--ink-3); font-size: 8.5px; letter-spacing: 0.06em; }
+.mi-greed-empty { color: var(--ink-3); font-size: 0.9rem; padding: 1.2rem 0; }
+.mi-greed-components {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  min-height: 1.35rem;
 }
-.mi-bd-stale-note::before {
-  content: ""; width: 7px; height: 7px; border-radius: 50%;
-  background: var(--flat); flex: 0 0 auto;
+.mi-greed-component {
+  padding: 0.16rem 0.38rem;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.61rem;
+  white-space: nowrap;
 }
-.mi-card-breadth.is-stale .mi-bd-bar,
-.mi-card-breadth.is-stale .mi-bd-row { opacity: 0.5; filter: grayscale(0.45); }
-
-/* Keep the breadth card visible while delayed, but grey it enough that the
-   prior-session counts cannot be mistaken for live breadth. */
-.mi-card-breadth.is-stale .mi-chart-donut,
-.mi-card-breadth.is-stale .mi-breadth-legend { opacity: 0.58; filter: grayscale(0.45); }
-
+.mi-greed-component b {
+  color: var(--ink-1);
+  font-family: 'JetBrains Mono', monospace;
+}
+/* CNN-style historical readings under the gauge (previous close / 1w / 1m / 1y). */
+.mi-greed-history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0.5rem auto 0;
+  width: 100%;
+  max-width: 270px;
+}
+.mi-greed-history:empty { display: none; }
+.mi-greed-hist-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.74rem;
+}
+.mi-greed-hist-label { color: var(--ink-2); }
+.mi-greed-hist-score {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+.mi-greed-hist-score b {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+.mi-greed-hist-band {
+  color: var(--ink-3);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
 /* Page-level "live feed delayed" marker: the heatmap is built purely from the
    per-scrip live feed, so when that feed lags, dim it and reveal the hint. */
 .mi-stale-hint { color: var(--down); font-weight: 600; }
@@ -571,15 +641,13 @@ body:not(.mi-feed-delayed) .mi-stale-hint { display: none; }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
 @media (max-width: 1180px) {
+  .mi-grid-market-pulse { grid-template-columns: 1fr; }
+  .mi-market-pulse .mi-ohlc-wrap { min-height: clamp(340px, 42vh, 480px); }
   .mi-grid-sector-compare { grid-template-columns: 1fr; }
   .mi-sector-compare-row .mi-sector-card .mi-chart { height: clamp(320px, 38vh, 460px); }
 }
 @media (max-width: 960px) {
-  .mi-grid-market-pulse { grid-template-columns: 1fr; }
-  .mi-market-pulse .mi-ohlc-wrap { min-height: clamp(340px, 42vh, 520px); }
-  .mi-market-pulse .mi-breadth-layout {
-    grid-template-columns: minmax(210px, 0.9fr) minmax(220px, 1fr);
-  }
+  .mi-market-pulse .mi-ohlc-wrap { min-height: clamp(320px, 40vh, 460px); }
 }
 @media (max-width: 1100px) {
   .mi-stats { grid-template-columns: repeat(3, 1fr); }
@@ -590,10 +658,12 @@ body:not(.mi-feed-delayed) .mi-stale-hint { display: none; }
   .mi-grid-3 { grid-template-columns: 1fr; }
   .mi-topbar { flex-direction: column; align-items: stretch; }
   .mi-controls { justify-content: space-between; }
-  .mi-breadth-layout { grid-template-columns: 1fr; }
   .mi-card-breadth .mi-chart-donut { min-height: 210px; }
 }
 @media (max-width: 560px) {
+  .mi-breadth-layout { grid-template-columns: 1fr; }
+  .mi-greed svg { max-width: 290px; }
+  .mi-market-pulse .mi-ohlc-wrap { min-height: 330px; }
   .mi-stats { grid-template-columns: repeat(2, 1fr); }
   .mi-stat-value { font-size: 1.3rem; }
 }

@@ -51,8 +51,8 @@
 .dsx-controls {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 14px 22px;
+  align-items: flex-end;
+  gap: 12px 14px;
   margin-bottom: 16px;
 }
 .dsx-field {
@@ -95,7 +95,8 @@
 }
 .dsx-analyze {
   align-self: flex-end;
-  margin-left: auto;
+  margin-left: 0;
+  min-width: 112px;
   appearance: none;
   background: var(--accent);
   color: #fff;
@@ -446,9 +447,23 @@
 .dsx-card-head.sell { background: linear-gradient(90deg, #e0575b, #ff6e72); }
 .dsx-card-head.hold { background: linear-gradient(90deg, #2f6fe0, #3f8cff); }
 .dsx-card-head.neutral { background: var(--surface-2); color: var(--ink-1); text-align: left; }
+.dsx-flow-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+.dsx-flow-head span:last-child {
+  font: 500 11px/1.35 'Manrope', sans-serif;
+  color: var(--ink-3);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.dsx-flow-wrap { max-height: 680px; }
 
 /* ── tables ──────────────────────────────────────────────────────────── */
 .dsx-table-wrap { max-height: 560px; overflow: auto; }
+.dsx-table-wrap.dsx-flow-wrap { max-height: 680px; }
 .dsx-table {
   width: 100%;
   border-collapse: collapse;

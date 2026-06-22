@@ -40,6 +40,7 @@
       const showWorkspaceTab = (target) => {
         const button = document.querySelector(`[data-bs-target="${target}"]`);
         if (!button) return;
+        const targetPane = document.querySelector(target);
 
         // Explicitly deactivate the current active pane & its button before
         // Bootstrap shows the new one. Bootstrap tracks "active" per-tablist
@@ -56,6 +57,17 @@
         }
 
         bootstrap.Tab.getOrCreateInstance(button).show();
+
+        // Bootstrap's Tab.show() early-returns when the trigger already carries
+        // the `active` class — which setPrimarySection() adds to the inventory
+        // primary tab before this runs — leaving the pane hidden (blank screen
+        // on re-click). Activate the target pane explicitly so it shows
+        // regardless of Bootstrap's guard.
+        if (targetPane && !targetPane.classList.contains('show')) {
+          targetPane.classList.add('show', 'active');
+          button.classList.add('active');
+          button.setAttribute('aria-selected', 'true');
+        }
       };
 
       document.querySelectorAll('[data-primary-section]').forEach((button) => {

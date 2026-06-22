@@ -25,6 +25,7 @@ from .broker_views import (
     net_holding_api,
     broker_concentration_api,
     hotstocks_api,
+    broker_flow_radar_api,
     broker_trend_api,
 )
 from .udf_views import (
@@ -60,6 +61,7 @@ urlpatterns = [
     path('floorsheet/api/netholding/', net_holding_api, name='net_holding_api'),
     path('floorsheet/api/concentration/', broker_concentration_api, name='broker_concentration_api'),
     path('floorsheet/api/hotstocks/', hotstocks_api, name='hotstocks_api'),
+    path('floorsheet/api/flow-radar/', broker_flow_radar_api, name='broker_flow_radar_api'),
     path('floorsheet/api/trend/', broker_trend_api, name='broker_trend_api'),
 
     # Analytics workbench (moved off root to /workbench/)

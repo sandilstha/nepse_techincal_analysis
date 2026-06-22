@@ -1,5 +1,52 @@
     <div class="tab-pane fade {% if active_tab == 'inventory' %}show active{% endif %}" id="inventory-pane" role="tabpanel">
 
+      <!-- Data sync toolbar — scoped to the Raw Inventory Manager tab. -->
+      <div class="d-flex flex-column gap-2 sync-toolbar mb-4">
+          <!-- Row 1: Sync Price Data -->
+          <form method="POST" action="{% url 'trigger_daily_sync' %}" class="d-flex align-items-center gap-2 sync-form">
+            {% csrf_token %}
+            <span class="sync-row-label">Sync Price</span>
+            <input type="text" id="headerSyncFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" autocomplete="off">
+            <span class="sync-sep">→</span>
+            <input type="text" id="headerSyncToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" autocomplete="off">
+            <select name="source" class="form-control form-control-sm sync-scope-input">
+              <option value="both">Stocks + Indices</option>
+              <option value="stocks">Stocks Only</option>
+              <option value="indices">Indices Only</option>
+            </select>
+            <button type="submit" class="btn btn-dark btn-sm sync-btn" data-loading-label="Syncing...">
+              Sync Price Data
+            </button>
+          </form>
+          <!-- Row 2: Sync & Calculate -->
+          <form method="POST" action="{% url 'trigger_sync_and_calculate' %}" class="d-flex align-items-center gap-2 sync-form">
+            {% csrf_token %}
+            <span class="sync-row-label">Sync &amp; Calc</span>
+            <input type="text" id="headerCalcFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" autocomplete="off">
+            <span class="sync-sep">→</span>
+            <input type="text" id="headerCalcToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" autocomplete="off">
+            <button type="submit" class="btn btn-primary btn-sm sync-btn" data-loading-label="Calculating...">
+              Sync &amp; Calculate
+            </button>
+          </form>
+          <!-- Row 3: Sync Floorsheet (trade-level broker feed) -->
+          <form method="POST" action="{% url 'trigger_floorsheet_sync' %}" class="d-flex align-items-center gap-2 sync-form">
+            {% csrf_token %}
+            <span class="sync-row-label">Sync Floorsheet</span>
+            <button type="button" class="btn btn-outline-success btn-sm sync-latest-btn"
+                    data-date-range="latest" data-from-id="headerFloorFromDate" data-to-id="headerFloorToDate"
+                    title="Set both dates to the latest trading day">
+              Latest
+            </button>
+            <input type="text" id="headerFloorFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" autocomplete="off">
+            <span class="sync-sep">→</span>
+            <input type="text" id="headerFloorToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" autocomplete="off">
+            <button type="submit" class="btn btn-success btn-sm sync-btn" data-loading-label="Syncing...">
+              Sync Floorsheet
+            </button>
+          </form>
+      </div>{# /sync-toolbar #}
+
       <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
         <h5 class="mb-3" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">Add New Stock Record Coordinates</h5>
         <form method="POST" action="{% url 'crud_operations' %}">
