@@ -1593,6 +1593,21 @@
     #msvForm .msv-param-xl { width: 126px; }
     #msvForm .msv-run-field { width: 210px; }
 
+    #msvForm .msv-quickrange-field {
+      flex: 1 1 auto;
+      min-width: 320px;
+    }
+
+    #msvForm .msv-quickrange-field .btn {
+      min-height: 30px;
+      padding: 4px 10px;
+    }
+
+    #msvForm .msv-quickrange-field > span {
+      display: block;
+      margin-top: 4px;
+    }
+
     #msvForm .msv-quick-range-row {
       display: flex;
       flex-wrap: wrap;
@@ -1622,8 +1637,10 @@
       #msvForm .msv-settings-row > *,
       #msvForm .msv-asset-field,
       #msvForm .msv-date-field,
+      #msvForm .msv-quickrange-field,
       #msvForm .msv-run-field {
         width: 100%;
+        min-width: 0;
       }
 
       #msvForm .msv-primary-row > * {
@@ -1632,6 +1649,7 @@
 
       #msvForm .msv-asset-field,
       #msvForm .msv-date-field,
+      #msvForm .msv-quickrange-field,
       #msvForm .msv-run-field {
         grid-column: 1 / -1;
       }

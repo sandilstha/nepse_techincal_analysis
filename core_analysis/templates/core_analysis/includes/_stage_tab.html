@@ -6,82 +6,80 @@
           <input type="hidden" name="active_tab" value="stage_backtest">
           <input type="hidden" name="stage_backtest_symbol" id="stageSymbolHidden" value="{{ stage_selected_symbol }}">
           <div class="row g-3 align-items-end">
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label class="form-label text-muted small fw-medium">Target Asset <span style="color: #9ca3af; font-size: 11px;">(Search)</span></label>
               <div class="autocomplete-wrapper">
                 <input type="text" class="autocomplete-input" id="stageSearchInput" placeholder="Type to search..." value="{{ stage_selected_symbol }}" autocomplete="off">
                 <div class="autocomplete-dropdown" id="stageDropdown"></div>
               </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
               <label class="form-label text-muted small fw-medium">From Date</label>
               <input type="text" id="stageFromDate" name="stage_from_date" class="form-control form-control-sm" value="{{ stage_from_date }}" required>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
               <label class="form-label text-muted small fw-medium">To Date</label>
               <input type="text" id="stageToDate" name="stage_to_date" class="form-control form-control-sm" value="{{ stage_to_date }}" required>
             </div>
-            <div class="col-md-2">
-              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute Stage Scan</button>
-            </div>
-          </div>
-          <div class="row g-3 mt-1">
-            <div class="col-md-2">
-              <label class="form-label text-muted small fw-medium">Vol Ratio Min</label>
-              <input type="number" min="0.1" step="0.1" name="stage_volume_multiplier" class="form-control form-control-sm" value="{{ stage_volume_multiplier }}" required>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label text-muted small fw-medium">Resistance Lookback</label>
-              <input type="number" min="2" step="1" name="stage_resistance_lookback" class="form-control form-control-sm" value="{{ stage_resistance_lookback }}" required>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label text-muted small fw-medium">Volume Avg Lookback</label>
-              <input type="number" min="2" step="1" name="stage_volume_lookback" class="form-control form-control-sm" value="{{ stage_volume_lookback }}" required>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label text-muted small fw-medium">Momentum Period</label>
-              <input type="number" min="2" step="1" name="stage_momentum_period" class="form-control form-control-sm" value="{{ stage_momentum_period }}" required>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label text-muted small fw-medium">RSI Length</label>
-              <input type="number" min="2" step="1" name="stage_rsi_length" class="form-control form-control-sm" value="{{ stage_rsi_length }}" required>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label text-muted small fw-medium">RSI Min</label>
-              <input type="number" min="0" step="0.1" name="stage_rsi_threshold" class="form-control form-control-sm" value="{{ stage_rsi_threshold }}" required>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label text-muted small fw-medium">ADX Length</label>
-              <input type="number" min="2" step="1" name="stage_adx_length" class="form-control form-control-sm" value="{{ stage_adx_length }}" required>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label text-muted small fw-medium">ADX Min</label>
-              <input type="number" min="0" step="0.1" name="stage_adx_threshold" class="form-control form-control-sm" value="{{ stage_adx_threshold }}" required>
-            </div>
-            <div class="col-md-4 d-flex align-items-end gap-4">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="stageUseRsi" name="stage_use_rsi" value="1" {% if stage_use_rsi %}checked{% endif %}>
-                <label class="form-check-label text-muted small fw-medium" for="stageUseRsi">Enable RSI Filter</label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="stageUseAdx" name="stage_use_adx" value="1" {% if stage_use_adx %}checked{% endif %}>
-                <label class="form-check-label text-muted small fw-medium" for="stageUseAdx">Enable ADX Filter</label>
-              </div>
-            </div>
-          </div>
-          <div class="row mt-2">
-            <div class="col-12">
-              <div class="d-flex gap-2 flex-wrap align-items-center">
-                <span class="text-muted small fw-medium" style="font-size:11px;">Quick Range:</span>
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Quick Range</label>
+              <div class="d-flex gap-1 flex-wrap">
                 <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="6m">6M</button>
                 <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="1y">1Y</button>
                 <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="2y">2Y</button>
                 <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="3y">3Y</button>
                 <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size:11px; border-radius:6px;" data-stage-range="ytd">YTD</button>
-                <span class="text-muted ms-1" style="font-size:11px;">⚠ Stage needs ≥150 trading days — use 1Y or longer</span>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium py-2 rounded-2">Execute Stage Scan</button>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap align-items-end gap-2 mt-3">
+            <div class="flex-fill" style="min-width:88px;">
+              <label class="form-label text-muted small fw-medium">Vol Ratio Min</label>
+              <input type="number" min="0.1" step="0.1" name="stage_volume_multiplier" class="form-control form-control-sm" value="{{ stage_volume_multiplier }}" required>
+            </div>
+            <div class="flex-fill" style="min-width:88px;">
+              <label class="form-label text-muted small fw-medium">Resistance Lookback</label>
+              <input type="number" min="2" step="1" name="stage_resistance_lookback" class="form-control form-control-sm" value="{{ stage_resistance_lookback }}" required>
+            </div>
+            <div class="flex-fill" style="min-width:88px;">
+              <label class="form-label text-muted small fw-medium">Volume Avg Lookback</label>
+              <input type="number" min="2" step="1" name="stage_volume_lookback" class="form-control form-control-sm" value="{{ stage_volume_lookback }}" required>
+            </div>
+            <div class="flex-fill" style="min-width:88px;">
+              <label class="form-label text-muted small fw-medium">Momentum Period</label>
+              <input type="number" min="2" step="1" name="stage_momentum_period" class="form-control form-control-sm" value="{{ stage_momentum_period }}" required>
+            </div>
+            <div class="flex-fill" style="min-width:80px;">
+              <label class="form-label text-muted small fw-medium">RSI Length</label>
+              <input type="number" min="2" step="1" name="stage_rsi_length" class="form-control form-control-sm" value="{{ stage_rsi_length }}" required>
+            </div>
+            <div class="flex-fill" style="min-width:80px;">
+              <label class="form-label text-muted small fw-medium">RSI Min</label>
+              <input type="number" min="0" step="0.1" name="stage_rsi_threshold" class="form-control form-control-sm" value="{{ stage_rsi_threshold }}" required>
+            </div>
+            <div class="flex-fill" style="min-width:80px;">
+              <label class="form-label text-muted small fw-medium">ADX Length</label>
+              <input type="number" min="2" step="1" name="stage_adx_length" class="form-control form-control-sm" value="{{ stage_adx_length }}" required>
+            </div>
+            <div class="flex-fill" style="min-width:80px;">
+              <label class="form-label text-muted small fw-medium">ADX Min</label>
+              <input type="number" min="0" step="0.1" name="stage_adx_threshold" class="form-control form-control-sm" value="{{ stage_adx_threshold }}" required>
+            </div>
+            <div class="d-flex align-items-end gap-3" style="padding-bottom:6px;">
+              <div class="form-check m-0">
+                <input class="form-check-input" type="checkbox" id="stageUseRsi" name="stage_use_rsi" value="1" {% if stage_use_rsi %}checked{% endif %}>
+                <label class="form-check-label text-muted small fw-medium" for="stageUseRsi">Enable RSI Filter</label>
+              </div>
+              <div class="form-check m-0">
+                <input class="form-check-input" type="checkbox" id="stageUseAdx" name="stage_use_adx" value="1" {% if stage_use_adx %}checked{% endif %}>
+                <label class="form-check-label text-muted small fw-medium" for="stageUseAdx">Enable ADX Filter</label>
               </div>
             </div>
           </div>
+          <div class="text-muted small mt-2" style="font-size:11px;">⚠ Stage needs ≥150 trading days — use 1Y or longer</div>
         </form>
       </div>
 

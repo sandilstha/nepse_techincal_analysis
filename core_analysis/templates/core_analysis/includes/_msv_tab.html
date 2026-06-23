@@ -26,17 +26,18 @@
               <label class="form-label text-muted small fw-medium">To Date</label>
               <input type="text" id="msvToDate" name="msv_to_date" class="form-control form-control-sm" value="{{ msv_to_date }}" required autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
-          </div>
-
-          <div class="msv-quick-range-row">
-            <span class="text-muted small fw-medium">Quick Range:</span>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="latest" data-from-id="msvFromDate" data-to-id="msvToDate">Latest</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="1m" data-from-id="msvFromDate" data-to-id="msvToDate">1M</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="3m" data-from-id="msvFromDate" data-to-id="msvToDate">3M</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="6m" data-from-id="msvFromDate" data-to-id="msvToDate">6M</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="1y" data-from-id="msvFromDate" data-to-id="msvToDate">1Y</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="ytd" data-from-id="msvFromDate" data-to-id="msvToDate">YTD</button>
-            <span class="text-muted small">To Date auto-limits to today.</span>
+            <div class="msv-quickrange-field">
+              <label class="form-label text-muted small fw-medium">Quick Range</label>
+              <div class="d-flex gap-1 flex-wrap">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="latest" data-from-id="msvFromDate" data-to-id="msvToDate">Latest</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="1m" data-from-id="msvFromDate" data-to-id="msvToDate">1M</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="3m" data-from-id="msvFromDate" data-to-id="msvToDate">3M</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="6m" data-from-id="msvFromDate" data-to-id="msvToDate">6M</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="1y" data-from-id="msvFromDate" data-to-id="msvToDate">1Y</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-date-range="ytd" data-from-id="msvFromDate" data-to-id="msvToDate">YTD</button>
+              </div>
+              <span class="text-muted" style="font-size:11px;">To Date auto-limits to today.</span>
+            </div>
           </div>
 
           <div class="row g-3 align-items-end msv-settings-row">

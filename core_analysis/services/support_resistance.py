@@ -1509,22 +1509,6 @@ _BTMM_DETAIL_SECTIONS = [
     },
 ]
 
-_BTMM_PSEUDOCODE = (
-    "FOR each candle:\n"
-    "  IF 11:00 <= time < 11:30 NPT:\n"
-    "    Update Opening_Range_High and Opening_Range_Low\n\n"
-    "  IF 11:30 <= time <= 15:00 NPT:\n"
-    "    IF Low < Opening_Range_Low AND EMA_13 crosses above EMA_50 AND EMA_5 > EMA_13:\n"
-    "      Execute BUY_ORDER\n"
-    "      SL = Lowest Low of last 4 candles minus buffer\n"
-    "      TP = EMA_200 or 1:2/1:3 RR\n\n"
-    "    IF High > Opening_Range_High AND EMA_13 crosses below EMA_50 AND EMA_5 < EMA_13:\n"
-    "      Execute SELL_ORDER\n"
-    "      SL = Highest High of last 4 candles plus buffer\n"
-    "      TP = EMA_200 or 1:2/1:3 RR"
-)
-
-
 def _read_btmm(ctx: dict[str, Any]) -> dict[str, Any]:
     price, hma, vwap = ctx["price"], ctx["hma"], ctx["vwap"]
     side, pd_zone, trend = ctx["sweep_side"], ctx["pd_zone"], ctx["trend_bias"]
@@ -1559,12 +1543,7 @@ def _read_btmm(ctx: dict[str, Any]) -> dict[str, Any]:
         "Boredom is the setup; the range is engineering the next liquidity run."
     )
     status = "Stop-Hunt Reversal" if side else "Range / pre-manipulation"
-    return _pack(
-        logic, sentiment, status, signal, confidence,
-        detail_title="BTMM Code-Ready Rules",
-        detail_sections=_BTMM_DETAIL_SECTIONS,
-        pseudocode=_BTMM_PSEUDOCODE,
-    )
+    return _pack(logic, sentiment, status, signal, confidence)
 
 
 # ---------------------------------------------------------------------------
@@ -1846,15 +1825,40 @@ def _contradiction_alert(rows: list[dict]) -> str | None:
     return None
 
 
+# Per-framework reliability prior for the consensus vote. The frameworks are
+# NOT equally trustworthy: objective / multi-factor reads (volume auction,
+# structure + liquidity) earn more weight than subjective or single-bar reads.
+# A framework's vote weight = its self-reported confidence × this prior.
+# Heuristic starting point — calibrate against realized hit-rate over time.
+_FRAMEWORK_RELIABILITY: dict[str, float] = {
+    "SMC / ICT": 1.00,                    # structure + liquidity + premium/discount
+    "Wyckoff Phase": 1.00,                # composite structure + volume cause
+    "Volume Flow": 0.95,                  # objective auction (POC / value area)
+    "RTM / QM": 0.90,                     # fresh supply/demand zones
+    "Structural S/R / Pivot Matrix": 0.90,  # mechanical levels + momentum
+    "Malaysian SNR": 0.85,               # wall strength / test count
+    "BTMM": 0.70,                         # tuned for intraday sessions; weaker on daily
+    "Elliott Wave": 0.70,                 # subjective wave counts, often ambiguous
+    "Candle Range": 0.60,                # single-candle, noisy, flat-bar exposed
+}
+_DEFAULT_RELIABILITY = 0.80
+
+
+def _framework_weight(row: dict) -> float:
+    """Consensus vote weight = self-reported confidence × reliability prior."""
+    reliability = _FRAMEWORK_RELIABILITY.get(row.get("system", ""), _DEFAULT_RELIABILITY)
+    return row.get("confidence", 0) * reliability
+
+
 def _institutional_consensus(rows: list[dict]) -> dict[str, Any]:
-    """Confidence-weighted vote of the nine framework reads."""
+    """Reliability-weighted confidence vote of the nine framework reads."""
     bull = [r for r in rows if r["signal"] == "Bullish"]
     bear = [r for r in rows if r["signal"] == "Bearish"]
     neutral = [r for r in rows if r["signal"] == "Neutral"]
-    bull_w = sum(r["confidence"] for r in bull)
-    bear_w = sum(r["confidence"] for r in bear)
+    bull_w = sum(_framework_weight(r) for r in bull)
+    bear_w = sum(_framework_weight(r) for r in bear)
     total_w = bull_w + bear_w
-    panel_w = total_w + sum(r["confidence"] for r in neutral)
+    panel_w = total_w + sum(_framework_weight(r) for r in neutral)
 
     if total_w == 0:
         signal, confidence, lean = "Neutral", 0, 0.0
@@ -1873,10 +1877,10 @@ def _institutional_consensus(rows: list[dict]) -> dict[str, Any]:
             signal = "Neutral"
 
     aligned = bull if signal == "Bullish" else bear if signal == "Bearish" else []
-    names = ", ".join(r["system"] for r in sorted(aligned, key=lambda r: r["confidence"], reverse=True)[:4])
+    names = ", ".join(r["system"] for r in sorted(aligned, key=_framework_weight, reverse=True)[:4])
     names = names or "no directional alignment"
     logic = (
-        f"Confidence-weighted vote of 9 frameworks → net lean {lean:+.2f}. "
+        f"Reliability-weighted vote of 9 frameworks → net lean {lean:+.2f}. "
         f"{len(bull)} bullish / {len(bear)} bearish / {len(neutral)} neutral. Aligned: {names}."
     )
     sentiment = (
@@ -1892,6 +1896,279 @@ def _institutional_consensus(rows: list[dict]) -> dict[str, Any]:
         "signal": signal,
         "confidence": confidence,
     }
+
+
+# ---------------------------------------------------------------------------
+# Code-ready rule panels — the "?" help expander on each framework row.
+# Each entry mirrors the actual decision logic of its _read_* function,
+# framed for NEPSE daily data (use a 1Y+ range for stable structure).
+# ---------------------------------------------------------------------------
+
+_SMC_DETAIL_SECTIONS = [
+    {
+        "title": "Inputs",
+        "items": [
+            "Market structure: latest BOS / CHoCH event and its direction.",
+            "Liquidity: most recent buy-side / sell-side sweep and its level.",
+            "Dealing range: premium / discount zone from Bollinger %B.",
+        ],
+    },
+    {
+        "title": "Structure Read",
+        "items": [
+            "CHoCH (change of character) = reversal bias, confidence 70.",
+            "BOS (break of structure) = continuation bias, confidence 62.",
+            "No confirmed BOS/CHoCH = Neutral, confidence 45.",
+        ],
+    },
+    {
+        "title": "Liquidity Confluence",
+        "items": [
+            "Sell-side sweep (longs' stops run) → bullish reaction, confidence ≥ 66.",
+            "Buy-side sweep (breakout buyers trapped) → bearish reaction, confidence ≥ 66.",
+        ],
+    },
+    {
+        "title": "Premium / Discount Filter",
+        "items": [
+            "Long from discount or short from premium: +12 confidence.",
+            "Long from premium or short from discount: −12 confidence.",
+        ],
+    },
+]
+
+_RTM_DETAIL_SECTIONS = [
+    {
+        "title": "Inputs",
+        "items": [
+            "Fresh supply / demand (engine) zones near price.",
+            "Latest CHoCH event for Quasimodo (QM) detection.",
+            "Zone test count (touches) for freshness grading.",
+        ],
+    },
+    {
+        "title": "Quasimodo Reversal",
+        "items": [
+            "QM active when a CHoCH breaks the prior swing: signal = direction, confidence 66.",
+            "Target = demand zone (bullish) or supply zone (bearish).",
+        ],
+    },
+    {
+        "title": "Fresh-Zone Reaction (no QM)",
+        "items": [
+            "Trade the nearer of demand / supply by distance to price, confidence 56.",
+            "Only one zone in range: take that side, confidence 54.",
+        ],
+    },
+    {
+        "title": "Freshness Grade",
+        "items": [
+            "≤1 touch: fresh / untested (full edge).",
+            "2 touches: tested.",
+            "≥3 touches: weak → −12 confidence (RTM only trades the first tap).",
+        ],
+    },
+]
+
+_SNR_DETAIL_SECTIONS = [
+    {
+        "title": "Inputs",
+        "items": [
+            "Nearest support / resistance walls and distance-to-price (%).",
+            "Wall test count (touches) for strength grading.",
+            "Latest BOS event for SNR flip (broken level swaps role).",
+        ],
+    },
+    {
+        "title": "At a Wall (within 1.5%)",
+        "items": [
+            "At support, ≤2 touches: bullish bounce, confidence 60.",
+            "At support, ≥3 touches: fatigued → bearish breakdown risk, confidence 56.",
+            "At resistance, ≤2 touches: bearish rejection, confidence 60.",
+            "At resistance, ≥3 touches: fatigued → bullish breakout risk, confidence 56.",
+        ],
+    },
+    {
+        "title": "Mid-Range / Flip",
+        "items": [
+            "Between walls: bias = price vs pivot, confidence 50.",
+            "Bullish BOS: broken resistance flips to support.",
+            "Bearish BOS: broken support flips to resistance.",
+        ],
+    },
+]
+
+_WYCKOFF_DETAIL_SECTIONS = [
+    {
+        "title": "Inputs",
+        "items": [
+            "Liquidity sweep side (Spring vs Upthrust test).",
+            "BOS / CHoCH event for SOS / SOW and character change.",
+            "Premium / discount zone; volume Point of Control (POC).",
+            "Strongest volume node and its share of the profile (cause).",
+        ],
+    },
+    {
+        "title": "Phase Map",
+        "items": [
+            "Sell-side test absorbed: Phase C Spring → Bullish 66.",
+            "Buy-side test rejected: Phase C Upthrust / UTAD → Bearish 66.",
+            "Bullish BOS: Phase D SOS (sign of strength) → Bullish 62.",
+            "Bearish BOS: Phase D SOW (sign of weakness) → Bearish 62.",
+            "CHoCH: Phase C/D character change → event direction, 58.",
+        ],
+    },
+    {
+        "title": "Phase B (no trigger)",
+        "items": [
+            "Discount zone: accumulation test → Bullish 50.",
+            "Premium zone: distribution test → Bearish 50.",
+            "Otherwise: range, cause still building → Neutral.",
+            "POC: price accepted above = strength; capped below = weakness.",
+        ],
+    },
+]
+
+_ELLIOTT_DETAIL_SECTIONS = [
+    {
+        "title": "Inputs",
+        "items": [
+            "Trend bias (up / down / sideways).",
+            "RSI for momentum confirmation and wave-5 divergence.",
+            "Nearest resistance (impulse target) and support (ABC).",
+        ],
+    },
+    {
+        "title": "Up-Trend",
+        "items": [
+            "RSI ≥ 60: impulse (likely wave 3), momentum expanding → Bullish 64.",
+            "At resistance (≤1%) and RSI < 60: possible wave 5, bearish divergence risk → Neutral 50.",
+            "Otherwise: mid-wave impulse up → Bullish 56.",
+        ],
+    },
+    {
+        "title": "Down-Trend / Sideways",
+        "items": [
+            "RSI ≤ 40: impulse down (likely wave 3) → Bearish 64.",
+            "Otherwise down: corrective ABC or impulsive down-leg → Bearish 54.",
+            "No clear trend: corrective / sideways, count unresolved → Neutral.",
+            "Confirmation: RSI ≥ 55 (up) or ≤ 45 (down) backs the wave direction.",
+        ],
+    },
+]
+
+_VOLUME_DETAIL_SECTIONS = [
+    {
+        "title": "Inputs",
+        "items": [
+            "Volume Point of Control (POC) — the auction's control price.",
+            "Value Area High / Low (VAH / VAL) — the 70% volume band.",
+            "Strongest volume node and its share of the profile.",
+        ],
+    },
+    {
+        "title": "Acceptance vs Rejection",
+        "items": [
+            "Price above VAH: accepted above value, breakout / excess → Bullish 64.",
+            "Price below VAL: rejected below value, distribution → Bearish 62.",
+            "Inside value: balanced auction, bias = price vs POC → 52.",
+        ],
+    },
+    {
+        "title": "Notes",
+        "items": [
+            "No volume profile for the range: Neutral, confidence 35.",
+            "NEPSE note: flat-bar / thin-float days distort the profile — prefer a 1Y+ range.",
+        ],
+    },
+]
+
+_CANDLE_DETAIL_SECTIONS = [
+    {
+        "title": "Inputs",
+        "items": [
+            "Latest candle open / high / low / close.",
+            "Body %, upper wick, lower wick of the range.",
+        ],
+    },
+    {
+        "title": "Anatomy Read",
+        "items": [
+            "Lower wick > 1.5× body and bullish close: sell-side raid absorbed (bullish pin) → Bullish 64.",
+            "Upper wick > 1.5× body and bearish close: buy-side raid failed (bearish pin) → Bearish 64.",
+            "Body ≥ 65% and bullish: displacement up → Bullish 62.",
+            "Body ≥ 65% and bearish: mark-down displacement → Bearish 62.",
+            "Compressed body (< 65%, no dominant wick): absorption / indecision → Neutral 44.",
+        ],
+    },
+]
+
+_STRUCTURAL_DETAIL_SECTIONS = [
+    {
+        "title": "Inputs",
+        "items": [
+            "Pivot, nearest support and resistance levels.",
+            "Reward/Risk ratio = resistance distance / support distance.",
+            "Momentum: RSI and Stochastic.",
+        ],
+    },
+    {
+        "title": "Pivot Bias",
+        "items": [
+            "Above pivot and not bearish momentum: constructive → Bullish 58 (+8 if momentum up).",
+            "Below pivot and not bullish momentum: defensive → Bearish 58 (+8 if momentum down).",
+            "Straddling the pivot with mixed momentum: Neutral.",
+        ],
+    },
+    {
+        "title": "R/R Adjustment",
+        "items": [
+            "Momentum up = RSI ≥ 55 or Stoch ≥ 60; down = RSI ≤ 45 or Stoch ≤ 40.",
+            "Long: R/R ≥ 2 → +8; R/R < 1 → −8 confidence.",
+            "Short: R/R ≤ 0.5 → +8; R/R > 1 → −8 confidence.",
+        ],
+    },
+]
+
+# system name → rule panel attached to each framework row.
+_FRAMEWORK_DETAILS: dict[str, dict[str, Any]] = {
+    "SMC / ICT": {
+        "detail_title": "SMC / ICT Rules",
+        "detail_sections": _SMC_DETAIL_SECTIONS,
+    },
+    "RTM / QM": {
+        "detail_title": "RTM / QM Rules",
+        "detail_sections": _RTM_DETAIL_SECTIONS,
+    },
+    "BTMM": {
+        "detail_title": "BTMM Rules",
+        "detail_sections": _BTMM_DETAIL_SECTIONS,
+    },
+    "Malaysian SNR": {
+        "detail_title": "Malaysian SNR Rules",
+        "detail_sections": _SNR_DETAIL_SECTIONS,
+    },
+    "Wyckoff Phase": {
+        "detail_title": "Wyckoff Phase Rules",
+        "detail_sections": _WYCKOFF_DETAIL_SECTIONS,
+    },
+    "Elliott Wave": {
+        "detail_title": "Elliott Wave Rules",
+        "detail_sections": _ELLIOTT_DETAIL_SECTIONS,
+    },
+    "Volume Flow": {
+        "detail_title": "Volume Flow Rules",
+        "detail_sections": _VOLUME_DETAIL_SECTIONS,
+    },
+    "Candle Range": {
+        "detail_title": "Candle Range Rules",
+        "detail_sections": _CANDLE_DETAIL_SECTIONS,
+    },
+    "Structural S/R / Pivot Matrix": {
+        "detail_title": "Structural S/R Rules",
+        "detail_sections": _STRUCTURAL_DETAIL_SECTIONS,
+    },
+}
 
 
 def build_institutional_analysis_rows(
@@ -1922,6 +2199,12 @@ def build_institutional_analysis_rows(
         {"system": "Candle Range", **_read_candle_range(ctx)},
         {"system": "Structural S/R / Pivot Matrix", **_read_structural_sr(ctx)},
     ]
+
+    # Attach the "?" code-ready rule panel to each framework row.
+    for row in rows:
+        detail = _FRAMEWORK_DETAILS.get(row["system"])
+        if detail:
+            row.update(detail)
 
     alert = _contradiction_alert(rows)
     consensus = _institutional_consensus(rows)
