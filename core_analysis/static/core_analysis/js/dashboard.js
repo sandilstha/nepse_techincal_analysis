@@ -70,7 +70,19 @@
         }
       };
 
+      // Inject custom styles and apply classes for the new tab hierarchy.
+      injectTabStyles();
+
+      // Apply custom styling classes for the new tab hierarchy.
+      const primaryNavButtons = document.querySelectorAll('[data-primary-section]');
+      if (primaryNavButtons.length > 0) {
+        // Add container class to the parent element for proper spacing and border.
+        primaryNavButtons[0].parentElement.classList.add('primary-nav-container');
+      }
       document.querySelectorAll('[data-primary-section]').forEach((button) => {
+        // Add the new class for main tab styling.
+        button.classList.add('primary-nav-btn');
+
         button.addEventListener('click', () => {
           const section = button.dataset.primarySection;
           setPrimarySection(section);

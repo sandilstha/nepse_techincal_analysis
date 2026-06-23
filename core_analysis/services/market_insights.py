@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 
 from django.core.cache import cache
-from django.db.models import Max, Count, Q, F
+from django.db.models import Max, Count, Q, F, Sum
 
 from core_analysis.models import (
     CompanyProfile,
@@ -440,6 +440,39 @@ def _sectors_from_subindices(subidx):
 
 # ── widget builders ────────────────────────────────────────────────────────
 
+def _market_cap_totals():
+    """NEPSE-wide market capitalisation for the latest EOD date and its change
+    versus the prior trading day, summed across every stock."""
+    dates = list(
+        NepseDailyStockPrice.objects.order_by("-business_date")
+        .values_list("business_date", flat=True)
+        .distinct()[:2]
+    )
+    if not dates:
+        return {"market_cap": None, "market_cap_change": None, "market_cap_pct": None}
+
+    def _cap(day):
+        agg = NepseDailyStockPrice.objects.filter(business_date=day).aggregate(
+            total=Sum("market_capitalization")
+        )
+        return _f(agg["total"])
+
+    latest = _cap(dates[0])
+    prev = _cap(dates[1]) if len(dates) > 1 else None
+    change = pct = None
+    if latest is not None and prev not in (None, 0):
+        change = latest - prev
+        pct = change / prev * 100.0
+    # The market_capitalization column is stored in millions of rupees; convert
+    # to raw rupees so the front-end money formatter scales it correctly.
+    MILLION = 1_000_000
+    return {
+        "market_cap": round(latest * MILLION, 2) if latest is not None else None,
+        "market_cap_change": round(change * MILLION, 2) if change is not None else None,
+        "market_cap_pct": round(pct, 2) if pct is not None else None,
+    }
+
+
 def _overview(enriched, nepse_live=None, market_summary=None):
     # Market totals: prefer the official MarketSummaryHistory row; otherwise sum
     # the live-price feed (which runs slightly low vs the exchange).
@@ -455,6 +488,14 @@ def _overview(enriched, nepse_live=None, market_summary=None):
         "scrips_traded": int(ms_scrips) if ms_scrips is not None else len(enriched),
     }
 
+    # Latest NEPSE index EOD row — source of the 52-week range (the live feed
+    # omits it) and the EOD fallback for the headline values.
+    idx_row = (
+        NepseMarketIndex.objects.filter(sector_name=NEPSE_INDEX_NAME)
+        .order_by("-business_date")
+        .first()
+    )
+
     if nepse_live and nepse_live.get("value") is not None:
         nepse = {
             "nepse_index": _round(nepse_live["value"]),
@@ -465,21 +506,24 @@ def _overview(enriched, nepse_live=None, market_summary=None):
             "nepse_date": nepse_live["date"],
         }
     else:
-        row = (
-            NepseMarketIndex.objects.filter(sector_name=NEPSE_INDEX_NAME)
-            .order_by("-business_date")
-            .first()
-        )
         nepse = {
-            "nepse_index": _round(_f(row.close_index)) if row else None,
-            "nepse_change": _round(_f(row.absolute_change)) if row else None,
-            "nepse_pct": _round(_f(row.percentage_change)) if row else None,
-            "nepse_high": _round(_f(row.high_index)) if row else None,
-            "nepse_low": _round(_f(row.low_index)) if row else None,
-            "nepse_date": row.business_date.isoformat() if row else None,
+            "nepse_index": _round(_f(idx_row.close_index)) if idx_row else None,
+            "nepse_change": _round(_f(idx_row.absolute_change)) if idx_row else None,
+            "nepse_pct": _round(_f(idx_row.percentage_change)) if idx_row else None,
+            "nepse_high": _round(_f(idx_row.high_index)) if idx_row else None,
+            "nepse_low": _round(_f(idx_row.low_index)) if idx_row else None,
+            "nepse_date": idx_row.business_date.isoformat() if idx_row else None,
         }
 
+    # 52-week range always comes from the index row; previous close is the
+    # current index value minus its absolute change.
+    nepse["nepse_52w_high"] = _round(_f(idx_row.number_52_weeks_high)) if idx_row else None
+    nepse["nepse_52w_low"] = _round(_f(idx_row.number_52_weeks_low)) if idx_row else None
+    _idx, _chg = nepse.get("nepse_index"), nepse.get("nepse_change")
+    nepse["nepse_prev_close"] = _round(_idx - _chg) if (_idx is not None and _chg is not None) else None
+
     nepse.update(totals)
+    nepse.update(_market_cap_totals())
     return nepse
 
 

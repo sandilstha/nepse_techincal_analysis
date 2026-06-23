@@ -50,6 +50,7 @@
   function fmtCompact(v) {
     if (!isNum(v)) return "—";
     var abs = Math.abs(v);
+    if (abs >= 1e11) return (v / 1e11).toFixed(2) + " Kh";  // Kharba (hundred billion)
     if (abs >= 1e9) return (v / 1e9).toFixed(2) + " Ar";   // Arba (billion)
     if (abs >= 1e7) return (v / 1e7).toFixed(2) + " Cr";   // Crore (10 million)
     if (abs >= 1e5) return (v / 1e5).toFixed(2) + " L";    // Lakh (hundred thousand)
@@ -149,22 +150,25 @@
   // ── Renderers ──────────────────────────────────────────────────────────
   function renderOverview(d) {
     var ov = d.overview || {};
-    el("ov-index").textContent = fmtNum(ov.nepse_index, 2);
-
     var deltaEl = el("ov-index-delta");
-    deltaEl.textContent = fmtSigned(ov.nepse_change) + "  (" + fmtPct(ov.nepse_pct) + ")";
-    deltaEl.className = "mi-stat-delta " + dirClass(ov.nepse_pct);
+    deltaEl.innerHTML = '<span class="mi-stat-value">' + fmtNum(ov.nepse_index, 2) + '</span> <span class="mi-stat-delta ' + dirClass(ov.nepse_pct) + '">' + fmtSigned(ov.nepse_change) + ' <small>(' + fmtPct(ov.nepse_pct) + ')</small></span>';
+    el("ov-index").innerHTML = ""; // Clear the old index-only element
+    el("ov-prevclose").textContent = fmtNum(ov.nepse_prev_close, 2);
 
-    var chgEl = el("ov-change");
-    chgEl.textContent = fmtPct(ov.nepse_pct);
-    chgEl.className = "mi-stat-value " + dirClass(ov.nepse_pct);
-    el("ov-change-abs").textContent = "Abs " + fmtSigned(ov.nepse_change);
+    el("ov-52w-high").textContent = fmtNum(ov.nepse_52w_high, 2);
+    el("ov-52w-low").textContent = fmtNum(ov.nepse_52w_low, 2);
+    el("ov-day-high").textContent = fmtNum(ov.nepse_high, 2);
+    el("ov-day-low").textContent = fmtNum(ov.nepse_low, 2);
 
     el("ov-turnover").textContent = fmtMoney(ov.turnover);
-    el("ov-volume").textContent = fmtCompact(ov.volume) + " shares";
+    el("ov-mcap").textContent = fmtMoney(ov.market_cap);
+    var mcapDelta = el("ov-mcap-delta");
+    mcapDelta.textContent = "(" + fmtPct(ov.market_cap_pct) + ")";
+    mcapDelta.className = "mi-sub-delta " + dirClass(ov.market_cap_pct);
 
     el("ov-trades").textContent = fmtNum(ov.trades, 0);
-    el("ov-scrips").textContent = fmtNum(ov.scrips_traded, 0) + " scrips traded";
+    el("ov-kitta").textContent = fmtCompact(ov.volume) + " kitta";
+    el("ov-scrips").textContent = " · " + fmtNum(ov.scrips_traded, 0) + " scrips";
 
     el("mi-asof-date").textContent = d.as_of || "—";
 
@@ -399,11 +403,11 @@
     }
   };
   var GREED_BANDS = [
-    { max: 24, label: "Extreme Fear", color: "#ff5d63" },
-    { max: 44, label: "Fear", color: "#ff9f43" },
-    { max: 55, label: "Neutral", color: "#ffc94d" },
-    { max: 75, label: "Greed", color: "#7ed957" },
-    { max: 100, label: "Extreme Greed", color: "#12d39a" }
+    { max: 24, label: "Extreme Fear", color: "#d83d44" },
+    { max: 44, label: "Fear", color: "#e07f2a" },
+    { max: 55, label: "Neutral", color: "#e0a82e" },
+    { max: 75, label: "Greed", color: "#5cb83f" },
+    { max: 100, label: "Extreme Greed", color: "#0fb383" }
   ];
   function greedBand(s) {
     for (var i = 0; i < GREED_BANDS.length; i++) if (s <= GREED_BANDS[i].max) return GREED_BANDS[i];

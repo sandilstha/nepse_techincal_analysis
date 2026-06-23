@@ -287,6 +287,39 @@ body {
 .mi-stat-delta { font-size: 0.85rem; font-weight: 600; }
 .mi-stat-sub { font-size: 0.74rem; color: var(--ink-3); }
 
+/* High / Low range value — both bounds equally prominent (not a dim sub-line). */
+.mi-stat-range {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.mi-stat-range .mi-range-div { font-size: 1.05rem; font-weight: 500; color: var(--ink-3); }
+
+/* Secondary metric tucked under the main value, in a smaller size. */
+.mi-stat-sub-metric {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+  font-size: 0.74rem;
+  color: var(--ink-3);
+}
+.mi-stat-sub-metric b {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+.mi-stat-sub-metric .mi-sub-delta { font-weight: 600; }
+
 .up   { color: var(--up); }
 .down { color: var(--down); }
 .flat { color: var(--flat); }
@@ -681,4 +714,5 @@ body:not(.mi-feed-delayed) .mi-stale-hint { display: none; }
   .mi-market-pulse .mi-ohlc-wrap { min-height: 330px; }
   .mi-stats { grid-template-columns: repeat(2, 1fr); }
   .mi-stat-value { font-size: 1.3rem; }
+  .mi-stat-range { font-size: 1.05rem; gap: 0.3rem; }
 }
