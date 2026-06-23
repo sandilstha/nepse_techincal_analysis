@@ -649,7 +649,11 @@
 
           const start = new Date(today);
           const rangeKey = button.dataset.dateRange;
-          if (rangeKey === '6m') {
+          if (rangeKey === '1m') {
+            start.setMonth(start.getMonth() - 1);
+          } else if (rangeKey === '3m') {
+            start.setMonth(start.getMonth() - 3);
+          } else if (rangeKey === '6m') {
             start.setMonth(start.getMonth() - 6);
           } else if (rangeKey === '1y') {
             start.setFullYear(start.getFullYear() - 1);
@@ -861,11 +865,11 @@
       const floorFrom = document.getElementById('headerFloorFromDate');
       if (floorTo && floorFrom && floorTo.value) setDateInputValue(floorFrom, floorTo.value);
     })();
-    setupFlatpickrRange('t3FromDate', 't3ToDate');
-    setupFlatpickrRange('emaFromDate', 'emaToDate');
-    setupFlatpickrRange('cciFromDate', 'cciToDate');
-    setupFlatpickrRange('rsiFromDate', 'rsiToDate');
-    setupFlatpickrRange('msvFromDate', 'msvToDate');
+    setupFlatpickrRange('t3FromDate', 't3ToDate', { defaultMonthRange: true });
+    setupFlatpickrRange('emaFromDate', 'emaToDate', { defaultMonthRange: true });
+    setupFlatpickrRange('cciFromDate', 'cciToDate', { defaultMonthRange: true });
+    setupFlatpickrRange('rsiFromDate', 'rsiToDate', { defaultMonthRange: true });
+    setupFlatpickrRange('msvFromDate', 'msvToDate', { defaultMonthRange: true });
     setupFlatpickrRange('supportResistanceFromDate', 'supportResistanceToDate');
     setupFlatpickrRange('rrgFromDate', 'rrgToDate');
     setupFlatpickrRange('rrgIndicesFromDate', 'rrgIndicesToDate');

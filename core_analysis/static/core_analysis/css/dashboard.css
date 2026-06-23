@@ -1557,3 +1557,89 @@
         min-height: 420px;
       }
     }
+
+    /* Momentum Scan: keep short numeric controls compact instead of stretching
+       every field to an equal grid column. The rows wrap naturally when the
+       available width decreases. */
+    #msvForm .msv-primary-row,
+    #msvForm .msv-settings-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 12px;
+      margin: 0;
+    }
+
+    #msvForm .msv-settings-row {
+      margin-top: 14px !important;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    #msvForm .msv-primary-row > *,
+    #msvForm .msv-settings-row > * {
+      width: auto;
+      max-width: none;
+      flex: 0 0 auto;
+      padding: 0;
+    }
+
+    #msvForm .msv-asset-field { width: 220px; }
+    #msvForm .msv-date-field { width: 190px; }
+    #msvForm .msv-param-xs { width: 78px; }
+    #msvForm .msv-param-sm { width: 88px; }
+    #msvForm .msv-param-md { width: 102px; }
+    #msvForm .msv-param-lg { width: 118px; }
+    #msvForm .msv-param-xl { width: 126px; }
+    #msvForm .msv-run-field { width: 210px; }
+
+    #msvForm .msv-quick-range-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    #msvForm .msv-quick-range-row .btn {
+      min-height: 30px;
+      padding: 4px 10px;
+    }
+
+    #msvForm .form-label {
+      min-height: 17px;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 767.98px) {
+      #msvForm .msv-primary-row,
+      #msvForm .msv-settings-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      #msvForm .msv-primary-row > *,
+      #msvForm .msv-settings-row > *,
+      #msvForm .msv-asset-field,
+      #msvForm .msv-date-field,
+      #msvForm .msv-run-field {
+        width: 100%;
+      }
+
+      #msvForm .msv-primary-row > * {
+        max-width: none;
+      }
+
+      #msvForm .msv-asset-field,
+      #msvForm .msv-date-field,
+      #msvForm .msv-run-field {
+        grid-column: 1 / -1;
+      }
+
+      #msvForm .msv-param-field .form-label {
+        min-height: 34px;
+        line-height: 1.25;
+        white-space: normal;
+      }
+
+    }

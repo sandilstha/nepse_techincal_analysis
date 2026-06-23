@@ -1,16 +1,16 @@
-# Graph Report - nepse_analytics_platform  (2026-06-22)
+# Graph Report - nepse_analytics_platform  (2026-06-23)
 
 ## Corpus Check
-- 66 files · ~81,577 words
+- 66 files · ~81,597 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1930 nodes · 4831 edges · 111 communities (69 shown, 42 thin omitted)
+- 1930 nodes · 4831 edges · 110 communities (70 shown, 40 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 131 edges (avg confidence: 0.53)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a99ab27f`
+- Built from commit: `6d1e3fab`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -40,7 +40,6 @@
 - [[_COMMUNITY_Community 22|Community 22]]
 - [[_COMMUNITY_Community 23|Community 23]]
 - [[_COMMUNITY_Community 24|Community 24]]
-- [[_COMMUNITY_Community 25|Community 25]]
 - [[_COMMUNITY_Community 26|Community 26]]
 - [[_COMMUNITY_Community 27|Community 27]]
 - [[_COMMUNITY_Community 28|Community 28]]
@@ -143,7 +142,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (111 total, 42 thin omitted)
+## Communities (110 total, 40 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.18
@@ -204,6 +203,10 @@ Nodes (26): DataFrame, Series, _build_position_signals(), _build_position_signal
 ### Community 19 - "Community 19"
 Cohesion: 0.10
 Nodes (28): _history_window(), indicator_data(), Parse UDF-style history window parameters from the indicator request., Compute one indicator's series for a symbol., _append_live_index_bar(), _bars(), _chart_bars(), _clean_symbol() (+20 more)
+
+### Community 20 - "Community 20"
+Cohesion: 0.07
+Nodes (3): f(), pn, un()
 
 ### Community 21 - "Community 21"
 Cohesion: 0.22
@@ -380,16 +383,16 @@ Nodes (4): bi(), vi(), xi, xt()
 ## Knowledge Gaps
 - **8 isolated node(s):** `Migration`, `Migration`, `Migration`, `Migration`, `Migration` (+3 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **42 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **40 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `_()` connect `Community 7` to `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 15`, `Community 16`, `Community 18`, `Community 20`, `Community 22`, `Community 23`, `Community 25`, `Community 26`, `Community 27`, `Community 28`, `Community 30`, `Community 33`, `Community 37`, `Community 39`, `Community 42`, `Community 44`, `Community 45`, `Community 46`, `Community 47`, `Community 48`, `Community 52`, `Community 54`, `Community 56`, `Community 57`, `Community 59`, `Community 60`, `Community 61`, `Community 62`, `Community 63`, `Community 64`, `Community 65`, `Community 66`, `Community 67`, `Community 70`, `Community 71`, `Community 72`, `Community 73`, `Community 82`, `Community 84`, `Community 87`, `Community 88`, `Community 89`, `Community 118`, `Community 120`?**
+- **Why does `_()` connect `Community 7` to `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 15`, `Community 16`, `Community 18`, `Community 20`, `Community 22`, `Community 23`, `Community 26`, `Community 27`, `Community 28`, `Community 30`, `Community 33`, `Community 37`, `Community 39`, `Community 42`, `Community 44`, `Community 45`, `Community 46`, `Community 47`, `Community 48`, `Community 52`, `Community 54`, `Community 56`, `Community 57`, `Community 59`, `Community 60`, `Community 61`, `Community 62`, `Community 63`, `Community 64`, `Community 65`, `Community 66`, `Community 67`, `Community 70`, `Community 71`, `Community 72`, `Community 73`, `Community 82`, `Community 84`, `Community 87`, `Community 88`, `Community 89`, `Community 118`, `Community 120`?**
   _High betweenness centrality (0.182) - this node is a cross-community bridge._
-- **Why does `vn` connect `Community 66` to `Community 7`, `Community 10`, `Community 11`, `Community 20`, `Community 23`, `Community 25`, `Community 28`, `Community 29`, `Community 31`, `Community 34`, `Community 43`, `Community 47`, `Community 59`, `Community 63`, `Community 64`, `Community 67`, `Community 71`, `Community 82`, `Community 84`, `Community 107`, `Community 109`, `Community 118`?**
+- **Why does `vn` connect `Community 66` to `Community 7`, `Community 10`, `Community 11`, `Community 20`, `Community 23`, `Community 28`, `Community 29`, `Community 31`, `Community 34`, `Community 43`, `Community 47`, `Community 59`, `Community 63`, `Community 64`, `Community 67`, `Community 71`, `Community 82`, `Community 84`, `Community 107`, `Community 109`, `Community 118`?**
   _High betweenness centrality (0.049) - this node is a cross-community bridge._
-- **Why does `f()` connect `Community 25` to `Community 7`, `Community 10`, `Community 11`, `Community 12`, `Community 15`, `Community 16`, `Community 20`, `Community 23`, `Community 27`, `Community 28`, `Community 29`, `Community 31`, `Community 34`, `Community 37`, `Community 43`, `Community 47`, `Community 63`, `Community 64`, `Community 65`, `Community 66`, `Community 67`, `Community 71`, `Community 82`, `Community 84`, `Community 109`?**
+- **Why does `f()` connect `Community 20` to `Community 7`, `Community 10`, `Community 11`, `Community 12`, `Community 15`, `Community 16`, `Community 23`, `Community 27`, `Community 28`, `Community 29`, `Community 31`, `Community 34`, `Community 37`, `Community 43`, `Community 47`, `Community 63`, `Community 64`, `Community 65`, `Community 66`, `Community 67`, `Community 71`, `Community 82`, `Community 84`, `Community 109`?**
   _High betweenness centrality (0.028) - this node is a cross-community bridge._
 - **What connects `api_urls.py — router for the read-only Data API (mounted at /api/v1/).  Kept sep`, `api_views.py — read-only Data API over every database table.  Each model is expo`, `Page-number pagination with a caller-tunable, hard-capped page size.      The pr` to the rest of the system?**
   _175 weakly-connected nodes found - possible documentation gaps or missing edges._

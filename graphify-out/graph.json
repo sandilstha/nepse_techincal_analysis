@@ -5567,7 +5567,7 @@
       "label": "onChange()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/dashboard.js",
-      "source_location": "L1136",
+      "source_location": "L1140",
       "_origin": "ast",
       "id": "js_dashboard_onchange",
       "community": 5,
@@ -7430,7 +7430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_f",
-      "community": 25,
+      "community": 20,
       "norm_label": "f()"
     },
     {
@@ -7740,7 +7740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_f_constructor",
-      "community": 25,
+      "community": 20,
       "norm_label": ".constructor()"
     },
     {
@@ -7750,7 +7750,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_f_j",
-      "community": 25,
+      "community": 20,
       "norm_label": ".j()"
     },
     {
@@ -7760,7 +7760,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_f_k",
-      "community": 25,
+      "community": 20,
       "norm_label": ".k()"
     },
     {
@@ -8390,7 +8390,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_yt",
-      "community": 16,
+      "community": 43,
       "norm_label": ".yt()"
     },
     {
@@ -8400,7 +8400,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_zt",
-      "community": 43,
+      "community": 16,
       "norm_label": ".zt()"
     },
     {
@@ -11360,7 +11360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_dt",
-      "community": 25,
+      "community": 20,
       "norm_label": ".dt()"
     },
     {
@@ -11780,7 +11780,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ta",
-      "community": 25,
+      "community": 20,
       "norm_label": ".ta()"
     },
     {
@@ -12490,7 +12490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_yo",
-      "community": 25,
+      "community": 20,
       "norm_label": ".yo()"
     },
     {
@@ -12620,7 +12620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_n",
-      "community": 25,
+      "community": 20,
       "norm_label": ".n_()"
     },
     {
@@ -14100,7 +14100,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_fd",
-      "community": 25,
+      "community": 20,
       "norm_label": ".fd()"
     },
     {
@@ -14110,7 +14110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_zl",
-      "community": 25,
+      "community": 20,
       "norm_label": ".zl()"
     },
     {
@@ -70472,5 +70472,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "a99ab27fb086e435eb34f949663cc327c79f25f3"
+  "built_at_commit": "6d1e3fab28551c9089584ce038bac37e4709c52d"
 }

@@ -208,27 +208,39 @@
   function renderSectors(sectors) {
     var box = el("sector-list");
     if (!box) return;
+    var template = el("mi-sector-row-template");
+    if (!template) {
+      if (window.console) console.error("Sector performance template not found.");
+      box.innerHTML = '<div class="mi-empty">UI template missing.</div>';
+      return;
+    }
+
     if (!sectors || !sectors.length) {
       box.innerHTML = '<div class="mi-empty">No sector data available</div>';
       return;
     }
+
     var maxAbs = sectors.reduce(function (m, s) {
       return Math.max(m, Math.abs(isNum(s.pct) ? s.pct : 0));
     }, 0.01);
-    box.innerHTML = sectors.map(function (s) {
+
+    var fragment = document.createDocumentFragment();
+    sectors.forEach(function (s) {
       var pct = isNum(s.pct) ? s.pct : 0;
       var cls = dirClass(pct);
       var width = Math.min(100, Math.abs(pct) / maxAbs * 100);
-      // Diverging bars: positive grows from centre to the right, negative to the left.
-      var fill = pct >= 0
-        ? '<span class="mi-sector-fill up" style="left:50%;width:' + (width / 2) + '%"></span>'
-        : '<span class="mi-sector-fill down" style="right:50%;width:' + (width / 2) + '%"></span>';
-      return '<div class="mi-sector-row">' +
-        '<span class="mi-sector-name" title="' + escapeHtml(s.sector) + '">' + escapeHtml(s.sector) + "</span>" +
-        '<span class="mi-sector-track">' + fill + "</span>" +
-        '<span class="mi-sector-pct ' + cls + '">' + fmtPct(s.pct) + "</span>" +
-        "</div>";
-    }).join("");
+
+      var clone = template.content.cloneNode(true);
+      var nameEl = clone.querySelector(".mi-sector-name");
+      nameEl.textContent = s.sector;
+      nameEl.title = s.sector;
+      clone.querySelector(".mi-sector-fill").style.setProperty("--fill-percent", width / 100);
+      clone.querySelector(".mi-sector-pct").textContent = fmtPct(s.pct);
+      clone.querySelector(".mi-sector-row").classList.add(cls);
+      fragment.appendChild(clone);
+    });
+    box.innerHTML = ""; // Clear previous content
+    box.appendChild(fragment);
   }
 
   // ── Charts (ApexCharts) ────────────────────────────────────────────────
