@@ -215,8 +215,8 @@
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/dashboard.js": {
-    "mtime": 1782188288.8199544,
-    "ast_hash": "6f642e5405ba6ff4966d8f0a3f6a216f",
+    "mtime": 1782214167.6390624,
+    "ast_hash": "d0a5da7024bab8a4a839cf481bb1493d",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/floorsheet-brokers.js": {
@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/insights.js": {
-    "mtime": 1782212454.46293,
-    "ast_hash": "4df8f369dd354753d2861d48a7194c07",
+    "mtime": 1782213475.0264156,
+    "ast_hash": "c862a8344f2fae0e0f2c0541cbf8a624",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/ohlc-chart.js": {
@@ -275,8 +275,8 @@
     "semantic_hash": ""
   },
   "core_analysis/views.py": {
-    "mtime": 1781868206.5231073,
-    "ast_hash": "5da02de2f2655cde8457359fd68eaba0",
+    "mtime": 1782290627.833037,
+    "ast_hash": "48db71b0032acce61e0508f4e1e3e397",
     "semantic_hash": ""
   },
   "manage.py": {

@@ -1,16 +1,16 @@
-# Graph Report - nepse_analytics_platform  (2026-06-23)
+# Graph Report - nepse_analytics_platform  (2026-06-24)
 
 ## Corpus Check
-- 66 files · ~83,103 words
+- 66 files · ~83,175 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1934 nodes · 4837 edges · 122 communities (74 shown, 48 thin omitted)
+- 1934 nodes · 4836 edges · 117 communities (70 shown, 47 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 131 edges (avg confidence: 0.53)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `934d789c`
+- Built from commit: `7938e063`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -66,8 +66,8 @@
 - [[_COMMUNITY_Community 52|Community 52]]
 - [[_COMMUNITY_Community 53|Community 53]]
 - [[_COMMUNITY_Community 54|Community 54]]
+- [[_COMMUNITY_Community 55|Community 55]]
 - [[_COMMUNITY_Community 56|Community 56]]
-- [[_COMMUNITY_Community 57|Community 57]]
 - [[_COMMUNITY_Community 58|Community 58]]
 - [[_COMMUNITY_Community 59|Community 59]]
 - [[_COMMUNITY_Community 60|Community 60]]
@@ -77,6 +77,7 @@
 - [[_COMMUNITY_Community 65|Community 65]]
 - [[_COMMUNITY_Community 66|Community 66]]
 - [[_COMMUNITY_Community 67|Community 67]]
+- [[_COMMUNITY_Community 68|Community 68]]
 - [[_COMMUNITY_Community 69|Community 69]]
 - [[_COMMUNITY_Community 70|Community 70]]
 - [[_COMMUNITY_Community 71|Community 71]]
@@ -110,12 +111,10 @@
 - [[_COMMUNITY_Community 99|Community 99]]
 - [[_COMMUNITY_Community 100|Community 100]]
 - [[_COMMUNITY_Community 101|Community 101]]
+- [[_COMMUNITY_Community 108|Community 108]]
+- [[_COMMUNITY_Community 109|Community 109]]
 - [[_COMMUNITY_Community 110|Community 110]]
 - [[_COMMUNITY_Community 112|Community 112]]
-- [[_COMMUNITY_Community 113|Community 113]]
-- [[_COMMUNITY_Community 114|Community 114]]
-- [[_COMMUNITY_Community 115|Community 115]]
-- [[_COMMUNITY_Community 116|Community 116]]
 - [[_COMMUNITY_Community 117|Community 117]]
 - [[_COMMUNITY_Community 118|Community 118]]
 - [[_COMMUNITY_Community 119|Community 119]]
@@ -149,7 +148,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (122 total, 48 thin omitted)
+## Communities (117 total, 47 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.18
@@ -181,15 +180,11 @@ Nodes (51): applyTheme(), baseChartOpts(), computeGreed(), cssVar(), deferNonCri
 
 ### Community 7 - "Community 7"
 Cohesion: 0.06
-Nodes (15): _(), b(), ce(), de(), dt(), fe(), hi(), In() (+7 more)
+Nodes (15): _(), b(), ce(), ct, de(), di(), dt(), fe() (+7 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.18
 Nodes (3): ii, k(), u()
-
-### Community 9 - "Community 9"
-Cohesion: 0.05
-Nodes (5): nn(), ot(), R(), yi, zi
 
 ### Community 10 - "Community 10"
 Cohesion: 0.25
@@ -224,7 +219,7 @@ Cohesion: 0.21
 Nodes (23): _adx(), _arr(), _atr(), _bbands(), _cci(), _cmf(), _ema(), _emit() (+15 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.13
+Cohesion: 0.15
 Nodes (3): ds(), Ts(), zs
 
 ### Community 32 - "Community 32"
@@ -239,13 +234,17 @@ Nodes (3): ai, ei, Ri
 Cohesion: 0.27
 Nodes (13): _build_url(), _can_stop_after_page(), _clean_date(), _clean_datetime(), _clean_decimal(), _clean_int(), _clean_text(), Command (+5 more)
 
+### Community 37 - "Community 37"
+Cohesion: 0.14
+Nodes (4): nn(), ot(), R(), T()
+
 ### Community 38 - "Community 38"
 Cohesion: 0.22
 Nodes (13): _build_url(), _clean_date(), _clean_decimal(), _clean_int(), _clean_text(), _clean_time(), Command, _configure_session() (+5 more)
 
 ### Community 39 - "Community 39"
-Cohesion: 0.13
-Nodes (4): ee(), le(), ne(), qn()
+Cohesion: 0.18
+Nodes (3): ee(), le(), qn()
 
 ### Community 40 - "Community 40"
 Cohesion: 0.17
@@ -268,20 +267,16 @@ Cohesion: 0.26
 Nodes (12): _clean_text(), fetch_contributors(), _first(), _num(), _parse(), _parse_sector_movers(), nepse_contributors.py — official NEPSE index + index point-contributors.  Source, Return index, stock contributors and sector contributors from HATHLYTICS. (+4 more)
 
 ### Community 51 - "Community 51"
-Cohesion: 0.21
-Nodes (4): H, I, X(), Z()
+Cohesion: 0.19
+Nodes (6): d(), H, jt, v(), X(), Z()
 
 ### Community 53 - "Community 53"
-Cohesion: 0.07
-Nodes (33): _build_benchmark_sparkline(), build_dashboard_context(), _build_index_dataframes(), _build_rrg_index_choices(), _build_standard_dataframe(), crud_dashboard_view(), crud_delete_handler(), crud_operations_handler() (+25 more)
+Cohesion: 0.08
+Nodes (31): _build_benchmark_sparkline(), build_dashboard_context(), _build_index_dataframes(), _build_rrg_index_choices(), _build_standard_dataframe(), crud_dashboard_view(), crud_delete_handler(), crud_operations_handler() (+23 more)
 
 ### Community 56 - "Community 56"
 Cohesion: 0.22
 Nodes (3): bs(), Ft, wt
-
-### Community 57 - "Community 57"
-Cohesion: 0.38
-Nodes (3): d(), jt, v()
 
 ### Community 58 - "Community 58"
 Cohesion: 0.15
@@ -304,16 +299,28 @@ Cohesion: 0.20
 Nodes (5): ae(), it, O(), oe(), ue()
 
 ### Community 67 - "Community 67"
-Cohesion: 0.12
+Cohesion: 0.13
 Nodes (3): hs(), jn(), se()
+
+### Community 68 - "Community 68"
+Cohesion: 0.20
+Nodes (4): ie(), ne(), ve(), zn()
 
 ### Community 69 - "Community 69"
 Cohesion: 0.36
 Nodes (7): DataFrame, _prepare_price_frame(), Calculates Relative Rotation Graph (RRG) coordinates (RS-Ratio and RS-Momentum), run_rrg_simulation(), _format_date(), ordered_nepse_indices(), run_rrg_indices_simulation()
 
-### Community 72 - "Community 72"
-Cohesion: 0.11
-Nodes (4): ie(), pe(), ve(), zn()
+### Community 70 - "Community 70"
+Cohesion: 0.15
+Nodes (4): fi(), gi(), mi, wi()
+
+### Community 71 - "Community 71"
+Cohesion: 0.13
+Nodes (4): he, I, ki(), nt
+
+### Community 73 - "Community 73"
+Cohesion: 0.15
+Nodes (3): At, ni, ti
 
 ### Community 74 - "Community 74"
 Cohesion: 0.29
@@ -347,10 +354,6 @@ Nodes (5): _as_bool(), calculate_stage_analysis(), _coerce_float(), _coerce_int(
 Cohesion: 0.22
 Nodes (11): _day_has_rows(), get_latest_trading_date(), get_range_aggregate(), _is_latest(), _local_trading_dates(), List of trading-day strings for a range, newest first (incl. latest)., Trading dates from the local EOD table; avoids 90 cheap upstream probes., Sum of every day aggregate in the range. Cached. None if nothing built. (+3 more)
 
-### Community 82 - "Community 82"
-Cohesion: 0.12
-Nodes (4): bn, mn, vt(), wn()
-
 ### Community 83 - "Community 83"
 Cohesion: 0.50
 Nodes (4): Series, _compute_rsi(), RSI/RSI-SMA long-only strategy for one-way markets (NEPSE):     1. BUY when RSI, run_rsi_sma_long_only_simulation()
@@ -358,10 +361,6 @@ Nodes (4): Series, _compute_rsi(), RSI/RSI-SMA long-only strategy for one-way ma
 ### Community 86 - "Community 86"
 Cohesion: 0.50
 Nodes (3): fetch_live_index_rows(), live_index.py — intraday live NEPSE index / sub-index quotes.  Pulls the interna, Return a list of raw live-index dicts, or None if the feed is unavailable.
-
-### Community 87 - "Community 87"
-Cohesion: 0.29
-Nodes (3): fi(), pi(), wi()
 
 ### Community 93 - "Community 93"
 Cohesion: 0.25
@@ -386,19 +385,19 @@ Nodes (4): bi(), G, vi(), xi
 ## Knowledge Gaps
 - **8 isolated node(s):** `Migration`, `Migration`, `Migration`, `Migration`, `Migration` (+3 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **48 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **47 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `_()` connect `Community 7` to `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 15`, `Community 16`, `Community 20`, `Community 22`, `Community 23`, `Community 25`, `Community 26`, `Community 29`, `Community 30`, `Community 31`, `Community 33`, `Community 34`, `Community 37`, `Community 39`, `Community 42`, `Community 44`, `Community 45`, `Community 46`, `Community 47`, `Community 48`, `Community 49`, `Community 51`, `Community 52`, `Community 54`, `Community 56`, `Community 57`, `Community 59`, `Community 60`, `Community 61`, `Community 62`, `Community 64`, `Community 65`, `Community 66`, `Community 67`, `Community 70`, `Community 71`, `Community 72`, `Community 73`, `Community 82`, `Community 84`, `Community 87`, `Community 88`, `Community 89`, `Community 112`, `Community 113`, `Community 114`, `Community 115`, `Community 116`, `Community 118`, `Community 120`?**
+- **Why does `_()` connect `Community 7` to `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 15`, `Community 16`, `Community 20`, `Community 22`, `Community 23`, `Community 25`, `Community 26`, `Community 29`, `Community 30`, `Community 31`, `Community 33`, `Community 34`, `Community 37`, `Community 39`, `Community 42`, `Community 44`, `Community 45`, `Community 46`, `Community 47`, `Community 48`, `Community 49`, `Community 51`, `Community 52`, `Community 54`, `Community 55`, `Community 56`, `Community 59`, `Community 60`, `Community 61`, `Community 62`, `Community 64`, `Community 65`, `Community 66`, `Community 67`, `Community 68`, `Community 70`, `Community 71`, `Community 72`, `Community 73`, `Community 82`, `Community 84`, `Community 87`, `Community 88`, `Community 89`, `Community 108`, `Community 112`, `Community 118`, `Community 120`?**
   _High betweenness centrality (0.179) - this node is a cross-community bridge._
-- **Why does `vn` connect `Community 66` to `Community 7`, `Community 10`, `Community 11`, `Community 18`, `Community 20`, `Community 22`, `Community 23`, `Community 27`, `Community 28`, `Community 29`, `Community 31`, `Community 34`, `Community 37`, `Community 43`, `Community 55`, `Community 59`, `Community 63`, `Community 64`, `Community 67`, `Community 68`, `Community 71`, `Community 84`, `Community 107`, `Community 108`, `Community 111`, `Community 112`, `Community 118`?**
+- **Why does `vn` connect `Community 66` to `Community 7`, `Community 10`, `Community 11`, `Community 18`, `Community 20`, `Community 22`, `Community 23`, `Community 26`, `Community 27`, `Community 28`, `Community 29`, `Community 31`, `Community 34`, `Community 37`, `Community 43`, `Community 55`, `Community 59`, `Community 63`, `Community 64`, `Community 67`, `Community 84`, `Community 107`, `Community 112`, `Community 118`?**
   _High betweenness centrality (0.049) - this node is a cross-community bridge._
-- **Why does `sn()` connect `Community 64` to `Community 67`, `Community 68`, `Community 37`, `Community 7`, `Community 9`, `Community 10`, `Community 107`, `Community 82`, `Community 55`, `Community 54`, `Community 23`, `Community 27`, `Community 63`?**
+- **Why does `sn()` connect `Community 64` to `Community 67`, `Community 37`, `Community 7`, `Community 10`, `Community 107`, `Community 82`, `Community 84`, `Community 54`, `Community 23`, `Community 87`, `Community 27`, `Community 63`?**
   _High betweenness centrality (0.029) - this node is a cross-community bridge._
 - **What connects `api_urls.py — router for the read-only Data API (mounted at /api/v1/).  Kept sep`, `api_views.py — read-only Data API over every database table.  Each model is expo`, `Page-number pagination with a caller-tunable, hard-capped page size.      The pr` to the rest of the system?**
-  _177 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _178 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 1` be split into smaller, more focused modules?**
   _Cohesion score 0.058549931600547195 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**

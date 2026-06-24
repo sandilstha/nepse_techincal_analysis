@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEPSE Core Storage &amp; Backtest Panel</title>
+  <title>{% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' %}Strategy Simulator{% elif active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}RRG Analytics Desk{% elif active_tab == 'inventory' %}NEPSE Analytics Workbench{% else %}Technical Analysis Desk{% endif %}</title>
   <script>
     // Apply the saved theme before paint to avoid a flash. Shares the
     // "mi-theme" key with the Market Insights dashboard so the choice carries
@@ -22,6 +22,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'core_analysis/css/dashboard.css' %}?v={{ dashboard_asset_version|default:1 }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/workbench-layout.css' %}?v={{ dashboard_asset_version|default:1 }}">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -35,17 +36,43 @@
 
   <div class="workspace-header py-3">
     <div class="header-text-center">
-      <p class="workspace-title"><span>NEPSE</span> Analytics Intelligence Workspace</p>
-      <p class="workspace-sub">Advanced Market Strategy &amp; Technical Analysis Console</p>
+      {% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' %}
+        <p class="workspace-title"><span>SS</span> Strategy Simulator</p>
+        <p class="workspace-sub">Advanced strategy backtesting and model simulation</p>
+      {% elif active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}
+        <p class="workspace-title"><span>RRG</span> Analytics Desk</p>
+        <p class="workspace-sub">Relative rotation analysis for stocks and indices versus NEPSE</p>
+      {% elif active_tab == 'inventory' %}
+        <p class="workspace-title"><span>NEPSE</span> Analytics Intelligence Workspace</p>
+        <p class="workspace-sub">Data management and analytics workbench</p>
+      {% else %}
+        <p class="workspace-title"><span>TA</span> Technical Analysis Desk</p>
+        <p class="workspace-sub">Technical screening, scoring and market structure analysis</p>
+      {% endif %}
     </div>
     <div class="header-actions">
       <div class="theme-control-cluster">
         <a href="{% url 'market_insights' %}" class="ui-icon-btn" title="Home" aria-label="Home">Home</a>
         <button type="button" id="themeToggleBtn" class="ui-icon-btn" title="Switch to light theme" aria-label="Switch to light theme">Light</button>
+        <a href="{% url 'crud_dashboard' %}" class="ui-icon-btn {% if active_tab == 'inventory' %}active{% endif %}" title="Analytics workbench" aria-label="Analytics workbench">Workbench</a>
       </div>
       {# Data-sync toolbar now lives inside the Raw Inventory Manager tab (see includes/_inventory_tab.html). #}
     </div>{# /header-actions #}
   </div>
+
+  {% comment %}Persistent global section nav so the workbench is never a dead-end —
+     keeps a back-path to every area and highlights the current section. active_section
+     is derived from active_tab: RRG panes -> 'rrg', everything else here -> 'technical'.
+     Market Insights / Floor sheet render their own copy and are unaffected.{% endcomment %}
+  {% if active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}
+    {% include "core_analysis/includes/_primary_nav.html" with active_section='rrg' %}
+  {% elif active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' %}
+    {% include "core_analysis/includes/_primary_nav.html" with active_section='strategy' %}
+  {% elif active_tab == 'inventory' %}
+    {% include "core_analysis/includes/_primary_nav.html" with active_section='data' %}
+  {% else %}
+    {% include "core_analysis/includes/_primary_nav.html" with active_section='technical' %}
+  {% endif %}
 
   {% block content %}{% endblock %}
 </main>{# /workspace-wrap #}

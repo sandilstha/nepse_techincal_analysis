@@ -224,6 +224,64 @@
       padding-bottom: 0;
       justify-content: center;
     }
+    /* ── Persistent global section nav (workbench shell) ───────────────────
+       Mirrors the home dashboard's mi-primary-nav so the workbench keeps a
+       back-path to every area (Market Insights / Technical / RRG / Floor sheet)
+       and the active section stays highlighted. Styled with workbench tokens;
+       these .mi-* rules only resolve here since dashboard.css is workbench-only. */
+    .mi-primary-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      padding: 0.5rem;
+      margin: 0 0 1.4rem;
+      background: linear-gradient(180deg, var(--bg-raised) 0%, var(--bg-surface) 100%);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 24px -8px rgba(0,0,0,0.5);
+    }
+    .mi-nav-link {
+      flex: 1 1 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      text-align: center;
+      padding: 0.6rem 1rem;
+      border-radius: var(--radius-sm);
+      font-family: 'Manrope', sans-serif;
+      font-weight: 700;
+      font-size: 0.72rem;
+      letter-spacing: 0.045em;
+      text-transform: uppercase;
+      color: var(--ink-1);
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    .mi-nav-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mi-nav-icon svg {
+      width: 1.15em;
+      height: 1.15em;
+      stroke: currentColor;
+    }
+    .mi-nav-link:hover {
+      color: var(--ink-1);
+      background: var(--bg-raised);
+      border-color: var(--line-bright);
+    }
+    .mi-nav-link.active {
+      color: #04111f;
+      background: var(--amber);
+      border-color: var(--amber);
+      box-shadow: 0 8px 22px -8px var(--amber-glow),
+                  inset 0 -3px 0 0 rgba(4, 17, 31, 0.28);
+    }
+
     .nav-tabs .nav-link {
       border: 1px solid transparent;
       color: var(--ink-2);
@@ -273,25 +331,49 @@
       order: 1;
     }
     .primary-menu-tab {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
       border: 1px solid var(--line);
       border-radius: var(--radius-sm) !important;
       background: linear-gradient(180deg, rgba(11,29,63,0.96) 0%, rgba(7,20,46,0.98) 100%);
       color: var(--amber);
       font-family: 'Poppins', sans-serif;
-      font-size: 12px;
+      /* Main-tab hierarchy: larger, bolder, more spacing than the sub-tab decks */
+      font-size: 14px;
       font-weight: 800;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      padding: 12px 24px;
+      padding: 14px 28px;
       margin-bottom: 0;
       transition: all 0.24s ease;
+    }
+    /* Icons on main tabs only — sub-tab decks stay text-only */
+    .primary-menu-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .primary-menu-icon svg {
+      width: 1.2em;
+      height: 1.2em;
+      stroke: currentColor;
+    }
+    /* Keep the inventory tab (which also carries .nav-link) on the main-tab scale */
+    .nav-tabs .primary-menu-tab {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
     }
     .nav-tabs .primary-menu-tab.active,
     .primary-menu-tab.active {
       color: var(--amber);
       border-color: var(--amber);
       background: linear-gradient(180deg, rgba(13,47,70,1) 0%, rgba(7,28,52,1) 100%);
-      box-shadow: 0 16px 36px -18px rgba(18,211,154,0.85), 0 0 0 1px rgba(18,211,154,0.24) inset;
+      box-shadow: 0 16px 36px -18px rgba(18,211,154,0.85),
+                  0 0 0 1px rgba(18,211,154,0.24) inset,
+                  inset 0 -3px 0 0 var(--amber);
       transform: translateY(-1px);
     }
     .nav-tabs .primary-menu-tab.active::before {
@@ -329,14 +411,50 @@
     .nav-section-rrg .rrg-tool-item {
       display: flex;
     }
+    /* The global nav now drives all top-level switching (Strategy / Technical /
+       RRG) and the Data button lives in the header, so the workbench's own
+       primary-menu toggle row is redundant — hide it everywhere and show only
+       the active section's sub-tabs. */
+    .primary-menu-item,
+    .nav-row-break {
+      display: none;
+    }
+    /* Data/inventory view has no sub-tabs, so suppress the empty tab bar. */
+    #workspaceTabs.nav-section-inventory {
+      display: none;
+    }
     .advanced-tool-item .nav-link,
     .rrg-tool-item .nav-link {
-      min-height: 54px;
+      min-height: 42px;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: var(--radius-sm) !important;
       margin-bottom: 0;
+      /* Sub-tab hierarchy: smaller, lighter, subtler, sentence case */
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      text-transform: none;
+      padding: 7px 14px;
+      color: var(--ink-3);
+    }
+    .advanced-tool-item .nav-link.active,
+    .rrg-tool-item .nav-link.active {
+      font-weight: 600;
+    }
+    /* RRG sub-tabs stand alone in RRG view (section row is hidden), so size them
+       a touch larger/clearer than the dense Advanced desk list. */
+    .rrg-tool-item .nav-link {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      padding: 9px 20px;
+      min-height: 44px;
+      color: var(--ink-2);
+    }
+    .rrg-tool-item .nav-link.active {
+      font-weight: 700;
     }
     .nav-tabs .strategy-card-button {
       width: 100%;

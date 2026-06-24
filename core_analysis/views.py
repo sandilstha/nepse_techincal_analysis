@@ -97,6 +97,7 @@ def _dashboard_asset_version():
     latest = 0
     for rel in (
         "core_analysis/css/dashboard.css",
+        "core_analysis/css/workbench-layout.css",
         "core_analysis/js/dashboard.js",
         "core_analysis/js/workbench-ajax.js",
     ):
