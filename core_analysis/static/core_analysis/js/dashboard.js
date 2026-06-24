@@ -1945,11 +1945,82 @@
       }
     };
 
+    // ── Gemini AI narrative (Support & Resistance tab) ─────────────────────
+    // The S/R partial renders an #sr-ai-analysis panel with a loading state and
+    // a data-ai-url. We auto-fire one fetch per render, reusing the tab's own
+    // query params (the URL is kept in sync by workbench-ajax.js after a swap,
+    // and is the real query string on a full-page load). The heavy LLM call is
+    // off the tab's main render path so the rest of the tab stays instant.
+    function loadSrAiAnalysis() {
+      const panel = document.getElementById('sr-ai-analysis');
+      if (!panel) return;
+      const body = panel.querySelector('[data-ai-body]');
+      if (!body || panel.dataset.aiLoaded === '1') return;
+      panel.dataset.aiLoaded = '1';
+
+      const renderNote = function (text, withRetry) {
+        const note = document.createElement('div');
+        note.className = 'sr-ai-note text-muted small';
+        note.textContent = text;
+        body.innerHTML = '';
+        body.appendChild(note);
+        if (withRetry) {
+          const retry = document.createElement('a');
+          retry.href = '#';
+          retry.className = 'ms-2';
+          retry.textContent = 'Retry';
+          retry.addEventListener('click', function (e) {
+            e.preventDefault();
+            panel.dataset.aiLoaded = '';
+            body.innerHTML =
+              '<div class="text-muted small d-flex align-items-center gap-2" data-ai-loading>' +
+              '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>' +
+              'Generating AI analysis…</div>';
+            loadSrAiAnalysis();
+          });
+          note.appendChild(retry);
+        }
+      };
+
+      const url = panel.getAttribute('data-ai-url') || '/workbench/ai-analysis/';
+      // Read the tab's params straight from its form so we get the exact symbol,
+      // dates and filters that produced these results. (window.location.search is
+      // unreliable here: workbench-ajax.js calls WorkbenchReinit BEFORE it updates
+      // the URL via replaceState, so on the first run the URL is still empty.)
+      const srForm = document.getElementById('supportResistanceForm');
+      const params = srForm
+        ? new URLSearchParams(new FormData(srForm))
+        : new URLSearchParams(window.location.search);
+      params.set('active_tab', 'support_resistance');
+
+      fetch(url + '?' + params.toString(), {
+        method: 'GET',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+      })
+        .then(function (resp) {
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          return resp.json();
+        })
+        .then(function (data) {
+          if (data.error) { renderNote(data.error, false); return; }
+          const meta = panel.querySelector('[data-ai-meta]');
+          if (meta && data.model) {
+            meta.textContent = (data.provider ? data.provider + ' · ' : '') + data.model;
+          }
+          body.innerHTML = '<div class="sr-ai-content">' + (data.analysis_html || '') + '</div>';
+        })
+        .catch(function () {
+          renderNote('AI analysis is temporarily unavailable.', true);
+        });
+    }
+
     setupRrgToolbar();
     drawRrgChart();
     drawAdvancedMarketStructureChart();
     setupRrgIndicesToolbar();
     drawRrgIndicesChart();
+    loadSrAiAnalysis();
 
     // ── AJAX re-init hook ──────────────────────────────────────────────────
     // workbench-ajax.js swaps a single tab's results partial into the DOM after
@@ -1972,6 +2043,7 @@
           drawRrgIndicesChart();
         } else if (tabKey === 'support_resistance') {
           drawAdvancedMarketStructureChart();
+          loadSrAiAnalysis();
         }
       } catch (e) { /* a chart failure must not break the rest of the page */ }
     };

@@ -1779,3 +1779,31 @@
       }
 
     }
+
+/* ── Gemini AI narrative panel (Support & Resistance tab) ─────────────────── */
+.sr-ai-panel .sr-ai-body { min-height: 56px; }
+
+.sr-ai-content {
+  color: var(--ink-1, #edf4ff);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.sr-ai-content .sr-ai-h {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent, #4a90e2);
+  margin: 16px 0 6px;
+}
+.sr-ai-content .sr-ai-h:first-child { margin-top: 0; }
+.sr-ai-content p { margin: 0 0 10px; }
+.sr-ai-content .sr-ai-list {
+  margin: 0 0 10px;
+  padding-left: 18px;
+}
+.sr-ai-content .sr-ai-list li { margin-bottom: 4px; }
+.sr-ai-content strong { color: var(--ink-1, #edf4ff); font-weight: 700; }
+
+.sr-ai-note { color: var(--ink-3, #6f88ad); }
+.sr-ai-note a { color: var(--accent, #4a90e2); }

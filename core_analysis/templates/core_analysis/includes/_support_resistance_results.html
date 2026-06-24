@@ -201,6 +201,24 @@
             </div>
           {% endif %}
 
+          <div class="panel-outer mb-4 sr-ai-panel"
+               id="sr-ai-analysis"
+               data-ai-url="{% url 'gemini_sr_analysis' %}">
+            <div class="p-3 bg-raised border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">
+                AI Narrative Analysis
+                <span style="opacity:.6; font-weight:600;">· Gemini</span>
+              </h6>
+              <span class="text-muted small" data-ai-meta>Generated from this symbol's computed levels &amp; recent price path</span>
+            </div>
+            <div class="p-3 sr-ai-body" data-ai-body>
+              <div class="text-muted small d-flex align-items-center gap-2" data-ai-loading>
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Generating AI analysis…
+              </div>
+            </div>
+          </div>
+
           {% if support_resistance_metrics.confluence_resistances or support_resistance_metrics.confluence_supports %}
           <div class="panel-outer mb-4">
             <div class="p-3 bg-raised border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">

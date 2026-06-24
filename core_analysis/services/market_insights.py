@@ -964,6 +964,25 @@ def build_payload(force=False, cache_only=False, fast=False):
     if live_stale and _eod():
         enriched = _eod()
 
+    # ── Single-session consistency ───────────────────────────────────────────
+    # When the per-scrip data is end-of-day (the live feed was stale or absent),
+    # keep the WHOLE overview on that same settled session: source the headline
+    # index from the EOD database too, so the index, day range, breadth, gainers
+    # and totals all describe ONE session — matching nepalstock's last settled
+    # close — instead of a live index sitting over prior-session widgets. When a
+    # genuine live session is available (is_live stays True), the live headline /
+    # breadth / movers are kept, so the live view auto-restores once the upstream
+    # feeds are fresh again.
+    eod_overview = not is_live
+    if eod_overview:
+        _eod()  # ensure eod_date + eod_enriched are loaded
+        enriched = eod_enriched if eod_enriched is not None else enriched
+        nepse_headline = None            # _overview falls back to the EOD index row
+        index_source = "eod"
+        headline_from_contributors = False
+        if eod_date:
+            as_of = eod_date.isoformat()
+
     # Reconcile sector turnover to the OFFICIAL total: the 13 index sub-sectors
     # only cover indexed scrips, so the remainder (debentures, preference /
     # promoter shares) is shown as a "Non-indexed" row. This makes sector turnover
@@ -979,10 +998,12 @@ def build_payload(force=False, cache_only=False, fast=False):
             }]
 
     # Official top gainers / losers / most-active scrips (fetched above); fall
-    # back to the lists computed from the live-price feed when unavailable.
-    gainers = top_gainers or _gainers(enriched)
-    losers = top_losers or _losers(enriched)
-    most_active = top_active or _most_active(enriched)
+    # back to the lists computed from the per-scrip feed when unavailable. In the
+    # EOD-consistency mode the live movers feeds are skipped so these lists also
+    # describe the same settled session as the rest of the overview.
+    gainers = (None if eod_overview else top_gainers) or _gainers(enriched)
+    losers = (None if eod_overview else top_losers) or _losers(enriched)
+    most_active = (None if eod_overview else top_active) or _most_active(enriched)
 
     # Heatmap is ALWAYS end-of-day, never the intraday live feed. Its change % is
     # then the settled close-vs-previous-close move, matching nepalstock's EOD
@@ -993,6 +1014,25 @@ def build_payload(force=False, cache_only=False, fast=False):
     heatmap_tiles = _heatmap(_eod())
     heatmap_as_of = eod_date.isoformat() if eod_date else None
 
+    # Market breadth: when the headline is the LIVE contributors session, the live
+    # advance/decline counts ride along on that same feed (positive_scripts /
+    # negative_scripts / flat_scripts). Use them so the breadth widget and the
+    # Fear & Greed meter describe the SAME session as the headline index, instead
+    # of the prior-session EOD breadth (which is all `enriched` holds when the live
+    # per-scrip feed is stale). Falls back to EOD breadth when those counts are
+    # absent.
+    breadth = None
+    if headline_from_contributors:
+        ci = (contrib or {}).get("index") or {}
+        adv = _f(ci.get("positive_scripts"))
+        dec = _f(ci.get("negative_scripts"))
+        unch = _f(ci.get("flat_scripts"))
+        if adv is not None and dec is not None:
+            a, d, u = int(adv), int(dec), int(unch or 0)
+            breadth = {"advancing": a, "declining": d, "unchanged": u, "total": a + d + u}
+    if breadth is None:
+        breadth = _breadth(enriched)
+
     payload = {
         "as_of": as_of,
         "live": is_live,
@@ -1001,7 +1041,7 @@ def build_payload(force=False, cache_only=False, fast=False):
         "live_time": live_time,
         "has_data": bool(enriched),
         "overview": _overview(enriched, nepse_headline, ms_row),
-        "breadth": _breadth(enriched),
+        "breadth": breadth,
         "greed_history": _greed_history(),
         "gainers": gainers,
         "losers": losers,

@@ -331,3 +331,20 @@ else:
 # lets users override this per-session; this is just the initial value. Can be
 # overridden via the INSIGHTS_REFRESH_SECONDS environment variable.
 INSIGHTS_REFRESH_SECONDS = int(os.environ.get('INSIGHTS_REFRESH_SECONDS', '30'))
+
+# ── Gemini AI narrative (Support & Resistance tab) ──────────────────────────
+# Powers the "AI Narrative Analysis" panel under the Institutional Multi-Framework
+# table. Leave GEMINI_API_KEY blank to disable the panel (it degrades gracefully).
+# Get a key at https://aistudio.google.com/apikey and put it in .env.
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-pro').strip()
+GEMINI_TIMEOUT_SECONDS = int(os.environ.get('GEMINI_TIMEOUT_SECONDS', '45'))
+
+# Fallback provider (OpenRouter, OpenAI-compatible) used when Gemini is missing,
+# errors, times out, or returns nothing. Must be a CHAT model — embedding models
+# (e.g. *-embed-*) cannot generate the narrative. Get a key at
+# https://openrouter.ai/keys and put it in .env.
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '').strip()
+OPENROUTER_MODEL = os.environ.get(
+    'OPENROUTER_MODEL', 'nvidia/nemotron-3-super-120b-a12b:free'
+).strip()

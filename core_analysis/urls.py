@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     crud_dashboard_view,
     dashboard_tab_calc,
+    gemini_sr_analysis,
     crud_operations_handler,
     crud_delete_handler,
     trigger_daily_api_sync_view,
@@ -68,6 +69,8 @@ urlpatterns = [
     path('workbench/', crud_dashboard_view, name='crud_dashboard'),
     # AJAX: run one tab's calculation and return only its results partial.
     path('workbench/calc/', dashboard_tab_calc, name='dashboard_tab_calc'),
+    # AJAX: Gemini narrative for the Support & Resistance tab (JSON).
+    path('workbench/ai-analysis/', gemini_sr_analysis, name='gemini_sr_analysis'),
     path('dashboard/process/', crud_operations_handler, name='crud_operations'),
     path('dashboard/delete/<int:pk>/', crud_delete_handler, name='crud_delete'),
     path('dashboard/sync/', trigger_daily_api_sync_view, name='trigger_daily_sync'),

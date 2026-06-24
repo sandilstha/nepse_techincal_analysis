@@ -61,6 +61,7 @@ from core_analysis.services.support_resistance import (
     build_institutional_analysis_rows,
     run_support_resistance_analysis,
 )
+from core_analysis.services.gemini_analysis import generate_sr_ai_analysis
 
 @staff_member_required
 @require_POST
@@ -1166,6 +1167,63 @@ def dashboard_tab_calc(request):
     context = build_dashboard_context(request)
     html = render_to_string(partial, context, request=request)
     return HttpResponse(html)
+
+
+def _recent_bars_summary(df, count=40):
+    """Compact, JSON-safe tail of the OHLC frame for the AI brief (oldest→newest)."""
+    if df is None or df.empty:
+        return []
+    tail = df.tail(count)
+    bars = []
+    for _, row in tail.iterrows():
+        bar = {
+            "date": pd.to_datetime(row.get("business_date")).strftime("%Y-%m-%d"),
+            "open": round(float(row["open_price_adj"]), 2) if pd.notna(row.get("open_price_adj")) else None,
+            "high": round(float(row["high_price_adj"]), 2) if pd.notna(row.get("high_price_adj")) else None,
+            "low": round(float(row["low_price_adj"]), 2) if pd.notna(row.get("low_price_adj")) else None,
+            "close": round(float(row["close_price_adj"]), 2) if pd.notna(row.get("close_price_adj")) else None,
+            "volume": int(row["volume"]) if pd.notna(row.get("volume")) else None,
+        }
+        bars.append(bar)
+    return bars
+
+
+@staff_member_required
+@require_GET
+def gemini_sr_analysis(request):
+    """Generate the Gemini narrative for the Support & Resistance tab (JSON).
+
+    Reuses build_dashboard_context() so the metrics fed to the model are
+    byte-for-byte identical to what the tab rendered, then rebuilds the recent
+    OHLC tail so the model can read the actual price path. The S/R tab's panel
+    fires this automatically on load with the same query params.
+    """
+    context = build_dashboard_context(request)
+    metrics = context.get("support_resistance_metrics")
+    if not isinstance(metrics, dict) or metrics.get("error"):
+        return JsonResponse(
+            {"error": (metrics or {}).get("error") if isinstance(metrics, dict) else "No analysis available for this selection."},
+            status=200,
+        )
+
+    symbol = context.get("support_resistance_selected_symbol", "")
+    sr_from = context.get("support_resistance_from_date", "")
+    sr_to = context.get("support_resistance_to_date", "")
+    recent_bars = []
+    if symbol and sr_from and sr_to:
+        try:
+            df = _build_standard_dataframe(symbol, sr_from, sr_to, use_unadjusted_fallback=True)
+            recent_bars = _recent_bars_summary(df)
+        except Exception:
+            recent_bars = []
+
+    result = generate_sr_ai_analysis(
+        metrics,
+        context.get("institutional_analysis_rows"),
+        context.get("advanced_market_structure_metrics"),
+        recent_bars,
+    )
+    return JsonResponse(result, status=200)
 
 
 # ── CRUD handlers (unchanged) ─────────────────────────────────────────────────
