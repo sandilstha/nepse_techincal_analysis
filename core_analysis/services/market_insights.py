@@ -55,6 +55,8 @@ CACHE_LAST_GOOD_TTL = 3600
 # can't wedge the dashboard.
 BUILD_LOCK_KEY = "market_insights_build_lock"
 BUILD_LOCK_TTL = 20
+CONTRIB_REFRESH_LOCK_KEY = "market_insights_contrib_refresh_lock"
+CONTRIB_REFRESH_LOCK_TTL = 30
 
 NEPSE_INDEX_NAME = "NEPSE INDEX"
 SUBINDEX_NEPSE_KEY = "NepseIndex"  # NEPSE headline key in the NepseSubIndices feed
@@ -741,6 +743,31 @@ def _contributors_block(contrib):
     }
 
 
+def _cached_contributors():
+    """Return the current contributors cache without making a network request."""
+    cached = cache.get("nepse_contributors")
+    if cached is None or cached == "FAIL":
+        return None
+    return cached
+
+
+def _refresh_contributors_async():
+    """Refresh contributors off-thread so page/API responses never wait on it."""
+    if not cache.add(CONTRIB_REFRESH_LOCK_KEY, 1, CONTRIB_REFRESH_LOCK_TTL):
+        return
+
+    def _run():
+        try:
+            fetch_contributors()
+        except Exception:
+            logger.exception("Background contributors refresh failed")
+        finally:
+            cache.delete(CONTRIB_REFRESH_LOCK_KEY)
+            connections.close_all()
+
+    threading.Thread(target=_run, name="nepse-contributors-refresh", daemon=True).start()
+
+
 def _nepse_history(days=HISTORY_DAYS):
     qs = (
         NepseMarketIndex.objects.filter(sector_name=NEPSE_INDEX_NAME)
@@ -951,13 +978,13 @@ def build_payload(force=False, cache_only=False, fast=False):
     if _after_market_close():
         _maybe_trigger_eod_sync(force=force)
         payload = _build_eod_payload()
-        # Keep the Top Contributors widget populated after the close exactly as
-        # during the session — it has no SQL equivalent, so fetch it live. A feed
-        # failure just leaves the widget empty; it never blocks the EOD page.
-        try:
-            payload["contributors"] = _contributors_block(fetch_contributors())
-        except Exception:  # pragma: no cover - defensive
-            logger.exception("Post-close contributors fetch failed")
+        # Contributors have no SQL equivalent, but their upstream page can stall.
+        # Use the last cached value and refresh it off-thread so the API returns
+        # the settled SQL dashboard immediately.
+        cached_contrib = _cached_contributors()
+        payload["contributors"] = _contributors_block(cached_contrib)
+        if force or cached_contrib is None:
+            _refresh_contributors_async()
         cache.set(CACHE_KEY, payload, CACHE_TTL)
         cache.set(CACHE_LAST_GOOD_KEY, payload, CACHE_LAST_GOOD_TTL)
         return payload

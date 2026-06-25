@@ -165,8 +165,8 @@
     "semantic_hash": "a696b07ac5b1787314b9da914e0e0cfb"
   },
   "core_analysis/services/market_insights.py": {
-    "mtime": 1782381122.7690642,
-    "ast_hash": "2f3288b0b16de9e6002eaaf6e032e90b",
+    "mtime": 1782387547.7209656,
+    "ast_hash": "307dc2b76aab58bc69f39b6a54911d99",
     "semantic_hash": ""
   },
   "core_analysis/services/moving_average.py": {
@@ -215,8 +215,8 @@
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/dashboard.js": {
-    "mtime": 1782386141.3350058,
-    "ast_hash": "6fc771dda6e497f3d4c98e330f18cf11",
+    "mtime": 1782386699.4037461,
+    "ast_hash": "b9af662796acc6dee122ee330e1a83ab",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/floorsheet-brokers.js": {
@@ -260,8 +260,8 @@
     "semantic_hash": "bb318371ce8811435f42f4a6ba8d64a7"
   },
   "core_analysis/tests.py": {
-    "mtime": 1782385982.0932548,
-    "ast_hash": "466aa47f399acbb7476759ba17d15dc0",
+    "mtime": 1782387602.5311787,
+    "ast_hash": "75534dd7ab25d1b7c173054acc09e46b",
     "semantic_hash": ""
   },
   "core_analysis/udf_views.py": {

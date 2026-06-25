@@ -411,8 +411,11 @@ class MarketInsightsHeadlineTests(unittest.TestCase):
         def boom(*a, **k):
             raise AssertionError("a per-scrip live feed was called after market close")
 
-        # Contributors HAS no SQL equivalent, so the Top Contributors widget is
-        # still fetched live after the close; the numeric-widget feeds are not.
+        def contributor_boom(*a, **k):
+            raise AssertionError("contributors were fetched synchronously after market close")
+
+        # Contributors have no SQL equivalent, so use the cached feed after the
+        # close and refresh it separately; the numeric-widget feeds are not used.
         contrib = {
             "positive": [{"symbol": "NABIL", "points": 1.2}],
             "negative": [],
@@ -430,7 +433,8 @@ class MarketInsightsHeadlineTests(unittest.TestCase):
             patch.object(market_insights, "_greed_history", return_value=[]),
             patch.object(market_insights, "_overview", return_value={}),
             patch.object(market_insights, "_sectors", return_value=[]),
-            patch.object(market_insights, "fetch_contributors", return_value=contrib),
+            patch.object(market_insights, "_cached_contributors", return_value=contrib),
+            patch.object(market_insights, "fetch_contributors", contributor_boom),
             # The per-scrip / index feeds must NOT be consulted after the close.
             patch.object(market_insights, "fetch_live_rows", boom),
             patch.object(market_insights, "fetch_subindices", boom),
@@ -439,6 +443,9 @@ class MarketInsightsHeadlineTests(unittest.TestCase):
         with ExitStack() as stack:
             trigger = stack.enter_context(
                 patch.object(market_insights, "_maybe_trigger_eod_sync")
+            )
+            refresh = stack.enter_context(
+                patch.object(market_insights, "_refresh_contributors_async")
             )
             for p in patches:
                 stack.enter_context(p)
@@ -450,10 +457,64 @@ class MarketInsightsHeadlineTests(unittest.TestCase):
         nabil = next(t for t in payload["heatmap"] if t["symbol"] == "NABIL")
         self.assertEqual(nabil["ltp"], 505.0)
         self.assertEqual(nabil["pct"], 1.0)       # (505-500)/500
-        # Index Contributors AND Sector Movers stay populated/live after close.
+        # Index Contributors AND Sector Movers stay populated after close.
         self.assertEqual(payload["contributors"]["positive"], contrib["positive"])
         self.assertEqual(payload["contributors"]["sectors"], contrib["sectors"])
         trigger.assert_called_once()
+        refresh.assert_called_once()
+
+    def test_after_close_empty_contributor_cache_does_not_block_payload(self):
+        eod_rows = [{
+            "symbol": "NABIL",
+            "security_name": "Nabil Bank",
+            "open_price": 500.0,
+            "high_price": 510.0,
+            "low_price": 495.0,
+            "close_price": 505.0,
+            "previous_close": 500.0,
+            "total_traded_quantity": 1000,
+            "total_traded_value": 505000.0,
+            "total_trades": 60,
+            "market_capitalization": 0.0,
+        }]
+
+        def boom(*a, **k):
+            raise AssertionError("a live feed was called while building post-close EOD payload")
+
+        patches = [
+            patch.object(market_insights.cache, "get", return_value=None),
+            patch.object(market_insights.cache, "set"),
+            patch.object(market_insights, "_after_market_close", return_value=True),
+            patch.object(market_insights, "_sector_map", return_value={"NABIL": "Banking"}),
+            patch.object(market_insights, "_latest_stock_rows", return_value=(date(2026, 6, 25), eod_rows)),
+            patch.object(market_insights, "_nepse_history", return_value=[]),
+            patch.object(market_insights, "_greed_history", return_value=[]),
+            patch.object(market_insights, "_overview", return_value={}),
+            patch.object(market_insights, "_sectors", return_value=[]),
+            patch.object(market_insights, "_cached_contributors", return_value=None),
+            patch.object(market_insights, "fetch_contributors", boom),
+            patch.object(market_insights, "fetch_live_rows", boom),
+            patch.object(market_insights, "fetch_subindices", boom),
+        ]
+
+        with ExitStack() as stack:
+            trigger = stack.enter_context(
+                patch.object(market_insights, "_maybe_trigger_eod_sync")
+            )
+            refresh = stack.enter_context(
+                patch.object(market_insights, "_refresh_contributors_async")
+            )
+            for p in patches:
+                stack.enter_context(p)
+            payload = market_insights.build_payload(force=False)
+
+        self.assertFalse(payload["live"])
+        self.assertEqual(payload["source"], "eod")
+        self.assertEqual(payload["contributors"]["positive"], [])
+        self.assertEqual(payload["contributors"]["negative"], [])
+        self.assertEqual(payload["contributors"]["sectors"], {"positive": [], "negative": []})
+        trigger.assert_called_once()
+        refresh.assert_called_once()
 
 
 @unittest.skipIf(market_insights is None, "Django settings unavailable")

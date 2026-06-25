@@ -1245,13 +1245,15 @@
     let rrgLockedDomain = null;
     let rrgLastDomain = null;
     let rrgAnimationTimer = null;
+    let rrgAnimationFrameCount = null;
 
     const readRrgPoints = () => {
       const dataEl = document.getElementById('rrg-chart-data');
       if (!dataEl) return [];
       try {
         return JSON.parse(dataEl.textContent || '[]')
-          .filter((row) => Number.isFinite(Number(row.RS_Ratio)) && Number.isFinite(Number(row.RS_Momentum)));
+          .filter((row) => Number.isFinite(Number(row.RS_Ratio)) && Number.isFinite(Number(row.RS_Momentum)))
+          .sort((a, b) => String(a.business_date || '').localeCompare(String(b.business_date || '')));
       } catch (e) {
         return [];
       }
@@ -1286,7 +1288,10 @@
       const maxTail = getRrgMaxTail();
       const tailLength = syncRrgTailControls(document.getElementById('rrgTailNumber')?.value || maxTail);
       const arrowMode = document.getElementById('rrgArrowMode')?.checked || false;
-      const points = allPoints.slice(-tailLength);
+      const isAnimatingTrail = Number.isInteger(rrgAnimationFrameCount);
+      const animationFrame = Math.max(1, Math.min(rrgAnimationFrameCount || 1, allPoints.length));
+      const points = isAnimatingTrail ? allPoints.slice(0, animationFrame) : allPoints.slice(-tailLength);
+      const domainPoints = isAnimatingTrail ? allPoints : points;
 
       const width = 900;
       const height = 390;
@@ -1299,13 +1304,13 @@
         min = rrgLockedDomain.min;
         max = rrgLockedDomain.max;
       } else if (rrgScaleMode === 'fit') {
-        const values = points.flatMap((row) => [Number(row.RS_Ratio), Number(row.RS_Momentum)]).concat([100]);
+        const values = domainPoints.flatMap((row) => [Number(row.RS_Ratio), Number(row.RS_Momentum)]).concat([100]);
         min = Math.floor(Math.min(...values)) - 1;
         max = Math.ceil(Math.max(...values)) + 1;
       } else {
         const spread = Math.max(
           2,
-          Math.ceil(Math.max(...points.flatMap((row) => [
+          Math.ceil(Math.max(...domainPoints.flatMap((row) => [
             Math.abs(Number(row.RS_Ratio) - 100),
             Math.abs(Number(row.RS_Momentum) - 100),
           ])))
@@ -1343,6 +1348,7 @@
       const latestX = scaleX(Number(latest.RS_Ratio));
       const latestY = scaleY(Number(latest.RS_Momentum));
       const latestColor = colorFor(latest.Quadrant);
+      const showLatestState = !isAnimatingTrail || animationFrame >= allPoints.length;
 
       // Trail along the visible tail (needs >= 2 points). Arrow Mode adds a
       // direction arrowhead at the leading (latest) end.
@@ -1363,7 +1369,10 @@
 
       // Pulsing halo around the latest point so it visibly blinks (CSS
       // animation in dashboard.css — reliable on innerHTML-injected SVG).
-      const blink = `<circle class="rrg-blink" cx="${latestX.toFixed(2)}" cy="${latestY.toFixed(2)}" r="6" fill="none" stroke="${latestColor}" stroke-width="2.5"></circle>`;
+      const blink = showLatestState
+        ? `<circle class="rrg-blink" cx="${latestX.toFixed(2)}" cy="${latestY.toFixed(2)}" r="6" fill="none" stroke="${latestColor}" stroke-width="2.5"></circle>`
+        : '';
+      const pointLabel = showLatestState ? 'Latest' : formatDisplayDate(latest.business_date);
 
       container.innerHTML = `
         <svg class="rrg-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Relative Rotation Graph">
@@ -1386,7 +1395,7 @@
           ${trailDots}
           ${latestDot}
           ${blink}
-          <text x="${(latestX + 10).toFixed(2)}" y="${(latestY - 12).toFixed(2)}" fill="#0f172a" font-size="12" font-weight="700">Latest</text>
+          <text x="${(latestX + 10).toFixed(2)}" y="${(latestY - 12).toFixed(2)}" fill="#0f172a" font-size="12" font-weight="700">${pointLabel}</text>
         </svg>`;
     };
 
@@ -1418,6 +1427,7 @@
           clearInterval(rrgAnimationTimer);
           rrgAnimationTimer = null;
         }
+        rrgAnimationFrameCount = null;
         animateBtn.innerHTML = '&#9658; Animate';
         animateBtn.classList.remove('active');
       };
@@ -1464,16 +1474,18 @@
           return;
         }
         const total = getRrgMaxTail();
-        let nextTail = 1;
+        let nextFrame = 1;
         animateBtn.textContent = 'Animating';
         animateBtn.classList.add('active');
-        syncRrgTailControls(nextTail);
+        rrgAnimationFrameCount = nextFrame;
+        syncRrgTailControls(nextFrame);
         drawRrgChart();
         rrgAnimationTimer = setInterval(() => {
-          nextTail += 1;
-          syncRrgTailControls(nextTail);
+          nextFrame += 1;
+          rrgAnimationFrameCount = nextFrame;
+          syncRrgTailControls(nextFrame);
           drawRrgChart();
-          if (nextTail >= total) stopAnimation();
+          if (nextFrame >= total) stopAnimation();
         }, 180);
       });
     };
