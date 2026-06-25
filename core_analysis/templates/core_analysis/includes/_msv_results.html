@@ -1,3 +1,6 @@
+      {% if msv_new_listing %}
+        {% include "core_analysis/includes/_new_listing_snapshot.html" with snapshot=msv_new_listing %}
+      {% endif %}
       {% if msv_backtest_metrics %}
         {% if msv_backtest_metrics.error %}
           <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ msv_backtest_metrics.error }}</div>

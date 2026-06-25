@@ -31,9 +31,21 @@ def run_rrg_simulation(
     
     df = pd.merge(stock, bench, on="business_date", how="inner").sort_values("business_date").reset_index(drop=True)
     df = df[(df["stock_close"] > 0) & (df["bench_close"] > 0)].copy()
+    source_bars = int(len(stock))
+    benchmark_bars = int(len(bench))
+    matched_bars = int(len(df))
     
     if len(df) < lookback * 2:
-        return {"error": f"Insufficient data for RRG({lookback}). Need at least {lookback*2} bars."}, pd.DataFrame()
+        return {
+            "error": (
+                f"Insufficient overlapping data for RRG({lookback}). "
+                f"Need at least {lookback * 2} shared trading dates; found {matched_bars}."
+            ),
+            "source_bars": source_bars,
+            "benchmark_bars": benchmark_bars,
+            "matched_bars": matched_bars,
+            "lookback": lookback,
+        }, pd.DataFrame()
 
     # 1. Calculate Relative Strength (RS)
     df["RS"] = (df["stock_close"] / df["bench_close"]) * 100.0
@@ -70,6 +82,9 @@ def run_rrg_simulation(
         "rs_ratio_delta": round(float(latest["RS_Ratio"] - previous["RS_Ratio"]), 2),
         "rs_momentum_delta": round(float(latest["RS_Momentum"] - previous["RS_Momentum"]), 2),
         "data_points": int(len(out_df)),
+        "source_bars": source_bars,
+        "benchmark_bars": benchmark_bars,
+        "matched_bars": matched_bars,
         "lookback": lookback,
     }
 

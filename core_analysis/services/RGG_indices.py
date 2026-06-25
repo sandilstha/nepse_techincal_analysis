@@ -110,6 +110,9 @@ def run_rrg_indices_simulation(
             "momentum_delta": round(float(latest["RS_Momentum"] - previous["RS_Momentum"]), 2),
             "Quadrant": str(latest["Quadrant"]),
             "data_points": int(len(rrg_df)),
+            "source_bars": int(metrics.get("source_bars", len(index_df))),
+            "benchmark_bars": int(metrics.get("benchmark_bars", len(benchmark_df))),
+            "matched_bars": int(metrics.get("matched_bars", len(rrg_df))),
         }
         points.append(point)
 

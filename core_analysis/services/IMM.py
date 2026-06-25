@@ -71,9 +71,17 @@ def calculate_relative_strength(
     lookback: int = 20,
 ) -> pd.Series:
     """
-    Return the ratio of the stock's ``lookback``-period return to NEPSE's
-    return for the same window.  Values > 1.0 mean the stock outperformed;
-    values < 1.0 mean it underperformed.
+    Relative strength as the ratio of the stock's price-relative to NEPSE's
+    price-relative over ``lookback`` bars:  (1 + stock_return) / (1 + nepse_return).
+    Values > 1.0 mean the stock outperformed; values < 1.0 mean it underperformed.
+
+    This is deliberately NOT a raw ratio of signed returns (stock_return /
+    nepse_return): that form flips sign when the index falls — a stock that
+    rose while NEPSE dropped would score negative (worst) instead of >1 (best) —
+    and explodes when the index return is near zero (very common on flat index
+    bars).  Using price-relatives keeps the metric monotonic and bounded:
+        stock +5%, index -2%  ->  1.05 / 0.98 = 1.07  (outperform, correct)
+        stock +5%, index  0%  ->  1.05 / 1.00 = 1.05  (stable, no blow-up)
 
     Returns a NaN series (aligned to stock_df.index) when benchmark data
     is unavailable — callers should emit a warning in that case.
@@ -89,7 +97,7 @@ def calculate_relative_strength(
 
     stock_return = merged["close_price_adj"].pct_change(lookback)
     nepse_return = merged["nepse_close"].pct_change(lookback)
-    rs = _safe_divide(stock_return, nepse_return)
+    rs = _safe_divide(1.0 + stock_return, 1.0 + nepse_return)
     return rs.reindex(stock_df.index)
 
 

@@ -1,3 +1,6 @@
+      {% if rrg_new_listing %}
+        {% include "core_analysis/includes/_new_listing_snapshot.html" with snapshot=rrg_new_listing %}
+      {% endif %}
       {% if rrg_backtest_metrics %}
         {% if rrg_backtest_metrics.error %}
           <div class="alert alert-warning border-0 rounded-3 shadow-sm text-center py-3">{{ rrg_backtest_metrics.error }}</div>
@@ -32,7 +35,7 @@
               <div class="card p-4 border-0 metric-card shadow-sm rounded-3 h-100">
                 <span class="metrics-card-label text-secondary">Benchmark</span>
                 <h4 class="mt-2 mb-0 fw-bold text-light">{{ rrg_benchmark_symbol }}</h4>
-                <div class="small text-muted mt-1">{{ rrg_backtest_metrics.data_points }} plotted data points</div>
+                <div class="small text-muted mt-1">{{ rrg_backtest_metrics.data_points }} plotted points{% if rrg_backtest_metrics.matched_bars %} from {{ rrg_backtest_metrics.matched_bars }} shared bars{% endif %}</div>
               </div>
             </div>
           </div>

@@ -480,6 +480,35 @@ def _market_cap_totals():
     }
 
 
+def _turnover_totals():
+    """NEPSE-wide traded turnover for the latest EOD date and its change versus
+    the prior trading day, summed across every stock."""
+    dates = list(
+        NepseDailyStockPrice.objects.order_by("-business_date")
+        .values_list("business_date", flat=True)
+        .distinct()[:2]
+    )
+    if not dates:
+        return {"turnover_change": None, "turnover_pct": None}
+
+    def _tv(day):
+        agg = NepseDailyStockPrice.objects.filter(business_date=day).aggregate(
+            total=Sum("total_traded_value")
+        )
+        return _f(agg["total"])
+
+    latest = _tv(dates[0])
+    prev = _tv(dates[1]) if len(dates) > 1 else None
+    change = pct = None
+    if latest is not None and prev not in (None, 0):
+        change = latest - prev
+        pct = change / prev * 100.0
+    return {
+        "turnover_change": round(change, 2) if change is not None else None,
+        "turnover_pct": round(pct, 2) if pct is not None else None,
+    }
+
+
 def _overview(enriched, nepse_live=None, market_summary=None):
     # Market totals: prefer the official MarketSummaryHistory row; otherwise sum
     # the live-price feed (which runs slightly low vs the exchange).
@@ -531,6 +560,7 @@ def _overview(enriched, nepse_live=None, market_summary=None):
 
     nepse.update(totals)
     nepse.update(_market_cap_totals())
+    nepse.update(_turnover_totals())
     return nepse
 
 

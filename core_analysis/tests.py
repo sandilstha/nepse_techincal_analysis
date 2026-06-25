@@ -119,6 +119,70 @@ class UdfChartBarsTests(SimpleTestCase):
         self.assertEqual(result, stored + [live])
 
 
+class RrgAnalyticsTests(unittest.TestCase):
+    @staticmethod
+    def _price_frame(start, closes):
+        return pd.DataFrame({
+            "business_date": pd.date_range(start, periods=len(closes), freq="D"),
+            "close_price_adj": closes,
+        })
+
+    def test_rrg_formula_reports_overlap_quality(self):
+        from core_analysis.services.RGG_Chart import run_rrg_simulation
+
+        stock = self._price_frame("2026-01-01", [100 + i * 1.8 for i in range(30)])
+        benchmark = self._price_frame("2026-01-01", [1000 + i * 4.0 for i in range(30)])
+
+        metrics, rows = run_rrg_simulation(stock, benchmark, lookback=5)
+
+        self.assertNotIn("error", metrics)
+        self.assertEqual(metrics["source_bars"], 30)
+        self.assertEqual(metrics["benchmark_bars"], 30)
+        self.assertEqual(metrics["matched_bars"], 30)
+        self.assertEqual(metrics["data_points"], len(rows))
+        self.assertEqual(len(rows), 22)
+        self.assertAlmostEqual(rows.iloc[-1]["RS"], (stock.iloc[-1]["close_price_adj"] / benchmark.iloc[-1]["close_price_adj"]) * 100.0)
+        self.assertTrue(np.isfinite(rows.iloc[-1]["RS_Ratio"]))
+        self.assertTrue(np.isfinite(rows.iloc[-1]["RS_Momentum"]))
+
+    def test_rrg_formula_rejects_sparse_overlap(self):
+        from core_analysis.services.RGG_Chart import run_rrg_simulation
+
+        stock = self._price_frame("2026-01-01", [100 + i for i in range(30)])
+        benchmark = self._price_frame("2026-01-01", [1000 + i for i in range(8)])
+
+        metrics, rows = run_rrg_simulation(stock, benchmark, lookback=5)
+
+        self.assertIn("Insufficient overlapping data", metrics["error"])
+        self.assertEqual(metrics["source_bars"], 30)
+        self.assertEqual(metrics["benchmark_bars"], 8)
+        self.assertEqual(metrics["matched_bars"], 8)
+        self.assertTrue(rows.empty)
+
+    def test_indices_rrg_preserves_skip_reason_and_shared_bar_count(self):
+        from core_analysis.services.RGG_indices import run_rrg_indices_simulation
+
+        benchmark = self._price_frame("2026-01-01", [1000 + i * 3.0 for i in range(30)])
+        index_frames = {
+            "BANKING SUBINDEX": self._price_frame("2026-01-01", [500 + i * 2.0 for i in range(30)]),
+            "HYDROPOWER INDEX": self._price_frame("2026-01-01", [300 + i for i in range(8)]),
+        }
+
+        metrics, points, trails, skipped = run_rrg_indices_simulation(
+            index_frames,
+            benchmark,
+            lookback=5,
+            selected_symbols=["BANKING SUBINDEX", "HYDROPOWER INDEX"],
+        )
+
+        self.assertEqual(metrics["indices_plotted"], 1)
+        self.assertEqual(points[0]["symbol"], "BANKING SUBINDEX")
+        self.assertEqual(points[0]["matched_bars"], 30)
+        self.assertTrue(trails)
+        self.assertEqual(skipped[0]["symbol"], "HYDROPOWER INDEX")
+        self.assertIn("Insufficient overlapping data", skipped[0]["reason"])
+
+
 class WorkbenchSecurityTests(SimpleTestCase):
     def test_workbench_routes_redirect_anonymous_users_to_admin_login(self):
         client = Client()

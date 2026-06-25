@@ -103,7 +103,18 @@ def calculate_stage_analysis(
 
     df['resistance'] = df['high'].rolling(resistance_lookback).max().shift(1)
 
-    df['ema30_rising'] = df['ema_30w'] > df['ema_30w'].shift(5)
+    # Normalized 5-bar slope of the 30-week MA, with a flat band. A plain
+    # ``ema > ema.shift(5)`` boolean has no "flat" state: any infinitesimal
+    # uptick counts as "rising", and topping (Stage 3 = MA flattening after a
+    # rise) is indistinguishable from advancing. We split the slope into three
+    # mutually exclusive regimes — rising / flat / falling — so each stage maps
+    # to exactly one regime. ``flat_band`` is the percent move over 5 bars below
+    # which the slow 30-week MA is treated as flat (tunable).
+    df['ema30_slope_pct'] = (df['ema_30w'] / df['ema_30w'].shift(5) - 1.0) * 100.0
+    flat_band = 0.2
+    df['ema30_rising'] = df['ema30_slope_pct'] > flat_band
+    df['ema30_falling'] = df['ema30_slope_pct'] < -flat_band
+    df['ema30_flat'] = df['ema30_slope_pct'].abs() <= flat_band
     df['returns_3m'] = df['close'].pct_change(periods=momentum_period)
 
     df['rsi'] = ta.rsi(df['close'], length=rsi_length)
@@ -146,16 +157,22 @@ def calculate_stage_analysis(
         adx_gate
     )
 
+    # Stage 3 (topping): the 30-week MA has FLATTENED (no longer rising) while
+    # price has rolled below the fast MA but has not yet broken decisively below
+    # the 30-week MA. Requiring a *rising* MA here was a bug — a genuine top, by
+    # definition, is where the uptrend stalls.
     conditions_stage3 = (
         (df['close'] < df['ema_10w']) &
         (df['ema_10w'] < df['ema_30w']) &
-        (df['ema30_rising']) &
+        (df['ema30_flat']) &
         (df['close'] >= df['ema_30w'] * 0.85)
     )
 
+    # Stage 4 (declining): price below a FALLING 30-week MA. Mutually exclusive
+    # with Stage 3 on the slope regime (flat vs falling).
     conditions_stage4 = (
         (df['close'] < df['ema_30w']) &
-        (df['ema_30w'] < df['ema_30w'].shift(5))
+        (df['ema30_falling'])
     )
 
     # Keep canonical stage labels so downstream UI/filters match exactly.

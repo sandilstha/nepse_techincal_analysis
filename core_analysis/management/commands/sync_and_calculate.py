@@ -5,6 +5,7 @@ from urllib.parse import urlencode, urljoin, urlparse, urlunparse, parse_qsl
 
 import requests
 from django.core.management.base import BaseCommand, CommandError
+from django.db import connection
 
 from core_analysis.models import CompanyProfile, StockPriceAdjustment
 
@@ -140,11 +141,19 @@ class Command(BaseCommand):
                 break
 
         if company_by_symbol and not dry_run:
+            # Upsert on the `symbol` unique key. MySQL (ON DUPLICATE KEY UPDATE)
+            # supports update_conflicts but rejects an explicit conflict target,
+            # whereas PostgreSQL/SQLite (ON CONFLICT) require `unique_fields`.
+            # Branch on the backend so the same command runs on either.
+            upsert_kwargs = {
+                "update_conflicts": True,
+                "update_fields": ["security_name", "sector_name", "status"],
+            }
+            if connection.features.supports_update_conflicts_with_target:
+                upsert_kwargs["unique_fields"] = ["symbol"]
             CompanyProfile.objects.bulk_create(
                 list(company_by_symbol.values()),
-                update_conflicts=True,
-                update_fields=["security_name", "sector_name", "status"],
-                unique_fields=["symbol"],
+                **upsert_kwargs,
             )
 
         self.stdout.write(

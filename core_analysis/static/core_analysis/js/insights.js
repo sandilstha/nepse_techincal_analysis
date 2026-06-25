@@ -161,6 +161,9 @@
     el("ov-day-low").textContent = fmtNum(ov.nepse_low, 2);
 
     el("ov-turnover").textContent = fmtMoney(ov.turnover);
+    var turnoverDelta = el("ov-turnover-delta");
+    turnoverDelta.textContent = "(" + fmtPct(ov.turnover_pct) + ")";
+    turnoverDelta.className = "mi-stat-delta " + dirClass(ov.turnover_pct);
     el("ov-mcap").textContent = fmtMoney(ov.market_cap);
     var mcapDelta = el("ov-mcap-delta");
     mcapDelta.textContent = "(" + fmtPct(ov.market_cap_pct) + ")";

@@ -9,6 +9,9 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
 from core_analysis.models import NepseDailyStockPrice, NepseMarketIndex
+from core_analysis.management.commands.backfill_companies import (
+    backfill_missing_company_profiles,
+)
 
 
 # Default upstream NEPSE API host. Overridable per-run with --api-base-url, or
@@ -111,6 +114,20 @@ class Command(BaseCommand):
 
         if source in ("both", "indices"):
             self._sync_indices(session, api_base_url, from_date, to_date, batch_size, max_pages, dry_run)
+
+        # Safety net: a freshly listed company trades (so it lands in the price
+        # table) before the listed-companies API gives it a profile, which would
+        # leave it invisible in the dropdown. Backfill provisional profiles for
+        # any recently-traded symbol that still has none. Only runs when stock
+        # prices were just synced and not in dry-run.
+        if source in ("both", "stocks") and not dry_run:
+            created = backfill_missing_company_profiles()
+            if created:
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"Backfilled {len(created)} new company profile(s): {', '.join(created)}"
+                    )
+                )
 
     def _sync_stocks(self, session, api_base_url, from_date, to_date, batch_size, max_pages, dry_run):
         stock_url = _build_url(

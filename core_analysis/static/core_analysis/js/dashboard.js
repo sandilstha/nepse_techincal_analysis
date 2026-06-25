@@ -867,10 +867,17 @@
     };
 
     setupFlatpickrSingle('inventoryBusinessDate');
-    setupFlatpickrRange('headerSyncFromDate', 'headerSyncToDate', { defaultMonthRange: true });
+    // Sync Price defaults to a single latest trading day (both From and To set
+    // to the current trading day), same as Sync Floorsheet below.
+    setupFlatpickrRange('headerSyncFromDate', 'headerSyncToDate');
+    (function () {
+      const syncTo = document.getElementById('headerSyncToDate');
+      const syncFrom = document.getElementById('headerSyncFromDate');
+      if (syncTo && syncFrom && syncTo.value) setDateInputValue(syncFrom, syncTo.value);
+    })();
     setupFlatpickrRange('headerCalcFromDate', 'headerCalcToDate', { defaultMonthRange: true });
-    // Floorsheet is trade-level and very high volume, so default to a single
-    // latest trading day (From == To) rather than a month; the user can widen it.
+    // Floorsheet defaults to a single latest trading day: both From and To are
+    // set to the current (latest) trading day. The user can widen it as needed.
     setupFlatpickrRange('headerFloorFromDate', 'headerFloorToDate');
     (function () {
       const floorTo = document.getElementById('headerFloorToDate');
@@ -1782,8 +1789,8 @@
           <text x="${plotRight - 22}" y="${plotTop + 30}" fill="#057a1f" font-size="21" font-weight="800" text-anchor="end">Leading</text>
           <text x="${plotLeft + 18}" y="${plotBottom - 22}" fill="#e11919" font-size="21" font-weight="800">Lagging</text>
           <text x="${plotRight - 22}" y="${plotBottom - 22}" fill="#f0b400" font-size="21" font-weight="800" text-anchor="end">Weakening</text>
-          <text x="${(plotLeft + plotRight) / 2}" y="${height - 16}" fill="#111827" font-size="16" font-weight="700" text-anchor="middle">JdK RS-Ratio</text>
-          <text x="24" y="${(plotTop + plotBottom) / 2}" fill="#111827" font-size="16" font-weight="700" text-anchor="middle" transform="rotate(-90 24 ${(plotTop + plotBottom) / 2})">JdK RS-Momentum</text>
+          <text x="${(plotLeft + plotRight) / 2}" y="${height - 16}" fill="#111827" font-size="16" font-weight="700" text-anchor="middle">RS-Ratio</text>
+          <text x="24" y="${(plotTop + plotBottom) / 2}" fill="#111827" font-size="16" font-weight="700" text-anchor="middle" transform="rotate(-90 24 ${(plotTop + plotBottom) / 2})">RS-Momentum</text>
           <text x="${(plotLeft + plotRight) / 2}" y="${plotBottom - 16}" fill="#64748b" font-size="22" font-weight="800" opacity="0.7" text-anchor="middle">NEPSE / RRG</text>
           ${trailNodes}
           ${pointNodes}

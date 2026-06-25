@@ -80,6 +80,7 @@ def run_msv_long_only_simulation(
     rvol_threshold=1.5,
     supertrend_length=10,
     supertrend_multiplier=3.0,
+    vwap_period=20,
 ):
     """
     Long-only NEPSE strategy using MACD + Supertrend + VWAP + ATR + RVOL.
@@ -101,6 +102,7 @@ def run_msv_long_only_simulation(
         "rvol_threshold": float(rvol_threshold),
         "supertrend_length": int(supertrend_length),
         "supertrend_multiplier": float(supertrend_multiplier),
+        "vwap_period": int(vwap_period),
     }
 
     if settings["macd_fast"] < 1 or settings["macd_slow"] < 2 or settings["macd_signal"] < 1:
@@ -113,6 +115,8 @@ def run_msv_long_only_simulation(
         warnings.append("Supertrend Length is too small. Use at least 2.")
     if settings["rvol_period"] < 2:
         warnings.append("RVOL Period is too small. Use at least 2.")
+    if settings["vwap_period"] < 2:
+        warnings.append("VWAP Period is too small. Use at least 2.")
     if settings["rvol_threshold"] <= 0 or settings["atr_multiplier"] <= 0 or settings["supertrend_multiplier"] <= 0:
         warnings.append("Multiplier and threshold values must be greater than zero.")
 
@@ -141,6 +145,7 @@ def run_msv_long_only_simulation(
         settings["atr_length"],
         settings["rvol_period"],
         settings["supertrend_length"],
+        settings["vwap_period"],
     ) + 5
     if len(df) < min_bars:
         return {
@@ -157,15 +162,20 @@ def run_msv_long_only_simulation(
         length=settings["supertrend_length"],
         multiplier=settings["supertrend_multiplier"],
     )
-    vwap_source = df.set_index("business_date", drop=False)
-    vwap = ta.vwap(
-        vwap_source["high_price_adj"],
-        vwap_source["low_price_adj"],
-        vwap_source["close_price_adj"],
-        vwap_source["volume"],
-    )
-    if vwap is not None:
-        vwap = pd.Series(vwap.to_numpy(), index=df.index)
+    # Rolling VWAP over ``vwap_period`` bars: Σ(typical_price·volume) / Σ(volume).
+    # NOTE: we do NOT use ta.vwap here. ta.vwap defaults to anchor="D" (daily
+    # reset); on daily bars each bar is its own anchor group, so its VWAP
+    # collapses to that same bar's (H+L+C)/3 and the "price above VWAP" filter
+    # degenerates to "close in the upper third of the bar" — a within-bar check
+    # carrying no multi-day demand information. A rolling window restores the
+    # intended volume-weighted trend reference.
+    typical_price = (
+        df["high_price_adj"] + df["low_price_adj"] + df["close_price_adj"]
+    ) / 3.0
+    vwap_win = settings["vwap_period"]
+    tpv_sum = (typical_price * df["volume"]).rolling(window=vwap_win).sum()
+    vol_sum = df["volume"].rolling(window=vwap_win).sum().replace(0, np.nan)
+    vwap = tpv_sum / vol_sum
 
     if macd_df is None or macd_df.empty or atr is None or supertrend_df is None or supertrend_df.empty or vwap is None:
         return {

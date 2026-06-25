@@ -88,7 +88,8 @@
                     <th class="th-num">RS-Momentum</th>
                     <th class="th-num">Ratio Delta</th>
                     <th class="th-num">Momentum Delta</th>
-                    <th class="th-num">Rows</th>
+                    <th class="th-num">Calc Rows</th>
+                    <th class="th-num">Shared Bars</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -104,10 +105,11 @@
                     <td class="td-num {% if point.ratio_delta >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">{{ point.ratio_delta|floatformat:2 }}</td>
                     <td class="td-num {% if point.momentum_delta >= 0 %}text-success-custom{% else %}text-danger-custom{% endif %}">{{ point.momentum_delta|floatformat:2 }}</td>
                     <td class="td-num">{{ point.data_points }}</td>
+                    <td class="td-num">{{ point.matched_bars }}</td>
                   </tr>
                   {% empty %}
                   <tr>
-                    <td colspan="10" class="text-center text-muted py-4">No RRG index data generated in this date range.</td>
+                    <td colspan="11" class="text-center text-muted py-4">No RRG index data generated in this date range.</td>
                   </tr>
                   {% endfor %}
                 </tbody>
@@ -119,7 +121,7 @@
             <div class="alert alert-secondary border-0 rounded-3 shadow-sm small">
               <strong>Skipped indices:</strong>
               {% for skipped in rrg_indices_skipped %}
-                {{ skipped.symbol }}{% if not forloop.last %}, {% endif %}
+                {{ skipped.symbol }}{% if skipped.reason %} ({{ skipped.reason }}){% endif %}{% if not forloop.last %}, {% endif %}
               {% endfor %}
             </div>
           {% endif %}

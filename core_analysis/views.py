@@ -62,6 +62,52 @@ from core_analysis.services.support_resistance import (
     run_support_resistance_analysis,
 )
 from core_analysis.services.gemini_analysis import generate_sr_ai_analysis
+from core_analysis.services.new_listing import (
+    build_new_listing_snapshot,
+    FULL_HISTORY_BARS,
+    SNAPSHOT_TRIGGER_BARS,
+)
+
+# Only companies with this status are offered in the search/dropdown — Delisted,
+# Suspended and Inactive tickers are hidden so users can't pick a dead symbol.
+# MySQL's default collation is case-insensitive, so this matches any casing.
+ACTIVE_COMPANY_STATUS = "Active"
+
+MARKET_INDEX_ALIASES = {
+    "NEPSE": "NEPSE INDEX",
+    "BANKING": "BANKING SUBINDEX",
+    "BANKING INDEX": "BANKING SUBINDEX",
+    "DEV BANK": "DEVELOPMENT BANK INDEX",
+    "DEVELOPMENT BANK": "DEVELOPMENT BANK INDEX",
+    "FINANCE": "FINANCE INDEX",
+    "FLOAT": "FLOAT INDEX",
+    "HOTELS": "HOTELS AND TOURISM INDEX",
+    "HOTEL": "HOTELS AND TOURISM INDEX",
+    "HOTELS AND TOURISM": "HOTELS AND TOURISM INDEX",
+    "HYDROPOWER": "HYDROPOWER INDEX",
+    "INVESTMENT": "INVESTMENT INDEX",
+    "LIFE": "LIFE INSURANCE",
+    "LIFE INS": "LIFE INSURANCE",
+    "MFG": "MANUFACTURING AND PROCESSING",
+    "MANUFACTURING": "MANUFACTURING AND PROCESSING",
+    "MICROFINANCE": "MICROFINANCE INDEX",
+    "MUTUAL FUND INDEX": "MUTUAL FUND",
+    "NON LIFE": "NON LIFE INSURANCE",
+    "NON-LIFE": "NON LIFE INSURANCE",
+    "OTHERS": "OTHERS INDEX",
+    "SENSITIVE": "SENSITIVE INDEX",
+    "SENSITIVE FLOAT": "SENSITIVE FLOAT INDEX",
+    "TRADING": "TRADING INDEX",
+}
+
+KNOWN_MARKET_INDEX_SYMBOLS = {
+    "BANKING SUBINDEX", "DEVELOPMENT BANK INDEX", "FINANCE INDEX", "FLOAT INDEX",
+    "HOTELS AND TOURISM INDEX", "HYDROPOWER INDEX", "INVESTMENT INDEX", "LIFE INSURANCE",
+    "MANUFACTURING AND PROCESSING", "MICROFINANCE INDEX", "MUTUAL FUND", "NEPSE INDEX",
+    "NON LIFE INSURANCE", "OTHERS INDEX", "SENSITIVE FLOAT INDEX", "SENSITIVE INDEX",
+    "TRADING INDEX",
+}
+
 
 @staff_member_required
 @require_POST
@@ -75,8 +121,14 @@ def trigger_sync_and_calculate(request):
         messages.error(request, "Invalid sync date format. Use YYYY-MM-DD.")
         return redirect("crud_dashboard")
     try:
+        # Always include the company-profile refresh ("both" runs _sync_companies
+        # then adjusted prices). Previously this fell back to "adjustments" once
+        # any CompanyProfile existed, which permanently froze the company list:
+        # newly listed (IPO) companies got daily prices via Sync Price but never a
+        # CompanyProfile row, so they never appeared in the dropdown. The company
+        # sync is an idempotent upsert, so re-running it each time is safe.
         kwargs = {
-            "source": "adjustments" if CompanyProfile.objects.exists() else "both",
+            "source": "both",
         }
         if from_date:
             kwargs["from_date"] = from_date
@@ -128,6 +180,54 @@ def _safe_int(value, default, minimum=None):
     return parsed
 
 
+def _normalized_symbol_text(symbol):
+    normalized = " ".join(str(symbol or "").strip().upper().split())
+    if normalized.startswith("NEPSE:"):
+        normalized = normalized.split(":", 1)[1].strip()
+    return normalized
+
+
+def _canonical_market_index_symbol(symbol):
+    normalized = _normalized_symbol_text(symbol)
+    return MARKET_INDEX_ALIASES.get(normalized, normalized)
+
+
+def _resolve_market_index_symbol(symbol):
+    normalized = _normalized_symbol_text(symbol)
+    candidate = _canonical_market_index_symbol(symbol)
+    if not candidate:
+        return None
+    if candidate != normalized and normalized:
+        company_cache_key = f"active_company_symbol:v1:{normalized}"
+        company_exists = cache.get(company_cache_key)
+        if company_exists is None:
+            company_exists = CompanyProfile.objects.filter(
+                symbol__iexact=normalized,
+                status=ACTIVE_COMPANY_STATUS,
+            ).exists()
+            cache.set(company_cache_key, company_exists, timeout=300)
+        if company_exists:
+            return None
+    if candidate in KNOWN_MARKET_INDEX_SYMBOLS:
+        return candidate
+
+    cache_key = f"market_index_symbol:v1:{candidate}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached or None
+
+    resolved = (
+        NepseMarketIndex.objects
+        .filter(sector_name__iexact=candidate)
+        .values_list("sector_name", flat=True)
+        .order_by("sector_name")
+        .first()
+    )
+    resolved = str(resolved).strip().upper() if resolved else ""
+    cache.set(cache_key, resolved, timeout=300)
+    return resolved or None
+
+
 def _get_symbol_lists():
     """
     FIX #1 — Cache symbol lists for 5 minutes so the two full-table scans
@@ -141,7 +241,9 @@ def _get_symbol_lists():
         return cached["companies"], cached["indices"]
 
     db_companies = sorted(
-        CompanyProfile.objects.values_list("symbol", flat=True).distinct()
+        CompanyProfile.objects.filter(status=ACTIVE_COMPANY_STATUS)
+        .values_list("symbol", flat=True)
+        .distinct()
     )
     db_indices = sorted(
         NepseMarketIndex.objects.values_list("sector_name", flat=True).distinct()
@@ -162,21 +264,16 @@ def _build_standard_dataframe(symbol, start_date, end_date, use_unadjusted_fallb
     symbol = (symbol or "").strip()
     symbol_upper = symbol.upper()
 
-    valid_sectors = [
-        "BANKING SUBINDEX", "DEVELOPMENT BANK INDEX", "FINANCE INDEX", "FLOAT INDEX",
-        "HOTELS AND TOURISM INDEX", "HYDROPOWER INDEX", "INVESTMENT INDEX", "LIFE INSURANCE",
-        "MANUFACTURING AND PROCESSING", "MICROFINANCE INDEX", "MUTUAL FUND", "NEPSE INDEX",
-        "NON LIFE INSURANCE", "OTHERS INDEX", "SENSITIVE FLOAT INDEX", "SENSITIVE INDEX", "TRADING INDEX"
-    ]
     empty_schema = pd.DataFrame(columns=[
         "business_date", "open_price_adj", "high_price_adj", "low_price_adj",
         "close_price_adj", "volume", "price_source",
     ])
 
-    if symbol_upper in valid_sectors:
+    index_symbol = _resolve_market_index_symbol(symbol_upper)
+    if index_symbol:
         # OPTIMIZED: Only select required columns and apply date filter at DB level
         qs = NepseMarketIndex.objects.filter(
-            sector_name__exact=symbol_upper,
+            sector_name__iexact=index_symbol,
             business_date__gte=start_date,
             business_date__lte=end_date,
         ).values(
@@ -409,7 +506,7 @@ def symbol_autocomplete_view(request):
 
     company_qs = CompanyProfile.objects.filter(
         Q(symbol__istartswith=q_raw) | name_filter
-    )
+    ).filter(status=ACTIVE_COMPANY_STATUS)
     if fast_mode:
         company_rows = list(
             company_qs
@@ -531,6 +628,9 @@ def build_dashboard_context(request):
     imm_indicator_rows = []
     imm_event_rows = []
     stage_indicator_rows = []
+    # New-listing snapshots: populated when a symbol has too little history for
+    # the desk's indicators, so we show listing-appropriate stats instead.
+    msv_new_listing = imm_new_listing = stage_new_listing = rrg_new_listing = None
     support_resistance_rows = []
     rrg_indicator_rows = []
     rrg_chart_points = []
@@ -723,6 +823,13 @@ def build_dashboard_context(request):
             )
             if df.empty:
                 msv_backtest_metrics = {"error": f"No price data found for '{msv_selected_symbol}' in the selected date range."}
+            elif len(df) < SNAPSHOT_TRIGGER_BARS["msv"]:
+                # Too few bars for MACD/Supertrend/ATR — show a New Listing
+                # snapshot instead of erroring out.
+                msv_new_listing = build_new_listing_snapshot(
+                    df, FULL_HISTORY_BARS["msv"], symbol=msv_selected_symbol,
+                    desk_label="Momentum Scan",
+                )
             else:
                 try:
                     msv_backtest_metrics, msv_trades_df, msv_indicator_df = run_msv_long_only_simulation(
@@ -764,6 +871,15 @@ def build_dashboard_context(request):
             nepse_df = _build_standard_dataframe("NEPSE INDEX", imm_from, imm_to)
             if stock_df.empty:
                 imm_backtest_metrics = {"error": f"No price data found for '{imm_selected_symbol}' in the selected date range."}
+            elif len(stock_df) < SNAPSHOT_TRIGGER_BARS["imm"]:
+                # IMM needs ~200 bars (SMA-200) before its score is meaningful;
+                # below that show a New Listing snapshot, with relative strength
+                # measured against NEPSE over the available window.
+                imm_new_listing = build_new_listing_snapshot(
+                    stock_df, FULL_HISTORY_BARS["imm"],
+                    sector_df=nepse_df if not nepse_df.empty else None,
+                    symbol=imm_selected_symbol, desk_label="IMM Technical Scoring",
+                )
             elif nepse_df.empty:
                 imm_backtest_metrics = {"error": "No NEPSE INDEX data found for the selected date range."}
             else:
@@ -802,6 +918,13 @@ def build_dashboard_context(request):
             )
             if df.empty:
                 stage_backtest_metrics = {"error": f"No price data found for '{stage_selected_symbol}' in the selected date range."}
+            elif len(df) < SNAPSHOT_TRIGGER_BARS["stage"]:
+                # Below the provisional floor (30 bars) stage classification is
+                # meaningless — show a New Listing snapshot instead.
+                stage_new_listing = build_new_listing_snapshot(
+                    df, FULL_HISTORY_BARS["stage"], symbol=stage_selected_symbol,
+                    desk_label="Stage Analysis",
+                )
             else:
                 # rename columns to match what calculate_stage_analysis expects
                 df_calc = df.rename(columns={
@@ -937,6 +1060,10 @@ def build_dashboard_context(request):
         if not (rrg_from and rrg_to):
             rrg_backtest_metrics = {"error": "Please select both From Date and To Date."}
         else:
+            rrg_lookback = _safe_int(g.get("rrg_lookback", 14), 14, minimum=2)
+            # RRG needs lookback*2 bars (RS-Ratio MA, then RS-Momentum MA of it)
+            # before it can plot a single point — see run_rrg_simulation's gate.
+            rrg_required_bars = rrg_lookback * 2
             stock_df = _build_standard_dataframe(
                 rrg_selected_symbol,
                 rrg_from,
@@ -953,8 +1080,15 @@ def build_dashboard_context(request):
                 rrg_backtest_metrics = {"error": f"No price data found for '{rrg_selected_symbol}' in the selected date range."}
             elif bench_df.empty:
                 rrg_backtest_metrics = {"error": f"No price data found for '{rrg_benchmark_symbol}' in the selected date range."}
+            elif len(stock_df) < rrg_required_bars:
+                # Too few bars to rotate on the RRG — show a New Listing snapshot
+                # with relative strength measured against the chosen benchmark.
+                rrg_new_listing = build_new_listing_snapshot(
+                    stock_df, rrg_required_bars,
+                    sector_df=bench_df if not bench_df.empty else None,
+                    symbol=rrg_selected_symbol, desk_label="RRG Analytics",
+                )
             else:
-                rrg_lookback = _safe_int(g.get("rrg_lookback", 14), 14, minimum=2)
                 rrg_backtest_metrics, rrg_df = run_rrg_simulation(
                     stock_df=stock_df,
                     benchmark_df=bench_df,
@@ -1025,12 +1159,14 @@ def build_dashboard_context(request):
         "rsi_from_date":        rsi_from,
         "rsi_to_date":          rsi_to,
         "msv_backtest_metrics": msv_backtest_metrics,
+        "msv_new_listing":      msv_new_listing,
         "msv_completed_trades": msv_completed_trades,
         "msv_indicator_rows":   msv_indicator_rows,
         "msv_selected_symbol":  msv_selected_symbol,
         "msv_from_date":        msv_from,
         "msv_to_date":          msv_to,
         "imm_backtest_metrics": imm_backtest_metrics,
+        "imm_new_listing":      imm_new_listing,
         "imm_indicator_rows":   imm_indicator_rows,
         "imm_event_rows":       imm_event_rows,
         "imm_selected_symbol":  imm_selected_symbol,
@@ -1040,6 +1176,7 @@ def build_dashboard_context(request):
         
         # Stage
         "stage_backtest_metrics": stage_backtest_metrics,
+        "stage_new_listing":      stage_new_listing,
         "stage_indicator_rows":   stage_indicator_rows,
         "stage_selected_symbol":  stage_selected_symbol,
         "stage_from_date":        stage_from,
@@ -1071,6 +1208,7 @@ def build_dashboard_context(request):
 
         # RRG
         "rrg_backtest_metrics": rrg_backtest_metrics,
+        "rrg_new_listing":      rrg_new_listing,
         "rrg_indicator_rows":   rrg_indicator_rows,
         "rrg_chart_points":     rrg_chart_points,
         "rrg_selected_symbol":  rrg_selected_symbol,

@@ -302,6 +302,8 @@ body {
 .mi-stat-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-3); }
 .mi-stat-value { font-size: 1.7rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
 .mi-stat-delta { font-size: 0.85rem; font-weight: 600; }
+/* Keep the value and its delta on one row (e.g. turnover "Rs 2.84 Ar (-35.77%)"). */
+.mi-stat-valrow { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; }
 .mi-stat-sub { font-size: 0.74rem; color: var(--ink-3); }
 
 /* High / Low range value — both bounds equally prominent (not a dim sub-line). */
