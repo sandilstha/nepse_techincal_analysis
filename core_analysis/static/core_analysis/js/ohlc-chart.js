@@ -234,7 +234,7 @@
     function handle(x, y, color) { ctx.setLineDash([]); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, 2 * Math.PI); ctx.fill(); }
     function fmt(v) { return (Math.round(v * 100) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
     function tag(x, y, text, color) {
-      ctx.setLineDash([]); ctx.font = "11px JetBrains Mono, monospace";
+      ctx.setLineDash([]); ctx.font = "11px Manrope, sans-serif";
       var w = ctx.measureText(text).width + 10;
       ctx.fillStyle = color; ctx.fillRect(x - w, y - 9, w, 18);
       ctx.fillStyle = "#fff"; ctx.textBaseline = "middle"; ctx.fillText(text, x - w + 5, y);

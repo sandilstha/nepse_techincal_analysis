@@ -641,7 +641,7 @@
       legend: { show: false },
       dataLabels: {
         enabled: true,
-        style: { fontSize: "11px", fontFamily: "JetBrains Mono, monospace", colors: ["#ffffff"] },
+        style: { fontSize: "11px", fontFamily: "Manrope, sans-serif", colors: ["#ffffff"] },
         formatter: function (text, op) {
           var pt = (op.w.config.series[op.seriesIndex].data[op.dataPointIndex] || {}).pct;
           return [text, isNum(pt) ? fmtPct(pt) : ""];

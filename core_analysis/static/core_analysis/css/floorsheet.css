@@ -6,7 +6,7 @@
 .fs-updated {
   font-size: 12px;
   color: var(--ink-3);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Manrope', system-ui, sans-serif;
   margin-right: 6px;
   white-space: nowrap;
 }
@@ -175,7 +175,7 @@
   border: 1px solid var(--line);
   border-radius: 7px;
   padding: 8px 0;
-  font: 600 12.5px/1 'JetBrains Mono', monospace;
+  font: 600 12.5px/1 'Manrope', system-ui, sans-serif;
   text-align: center; cursor: pointer;
   transition: background .12s, color .12s, border-color .12s;
 }
@@ -243,7 +243,7 @@
   color: var(--ink-3);
 }
 .dsx-kpi-val {
-  font: 700 19px/1.1 'JetBrains Mono', monospace;
+  font: 700 19px/1.1 'Manrope', system-ui, sans-serif;
   color: var(--ink-1);
 }
 .dsx-kpi-sub {
@@ -313,12 +313,12 @@
 @media (max-width: 700px) { .dsx-ad-row { grid-template-columns: 54px 52px 1fr 78px; } .dsx-ad-row .dsx-hhi { display: none; } }
 .dsx-ad-row:hover { background: var(--surface-2); }
 .dsx-ad-sym {
-  font: 700 13px/1 'JetBrains Mono', monospace;
+  font: 700 13px/1 'Manrope', system-ui, sans-serif;
   color: var(--accent);
 }
 /* conviction streak badge (consecutive same-side sessions) */
 .dsx-streak {
-  font: 700 11px/1 'JetBrains Mono', monospace;
+  font: 700 11px/1 'Manrope', system-ui, sans-serif;
   text-align: center;
   padding: 3px 0; border-radius: 5px;
   border: 1px solid var(--line);
@@ -328,7 +328,7 @@
 .dsx-streak.flat { color: var(--ink-3); }
 /* concentration (HHI) chip, coloured by risk band */
 .dsx-hhi {
-  font: 700 11px/1 'JetBrains Mono', monospace;
+  font: 700 11px/1 'Manrope', system-ui, sans-serif;
   text-align: center;
   padding: 3px 4px; border-radius: 5px;
   cursor: help;
@@ -342,7 +342,7 @@
 .dsx-sig { padding: 6px 14px 12px; max-height: 320px; overflow: auto; }
 .dsx-sig-tbl {
   width: 100%; border-collapse: collapse;
-  font: 500 12.5px/1.2 'JetBrains Mono', monospace;
+  font: 500 12.5px/1.2 'Manrope', system-ui, sans-serif;
 }
 .dsx-sig-tbl thead th {
   position: sticky; top: 0; background: var(--surface);
@@ -389,7 +389,7 @@
 .dsx-churn {
   display: inline-block; padding: 2px 7px; border-radius: 5px;
   background: rgba(216,148,31,.14); color: #d8941f;
-  font: 700 11px/1.4 'JetBrains Mono', monospace; cursor: help;
+  font: 700 11px/1.4 'Manrope', system-ui, sans-serif; cursor: help;
 }
 .dsx-ad-track {
   position: relative;
@@ -410,7 +410,7 @@
 .dsx-ad-fill.sell { right: 50%; background: linear-gradient(90deg, #ff6e72, #e0575b); }
 .dsx-ad-net {
   text-align: right;
-  font: 700 13px/1 'JetBrains Mono', monospace;
+  font: 700 13px/1 'Manrope', system-ui, sans-serif;
 }
 .dsx-ad-net.num-pos { color: var(--up); }
 .dsx-ad-net.num-neg { color: var(--down); }
@@ -467,7 +467,7 @@
 .dsx-table {
   width: 100%;
   border-collapse: collapse;
-  font: 500 13px/1.2 'JetBrains Mono', monospace;
+  font: 500 13px/1.2 'Manrope', system-ui, sans-serif;
 }
 .dsx-table thead th {
   position: sticky; top: 0;
@@ -591,7 +591,7 @@
 }
 .dsx-tm-tip-row { display: flex; justify-content: space-between; gap: 18px; }
 .dsx-tm-tip-row span { color: var(--ink-3); }
-.dsx-tm-tip-row b { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+.dsx-tm-tip-row b { font-family: 'Manrope', system-ui, sans-serif; font-weight: 700; }
 .dsx-tm-tip-row.net {
   margin-top: 4px; padding-top: 4px;
   border-top: 1px solid var(--line-soft);

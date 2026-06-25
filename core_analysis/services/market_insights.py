@@ -12,12 +12,17 @@ repeated dashboard polls do not re-hit the database on every request.
 """
 from __future__ import annotations
 
+import logging
 import math
+import threading
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 
+from django.conf import settings
 from django.core.cache import cache
+from django.core.management import call_command
+from django.db import connections
 from django.db.models import Max, Count, Q, F, Sum
 
 from core_analysis.models import (
@@ -34,6 +39,8 @@ from core_analysis.services.nepse_top_movers import (
     fetch_top_losers,
     fetch_top_active,
 )
+
+logger = logging.getLogger(__name__)
 
 CACHE_KEY = "market_insights_payload"
 FAST_CACHE_KEY = "market_insights_payload_fast_eod"
@@ -688,6 +695,22 @@ def _heatmap(enriched, limit=HEATMAP_POOL):
     ]
 
 
+def _contributors_block(contrib):
+    """Shape the raw contributors feed into the payload's contributors dict.
+
+    Single source of truth so the live build and the post-close EOD build emit
+    the Top Contributors widget identically. Empty-but-valid when the feed is
+    down, so the widget degrades gracefully instead of erroring.
+    """
+    if not contrib:
+        return {"positive": [], "negative": [], "sectors": {"positive": [], "negative": []}}
+    return {
+        "positive": contrib.get("positive", []),
+        "negative": contrib.get("negative", []),
+        "sectors": contrib.get("sectors", {"positive": [], "negative": []}),
+    }
+
+
 def _nepse_history(days=HISTORY_DAYS):
     qs = (
         NepseMarketIndex.objects.filter(sector_name=NEPSE_INDEX_NAME)
@@ -762,6 +785,81 @@ def subindex_comparison(days=COMPARISON_SESSIONS):
     return result
 
 
+# ── post-close EOD switch ───────────────────────────────────────────────────
+# NEPSE continuous trading settles by 3:00 PM Nepal time. After the close the
+# intraday live feeds just echo their final tick, so the dashboard switches to
+# the settled end-of-day data in SQL — refreshing it once via a background sync.
+
+# Nepal Standard Time is a fixed UTC+5:45 offset all year (no DST), so the local
+# trading clock needs no tz database.
+NPT = dt_timezone(timedelta(hours=5, minutes=45))
+MARKET_CLOSE_HOUR = getattr(settings, "NEPSE_MARKET_CLOSE_HOUR", 15)
+MARKET_CLOSE_MINUTE = getattr(settings, "NEPSE_MARKET_CLOSE_MINUTE", 0)
+# Master switch — set False in settings to revert to purely feed-driven sourcing.
+POST_CLOSE_EOD_ENABLED = getattr(settings, "NEPSE_POST_CLOSE_EOD", True)
+
+# Post-close one-shot sync guards. The "done" flag is keyed by the Nepal trading
+# date so the sync fires exactly once per session; the "running" key is a
+# self-expiring single-flight lock (atomic on the Redis cache in production).
+EOD_SYNC_DONE_KEY = "market_insights_eod_sync_done"
+EOD_SYNC_DONE_TTL = 12 * 3600
+EOD_SYNC_RUNNING_KEY = "market_insights_eod_sync_running"
+EOD_SYNC_RUNNING_TTL = 1800
+
+
+def _nepse_now():
+    """Current wall-clock time in Nepal (UTC+5:45)."""
+    return datetime.now(dt_timezone.utc).astimezone(NPT)
+
+
+def _after_market_close(now=None):
+    """True once the NEPSE session has settled for the day (>= 3:00 PM NPT)."""
+    if not POST_CLOSE_EOD_ENABLED:
+        return False
+    now = now or _nepse_now()
+    return (now.hour, now.minute) >= (MARKET_CLOSE_HOUR, MARKET_CLOSE_MINUTE)
+
+
+def _maybe_trigger_eod_sync(force=False):
+    """Refresh the local SQL price/index tables once per trading day, off-thread.
+
+    Pulls the just-settled session's stock prices and indices into MySQL exactly
+    once (idempotent upserts make a repeat run harmless). It runs in a daemon
+    thread so the request never blocks: the dashboard keeps serving the last
+    settled snapshot and picks up the fresh rows on the next poll, because the
+    payload cache is invalidated when the sync finishes.
+    """
+    now = _nepse_now()
+    # NEPSE is closed Friday (4) and Saturday (5) — nothing new to pull.
+    if not force and now.weekday() in (4, 5):
+        return
+    done_key = "%s:%s" % (EOD_SYNC_DONE_KEY, now.date().isoformat())
+    if not force and cache.get(done_key):
+        return
+    # Single-flight: at most one sync thread across the fleet.
+    if not cache.add(EOD_SYNC_RUNNING_KEY, 1, EOD_SYNC_RUNNING_TTL):
+        return
+    cache.set(done_key, 1, EOD_SYNC_DONE_TTL)
+
+    trading_day = now.date()
+
+    def _run():
+        try:
+            # Stocks + indices for the settled day feed every front-page widget
+            # (heatmap, breadth, overview, history). Scoped to the current Nepal
+            # trading day so this is a light delta, not a full historical resync.
+            call_command("sync_nepse_data", source="both", from_date=trading_day)
+        except Exception:
+            logger.exception("Post-close EOD sync failed; will retry on a later poll")
+            cache.delete(done_key)  # allow a later poll to re-attempt today
+        finally:
+            cache.delete(EOD_SYNC_RUNNING_KEY)
+            invalidate_cache()       # serve the fresh SQL rows on the next poll
+            connections.close_all()  # this thread owns its DB connections; release them
+
+    threading.Thread(target=_run, name="nepse-eod-sync", daemon=True).start()
+
+
 # ── public API ─────────────────────────────────────────────────────────────
 
 def _build_eod_payload():
@@ -787,12 +885,8 @@ def _build_eod_payload():
         "sectors": _sectors(),
         "heatmap": _heatmap(enriched),
         "heatmap_as_of": as_of,
-        "history": [],
-        "contributors": {
-            "positive": [],
-            "negative": [],
-            "sectors": {"positive": [], "negative": []},
-        },
+        "history": _nepse_history(),
+        "contributors": _contributors_block(None),
         "stock_count": len(enriched),
     }
 
@@ -818,6 +912,25 @@ def build_payload(force=False, cache_only=False, fast=False):
     # Render path: do not block HTML generation on the external feeds.
     if cache_only:
         return None
+
+    # ── Post-close: serve settled end-of-day data from SQL ────────────────────
+    # After 3 PM NPT the intraday live feeds are frozen on their last tick, so
+    # the authoritative figures are the settled close now in MySQL. Kick off a
+    # one-shot background sync (once per trading day) and build the payload
+    # straight from the database instead of the pre-close live snapshot.
+    if _after_market_close():
+        _maybe_trigger_eod_sync(force=force)
+        payload = _build_eod_payload()
+        # Keep the Top Contributors widget populated after the close exactly as
+        # during the session — it has no SQL equivalent, so fetch it live. A feed
+        # failure just leaves the widget empty; it never blocks the EOD page.
+        try:
+            payload["contributors"] = _contributors_block(fetch_contributors())
+        except Exception:  # pragma: no cover - defensive
+            logger.exception("Post-close contributors fetch failed")
+        cache.set(CACHE_KEY, payload, CACHE_TTL)
+        cache.set(CACHE_LAST_GOOD_KEY, payload, CACHE_LAST_GOOD_TTL)
+        return payload
 
     if fast and not force:
         cached_fast = cache.get(FAST_CACHE_KEY)
@@ -1050,11 +1163,7 @@ def build_payload(force=False, cache_only=False, fast=False):
         "heatmap": heatmap_tiles,
         "heatmap_as_of": heatmap_as_of,
         "history": _nepse_history(),
-        "contributors": {
-            "positive": contrib["positive"] if contrib else [],
-            "negative": contrib["negative"] if contrib else [],
-            "sectors": contrib.get("sectors", {"positive": [], "negative": []}) if contrib else {"positive": [], "negative": []},
-        },
+        "contributors": _contributors_block(contrib),
         "stock_count": len(enriched),
     }
     cache.set(CACHE_KEY, payload, CACHE_TTL)

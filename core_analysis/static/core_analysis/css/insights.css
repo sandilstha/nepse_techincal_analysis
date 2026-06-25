@@ -76,7 +76,7 @@ body {
 }
 
 .mono, .num, .mi-stat-value, .mi-table td.num {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
 }
 
@@ -170,7 +170,7 @@ body {
   box-shadow: var(--shadow);
 }
 .mi-coming-soon-icon { font-size: 3rem; line-height: 1; }
-.mi-coming-soon-title { font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--ink-1); margin: 0; }
+.mi-coming-soon-title { font-family: 'Manrope', system-ui, sans-serif; font-weight: 700; color: var(--ink-1); margin: 0; }
 .mi-coming-soon-text { max-width: 540px; color: var(--ink-2); margin: 0; font-size: 0.95rem; line-height: 1.6; }
 .mi-coming-soon-cta {
   margin-top: 0.6rem;
@@ -186,7 +186,7 @@ body {
 
 .mi-brand { display: flex; align-items: center; gap: 0.9rem; }
 .mi-logo {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-weight: 800;
   font-size: 1.05rem;
   letter-spacing: 0.04em;
@@ -197,7 +197,7 @@ body {
 }
 .mi-title {
   margin: 0;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 1.4rem;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -207,7 +207,7 @@ body {
 .mi-controls { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 .mi-asof { display: flex; flex-direction: column; line-height: 1.1; padding-right: 0.4rem; }
 .mi-asof-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
-.mi-asof-date { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--ink-1); }
+.mi-asof-date { font-family: 'Manrope', system-ui, sans-serif; font-size: 0.85rem; color: var(--ink-1); }
 
 .mi-live-badge {
   display: inline-flex; align-items: center; gap: 0.32rem;
@@ -309,7 +309,7 @@ body {
   display: flex;
   align-items: baseline;
   gap: 0.45rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
   font-size: 1.4rem;
   font-weight: 700;
@@ -329,7 +329,7 @@ body {
   color: var(--ink-3);
 }
 .mi-stat-sub-metric b {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   font-size: 0.9rem;
@@ -370,7 +370,7 @@ body {
   margin-bottom: 1rem;
 }
 .mi-card-title {
-  margin: 0; font-family: 'Poppins', sans-serif;
+  margin: 0; font-family: 'Manrope', system-ui, sans-serif;
   font-size: 1.08rem; font-weight: 600; letter-spacing: -0.01em;
 }
 .mi-card-subtitle {
@@ -520,7 +520,7 @@ body {
 .mi-breadth-table tr:last-child th,
 .mi-breadth-table tr:last-child td { border-bottom: 0; }
 .mi-breadth-table th { width: 47%; color: var(--ink-2); font-weight: 600; text-align: left; }
-.mi-breadth-table td { font-family: 'JetBrains Mono', monospace; font-weight: 700; text-align: right; }
+.mi-breadth-table td { font-family: 'Manrope', system-ui, sans-serif; font-weight: 700; text-align: right; }
 .mi-breadth-label { display: inline-flex; align-items: center; gap: 0.28rem; }
 .mi-breadth-dot { width: 7px; height: 7px; border-radius: 2px; flex: 0 0 auto; }
 .mi-breadth-dot.up { background: var(--up); }
@@ -547,7 +547,7 @@ body {
 .mi-widget-head { min-height: 3.1rem; }
 .mi-widget-title {
   margin: 0;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.86rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -569,8 +569,8 @@ body {
 .mi-greed { width: 100%; min-width: 0; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .mi-greed svg { width: 100%; max-width: 300px; height: auto; display: block; margin: 0 auto; }
 .mi-greed-seg { font-size: 8.7px; font-weight: 700; letter-spacing: 0.02em; }
-.mi-greed-tick { font-size: 10px; font-family: 'JetBrains Mono', monospace; opacity: 0.9; }
-.mi-greed-num { font-size: 35px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+.mi-greed-tick { font-size: 10px; font-family: 'Manrope', system-ui, sans-serif; opacity: 0.9; }
+.mi-greed-num { font-size: 35px; font-weight: 800; font-family: 'Manrope', system-ui, sans-serif; }
 .mi-greed-band { font-size: 13.5px; font-weight: 700; letter-spacing: 0.025em; }
 .mi-greed-cap { fill: var(--ink-3); font-size: 8.5px; letter-spacing: 0.06em; }
 .mi-greed-empty { color: var(--ink-3); font-size: 0.9rem; padding: 1.2rem 0; }
@@ -592,7 +592,7 @@ body {
 }
 .mi-greed-component b {
   color: var(--ink-1);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Manrope', system-ui, sans-serif;
 }
 /* CNN-style historical readings under the gauge (previous close / 1w / 1m / 1y). */
 .mi-greed-history {
@@ -620,7 +620,7 @@ body {
   gap: 0.45rem;
 }
 .mi-greed-hist-score b {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.86rem;
   font-weight: 800;
 }
@@ -651,8 +651,8 @@ body:not(.mi-feed-delayed) .mi-stale-hint { display: none; }
 .mi-contrib-track i { display: block; height: 100%; border-radius: 999px; }
 .mi-contrib-track i.up { background: var(--up); }
 .mi-contrib-track i.down { background: var(--down); }
-.mi-contrib-pts { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.8rem; text-align: right; }
-.mi-contrib-pct { font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; text-align: right; }
+.mi-contrib-pts { font-family: 'Manrope', system-ui, sans-serif; font-weight: 700; font-size: 0.8rem; text-align: right; }
+.mi-contrib-pct { font-family: 'Manrope', system-ui, sans-serif; font-size: 0.76rem; text-align: right; }
 .mi-contrib-pts.up, .mi-contrib-pct.up { color: var(--up); }
 .mi-contrib-pts.down, .mi-contrib-pct.down { color: var(--down); }
 .mi-sector-movers-card { min-width: 0; }
@@ -677,7 +677,7 @@ body:not(.mi-feed-delayed) .mi-stale-hint { display: none; }
 .mi-sector-mover-row.down { background: var(--down-soft); color: var(--down); }
 .mi-sector-mover-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mi-sector-mover-pts {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.76rem;
   font-weight: 800;
 }
@@ -694,7 +694,7 @@ body:not(.mi-feed-delayed) .mi-stale-hint { display: none; }
 .mi-sector-fill { position: absolute; top: 0; bottom: 0; border-radius: 999px; }
 .mi-sector-fill.up { background: var(--up); }
 .mi-sector-fill.down { background: var(--down); }
-.mi-sector-pct { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 600; text-align: right; min-width: 56px; }
+.mi-sector-pct { font-family: 'Manrope', system-ui, sans-serif; font-size: 0.8rem; font-weight: 600; text-align: right; min-width: 56px; }
 
 /* ── Footer ───────────────────────────────────────────────────────────── */
 .mi-footer {

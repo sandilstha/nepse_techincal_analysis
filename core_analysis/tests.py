@@ -235,6 +235,9 @@ class MarketInsightsHeadlineTests(unittest.TestCase):
             patch.object(market_insights, "_sector_map", return_value={}),
             patch.object(market_insights, "_latest_stock_rows", return_value=(date(2026, 6, 11), [])),
             patch.object(market_insights, "_nepse_history", return_value=[]),
+            # Pin the clock to the live (pre-3 PM NPT) session so this exercises
+            # the feed-driven path regardless of when the suite runs.
+            patch.object(market_insights, "_after_market_close", return_value=False),
         ]
 
         with ExitStack() as stack:
@@ -308,6 +311,7 @@ class MarketInsightsHeadlineTests(unittest.TestCase):
             patch.object(market_insights, "_sector_map", return_value={"CFCL": "Finance"}),
             patch.object(market_insights, "_latest_stock_rows", return_value=(date(2026, 6, 15), eod_rows)),
             patch.object(market_insights, "_nepse_history", return_value=[]),
+            patch.object(market_insights, "_after_market_close", return_value=False),
         ]
 
         with ExitStack() as stack:
@@ -321,6 +325,71 @@ class MarketInsightsHeadlineTests(unittest.TestCase):
         cfcl = next(t for t in payload["heatmap"] if t["symbol"] == "CFCL")
         self.assertEqual(cfcl["ltp"], 620.0)      # EOD close, not the stale 641.8
         self.assertEqual(cfcl["pct"], -5.92)      # (620-659)/659, not the stale +1.87
+
+    def test_after_close_serves_eod_from_sql_and_skips_live_feeds(self):
+        # After 3 PM NPT the dashboard must ignore the intraday live feeds and
+        # build the payload from the settled end-of-day DB rows, while kicking
+        # off the one-shot background sync exactly once.
+        eod_rows = [{
+            "symbol": "NABIL",
+            "security_name": "Nabil Bank",
+            "open_price": 500.0,
+            "high_price": 510.0,
+            "low_price": 495.0,
+            "close_price": 505.0,
+            "previous_close": 500.0,
+            "total_traded_quantity": 1000,
+            "total_traded_value": 505000.0,
+            "total_trades": 60,
+            "market_capitalization": 0.0,
+        }]
+
+        def boom(*a, **k):
+            raise AssertionError("a per-scrip live feed was called after market close")
+
+        # Contributors HAS no SQL equivalent, so the Top Contributors widget is
+        # still fetched live after the close; the numeric-widget feeds are not.
+        contrib = {
+            "positive": [{"symbol": "NABIL", "points": 1.2}],
+            "negative": [],
+            # Sector Movers rides on the same contributors feed and must survive.
+            "sectors": {"positive": [{"sector": "Banking", "points": 0.8}], "negative": []},
+        }
+
+        patches = [
+            patch.object(market_insights.cache, "get", return_value=None),
+            patch.object(market_insights.cache, "set"),
+            patch.object(market_insights, "_after_market_close", return_value=True),
+            patch.object(market_insights, "_sector_map", return_value={"NABIL": "Banking"}),
+            patch.object(market_insights, "_latest_stock_rows", return_value=(date(2026, 6, 25), eod_rows)),
+            patch.object(market_insights, "_nepse_history", return_value=[]),
+            patch.object(market_insights, "_greed_history", return_value=[]),
+            patch.object(market_insights, "_overview", return_value={}),
+            patch.object(market_insights, "_sectors", return_value=[]),
+            patch.object(market_insights, "fetch_contributors", return_value=contrib),
+            # The per-scrip / index feeds must NOT be consulted after the close.
+            patch.object(market_insights, "fetch_live_rows", boom),
+            patch.object(market_insights, "fetch_subindices", boom),
+        ]
+
+        with ExitStack() as stack:
+            trigger = stack.enter_context(
+                patch.object(market_insights, "_maybe_trigger_eod_sync")
+            )
+            for p in patches:
+                stack.enter_context(p)
+            payload = market_insights.build_payload(force=True)
+
+        self.assertFalse(payload["live"])
+        self.assertEqual(payload["source"], "eod")
+        self.assertEqual(payload["index_source"], "eod")
+        nabil = next(t for t in payload["heatmap"] if t["symbol"] == "NABIL")
+        self.assertEqual(nabil["ltp"], 505.0)
+        self.assertEqual(nabil["pct"], 1.0)       # (505-500)/500
+        # Index Contributors AND Sector Movers stay populated/live after close.
+        self.assertEqual(payload["contributors"]["positive"], contrib["positive"])
+        self.assertEqual(payload["contributors"]["sectors"], contrib["sectors"])
+        trigger.assert_called_once()
 
 
 @unittest.skipIf(market_insights is None, "Django settings unavailable")
