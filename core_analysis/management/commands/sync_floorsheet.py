@@ -146,6 +146,7 @@ class Command(BaseCommand):
         grand_processed = 0
         grand_skipped_invalid = 0
         days = 0
+        synced_days = []
         current = from_date
         while current <= to_date:
             processed, skipped_invalid = self._sync_one_day(
@@ -153,8 +154,19 @@ class Command(BaseCommand):
             )
             grand_processed += processed
             grand_skipped_invalid += skipped_invalid
+            if processed:
+                synced_days.append(current)
             days += 1
             current += timedelta(days=1)
+
+        # Refresh the broker-analytics caches so the dashboard reflects the new
+        # rows at once and the freshly-synced sessions are pre-warmed for the
+        # rolling/fiscal-year windows. Best-effort; never fails the sync.
+        if synced_days and not dry_run:
+            from core_analysis.services import broker_analytics as ba
+
+            ba.refresh_after_sync(synced_days)
+            self.stdout.write(self.style.SUCCESS(f"Warmed broker caches for {len(synced_days)} day(s)."))
 
         self.stdout.write(
             self.style.SUCCESS(

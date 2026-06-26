@@ -27,7 +27,6 @@ from .broker_views import (
     broker_concentration_api,
     hotstocks_api,
     broker_flow_radar_api,
-    broker_trend_api,
 )
 from .udf_views import (
     udf_config,
@@ -63,7 +62,6 @@ urlpatterns = [
     path('floorsheet/api/concentration/', broker_concentration_api, name='broker_concentration_api'),
     path('floorsheet/api/hotstocks/', hotstocks_api, name='hotstocks_api'),
     path('floorsheet/api/flow-radar/', broker_flow_radar_api, name='broker_flow_radar_api'),
-    path('floorsheet/api/trend/', broker_trend_api, name='broker_trend_api'),
 
     # Analytics workbench (moved off root to /workbench/)
     path('workbench/', crud_dashboard_view, name='crud_dashboard'),

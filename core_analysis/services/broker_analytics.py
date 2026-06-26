@@ -56,7 +56,20 @@ DAY_BUILD_LOCK_TTL = int(os.environ.get("NEPSE_FLOORSHEET_BUILD_LOCK_TTL", "180"
 LOCK_WAIT_SECONDS = float(os.environ.get("NEPSE_FLOORSHEET_LOCK_WAIT_SECONDS", "20"))
 LOCK_WAIT_STEP = 0.25
 
-RANGE_DAYS = {"today": 1, "1w": 7, "1m": 30, "3m": 90}
+# Rolling preset windows, expressed as calendar spans anchored at the latest
+# trading day. They are *resolved* to the actual NEPSE sessions inside the span
+# (read from the EOD table), so Saturdays and exchange holidays are excluded
+# automatically — "1w" lands on the ~6 Sun–Fri sessions of a NEPSE trading week.
+RANGE_DAYS = {"today": 1, "1w": 7, "1m": 30, "3m": 90, "1y": 365}
+# "fy" (Nepali fiscal year, period-to-date) is resolved separately from a start
+# date, not a fixed span — see _fiscal_year_start / _trading_dates.
+NAMED_RANGES = set(RANGE_DAYS) | {"fy"}
+
+# Nepali fiscal year begins on Shrawan 1 ≈ 16 July (Gregorian). The exact day
+# drifts ±1 with the Bikram Sambat calendar, but because the window is snapped to
+# real trading sessions a one-day proxy error practically never changes the set.
+FY_START_MONTH = 7
+FY_START_DAY = 16
 TOP_N = 10
 _MISSING = object()
 
@@ -64,13 +77,6 @@ _MISSING = object()
 # ─────────────────────────────────────────────────────────────────────────────
 # Local DB read + per-day aggregate
 # ─────────────────────────────────────────────────────────────────────────────
-def _to_float(value):
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return 0.0
-
-
 def get_latest_trading_date():
     """Most recent date that has floorsheet rows ('YYYY-MM-DD'), or None."""
     cached = cache.get("fs_latest_date")
@@ -113,18 +119,59 @@ def _is_latest(date_str):
     return date_str == cache.get("fs_latest_date") or date_str == get_latest_trading_date()
 
 
-def _fetch_day_rows(date_str):
-    """Every floorsheet row for one business_date, as lightweight dicts.
+def _aggregate_day(date_str):
+    """Build one session's (buy, sell, sector) aggregate with DB-side GROUP BY.
 
-    Returns the same column names the aggregate builder expects (stock_symbol,
-    buyer, seller, quantity, amount, sector), read straight from the local table.
+    A NEPSE session is ~50k+ trade rows; pulling them all into Python and summing
+    row-by-row is slow and memory-hungry. Instead we let MySQL collapse each side
+    with two grouped queries (covered by the ``(business_date, buyer)`` /
+    ``(business_date, seller)`` indexes), so only one row per (symbol, broker)
+    crosses the wire:
+
+        buy[sym][broker]  = [qty, amount]   (broker == buyer)
+        sell[sym][broker] = [qty, amount]   (broker == seller)
+        sector[sym]       = sector label
+
+    Day-scoped (not range-scoped) on purpose: a single day's GROUP BY rides the
+    index, while a wide ``business_date BETWEEN`` GROUP BY filesorts millions of
+    rows. Multi-day windows merge these cached per-day results instead. Broker
+    keys stay ints (matching the IntegerField columns and ``_typed_broker``).
     """
+    from django.db.models import Sum
+
     from core_analysis.models import NepseFloorsheet
 
-    qs = NepseFloorsheet.objects.filter(business_date=date_str).values(
-        "stock_symbol", "buyer", "seller", "quantity", "amount", "sector"
-    )
-    return list(qs)
+    base = NepseFloorsheet.objects.filter(business_date=date_str)
+    buy, sell, sector = {}, {}, {}
+
+    for r in (
+        base.filter(buyer__isnull=False)
+        .values("stock_symbol", "buyer")
+        .annotate(q=Sum("quantity"), a=Sum("amount"))
+    ):
+        sym = r["stock_symbol"]
+        if sym:
+            buy.setdefault(sym, {})[r["buyer"]] = [float(r["q"] or 0), float(r["a"] or 0)]
+
+    for r in (
+        base.filter(seller__isnull=False)
+        .values("stock_symbol", "seller")
+        .annotate(q=Sum("quantity"), a=Sum("amount"))
+    ):
+        sym = r["stock_symbol"]
+        if sym:
+            sell.setdefault(sym, {})[r["seller"]] = [float(r["q"] or 0), float(r["a"] or 0)]
+
+    for r in (
+        base.exclude(sector__isnull=True)
+        .exclude(sector="")
+        .values("stock_symbol", "sector")
+        .distinct()
+    ):
+        if r["stock_symbol"]:
+            sector.setdefault(r["stock_symbol"], r["sector"])
+
+    return buy, sell, sector
 
 
 def _cached_day_value(key, stale_key):
@@ -166,38 +213,11 @@ def get_day_aggregate(date_str):
             cached = _cached_day_value(key, stale_key)
             if cached is not _MISSING:
                 return cached
-            rows = _fetch_day_rows(date_str)
+            buy, sell, sector = _aggregate_day(date_str)
         except Exception:  # pragma: no cover - DB read failure
             cache.set(key, FAIL_SENTINEL, FAIL_TTL)
             stale = cache.get(stale_key)
             return stale if stale is not None else None
-
-        buy, sell, sector = {}, {}, {}
-        for r in rows:
-            sym = r.get("stock_symbol")
-            if not sym:
-                continue
-            qty = _to_float(r.get("quantity"))
-            amt = _to_float(r.get("amount"))
-            buyer, seller = r.get("buyer"), r.get("seller")
-            if r.get("sector"):
-                sector.setdefault(sym, r["sector"])
-            if buyer is not None:
-                b = buy.setdefault(sym, {})
-                cell = b.get(buyer)
-                if cell:
-                    cell[0] += qty
-                    cell[1] += amt
-                else:
-                    b[buyer] = [qty, amt]
-            if seller is not None:
-                s = sell.setdefault(sym, {})
-                cell = s.get(seller)
-                if cell:
-                    cell[0] += qty
-                    cell[1] += amt
-                else:
-                    s[seller] = [qty, amt]
 
         agg = {"date": date_str, "buy": buy, "sell": sell, "sector": sector}
         is_latest = _is_latest(date_str)
@@ -211,6 +231,14 @@ def get_day_aggregate(date_str):
         cache.delete(lock_key)
 
 
+def _fiscal_year_start(latest_date):
+    """Nepali fiscal-year start (≈ Shrawan 1) on or before ``latest_date``."""
+    fy_anchor = latest_date.replace(month=FY_START_MONTH, day=FY_START_DAY)
+    if latest_date < fy_anchor:
+        fy_anchor = fy_anchor.replace(year=fy_anchor.year - 1)
+    return fy_anchor
+
+
 def _trading_dates(range_key):
     """List of trading-day strings for a range, newest first (incl. latest)."""
     latest = get_latest_trading_date()
@@ -218,8 +246,12 @@ def _trading_dates(range_key):
         return []
     if range_key == "today":
         return [latest]
+    latest_d = datetime.strptime(latest, "%Y-%m-%d").date()
+    if range_key == "fy":
+        # Fiscal year to date: every session from Shrawan 1 through the latest.
+        return _custom_trading_dates(_fiscal_year_start(latest_d), latest_d)
     span = RANGE_DAYS.get(range_key, 1)
-    start = datetime.strptime(latest, "%Y-%m-%d").date()
+    start = latest_d
     local_dates = _local_trading_dates(start, span)
     if local_dates:
         return local_dates
@@ -258,39 +290,20 @@ def _local_trading_dates(latest_date, span):
     return dates
 
 
-def _merge_into(dst, src):
-    """Accumulate one side ({symbol: {broker: [qty, amt]}}) into dst."""
-    for sym, brokers in src.items():
-        d = dst.setdefault(sym, {})
-        for broker, (qty, amt) in brokers.items():
-            cell = d.get(broker)
-            if cell:
-                cell[0] += qty
-                cell[1] += amt
-            else:
-                d[broker] = [qty, amt]
-
-
 def get_range_aggregate(range_key):
     """Sum of every day aggregate in the range. Cached. None if nothing built."""
-    range_key = range_key if range_key in RANGE_DAYS else "today"
+    range_key = range_key if range_key in NAMED_RANGES else "today"
     key = f"fs_range_{range_key}_{get_latest_trading_date()}"
     cached = cache.get(key)
     if cached is not None:
         return cached or None
 
-    buy, sell, sector = {}, {}, {}
     dates = _trading_dates(range_key)
-    aggs = [get_day_aggregate(ds) for ds in dates]
+    if not dates:
+        cache.set(key, {}, FAIL_TTL)
+        return None
 
-    for agg in aggs:
-        if not agg:
-            continue
-        _merge_into(buy, agg["buy"])
-        _merge_into(sell, agg["sell"])
-        for sym, sec in agg["sector"].items():
-            sector.setdefault(sym, sec)
-
+    buy, sell, sector = _window_sides(dates)
     if not buy and not sell:
         cache.set(key, {}, FAIL_TTL)
         return None
@@ -304,6 +317,44 @@ def get_range_aggregate(range_key):
     }
     cache.set(key, merged, RANGE_TTL)
     return merged
+
+
+def _merge_into(dst, src):
+    """Accumulate one side ({symbol: {broker: [qty, amt]}}) into dst."""
+    for sym, brokers in src.items():
+        d = dst.setdefault(sym, {})
+        for broker, (qty, amt) in brokers.items():
+            cell = d.get(broker)
+            if cell:
+                cell[0] += qty
+                cell[1] += amt
+            else:
+                d[broker] = [qty, amt]
+
+
+def _window_sides(dates):
+    """(buy, sell, sector) for a list of trading-day strings.
+
+    Built by merging the *per-day* aggregates, not a single range-wide query. A
+    per-day GROUP BY is bounded and rides the ``(business_date, buyer)`` index
+    (~0.4s/session), whereas one ``business_date BETWEEN`` GROUP BY over a wide
+    window filesorts millions of rows (measured ~340s for a year vs ~80s cold /
+    ~1s warm here). Crucially each finished session is immutable and cached for a
+    week, so every other window that touches the same day reuses it — only the
+    moving latest day is ever rebuilt.
+    """
+    if not dates:
+        return {}, {}, {}
+    buy, sell, sector = {}, {}, {}
+    for ds in dates:
+        agg = get_day_aggregate(ds)
+        if not agg:
+            continue
+        _merge_into(buy, agg["buy"])
+        _merge_into(sell, agg["sell"])
+        for sym, sec in agg["sector"].items():
+            sector.setdefault(sym, sec)
+    return buy, sell, sector
 
 
 # Hard cap on a custom window so a runaway start/end can't fan out to thousands
@@ -375,16 +426,7 @@ def get_custom_range_aggregate(start, end):
         cache.set(key, {}, FAIL_TTL)
         return None
 
-    buy, sell, sector = {}, {}, {}
-    for ds in dates:
-        agg = get_day_aggregate(ds)
-        if not agg:
-            continue
-        _merge_into(buy, agg["buy"])
-        _merge_into(sell, agg["sell"])
-        for sym, sec in agg["sector"].items():
-            sector.setdefault(sym, sec)
-
+    buy, sell, sector = _window_sides(dates)
     if not buy and not sell:
         cache.set(key, {}, FAIL_TTL)
         return None
@@ -547,6 +589,45 @@ def _build_meta(latest, agg=None):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Cache maintenance (called by sync_floorsheet after new rows land)
+# ─────────────────────────────────────────────────────────────────────────────
+def refresh_after_sync(dates):
+    """Invalidate and warm caches for freshly-synced sessions.
+
+    The floorsheet sync calls this once new trade rows have landed so the broker
+    dashboard reflects them immediately instead of serving a stale day aggregate
+    until its TTL lapses. For each synced day we drop its cached aggregate /
+    row-count and rebuild it (a single ~0.4s DB-side GROUP BY), then clear the
+    derived latest-date, meta and rolling-range caches that depend on it. Warming
+    here is what keeps the heavy 1Y / FY windows fast: every finished session is
+    pre-built, so a range request just merges immutable, already-cached days.
+
+    Best-effort — any cache backend hiccup is swallowed so it can never fail the
+    sync itself.
+    """
+    try:
+        date_strs = sorted({str(d) for d in (dates or [])})
+        if not date_strs:
+            return
+        cache.delete("fs_latest_date")
+        cache.delete("fs_meta")
+        for ds in date_strs:
+            cache.delete(f"fs_agg_{ds}")
+            cache.delete(f"fs_agg_stale_{ds}")
+            cache.delete(f"fs_count_{ds}")
+        latest = get_latest_trading_date()
+        # Drop rolling-range roll-ups (they key off the latest date) so they
+        # rebuild from the freshly warmed day aggregates on next request.
+        if latest:
+            for rk in NAMED_RANGES:
+                cache.delete(f"fs_range_{rk}_{latest}")
+        for ds in date_strs:
+            get_day_aggregate(ds)  # rebuild + recache (also refreshes meta for latest)
+    except Exception:  # pragma: no cover - cache maintenance must never break sync
+        logger.exception("refresh_after_sync failed")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Tab builders
 # ─────────────────────────────────────────────────────────────────────────────
 def meta():
@@ -702,7 +783,7 @@ def net_holding(brokers, range_key="today", exclude_mf=False, sector="All", star
     for sym in symbols:
         if sector and sector != "All" and agg["sector"].get(sym) != sector:
             continue
-        if exclude_mf and _is_mutual_fund(sym):
+        if exclude_mf and _is_mutual_fund(sym, agg["sector"].get(sym)):
             continue
         bq = sum(agg["buy"].get(sym, {}).get(b, [0, 0])[0] for b in sel)
         sq = sum(agg["sell"].get(sym, {}).get(b, [0, 0])[0] for b in sel)
@@ -718,8 +799,17 @@ def net_holding(brokers, range_key="today", exclude_mf=False, sector="All", star
     return {"ok": True, "items": items}
 
 
-def _is_mutual_fund(symbol):
-    # NEPSE close-ended funds end in MF / a digit (e.g. NMMF1, SBCF). Heuristic.
+def _is_mutual_fund(symbol, sector=None):
+    """True if a symbol is a NEPSE mutual fund.
+
+    The floorsheet/company tables carry an authoritative ``sector`` of
+    'Mutual Fund' for every close-ended fund, so we key on that first (it
+    catches names a symbol-suffix heuristic misses entirely — CSY, GSY, KSY,
+    LUK, KEF, …). The suffix heuristic only survives as a fallback for the rare
+    row with a blank sector.
+    """
+    if sector:
+        return sector.strip().lower() == "mutual fund"
     return symbol.endswith("MF") or (len(symbol) > 2 and symbol[-1].isdigit() and "MF" in symbol)
 
 
@@ -934,7 +1024,7 @@ def broker_persistence(brokers, range_key="1w", sector="All", exclude_mf=False,
     for sym, day_nets in per_day.items():
         if sector and sector != "All" and agg["sector"].get(sym) != sector:
             continue
-        if exclude_mf and _is_mutual_fund(sym):
+        if exclude_mf and _is_mutual_fund(sym, agg["sector"].get(sym)):
             continue
 
         # Streak: consecutive most-recent sessions on one side (break on a flat
@@ -1051,7 +1141,7 @@ def broker_signals(brokers, range_key="1m", sector="All", exclude_mf=False, star
     def passes(sym):
         if sector and sector != "All" and secmap.get(sym) != sector:
             return False
-        if exclude_mf and _is_mutual_fund(sym):
+        if exclude_mf and _is_mutual_fund(sym, secmap.get(sym)):
             return False
         return True
 
@@ -1132,60 +1222,3 @@ def broker_signals(brokers, range_key="1m", sector="All", exclude_mf=False, star
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 90-day trend (bars: floorsheet qty for selected ticker; line: closing price)
-# ─────────────────────────────────────────────────────────────────────────────
-def trend(symbol, side="buy", days=90, broker=None):
-    """Daily traded quantity (from cached day aggregates) + closing price (DB).
-
-    When ``broker`` is supplied, quantity is scoped to that broker. ``side`` can
-    be buy, sell, or all; all means buy + sell activity for the selected broker.
-    """
-    if not symbol:
-        return {"ok": False, "points": []}
-    latest = get_latest_trading_date()
-    if not latest:
-        return {"ok": False, "points": []}
-    broker = _typed_broker(broker) if broker not in (None, "") else None
-    side = "all" if side == "all" else ("sell" if side == "sell" else "buy")
-
-    # Closing prices from the local end-of-day table (cheap, authoritative).
-    closes = {}
-    try:
-        from core_analysis.models import NepseDailyStockPrice
-
-        start = datetime.strptime(latest, "%Y-%m-%d").date() - timedelta(days=days)
-        qs = (
-            NepseDailyStockPrice.objects.filter(symbol=symbol, business_date__gte=start)
-            .values_list("business_date", "close_price")
-        )
-        closes = {bd.isoformat(): float(cp) for bd, cp in qs}
-    except Exception:  # pragma: no cover
-        closes = {}
-
-    # Quantity bars: only from day aggregates already cached (avoid 90 live pulls).
-    start = datetime.strptime(latest, "%Y-%m-%d").date()
-    points = []
-    for i in range(days):
-        d = (start - timedelta(days=i)).isoformat()
-        cached = cache.get(f"fs_agg_{d}")
-        qty = None
-        if cached and cached != FAIL_SENTINEL:
-            if side == "all":
-                maps = (cached.get("buy", {}), cached.get("sell", {}))
-            else:
-                maps = (cached.get(side, {}),)
-            total_qty = 0.0
-            for side_map in maps:
-                symbol_cells = side_map.get(symbol, {})
-                if broker is None:
-                    total_qty += sum(q for q, _a in symbol_cells.values())
-                else:
-                    total_qty += symbol_cells.get(broker, [0, 0])[0]
-            qty = round(total_qty)
-        close = closes.get(d)
-        if qty is None and close is None:
-            continue
-        points.append({"date": d, "quantity": qty or 0, "close": close})
-    points.sort(key=lambda p: p["date"])
-    return {"ok": True, "symbol": symbol, "side": side, "broker": broker, "points": points}

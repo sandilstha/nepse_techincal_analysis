@@ -2,7 +2,7 @@
    Dalal Street X broker analytics — frontend controller.
    Reads bootstrap meta (brokers/symbols/sectors), drives 6 tabs, each backed by
    a JSON endpoint under /floorsheet/api/*. Tables + squarified treemap are
-   rendered by hand; the 90-day trend uses Chart.js (bar qty + line close).
+   rendered by hand.
    ========================================================================== */
 (function () {
   "use strict";
@@ -126,9 +126,10 @@
   }
 
   // ── shared date-range control ─────────────────────────────────────────
-  // Preset dropdown (Current Day / Last Week / Month / 3M / Custom Range) with
-  // Start/End inputs and an Analyze button, namespaced by `prefix`. Presets fill
-  // read-only Start/End and apply immediately; "Custom Range" enables the inputs
+  // Preset dropdown mapped to the NEPSE trading calendar (Current Day / This
+  // Week / 1M / 3M / 1Y / Fiscal Year / Custom), namespaced by `prefix`. Presets
+  // are resolved to real sessions server-side, so the client only sends the key
+  // and never has to do calendar math. "Custom Range" reveals Start/End inputs
   // and applies on Analyze. params() yields the query params for the request.
   var _dateRanges = [];
   function dateRange(prefix, onApply, defaultRange) {
@@ -136,8 +137,8 @@
         startI = el(prefix + "-start"),
         endI = el(prefix + "-end"),
         analyze = el(prefix + "-analyze");
+    var customFields = [el(prefix + "-custom"), el(prefix + "-custom-end")];
     var state = { range: "today", start: null, end: null };
-    var SPANS = { today: 1, "1w": 7, "1m": 30, "3m": 90 };
 
     function addDays(iso, n) {
       var p = (iso || "").split("-");
@@ -146,37 +147,28 @@
       d.setDate(d.getDate() + n);
       return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
     }
-    function presetWindow(val) {
-      var L = META.latest_date;
-      if (!L) return { start: "", end: "" };
-      return { start: addDays(L, -((SPANS[val] || 1) - 1)), end: L };
+    function showCustom(on) {
+      customFields.forEach(function (f) { if (f) f.hidden = !on; });
     }
     function setMax() {
       if (!META.latest_date) return;
       if (startI) startI.max = META.latest_date;
       if (endI) endI.max = META.latest_date;
     }
-    function setDisabled(on) {
-      if (startI) startI.disabled = on;
-      if (endI) endI.disabled = on;
-    }
     function apply(val, fire) {
       if (val === "custom") {
-        setDisabled(false);
-        if (startI && !startI.value) {
-          var seed = presetWindow("today");
-          startI.value = seed.start; if (endI) endI.value = seed.end;
+        showCustom(true);
+        if (startI && !startI.value && META.latest_date) {
+          startI.value = addDays(META.latest_date, -29);  // sensible default window
+          if (endI) endI.value = META.latest_date;
         }
         state.range = "custom";
         state.start = startI ? startI.value : null;
         state.end = endI ? endI.value : null;
         return;                 // wait for Analyze
       }
-      setDisabled(true);
-      var w = presetWindow(val);
-      if (startI) startI.value = w.start;
-      if (endI) endI.value = w.end;
-      state.range = val; state.start = w.start; state.end = w.end;
+      showCustom(false);
+      state.range = val; state.start = null; state.end = null;
       if (fire) onApply();
     }
 
@@ -195,7 +187,7 @@
     apply(def, false);          // seed defaults; caller fires the first load
 
     var ctrl = {
-      refresh: function () { setMax(); if (state.range !== "custom") apply(state.range, false); },
+      refresh: function () { setMax(); },
       params: function () {
         return state.range === "custom"
           ? { range: "custom", start_date: state.start || "", end_date: state.end || "" }
@@ -297,7 +289,7 @@
     { label: "Quantity", key: "quantity", type: "num" },
     { label: "Amount (Rs)", key: "amount", type: "num" },
     { label: "Average Price (Rs)", key: "avg_price", type: "num" },
-    { label: "% Of Total Transactions", key: "pct", type: "num" }
+    { label: "% Of Desk Flow", key: "pct", type: "num" }
   ];
   function buildFavTable(table, rows) {
     if (!rows || !rows.length) { empty(table, 6); return; }
@@ -388,61 +380,10 @@
     table.innerHTML = sortableHead(table.id, FLOW_COLS) + "<tbody>" + body + "</tbody>";
   }
 
-  // Trend chart shared by broker analysis and script deep-dive tabs.
-  var charts = {};
-  var chartLoader = null;
-  function ensureChart() {
-    if (window.Chart) return Promise.resolve(true);
-    if (chartLoader) return chartLoader;
-    chartLoader = new Promise(function (resolve) {
-      var s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js";
-      s.async = true;
-      s.onload = function () { resolve(true); };
-      s.onerror = function () { resolve(false); };
-      document.head.appendChild(s);
-    });
-    return chartLoader;
-  }
-  function renderTrend(canvasId, data) {
-    var cv = el(canvasId);
-    if (!cv) return;
-    var pts = (data && data.points) || [];
-    var labels = pts.map(function (p) { return p.date; });
-    var qty = pts.map(function (p) { return p.quantity; });
-    var close = pts.map(function (p) { return p.close; });
-    ensureChart().then(function (ok) {
-      if (!ok || !window.Chart) return;
-      if (charts[canvasId]) charts[canvasId].destroy();
-      charts[canvasId] = new Chart(cv.getContext("2d"), {
-        data: {
-          labels: labels,
-          datasets: [
-            { type: "bar", label: "Traded Qty", data: qty, yAxisID: "y",
-              backgroundColor: "rgba(94,201,143,.55)", borderColor: "rgba(94,201,143,.9)", borderWidth: 1 },
-            { type: "line", label: "Close", data: close, yAxisID: "y1",
-              borderColor: "#3f8cff", backgroundColor: "#3f8cff", tension: .25,
-              pointRadius: 0, borderWidth: 2, spanGaps: true }
-          ]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          interaction: { mode: "index", intersect: false },
-          plugins: { legend: { labels: { color: "#9bb0d3", boxWidth: 12 } } },
-          scales: {
-            x: { ticks: { color: "#6f88ad", maxTicksLimit: 14, autoSkip: true }, grid: { display: false } },
-            y: { position: "left", ticks: { color: "#6f88ad" }, grid: { color: "rgba(120,150,200,.08)" } },
-            y1: { position: "right", ticks: { color: "#6f88ad" }, grid: { display: false } }
-          }
-        }
-      });
-    });
-  }
-
   // ─────────────────────────────────────────────────────────────────────
   // TAB: Broker Favorites
   // ─────────────────────────────────────────────────────────────────────
-  var favState = { brokers: [], trendSide: "buy", trendSym: null, dr: null, persistSide: "all", persistData: null, persistSort: null };
+  var favState = { brokers: [], dr: null, persistSide: "all", persistData: null, persistSort: null };
 
   TABS.favorites = {
     init: function () {
@@ -474,19 +415,6 @@
         });
         drawPersistence();
       });
-      segGroup("fav-trend-side", function (v) { favState.trendSide = v; TABS.favorites.loadTrend(); });
-      // Row click selects that ticker for the trend (delegated so it survives
-      // table re-renders from sorting).
-      wireFavSelect(el("fav-buy"));
-      wireFavSelect(el("fav-sell"));
-      // A/D rows pick the trend ticker too (delegated; survives re-renders).
-      var ad = el("fav-ad");
-      if (ad) ad.addEventListener("click", function (e) {
-        var row = e.target.closest ? e.target.closest(".dsx-ad-row[data-key]") : null;
-        if (!row || !ad.contains(row)) return;
-        favState.trendSym = row.getAttribute("data-key");
-        TABS.favorites.loadTrend();
-      });
     },
     load: function () {
       if (!favState.brokers.length) {
@@ -503,8 +431,6 @@
           renderFavKpis(d);
           showTable(el("fav-buy"), d.buy, buildFavTable);
           showTable(el("fav-sell"), d.sell, buildFavTable);
-          if (!favState.trendSym && d.buy && d.buy.length) favState.trendSym = d.buy[0].key;
-          TABS.favorites.loadTrend();
         })
         .catch(function (err) { if (isAbort(err)) return; empty(el("fav-buy"), 6, "Error"); empty(el("fav-sell"), 6, "Error"); });
       TABS.favorites.loadPersistence();
@@ -520,26 +446,8 @@
       }, "fav-persist")
         .then(renderPersistence)
         .catch(function (err) { if (isAbort(err)) return; box.innerHTML = '<div class="dsx-empty">Error</div>'; });
-    },
-    loadTrend: function () {
-      if (!favState.trendSym) return;
-      el("fav-trend-sym").textContent = favState.trendSym;
-      getJSON("trend/", { symbol: favState.trendSym, side: favState.trendSide }, "fav-trend")
-        .then(function (d) { renderTrend("fav-trend-chart", d); })
-        .catch(function () {});
     }
   };
-  function wireFavSelect(table) {
-    if (!table) return;
-    table.style.cursor = "pointer";
-    table.addEventListener("click", function (e) {
-      if (e.target.closest && e.target.closest("th")) return;   // header clicks sort
-      var tr = e.target.closest ? e.target.closest("tr[data-key]") : null;
-      if (!tr || !table.contains(tr)) return;
-      favState.trendSym = tr.getAttribute("data-key");
-      TABS.favorites.loadTrend();
-    });
-  }
 
   // KPI strip: the selected desk's stance, all derived from the favorites/
   // response (no extra request). Buy/sell turnover, net flow, breadth, and the
@@ -590,7 +498,7 @@
     var rows = side === "all" ? all : all.filter(function (r) { return r.side === side; });
     var ps = favState.persistSort;
     if (ps) rows = sortRows(rows, ps.key, ps.dir, ps.type);
-    if (sub) sub.textContent = d.days ? ("Last " + d.days + " sessions · click a row to chart it") : "";
+    if (sub) sub.textContent = d.days ? ("Last " + d.days + " sessions") : "";
     if (!rows.length) {
       box.innerHTML = "<div class='dsx-empty'>" +
         (all.length ? "No " + (side === "buy" ? "accumulating" : "distributing") + " names" : "No multi-day positions") +
@@ -727,6 +635,55 @@
         : n === 1 ? one
         : n + " brokers selected") + " ▾";
     }
+    // Removable "selected chips" strip, created once just below the button so the
+    // current desk is always visible without opening the menu. A handful of picks
+    // render as individual removable chips; beyond CHIP_CAP they collapse to one
+    // summary pill ("All N brokers" / "N brokers selected") whose × clears the
+    // whole selection — so "Select all" shows a tidy single pill, not a wall of
+    // 100 chips.
+    var CHIP_CAP = 12;
+    var chipsEl = btn.parentNode.querySelector(".dsx-multi-chips");
+    if (!chipsEl) {
+      chipsEl = document.createElement("div");
+      chipsEl.className = "dsx-multi-chips";
+      btn.parentNode.insertBefore(chipsEl, btn.nextSibling);
+    }
+    function deselect(bs) {
+      state.brokers = state.brokers.filter(function (x) { return x !== bs; });
+      commit(); render(search.value.trim()); onChange();
+    }
+    function clearAll() {
+      state.brokers = [];
+      commit(); render(search.value.trim()); onChange();
+    }
+    function makeChip(label, title, ariaX, onX, summary) {
+      var chip = document.createElement("span");
+      chip.className = "dsx-sel-chip" + (summary ? " summary" : "");
+      if (title) chip.title = title;
+      chip.innerHTML = "<b>" + label + "</b>" +
+        "<button type='button' class='dsx-sel-x' aria-label='" + ariaX + "'>×</button>";
+      chip.querySelector(".dsx-sel-x").addEventListener("click", function (e) {
+        e.stopPropagation(); onX();
+      });
+      return chip;
+    }
+    function renderChips() {
+      chipsEl.innerHTML = "";
+      var n = state.brokers.length;
+      if (!n) return;
+      var total = (META.brokers || []).length;
+      if (n > CHIP_CAP) {
+        var label = (n === total ? "All " + n + " brokers" : n + " brokers selected");
+        chipsEl.appendChild(makeChip(label, "Clear all selected brokers",
+          "Clear all selected brokers", clearAll, true));
+        return;
+      }
+      state.brokers.forEach(function (bs) {
+        var nm = brokerName(bs);
+        chipsEl.appendChild(makeChip(bs, nm ? bs + " — " + nm : "",
+          "Remove broker " + bs, function () { deselect(bs); }, false));
+      });
+    }
     // Live "N of M selected" line, created once just above the chip grid.
     var countEl = menu.querySelector(".dsx-multi-count");
     if (!countEl) {
@@ -737,6 +694,7 @@
     function updateCount() {
       countEl.textContent = state.brokers.length + " of " + (META.brokers || []).length + " selected";
     }
+    function commit() { syncLabel(); updateCount(); renderChips(); }
     function render(filter) {
       list.innerHTML = "";
       var shown = 0;
@@ -760,7 +718,7 @@
           var sel = state.brokers.indexOf(bs) !== -1;
           chip.classList.toggle("on", sel);
           chip.setAttribute("aria-pressed", sel ? "true" : "false");
-          syncLabel(); updateCount(); onChange();
+          commit(); onChange();
         });
         list.appendChild(chip);
       });
@@ -783,24 +741,23 @@
         } else {
           state.brokers = [];
         }
-        render(search.value.trim()); syncLabel(); onChange();
+        render(search.value.trim()); commit(); onChange();
       });
     });
 
-    syncLabel();
+    commit();
   }
 
   // ─────────────────────────────────────────────────────────────────────
   // TAB: Stock Wise Details
   // ─────────────────────────────────────────────────────────────────────
-  var swState = { symbol: null, trendSide: "buy", dr: null };
+  var swState = { symbol: null, dr: null };
   TABS.stockwise = {
     init: function () {
       fillSymbols(el("sw-symbol"));
       swState.symbol = el("sw-symbol").value || ((META.symbols || [])[0] || {}).symbol;
       el("sw-symbol").addEventListener("change", function () { swState.symbol = this.value; TABS.stockwise.load(); });
       swState.dr = dateRange("sw", function () { TABS.stockwise.load(); });
-      segGroup("sw-trend-side", function (v) { swState.trendSide = v; TABS.stockwise.loadTrend(); });
     },
     load: function () {
       if (!swState.symbol) { empty(el("sw-buy"), 5, "No symbols"); return; }
@@ -810,16 +767,8 @@
           showTable(el("sw-buy"), d.buy, buildBrokerTable);
           showTable(el("sw-sell"), d.sell, buildBrokerTable);
           showTable(el("sw-hold"), d.holdings, buildHoldTable);
-          TABS.stockwise.loadTrend();
         })
         .catch(function (err) { if (isAbort(err)) return; empty(el("sw-buy"), 5, "Error"); empty(el("sw-sell"), 5, "Error"); empty(el("sw-hold"), 4, "Error"); });
-    },
-    loadTrend: function () {
-      if (!swState.symbol) return;
-      el("sw-trend-sym").textContent = swState.symbol;
-      getJSON("trend/", { symbol: swState.symbol, side: swState.trendSide }, "sw-trend")
-        .then(function (d) { renderTrend("sw-trend-chart", d); })
-        .catch(function () {});
     }
   };
 
