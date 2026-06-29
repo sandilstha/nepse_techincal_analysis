@@ -255,27 +255,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Email activation. Local DEBUG defaults to console email so signup does not
-# require a mail server; production defaults to SMTP and reads credentials here.
-EMAIL_BACKEND = os.environ.get(
-    'DJANGO_EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend'
-    if DEBUG
-    else 'django.core.mail.backends.smtp.EmailBackend',
-)
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '25'))
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-EMAIL_USE_TLS = _env_bool('EMAIL_USE_TLS', False)
-EMAIL_USE_SSL = _env_bool('EMAIL_USE_SSL', False)
-EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '10'))
-DEFAULT_FROM_EMAIL = os.environ.get(
-    'DEFAULT_FROM_EMAIL',
-    EMAIL_HOST_USER or 'webmaster@localhost',
-)
-
-
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 

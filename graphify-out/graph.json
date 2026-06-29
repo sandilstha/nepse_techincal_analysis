@@ -10,7 +10,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "dsx_smoke",
-      "community": 81,
+      "community": 4,
       "norm_label": "_dsx_smoke.py"
     },
     {
@@ -32,6 +32,46 @@
       "id": "core_analysis_admin",
       "community": 102,
       "norm_label": "admin.py"
+    },
+    {
+      "label": "approve_requests()",
+      "file_type": "code",
+      "source_file": "core_analysis/admin.py",
+      "source_location": "L8",
+      "_origin": "ast",
+      "id": "core_analysis_admin_approve_requests",
+      "community": 102,
+      "norm_label": "approve_requests()"
+    },
+    {
+      "label": "reject_requests()",
+      "file_type": "code",
+      "source_file": "core_analysis/admin.py",
+      "source_location": "L22",
+      "_origin": "ast",
+      "id": "core_analysis_admin_reject_requests",
+      "community": 102,
+      "norm_label": "reject_requests()"
+    },
+    {
+      "label": "AccountApprovalAdmin",
+      "file_type": "code",
+      "source_file": "core_analysis/admin.py",
+      "source_location": "L36",
+      "_origin": "ast",
+      "id": "core_analysis_admin_accountapprovaladmin",
+      "community": 102,
+      "norm_label": "accountapprovaladmin"
+    },
+    {
+      "label": ".save_model()",
+      "file_type": "code",
+      "source_file": "core_analysis/admin.py",
+      "source_location": "L54",
+      "_origin": "ast",
+      "id": "core_analysis_admin_accountapprovaladmin_save_model",
+      "community": 102,
+      "norm_label": ".save_model()"
     },
     {
       "label": "api_urls.py",
@@ -560,18 +600,18 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "core_analysis_forms",
-      "community": 2,
+      "community": 30,
       "norm_label": "forms.py"
     },
     {
-      "label": "EmailRegistrationForm",
+      "label": "AdminApprovalRegistrationForm",
       "file_type": "code",
       "source_file": "core_analysis/forms.py",
       "source_location": "L8",
       "_origin": "ast",
-      "id": "core_analysis_forms_emailregistrationform",
-      "community": 2,
-      "norm_label": "emailregistrationform"
+      "id": "core_analysis_forms_adminapprovalregistrationform",
+      "community": 30,
+      "norm_label": "adminapprovalregistrationform"
     },
     {
       "label": "UserCreationForm",
@@ -580,7 +620,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "usercreationform",
-      "community": 2,
+      "community": 30,
       "norm_label": "usercreationform"
     },
     {
@@ -589,8 +629,8 @@
       "source_file": "core_analysis/forms.py",
       "source_location": "L21",
       "_origin": "ast",
-      "id": "core_analysis_forms_emailregistrationform_clean_email",
-      "community": 2,
+      "id": "core_analysis_forms_adminapprovalregistrationform_clean_email",
+      "community": 30,
       "norm_label": ".clean_email()"
     },
     {
@@ -599,8 +639,8 @@
       "source_file": "core_analysis/forms.py",
       "source_location": "L30",
       "_origin": "ast",
-      "id": "core_analysis_forms_emailregistrationform_save",
-      "community": 2,
+      "id": "core_analysis_forms_adminapprovalregistrationform_save",
+      "community": 30,
       "norm_label": ".save()"
     },
     {
@@ -820,7 +860,7 @@
       "source_location": "L179",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_indicator_catalog",
-      "community": 13,
+      "community": 19,
       "norm_label": "indicator_catalog()"
     },
     {
@@ -880,7 +920,7 @@
       "source_location": "L180",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_rationale_180",
-      "community": 13,
+      "community": 19,
       "norm_label": "list available indicators for the dropdown."
     },
     {
@@ -1070,7 +1110,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "commands_backfill_companies",
-      "community": 48,
+      "community": 76,
       "norm_label": "backfill_companies.py"
     },
     {
@@ -1090,7 +1130,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "commands_backfill_companies_command",
-      "community": 48,
+      "community": 76,
       "norm_label": "command"
     },
     {
@@ -1100,7 +1140,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "basecommand",
-      "community": 46,
+      "community": 76,
       "norm_label": "basecommand"
     },
     {
@@ -1110,7 +1150,7 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "commands_backfill_companies_command_add_arguments",
-      "community": 48,
+      "community": 76,
       "norm_label": ".add_arguments()"
     },
     {
@@ -1120,7 +1160,7 @@
       "source_location": "L92",
       "_origin": "ast",
       "id": "commands_backfill_companies_command_handle",
-      "community": 48,
+      "community": 76,
       "norm_label": ".handle()"
     },
     {
@@ -1130,7 +1170,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "commands_backfill_companies_rationale_1",
-      "community": 48,
+      "community": 76,
       "norm_label": "safety-net backfill for the company list.  the dropdown reads from ``companyprof"
     },
     {
@@ -1150,7 +1190,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "commands_grant_staff",
-      "community": 46,
+      "community": 76,
       "norm_label": "grant_staff.py"
     },
     {
@@ -1160,7 +1200,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "commands_grant_staff_command",
-      "community": 46,
+      "community": 76,
       "norm_label": "command"
     },
     {
@@ -1170,7 +1210,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "commands_grant_staff_command_add_arguments",
-      "community": 46,
+      "community": 76,
       "norm_label": ".add_arguments()"
     },
     {
@@ -1180,7 +1220,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "commands_grant_staff_command_handle",
-      "community": 46,
+      "community": 76,
       "norm_label": ".handle()"
     },
     {
@@ -1190,7 +1230,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "commands_grant_staff_rationale_1",
-      "community": 46,
+      "community": 76,
       "norm_label": "grant_staff \u2014 give (or revoke) a my portfolio account access to the workbench."
     },
     {
@@ -1944,6 +1984,36 @@
       "norm_label": "migration"
     },
     {
+      "label": "0008_accountapproval.py",
+      "file_type": "code",
+      "source_file": "core_analysis/migrations/0008_accountapproval.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "migrations_0008_accountapproval",
+      "community": 117,
+      "norm_label": "0008_accountapproval.py"
+    },
+    {
+      "label": "mark_existing_approved()",
+      "file_type": "code",
+      "source_file": "core_analysis/migrations/0008_accountapproval.py",
+      "source_location": "L8",
+      "_origin": "ast",
+      "id": "migrations_0008_accountapproval_mark_existing_approved",
+      "community": 117,
+      "norm_label": "mark_existing_approved()"
+    },
+    {
+      "label": "Migration",
+      "file_type": "code",
+      "source_file": "core_analysis/migrations/0008_accountapproval.py",
+      "source_location": "L15",
+      "_origin": "ast",
+      "id": "migrations_0008_accountapproval_migration",
+      "community": 117,
+      "norm_label": "migration"
+    },
+    {
       "label": "__init__.py",
       "file_type": "code",
       "source_file": "core_analysis/migrations/__init__.py",
@@ -1960,7 +2030,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "core_analysis_models",
-      "community": 48,
+      "community": 0,
       "norm_label": "models.py"
     },
     {
@@ -1980,7 +2050,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "core_analysis_models_meta",
-      "community": 48,
+      "community": 0,
       "norm_label": "meta"
     },
     {
@@ -2120,7 +2190,7 @@
       "source_location": "L284",
       "_origin": "ast",
       "id": "core_analysis_models_portfolio",
-      "community": 117,
+      "community": 30,
       "norm_label": "portfolio"
     },
     {
@@ -2130,7 +2200,7 @@
       "source_location": "L304",
       "_origin": "ast",
       "id": "core_analysis_models_portfolio_str",
-      "community": 117,
+      "community": 30,
       "norm_label": ".__str__()"
     },
     {
@@ -2154,44 +2224,54 @@
       "norm_label": ".__str__()"
     },
     {
-      "label": "EmailActivation",
+      "label": "AccountApproval",
       "file_type": "code",
       "source_file": "core_analysis/models.py",
       "source_location": "L335",
       "_origin": "ast",
-      "id": "core_analysis_models_emailactivation",
-      "community": 2,
-      "norm_label": "emailactivation"
+      "id": "core_analysis_models_accountapproval",
+      "community": 124,
+      "norm_label": "accountapproval"
     },
     {
       "label": ".__str__()",
       "file_type": "code",
       "source_file": "core_analysis/models.py",
-      "source_location": "L353",
+      "source_location": "L369",
       "_origin": "ast",
-      "id": "core_analysis_models_emailactivation_str",
-      "community": 2,
+      "id": "core_analysis_models_accountapproval_str",
+      "community": 124,
       "norm_label": ".__str__()"
     },
     {
-      "label": ".is_activated()",
+      "label": ".is_pending()",
       "file_type": "code",
       "source_file": "core_analysis/models.py",
-      "source_location": "L357",
+      "source_location": "L373",
       "_origin": "ast",
-      "id": "core_analysis_models_emailactivation_is_activated",
-      "community": 2,
-      "norm_label": ".is_activated()"
+      "id": "core_analysis_models_accountapproval_is_pending",
+      "community": 124,
+      "norm_label": ".is_pending()"
     },
     {
-      "label": ".mark_sent()",
+      "label": ".approve()",
       "file_type": "code",
       "source_file": "core_analysis/models.py",
-      "source_location": "L360",
+      "source_location": "L376",
       "_origin": "ast",
-      "id": "core_analysis_models_emailactivation_mark_sent",
-      "community": 2,
-      "norm_label": ".mark_sent()"
+      "id": "core_analysis_models_accountapproval_approve",
+      "community": 124,
+      "norm_label": ".approve()"
+    },
+    {
+      "label": ".reject()",
+      "file_type": "code",
+      "source_file": "core_analysis/models.py",
+      "source_location": "L385",
+      "_origin": "ast",
+      "id": "core_analysis_models_accountapproval_reject",
+      "community": 124,
+      "norm_label": ".reject()"
     },
     {
       "label": "Table: nepse_brokers     Reference list of NEPSE stock brokers (and stock deale",
@@ -2270,7 +2350,7 @@
       "source_location": "L285",
       "_origin": "ast",
       "id": "core_analysis_models_rationale_285",
-      "community": 117,
+      "community": 30,
       "norm_label": "table: portfolio_portfolio     a logged-in user's private holdings portfolio \u2014"
     },
     {
@@ -2284,14 +2364,14 @@
       "norm_label": "table: portfolio_holding     one scrip position inside a portfolio. ``quantity`"
     },
     {
-      "label": "Email state for activating a self-service portfolio account.     The signed acti",
+      "label": "Admin review state for a self-service portfolio account request.",
       "file_type": "rationale",
       "source_file": "core_analysis/models.py",
       "source_location": "L336",
       "_origin": "ast",
       "id": "core_analysis_models_rationale_336",
-      "community": 2,
-      "norm_label": "email state for activating a self-service portfolio account.     the signed acti"
+      "community": 124,
+      "norm_label": "admin review state for a self-service portfolio account request."
     },
     {
       "label": "portfolio_views.py",
@@ -2307,7 +2387,7 @@
       "label": "_asset_version()",
       "file_type": "code",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L41",
+      "source_location": "L33",
       "_origin": "ast",
       "id": "core_analysis_portfolio_views_asset_version",
       "community": 30,
@@ -2317,7 +2397,7 @@
       "label": "_num()",
       "file_type": "code",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L50",
+      "source_location": "L42",
       "_origin": "ast",
       "id": "core_analysis_portfolio_views_num",
       "community": 30,
@@ -2327,7 +2407,7 @@
       "label": "_map_columns()",
       "file_type": "code",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L63",
+      "source_location": "L55",
       "_origin": "ast",
       "id": "core_analysis_portfolio_views_map_columns",
       "community": 30,
@@ -2337,97 +2417,37 @@
       "label": "parse_holdings_csv()",
       "file_type": "code",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L87",
+      "source_location": "L79",
       "_origin": "ast",
       "id": "core_analysis_portfolio_views_parse_holdings_csv",
       "community": 30,
       "norm_label": "parse_holdings_csv()"
     },
     {
-      "label": "_mask_email()",
-      "file_type": "code",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L131",
-      "_origin": "ast",
-      "id": "core_analysis_portfolio_views_mask_email",
-      "community": 30,
-      "norm_label": "_mask_email()"
-    },
-    {
-      "label": "_activation_sent_url()",
-      "file_type": "code",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L142",
-      "_origin": "ast",
-      "id": "core_analysis_portfolio_views_activation_sent_url",
-      "community": 30,
-      "norm_label": "_activation_sent_url()"
-    },
-    {
-      "label": "_activation_link()",
-      "file_type": "code",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L147",
-      "_origin": "ast",
-      "id": "core_analysis_portfolio_views_activation_link",
-      "community": 30,
-      "norm_label": "_activation_link()"
-    },
-    {
-      "label": "_activation_from_uid()",
-      "file_type": "code",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L154",
-      "_origin": "ast",
-      "id": "core_analysis_portfolio_views_activation_from_uid",
-      "community": 30,
-      "norm_label": "_activation_from_uid()"
-    },
-    {
-      "label": "_send_activation_email()",
-      "file_type": "code",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L170",
-      "_origin": "ast",
-      "id": "core_analysis_portfolio_views_send_activation_email",
-      "community": 30,
-      "norm_label": "_send_activation_email()"
-    },
-    {
       "label": "register_view()",
       "file_type": "code",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L184",
+      "source_location": "L123",
       "_origin": "ast",
       "id": "core_analysis_portfolio_views_register_view",
       "community": 30,
       "norm_label": "register_view()"
     },
     {
-      "label": "activation_sent_view()",
+      "label": "approval_pending_view()",
       "file_type": "code",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L213",
+      "source_location": "L149",
       "_origin": "ast",
-      "id": "core_analysis_portfolio_views_activation_sent_view",
+      "id": "core_analysis_portfolio_views_approval_pending_view",
       "community": 30,
-      "norm_label": "activation_sent_view()"
-    },
-    {
-      "label": "activate_email_view()",
-      "file_type": "code",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L249",
-      "_origin": "ast",
-      "id": "core_analysis_portfolio_views_activate_email_view",
-      "community": 30,
-      "norm_label": "activate_email_view()"
+      "norm_label": "approval_pending_view()"
     },
     {
       "label": "_get_or_create_portfolio()",
       "file_type": "code",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L283",
+      "source_location": "L160",
       "_origin": "ast",
       "id": "core_analysis_portfolio_views_get_or_create_portfolio",
       "community": 30,
@@ -2437,7 +2457,7 @@
       "label": "portfolio_view()",
       "file_type": "code",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L293",
+      "source_location": "L170",
       "_origin": "ast",
       "id": "core_analysis_portfolio_views_portfolio_view",
       "community": 30,
@@ -2447,7 +2467,7 @@
       "label": "portfolio_data_api()",
       "file_type": "code",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L307",
+      "source_location": "L184",
       "_origin": "ast",
       "id": "core_analysis_portfolio_views_portfolio_data_api",
       "community": 30,
@@ -2457,7 +2477,7 @@
       "label": "portfolio_import()",
       "file_type": "code",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L321",
+      "source_location": "L198",
       "_origin": "ast",
       "id": "core_analysis_portfolio_views_portfolio_import",
       "community": 30,
@@ -2467,7 +2487,7 @@
       "label": "portfolio_clear()",
       "file_type": "code",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L369",
+      "source_location": "L246",
       "_origin": "ast",
       "id": "core_analysis_portfolio_views_portfolio_clear",
       "community": 30,
@@ -2487,9 +2507,9 @@
       "label": "Parse a number from a CSV cell ('1,065.00', '\"100\"', '') -> float|None.",
       "file_type": "rationale",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L51",
+      "source_location": "L43",
       "_origin": "ast",
-      "id": "core_analysis_portfolio_views_rationale_51",
+      "id": "core_analysis_portfolio_views_rationale_43",
       "community": 30,
       "norm_label": "parse a number from a csv cell ('1,065.00', '\"100\"', '') -> float|none."
     },
@@ -2497,9 +2517,9 @@
       "label": "Locate the columns we need by header name (order-independent).      The Meroshar",
       "file_type": "rationale",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L64",
+      "source_location": "L56",
       "_origin": "ast",
-      "id": "core_analysis_portfolio_views_rationale_64",
+      "id": "core_analysis_portfolio_views_rationale_56",
       "community": 30,
       "norm_label": "locate the columns we need by header name (order-independent).      the meroshar"
     },
@@ -2507,29 +2527,29 @@
       "label": "Parse the Meroshare holdings CSV into rows + a skipped-line count.      Tolerate",
       "file_type": "rationale",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L88",
+      "source_location": "L80",
       "_origin": "ast",
-      "id": "core_analysis_portfolio_views_rationale_88",
+      "id": "core_analysis_portfolio_views_rationale_80",
       "community": 30,
       "norm_label": "parse the meroshare holdings csv into rows + a skipped-line count.      tolerate"
     },
     {
-      "label": "Self-service signup with email activation.",
+      "label": "Self-service signup that waits for admin approval.",
       "file_type": "rationale",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L185",
+      "source_location": "L124",
       "_origin": "ast",
-      "id": "core_analysis_portfolio_views_rationale_185",
+      "id": "core_analysis_portfolio_views_rationale_124",
       "community": 30,
-      "norm_label": "self-service signup with email activation."
+      "norm_label": "self-service signup that waits for admin approval."
     },
     {
       "label": "Render the Risk & Portfolio dashboard shell for the logged-in user.",
       "file_type": "rationale",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L294",
+      "source_location": "L171",
       "_origin": "ast",
-      "id": "core_analysis_portfolio_views_rationale_294",
+      "id": "core_analysis_portfolio_views_rationale_171",
       "community": 30,
       "norm_label": "render the risk & portfolio dashboard shell for the logged-in user."
     },
@@ -2537,9 +2557,9 @@
       "label": "JSON valuation + risk roll-up for the user's portfolio.",
       "file_type": "rationale",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L308",
+      "source_location": "L185",
       "_origin": "ast",
-      "id": "core_analysis_portfolio_views_rationale_308",
+      "id": "core_analysis_portfolio_views_rationale_185",
       "community": 30,
       "norm_label": "json valuation + risk roll-up for the user's portfolio."
     },
@@ -2547,9 +2567,9 @@
       "label": "Replace the user's holdings with the contents of an uploaded CSV.",
       "file_type": "rationale",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L322",
+      "source_location": "L199",
       "_origin": "ast",
-      "id": "core_analysis_portfolio_views_rationale_322",
+      "id": "core_analysis_portfolio_views_rationale_199",
       "community": 30,
       "norm_label": "replace the user's holdings with the contents of an uploaded csv."
     },
@@ -2557,9 +2577,9 @@
       "label": "Wipe the user's holdings (keeps the empty portfolio).",
       "file_type": "rationale",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L370",
+      "source_location": "L247",
       "_origin": "ast",
-      "id": "core_analysis_portfolio_views_rationale_370",
+      "id": "core_analysis_portfolio_views_rationale_247",
       "community": 30,
       "norm_label": "wipe the user's holdings (keeps the empty portfolio)."
     },
@@ -3460,7 +3480,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_broker_analytics",
-      "community": 81,
+      "community": 4,
       "norm_label": "broker_analytics.py"
     },
     {
@@ -3470,7 +3490,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "services_broker_analytics_get_latest_trading_date",
-      "community": 123,
+      "community": 81,
       "norm_label": "get_latest_trading_date()"
     },
     {
@@ -3660,7 +3680,7 @@
       "source_location": "L468",
       "_origin": "ast",
       "id": "services_broker_analytics_row",
-      "community": 81,
+      "community": 4,
       "norm_label": "_row()"
     },
     {
@@ -3710,7 +3730,7 @@
       "source_location": "L550",
       "_origin": "ast",
       "id": "services_broker_analytics_broker_sort_key",
-      "community": 81,
+      "community": 4,
       "norm_label": "_broker_sort_key()"
     },
     {
@@ -3730,7 +3750,7 @@
       "source_location": "L594",
       "_origin": "ast",
       "id": "services_broker_analytics_refresh_after_sync",
-      "community": 123,
+      "community": 81,
       "norm_label": "refresh_after_sync()"
     },
     {
@@ -3870,7 +3890,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_broker_analytics_rationale_1",
-      "community": 81,
+      "community": 4,
       "norm_label": "broker_analytics.py \u2014 \"dalal street x\" style broker analytics built on top of t"
     },
     {
@@ -3880,7 +3900,7 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "services_broker_analytics_rationale_81",
-      "community": 123,
+      "community": 81,
       "norm_label": "most recent date that has floorsheet rows ('yyyy-mm-dd'), or none."
     },
     {
@@ -4070,7 +4090,7 @@
       "source_location": "L595",
       "_origin": "ast",
       "id": "services_broker_analytics_rationale_595",
-      "community": 123,
+      "community": 81,
       "norm_label": "invalidate and warm caches for freshly-synced sessions.      the floorsheet sy"
     },
     {
@@ -5130,7 +5150,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_moving_average",
-      "community": 116,
+      "community": 53,
       "norm_label": "moving_average.py"
     },
     {
@@ -5140,7 +5160,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "services_moving_average_run_ema_50_200_long_only_simulation",
-      "community": 116,
+      "community": 53,
       "norm_label": "run_ema_50_200_long_only_simulation()"
     },
     {
@@ -5150,7 +5170,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "services_moving_average_rationale_12",
-      "community": 116,
+      "community": 53,
       "norm_label": "long-only strategy:     1. buy only when fast ema crosses above slow ema     2."
     },
     {
@@ -6910,7 +6930,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "js_dashboard",
-      "community": 35,
+      "community": 5,
       "norm_label": "dashboard.js"
     },
     {
@@ -6920,7 +6940,7 @@
       "source_location": "L118",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch",
-      "community": 35,
+      "community": 2,
       "norm_label": "autocompletesearch"
     },
     {
@@ -6930,7 +6950,7 @@
       "source_location": "L119",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_constructor",
-      "community": 35,
+      "community": 2,
       "norm_label": ".constructor()"
     },
     {
@@ -6940,7 +6960,7 @@
       "source_location": "L141",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_init",
-      "community": 35,
+      "community": 2,
       "norm_label": ".init()"
     },
     {
@@ -6950,7 +6970,7 @@
       "source_location": "L168",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_handleinput",
-      "community": 35,
+      "community": 2,
       "norm_label": ".handleinput()"
     },
     {
@@ -6960,7 +6980,7 @@
       "source_location": "L199",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_performsearch",
-      "community": 35,
+      "community": 2,
       "norm_label": ".performsearch()"
     },
     {
@@ -6970,7 +6990,7 @@
       "source_location": "L240",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_showhint",
-      "community": 35,
+      "community": 2,
       "norm_label": ".showhint()"
     },
     {
@@ -6980,7 +7000,7 @@
       "source_location": "L245",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_showloading",
-      "community": 35,
+      "community": 2,
       "norm_label": ".showloading()"
     },
     {
@@ -6990,7 +7010,7 @@
       "source_location": "L250",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_showresults",
-      "community": 35,
+      "community": 2,
       "norm_label": ".showresults()"
     },
     {
@@ -7000,7 +7020,7 @@
       "source_location": "L305",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_hidedropdown",
-      "community": 35,
+      "community": 2,
       "norm_label": ".hidedropdown()"
     },
     {
@@ -7010,7 +7030,7 @@
       "source_location": "L310",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_selectitem",
-      "community": 35,
+      "community": 2,
       "norm_label": ".selectitem()"
     },
     {
@@ -7020,7 +7040,7 @@
       "source_location": "L333",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_handlekeydown",
-      "community": 35,
+      "community": 2,
       "norm_label": ".handlekeydown()"
     },
     {
@@ -7030,7 +7050,7 @@
       "source_location": "L360",
       "_origin": "ast",
       "id": "js_dashboard_autocompletesearch_updateactiveitem",
-      "community": 35,
+      "community": 2,
       "norm_label": ".updateactiveitem()"
     },
     {
@@ -7050,7 +7070,7 @@
       "source_location": "L1973",
       "_origin": "ast",
       "id": "js_dashboard_loadsraianalysis",
-      "community": 35,
+      "community": 5,
       "norm_label": "loadsraianalysis()"
     },
     {
@@ -9070,7 +9090,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c",
-      "community": 87,
+      "community": 128,
       "norm_label": "c()"
     },
     {
@@ -9080,7 +9100,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_d",
-      "community": 89,
+      "community": 84,
       "norm_label": "d()"
     },
     {
@@ -9090,7 +9110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_f",
-      "community": 10,
+      "community": 72,
       "norm_label": "f()"
     },
     {
@@ -9100,7 +9120,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_v",
-      "community": 89,
+      "community": 7,
       "norm_label": "v()"
     },
     {
@@ -9150,7 +9170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_y",
-      "community": 60,
+      "community": 20,
       "norm_label": "y()"
     },
     {
@@ -9160,7 +9180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c_constructor",
-      "community": 87,
+      "community": 128,
       "norm_label": ".constructor()"
     },
     {
@@ -9170,7 +9190,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c_l",
-      "community": 84,
+      "community": 82,
       "norm_label": ".l()"
     },
     {
@@ -9180,7 +9200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c_v",
-      "community": 68,
+      "community": 84,
       "norm_label": ".v()"
     },
     {
@@ -9210,7 +9230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c_s",
-      "community": 87,
+      "community": 128,
       "norm_label": ".s()"
     },
     {
@@ -9270,7 +9290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_e",
-      "community": 70,
+      "community": 11,
       "norm_label": "e()"
     },
     {
@@ -9400,7 +9420,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_f_constructor",
-      "community": 10,
+      "community": 72,
       "norm_label": ".constructor()"
     },
     {
@@ -9410,7 +9430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_f_j",
-      "community": 10,
+      "community": 72,
       "norm_label": ".j()"
     },
     {
@@ -9420,7 +9440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_f_k",
-      "community": 10,
+      "community": 72,
       "norm_label": ".k()"
     },
     {
@@ -9440,7 +9460,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_h",
-      "community": 110,
+      "community": 29,
       "norm_label": "h"
     },
     {
@@ -9450,7 +9470,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_h_constructor",
-      "community": 110,
+      "community": 29,
       "norm_label": ".constructor()"
     },
     {
@@ -9460,7 +9480,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_h_bt",
-      "community": 110,
+      "community": 29,
       "norm_label": ".bt()"
     },
     {
@@ -9480,7 +9500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_h_mt",
-      "community": 39,
+      "community": 44,
       "norm_label": ".mt()"
     },
     {
@@ -9530,7 +9550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_u_mt",
-      "community": 39,
+      "community": 60,
       "norm_label": ".mt()"
     },
     {
@@ -9550,7 +9570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_z",
-      "community": 110,
+      "community": 29,
       "norm_label": "z()"
     },
     {
@@ -9560,7 +9580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_x",
-      "community": 110,
+      "community": 29,
       "norm_label": "x()"
     },
     {
@@ -9820,7 +9840,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nt",
-      "community": 45,
+      "community": 44,
       "norm_label": "nt"
     },
     {
@@ -9830,7 +9850,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nt_constructor",
-      "community": 45,
+      "community": 44,
       "norm_label": ".constructor()"
     },
     {
@@ -9840,7 +9860,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nt_bt",
-      "community": 45,
+      "community": 44,
       "norm_label": ".bt()"
     },
     {
@@ -9850,7 +9870,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nt_gt",
-      "community": 45,
+      "community": 44,
       "norm_label": ".gt()"
     },
     {
@@ -9860,7 +9880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nt_mt",
-      "community": 82,
+      "community": 44,
       "norm_label": ".mt()"
     },
     {
@@ -9870,7 +9890,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st",
-      "community": 51,
+      "community": 27,
       "norm_label": "st"
     },
     {
@@ -9880,7 +9900,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_constructor",
-      "community": 51,
+      "community": 27,
       "norm_label": ".constructor()"
     },
     {
@@ -9890,7 +9910,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_xi",
-      "community": 87,
+      "community": 72,
       "norm_label": ".xi()"
     },
     {
@@ -9900,7 +9920,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_ki",
-      "community": 51,
+      "community": 72,
       "norm_label": ".ki()"
     },
     {
@@ -9910,7 +9930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_dt",
-      "community": 51,
+      "community": 27,
       "norm_label": ".dt()"
     },
     {
@@ -9920,7 +9940,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_gi",
-      "community": 51,
+      "community": 27,
       "norm_label": ".gi()"
     },
     {
@@ -9930,7 +9950,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_ji",
-      "community": 51,
+      "community": 27,
       "norm_label": ".ji()"
     },
     {
@@ -9940,7 +9960,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_qi",
-      "community": 51,
+      "community": 27,
       "norm_label": ".qi()"
     },
     {
@@ -9950,7 +9970,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_yt",
-      "community": 51,
+      "community": 27,
       "norm_label": ".yt()"
     },
     {
@@ -10020,7 +10040,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_sn",
-      "community": 39,
+      "community": 16,
       "norm_label": ".sn()"
     },
     {
@@ -10050,7 +10070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_yt",
-      "community": 73,
+      "community": 15,
       "norm_label": ".yt()"
     },
     {
@@ -10060,7 +10080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_zt",
-      "community": 73,
+      "community": 15,
       "norm_label": ".zt()"
     },
     {
@@ -10090,7 +10110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_ut",
-      "community": 16,
+      "community": 60,
       "norm_label": ".ut()"
     },
     {
@@ -10130,7 +10150,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_ht",
-      "community": 39,
+      "community": 60,
       "norm_label": ".ht()"
     },
     {
@@ -10160,7 +10180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_yn",
-      "community": 72,
+      "community": 16,
       "norm_label": ".yn()"
     },
     {
@@ -10230,7 +10250,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_lt_nn",
-      "community": 66,
+      "community": 89,
       "norm_label": ".nn()"
     },
     {
@@ -10330,7 +10350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_lt_ts",
-      "community": 66,
+      "community": 28,
       "norm_label": ".ts()"
     },
     {
@@ -10480,7 +10500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ct_format",
-      "community": 89,
+      "community": 45,
       "norm_label": ".format()"
     },
     {
@@ -10700,7 +10720,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_at",
-      "community": 29,
+      "community": 60,
       "norm_label": "at"
     },
     {
@@ -10710,7 +10730,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_at_constructor",
-      "community": 29,
+      "community": 60,
       "norm_label": ".constructor()"
     },
     {
@@ -10720,7 +10740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_at_bt",
-      "community": 29,
+      "community": 60,
       "norm_label": ".bt()"
     },
     {
@@ -10730,7 +10750,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_at_gt",
-      "community": 29,
+      "community": 60,
       "norm_label": ".gt()"
     },
     {
@@ -10740,7 +10760,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_at_js",
-      "community": 29,
+      "community": 60,
       "norm_label": ".js()"
     },
     {
@@ -10750,7 +10770,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_at_us",
-      "community": 29,
+      "community": 60,
       "norm_label": ".us()"
     },
     {
@@ -10760,7 +10780,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_at_fs",
-      "community": 29,
+      "community": 60,
       "norm_label": ".fs()"
     },
     {
@@ -10770,7 +10790,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_at_ys",
-      "community": 29,
+      "community": 60,
       "norm_label": ".ys()"
     },
     {
@@ -10820,7 +10840,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zt_qs",
-      "community": 38,
+      "community": 73,
       "norm_label": ".qs()"
     },
     {
@@ -10860,7 +10880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_et_gs",
-      "community": 45,
+      "community": 44,
       "norm_label": ".gs()"
     },
     {
@@ -10910,7 +10930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_lt_qs",
-      "community": 38,
+      "community": 73,
       "norm_label": ".qs()"
     },
     {
@@ -10930,7 +10950,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nt_gs",
-      "community": 45,
+      "community": 44,
       "norm_label": ".gs()"
     },
     {
@@ -10980,7 +11000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_jt",
-      "community": 59,
+      "community": 29,
       "norm_label": "jt"
     },
     {
@@ -10990,7 +11010,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_jt_constructor",
-      "community": 110,
+      "community": 29,
       "norm_label": ".constructor()"
     },
     {
@@ -11000,7 +11020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_jt_ne",
-      "community": 59,
+      "community": 56,
       "norm_label": ".ne()"
     },
     {
@@ -11100,7 +11120,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_t_gs",
-      "community": 45,
+      "community": 44,
       "norm_label": ".gs()"
     },
     {
@@ -11160,7 +11180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_qt_qs",
-      "community": 38,
+      "community": 73,
       "norm_label": ".qs()"
     },
     {
@@ -11180,7 +11200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_qt_gs",
-      "community": 45,
+      "community": 44,
       "norm_label": ".gs()"
     },
     {
@@ -11260,7 +11280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_kt_gs",
-      "community": 29,
+      "community": 44,
       "norm_label": ".gs()"
     },
     {
@@ -11270,7 +11290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_jt_ir",
-      "community": 59,
+      "community": 29,
       "norm_label": ".ir()"
     },
     {
@@ -11280,7 +11300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_jt_xi",
-      "community": 59,
+      "community": 29,
       "norm_label": ".xi()"
     },
     {
@@ -11290,7 +11310,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_jt_mi",
-      "community": 59,
+      "community": 29,
       "norm_label": ".mi()"
     },
     {
@@ -11300,7 +11320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_jt_nr",
-      "community": 59,
+      "community": 29,
       "norm_label": ".nr()"
     },
     {
@@ -11330,7 +11350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ti",
-      "community": 72,
+      "community": 60,
       "norm_label": "ti"
     },
     {
@@ -11340,7 +11360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ti_constructor",
-      "community": 72,
+      "community": 60,
       "norm_label": ".constructor()"
     },
     {
@@ -11350,7 +11370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ti_gt",
-      "community": 72,
+      "community": 11,
       "norm_label": ".gt()"
     },
     {
@@ -11510,7 +11530,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ei_he",
-      "community": 26,
+      "community": 43,
       "norm_label": ".he()"
     },
     {
@@ -11530,7 +11550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hi",
-      "community": 26,
+      "community": 7,
       "norm_label": "hi()"
     },
     {
@@ -11540,7 +11560,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_li",
-      "community": 26,
+      "community": 7,
       "norm_label": "li()"
     },
     {
@@ -11630,7 +11650,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ai_gt",
-      "community": 26,
+      "community": 43,
       "norm_label": ".gt()"
     },
     {
@@ -11650,7 +11670,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ai_qr",
-      "community": 26,
+      "community": 43,
       "norm_label": ".qr()"
     },
     {
@@ -11710,7 +11730,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fi",
-      "community": 82,
+      "community": 43,
       "norm_label": "fi()"
     },
     {
@@ -11720,7 +11740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vi",
-      "community": 56,
+      "community": 59,
       "norm_label": "vi()"
     },
     {
@@ -11730,7 +11750,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pi",
-      "community": 82,
+      "community": 60,
       "norm_label": "pi()"
     },
     {
@@ -11770,7 +11790,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_ar",
-      "community": 70,
+      "community": 11,
       "norm_label": ".ar()"
     },
     {
@@ -11780,7 +11800,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_br",
-      "community": 82,
+      "community": 70,
       "norm_label": ".br()"
     },
     {
@@ -11790,7 +11810,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_k",
-      "community": 56,
+      "community": 59,
       "norm_label": ".k()"
     },
     {
@@ -11800,7 +11820,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_bi",
-      "community": 56,
+      "community": 59,
       "norm_label": "bi()"
     },
     {
@@ -11810,7 +11830,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wi",
-      "community": 82,
+      "community": 70,
       "norm_label": "wi()"
     },
     {
@@ -11840,7 +11860,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_gt",
-      "community": 70,
+      "community": 44,
       "norm_label": ".gt()"
     },
     {
@@ -11880,7 +11900,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi",
-      "community": 45,
+      "community": 59,
       "norm_label": "xi"
     },
     {
@@ -11890,7 +11910,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi_constructor",
-      "community": 45,
+      "community": 59,
       "norm_label": ".constructor()"
     },
     {
@@ -11900,7 +11920,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi_kr",
-      "community": 45,
+      "community": 44,
       "norm_label": ".kr()"
     },
     {
@@ -11980,7 +12000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_ch",
-      "community": 112,
+      "community": 89,
       "norm_label": ".ch()"
     },
     {
@@ -12040,7 +12060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_dh",
-      "community": 126,
+      "community": 9,
       "norm_label": ".dh()"
     },
     {
@@ -12050,7 +12070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_oh",
-      "community": 126,
+      "community": 9,
       "norm_label": ".oh()"
     },
     {
@@ -12120,7 +12140,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ci_vh",
-      "community": 136,
+      "community": 9,
       "norm_label": ".vh()"
     },
     {
@@ -12140,7 +12160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pi_constructor",
-      "community": 82,
+      "community": 60,
       "norm_label": ".constructor()"
     },
     {
@@ -12160,7 +12180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pi_fh",
-      "community": 82,
+      "community": 60,
       "norm_label": ".fh()"
     },
     {
@@ -12230,7 +12250,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri_yh",
-      "community": 134,
+      "community": 9,
       "norm_label": ".yh()"
     },
     {
@@ -12280,7 +12300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_bi_constructor",
-      "community": 38,
+      "community": 59,
       "norm_label": ".constructor()"
     },
     {
@@ -12380,7 +12400,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zi_kh",
-      "community": 9,
+      "community": 108,
       "norm_label": ".kh()"
     },
     {
@@ -12550,7 +12570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_li_constructor",
-      "community": 26,
+      "community": 7,
       "norm_label": ".constructor()"
     },
     {
@@ -12560,7 +12580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_li_gt",
-      "community": 26,
+      "community": 7,
       "norm_label": ".gt()"
     },
     {
@@ -12570,7 +12590,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_li_xl",
-      "community": 26,
+      "community": 7,
       "norm_label": ".xl()"
     },
     {
@@ -12580,7 +12600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fi_constructor",
-      "community": 82,
+      "community": 43,
       "norm_label": ".constructor()"
     },
     {
@@ -12590,7 +12610,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fi_gt",
-      "community": 82,
+      "community": 43,
       "norm_label": ".gt()"
     },
     {
@@ -12600,7 +12620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wi_constructor",
-      "community": 82,
+      "community": 70,
       "norm_label": ".constructor()"
     },
     {
@@ -12670,7 +12690,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ji_qi",
-      "community": 39,
+      "community": 22,
       "norm_label": ".qi()"
     },
     {
@@ -12790,7 +12810,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_ia",
-      "community": 39,
+      "community": 87,
       "norm_label": ".ia()"
     },
     {
@@ -12820,7 +12840,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_sa",
-      "community": 126,
+      "community": 38,
       "norm_label": ".sa()"
     },
     {
@@ -12900,7 +12920,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_pn",
-      "community": 134,
+      "community": 9,
       "norm_label": ".pn()"
     },
     {
@@ -12960,7 +12980,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_rn",
-      "community": 134,
+      "community": 9,
       "norm_label": ".rn()"
     },
     {
@@ -12970,7 +12990,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_qi",
-      "community": 89,
+      "community": 45,
       "norm_label": ".qi()"
     },
     {
@@ -12980,7 +13000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_al",
-      "community": 136,
+      "community": 9,
       "norm_label": ".al()"
     },
     {
@@ -13010,7 +13030,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_on",
-      "community": 9,
+      "community": 39,
       "norm_label": ".on()"
     },
     {
@@ -13080,7 +13100,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_oa",
-      "community": 134,
+      "community": 9,
       "norm_label": ".oa()"
     },
     {
@@ -13090,7 +13110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_va",
-      "community": 136,
+      "community": 9,
       "norm_label": ".va()"
     },
     {
@@ -13130,7 +13150,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_l",
-      "community": 9,
+      "community": 87,
       "norm_label": ".$l()"
     },
     {
@@ -13180,7 +13200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi_j",
-      "community": 45,
+      "community": 44,
       "norm_label": ".j()"
     },
     {
@@ -13190,7 +13210,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi_k",
-      "community": 45,
+      "community": 59,
       "norm_label": ".k()"
     },
     {
@@ -13220,7 +13240,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ki_gt",
-      "community": 45,
+      "community": 44,
       "norm_label": ".gt()"
     },
     {
@@ -13240,7 +13260,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gi_uh",
-      "community": 73,
+      "community": 72,
       "norm_label": ".uh()"
     },
     {
@@ -13280,7 +13300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_en",
-      "community": 112,
+      "community": 10,
       "norm_label": "en()"
     },
     {
@@ -13410,7 +13430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_un",
-      "community": 87,
+      "community": 72,
       "norm_label": "un()"
     },
     {
@@ -13430,7 +13450,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_constructor",
-      "community": 89,
+      "community": 112,
       "norm_label": ".constructor()"
     },
     {
@@ -13440,7 +13460,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ta",
-      "community": 87,
+      "community": 72,
       "norm_label": ".ta()"
     },
     {
@@ -13460,7 +13480,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_hh",
-      "community": 89,
+      "community": 112,
       "norm_label": ".hh()"
     },
     {
@@ -13470,7 +13490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_do",
-      "community": 66,
+      "community": 89,
       "norm_label": ".do()"
     },
     {
@@ -13490,7 +13510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_gh",
-      "community": 112,
+      "community": 89,
       "norm_label": ".gh()"
     },
     {
@@ -13500,7 +13520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_oo",
-      "community": 112,
+      "community": 89,
       "norm_label": ".oo()"
     },
     {
@@ -13590,7 +13610,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ni",
-      "community": 89,
+      "community": 10,
       "norm_label": ".ni()"
     },
     {
@@ -13640,7 +13660,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_pn",
-      "community": 112,
+      "community": 89,
       "norm_label": ".pn()"
     },
     {
@@ -13650,7 +13670,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ho",
-      "community": 112,
+      "community": 89,
       "norm_label": ".ho()"
     },
     {
@@ -13670,7 +13690,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_o",
-      "community": 87,
+      "community": 72,
       "norm_label": ".$o()"
     },
     {
@@ -13700,7 +13720,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ct",
-      "community": 44,
+      "community": 60,
       "norm_label": ".ct()"
     },
     {
@@ -13720,7 +13740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ja",
-      "community": 45,
+      "community": 128,
       "norm_label": ".ja()"
     },
     {
@@ -13740,7 +13760,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ko",
-      "community": 112,
+      "community": 89,
       "norm_label": ".ko()"
     },
     {
@@ -13750,7 +13770,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_go",
-      "community": 112,
+      "community": 89,
       "norm_label": ".go()"
     },
     {
@@ -13760,7 +13780,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_jo",
-      "community": 112,
+      "community": 89,
       "norm_label": ".jo()"
     },
     {
@@ -13770,7 +13790,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_qo",
-      "community": 10,
+      "community": 89,
       "norm_label": ".qo()"
     },
     {
@@ -13790,7 +13810,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_i",
-      "community": 66,
+      "community": 89,
       "norm_label": ".i_()"
     },
     {
@@ -13800,7 +13820,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ma",
-      "community": 89,
+      "community": 45,
       "norm_label": ".ma()"
     },
     {
@@ -13810,7 +13830,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_fi",
-      "community": 89,
+      "community": 45,
       "norm_label": ".fi()"
     },
     {
@@ -13820,7 +13840,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_so",
-      "community": 89,
+      "community": 45,
       "norm_label": ".so()"
     },
     {
@@ -13830,7 +13850,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ql",
-      "community": 89,
+      "community": 45,
       "norm_label": ".ql()"
     },
     {
@@ -13840,7 +13860,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_yl",
-      "community": 89,
+      "community": 45,
       "norm_label": ".yl()"
     },
     {
@@ -13850,7 +13870,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_e",
-      "community": 112,
+      "community": 72,
       "norm_label": ".e_()"
     },
     {
@@ -13860,7 +13880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_r",
-      "community": 66,
+      "community": 72,
       "norm_label": ".r_()"
     },
     {
@@ -13930,7 +13950,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ro",
-      "community": 89,
+      "community": 112,
       "norm_label": ".ro()"
     },
     {
@@ -13980,7 +14000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_l",
-      "community": 89,
+      "community": 45,
       "norm_label": ".l_()"
     },
     {
@@ -13990,7 +14010,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_fh",
-      "community": 89,
+      "community": 45,
       "norm_label": ".fh()"
     },
     {
@@ -14000,7 +14020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_n",
-      "community": 89,
+      "community": 45,
       "norm_label": ".n_()"
     },
     {
@@ -14040,7 +14060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_b",
-      "community": 51,
+      "community": 72,
       "norm_label": ".b_()"
     },
     {
@@ -14110,7 +14130,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_eo",
-      "community": 25,
+      "community": 63,
       "norm_label": ".eo()"
     },
     {
@@ -14120,7 +14140,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_ba",
-      "community": 44,
+      "community": 72,
       "norm_label": ".ba()"
     },
     {
@@ -14140,7 +14160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_uo",
-      "community": 87,
+      "community": 72,
       "norm_label": ".uo()"
     },
     {
@@ -14150,7 +14170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_yo",
-      "community": 87,
+      "community": 72,
       "norm_label": ".yo()"
     },
     {
@@ -14180,7 +14200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_r",
-      "community": 72,
+      "community": 25,
       "norm_label": ".r_()"
     },
     {
@@ -14190,7 +14210,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_d",
-      "community": 72,
+      "community": 133,
       "norm_label": ".d_()"
     },
     {
@@ -14200,7 +14220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_o",
-      "community": 87,
+      "community": 72,
       "norm_label": ".o_()"
     },
     {
@@ -14210,7 +14230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_v",
-      "community": 44,
+      "community": 15,
       "norm_label": ".v_()"
     },
     {
@@ -14220,7 +14240,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_a",
-      "community": 28,
+      "community": 64,
       "norm_label": ".a_()"
     },
     {
@@ -14250,7 +14270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_vr",
-      "community": 72,
+      "community": 11,
       "norm_label": ".vr()"
     },
     {
@@ -14260,7 +14280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_i",
-      "community": 66,
+      "community": 72,
       "norm_label": ".i_()"
     },
     {
@@ -14300,7 +14320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_w",
-      "community": 73,
+      "community": 72,
       "norm_label": ".w_()"
     },
     {
@@ -14320,7 +14340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_y",
-      "community": 87,
+      "community": 72,
       "norm_label": ".y_()"
     },
     {
@@ -14330,7 +14350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_c",
-      "community": 51,
+      "community": 72,
       "norm_label": ".c_()"
     },
     {
@@ -14340,7 +14360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mn",
-      "community": 122,
+      "community": 54,
       "norm_label": "mn"
     },
     {
@@ -14350,7 +14370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mn_constructor",
-      "community": 122,
+      "community": 54,
       "norm_label": ".constructor()"
     },
     {
@@ -14420,7 +14440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_bn_xr",
-      "community": 120,
+      "community": 64,
       "norm_label": ".xr()"
     },
     {
@@ -14470,7 +14490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_q",
-      "community": 122,
+      "community": 54,
       "norm_label": ".q_()"
     },
     {
@@ -14530,7 +14550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mn_lu",
-      "community": 122,
+      "community": 54,
       "norm_label": ".lu()"
     },
     {
@@ -14540,7 +14560,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mn_au",
-      "community": 122,
+      "community": 54,
       "norm_label": ".au()"
     },
     {
@@ -14550,7 +14570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xn",
-      "community": 39,
+      "community": 7,
       "norm_label": "xn()"
     },
     {
@@ -14560,7 +14580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_constructor",
-      "community": 122,
+      "community": 54,
       "norm_label": ".constructor()"
     },
     {
@@ -14580,7 +14600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ku",
-      "community": 64,
+      "community": 126,
       "norm_label": ".ku()"
     },
     {
@@ -14600,7 +14620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_mn",
-      "community": 28,
+      "community": 64,
       "norm_label": ".mn()"
     },
     {
@@ -14610,7 +14630,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ui",
-      "community": 64,
+      "community": 48,
       "norm_label": ".ui()"
     },
     {
@@ -14660,7 +14680,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ru",
-      "community": 122,
+      "community": 64,
       "norm_label": ".ru()"
     },
     {
@@ -14680,7 +14700,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ou",
-      "community": 64,
+      "community": 48,
       "norm_label": ".ou()"
     },
     {
@@ -14690,7 +14710,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_au",
-      "community": 66,
+      "community": 128,
       "norm_label": ".au()"
     },
     {
@@ -14700,7 +14720,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_hi",
-      "community": 82,
+      "community": 43,
       "norm_label": ".hi()"
     },
     {
@@ -14730,7 +14750,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_js",
-      "community": 122,
+      "community": 64,
       "norm_label": ".js()"
     },
     {
@@ -14740,7 +14760,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_lu",
-      "community": 64,
+      "community": 48,
       "norm_label": ".lu()"
     },
     {
@@ -14790,7 +14810,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ja",
-      "community": 45,
+      "community": 44,
       "norm_label": ".ja()"
     },
     {
@@ -14800,7 +14820,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_uu",
-      "community": 66,
+      "community": 28,
       "norm_label": ".uu()"
     },
     {
@@ -14830,7 +14850,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ko",
-      "community": 72,
+      "community": 133,
       "norm_label": ".ko()"
     },
     {
@@ -14840,7 +14860,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_go",
-      "community": 87,
+      "community": 72,
       "norm_label": ".go()"
     },
     {
@@ -14860,7 +14880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_qo",
-      "community": 44,
+      "community": 15,
       "norm_label": ".qo()"
     },
     {
@@ -14870,7 +14890,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_t",
-      "community": 28,
+      "community": 64,
       "norm_label": ".t_()"
     },
     {
@@ -14890,7 +14910,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_gu",
-      "community": 64,
+      "community": 126,
       "norm_label": ".gu()"
     },
     {
@@ -14940,7 +14960,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_iu",
-      "community": 122,
+      "community": 64,
       "norm_label": ".iu()"
     },
     {
@@ -14950,7 +14970,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ec",
-      "community": 64,
+      "community": 120,
       "norm_label": ".ec()"
     },
     {
@@ -14960,7 +14980,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_rc",
-      "community": 64,
+      "community": 48,
       "norm_label": ".rc()"
     },
     {
@@ -14970,7 +14990,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_hc",
-      "community": 64,
+      "community": 28,
       "norm_label": ".hc()"
     },
     {
@@ -14990,7 +15010,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_hu",
-      "community": 45,
+      "community": 44,
       "norm_label": ".hu()"
     },
     {
@@ -15000,7 +15020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_bu",
-      "community": 64,
+      "community": 48,
       "norm_label": ".bu()"
     },
     {
@@ -15010,7 +15030,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_vu",
-      "community": 64,
+      "community": 48,
       "norm_label": ".vu()"
     },
     {
@@ -15050,7 +15070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_pu",
-      "community": 122,
+      "community": 64,
       "norm_label": ".pu()"
     },
     {
@@ -15090,7 +15110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_cc",
-      "community": 64,
+      "community": 48,
       "norm_label": ".cc()"
     },
     {
@@ -15140,7 +15160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_oc",
-      "community": 122,
+      "community": 64,
       "norm_label": ".oc()"
     },
     {
@@ -15150,7 +15170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ac",
-      "community": 122,
+      "community": 64,
       "norm_label": ".ac()"
     },
     {
@@ -15160,7 +15180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_su",
-      "community": 64,
+      "community": 54,
       "norm_label": ".su()"
     },
     {
@@ -15250,7 +15270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yn_k",
-      "community": 132,
+      "community": 20,
       "norm_label": ".k()"
     },
     {
@@ -15350,7 +15370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_tn_rn",
-      "community": 11,
+      "community": 112,
       "norm_label": ".rn()"
     },
     {
@@ -15380,7 +15400,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_tn_on",
-      "community": 72,
+      "community": 87,
       "norm_label": ".on()"
     },
     {
@@ -15390,7 +15410,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_xl",
-      "community": 66,
+      "community": 89,
       "norm_label": ".xl()"
     },
     {
@@ -15420,7 +15440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_fc",
-      "community": 73,
+      "community": 15,
       "norm_label": ".fc()"
     },
     {
@@ -15440,7 +15460,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_hc",
-      "community": 51,
+      "community": 72,
       "norm_label": ".hc()"
     },
     {
@@ -15450,7 +15470,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_c",
-      "community": 51,
+      "community": 72,
       "norm_label": ".$c()"
     },
     {
@@ -15480,7 +15500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_qc",
-      "community": 73,
+      "community": 15,
       "norm_label": ".qc()"
     },
     {
@@ -15490,7 +15510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_yc",
-      "community": 73,
+      "community": 15,
       "norm_label": ".yc()"
     },
     {
@@ -15510,7 +15530,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_xc",
-      "community": 25,
+      "community": 63,
       "norm_label": ".xc()"
     },
     {
@@ -15530,7 +15550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ac",
-      "community": 66,
+      "community": 89,
       "norm_label": ".ac()"
     },
     {
@@ -15540,7 +15560,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_d",
-      "community": 11,
+      "community": 89,
       "norm_label": ".d_()"
     },
     {
@@ -15550,7 +15570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_b",
-      "community": 11,
+      "community": 89,
       "norm_label": ".b_()"
     },
     {
@@ -15560,7 +15580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_v",
-      "community": 66,
+      "community": 89,
       "norm_label": ".v_()"
     },
     {
@@ -15570,7 +15590,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_a",
-      "community": 66,
+      "community": 89,
       "norm_label": ".a_()"
     },
     {
@@ -15580,7 +15600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_z",
-      "community": 66,
+      "community": 89,
       "norm_label": ".z_()"
     },
     {
@@ -15590,7 +15610,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_gc",
-      "community": 72,
+      "community": 133,
       "norm_label": ".gc()"
     },
     {
@@ -15600,7 +15620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_jc",
-      "community": 82,
+      "community": 43,
       "norm_label": ".jc()"
     },
     {
@@ -15610,7 +15630,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ed",
-      "community": 87,
+      "community": 72,
       "norm_label": ".ed()"
     },
     {
@@ -15630,7 +15650,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_td",
-      "community": 44,
+      "community": 15,
       "norm_label": ".td()"
     },
     {
@@ -15640,7 +15660,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_nd",
-      "community": 28,
+      "community": 64,
       "norm_label": ".nd()"
     },
     {
@@ -15660,7 +15680,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_wt",
-      "community": 39,
+      "community": 22,
       "norm_label": ".wt()"
     },
     {
@@ -15700,7 +15720,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_gl",
-      "community": 39,
+      "community": 87,
       "norm_label": ".gl()"
     },
     {
@@ -15710,7 +15730,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_od",
-      "community": 28,
+      "community": 64,
       "norm_label": ".od()"
     },
     {
@@ -15730,7 +15750,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_fu",
-      "community": 28,
+      "community": 64,
       "norm_label": ".fu()"
     },
     {
@@ -15740,7 +15760,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_mr",
-      "community": 72,
+      "community": 11,
       "norm_label": ".mr()"
     },
     {
@@ -15770,7 +15790,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_zl",
-      "community": 87,
+      "community": 72,
       "norm_label": ".zl()"
     },
     {
@@ -15790,7 +15810,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_vd",
-      "community": 66,
+      "community": 128,
       "norm_label": ".vd()"
     },
     {
@@ -15810,7 +15830,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_gn",
-      "community": 66,
+      "community": 28,
       "norm_label": ".gn()"
     },
     {
@@ -15820,7 +15840,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_jn",
-      "community": 66,
+      "community": 28,
       "norm_label": ".jn()"
     },
     {
@@ -15860,7 +15880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_md",
-      "community": 132,
+      "community": 20,
       "norm_label": ".md()"
     },
     {
@@ -15870,7 +15890,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_q",
-      "community": 132,
+      "community": 20,
       "norm_label": ".q()"
     },
     {
@@ -15890,7 +15910,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_kc",
-      "community": 66,
+      "community": 89,
       "norm_label": ".kc()"
     },
     {
@@ -15910,7 +15930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_lc",
-      "community": 66,
+      "community": 89,
       "norm_label": ".lc()"
     },
     {
@@ -15930,7 +15950,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ec",
-      "community": 89,
+      "community": 112,
       "norm_label": ".ec()"
     },
     {
@@ -15940,7 +15960,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zn",
-      "community": 38,
+      "community": 73,
       "norm_label": "zn()"
     },
     {
@@ -16060,7 +16080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_preprocessdata",
-      "community": 94,
+      "community": 66,
       "norm_label": ".preprocessdata()"
     },
     {
@@ -16070,7 +16090,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_createconvertertointernalobj",
-      "community": 94,
+      "community": 108,
       "norm_label": ".createconvertertointernalobj()"
     },
     {
@@ -16180,7 +16200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_es",
-      "community": 66,
+      "community": 89,
       "norm_label": "es()"
     },
     {
@@ -16390,7 +16410,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ds",
-      "community": 20,
+      "community": 28,
       "norm_label": "ds()"
     },
     {
@@ -16760,7 +16780,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ts",
-      "community": 20,
+      "community": 28,
       "norm_label": "ts()"
     },
     {
@@ -16780,7 +16800,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_constructor",
-      "community": 20,
+      "community": 28,
       "norm_label": ".constructor()"
     },
     {
@@ -16810,7 +16830,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_p",
-      "community": 126,
+      "community": 60,
       "norm_label": ".p()"
     },
     {
@@ -16840,7 +16860,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_up",
-      "community": 11,
+      "community": 63,
       "norm_label": ".up()"
     },
     {
@@ -16910,7 +16930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_xp",
-      "community": 63,
+      "community": 20,
       "norm_label": ".xp()"
     },
     {
@@ -16920,7 +16940,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_bt",
-      "community": 11,
+      "community": 44,
       "norm_label": ".bt()"
     },
     {
@@ -16980,7 +17000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_sp",
-      "community": 112,
+      "community": 11,
       "norm_label": ".sp()"
     },
     {
@@ -17000,7 +17020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_pp",
-      "community": 132,
+      "community": 20,
       "norm_label": ".pp()"
     },
     {
@@ -17080,7 +17100,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_op",
-      "community": 70,
+      "community": 11,
       "norm_label": ".op()"
     },
     {
@@ -17090,7 +17110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_constructor",
-      "community": 20,
+      "community": 28,
       "norm_label": ".constructor()"
     },
     {
@@ -17120,7 +17140,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_up",
-      "community": 63,
+      "community": 25,
       "norm_label": ".up()"
     },
     {
@@ -17150,7 +17170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_p",
-      "community": 72,
+      "community": 25,
       "norm_label": ".$p()"
     },
     {
@@ -17160,7 +17180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_zp",
-      "community": 15,
+      "community": 39,
       "norm_label": ".zp()"
     },
     {
@@ -17210,7 +17230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_qf",
-      "community": 15,
+      "community": 116,
       "norm_label": ".qf()"
     },
     {
@@ -17320,7 +17340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_xv",
-      "community": 82,
+      "community": 43,
       "norm_label": ".xv()"
     },
     {
@@ -17330,7 +17350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_vv",
-      "community": 73,
+      "community": 15,
       "norm_label": ".vv()"
     },
     {
@@ -17390,7 +17410,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_mp",
-      "community": 73,
+      "community": 15,
       "norm_label": ".mp()"
     },
     {
@@ -17400,7 +17420,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_xp",
-      "community": 63,
+      "community": 20,
       "norm_label": ".xp()"
     },
     {
@@ -17410,7 +17430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_fp",
-      "community": 73,
+      "community": 72,
       "norm_label": ".fp()"
     },
     {
@@ -17470,7 +17490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_pp",
-      "community": 132,
+      "community": 20,
       "norm_label": ".pp()"
     },
     {
@@ -17480,7 +17500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_fm",
-      "community": 73,
+      "community": 72,
       "norm_label": ".fm()"
     },
     {
@@ -17490,7 +17510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_vm",
-      "community": 73,
+      "community": 15,
       "norm_label": ".vm()"
     },
     {
@@ -17500,7 +17520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_pm",
-      "community": 73,
+      "community": 15,
       "norm_label": ".pm()"
     },
     {
@@ -17510,7 +17530,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_dm",
-      "community": 73,
+      "community": 72,
       "norm_label": ".dm()"
     },
     {
@@ -17520,7 +17540,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_gm",
-      "community": 73,
+      "community": 15,
       "norm_label": ".gm()"
     },
     {
@@ -17530,7 +17550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_yp",
-      "community": 72,
+      "community": 25,
       "norm_label": ".yp()"
     },
     {
@@ -17560,7 +17580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_sm",
-      "community": 73,
+      "community": 15,
       "norm_label": ".sm()"
     },
     {
@@ -17620,7 +17640,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_gp",
-      "community": 44,
+      "community": 15,
       "norm_label": ".gp()"
     },
     {
@@ -17630,7 +17650,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_im",
-      "community": 44,
+      "community": 15,
       "norm_label": ".im()"
     },
     {
@@ -17650,7 +17670,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zs_constructor",
-      "community": 20,
+      "community": 28,
       "norm_label": ".constructor()"
     },
     {
@@ -17720,7 +17740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zs_xp",
-      "community": 63,
+      "community": 20,
       "norm_label": ".xp()"
     },
     {
@@ -17750,7 +17770,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_constructor",
-      "community": 39,
+      "community": 22,
       "norm_label": ".constructor()"
     },
     {
@@ -17960,7 +17980,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_mp",
-      "community": 63,
+      "community": 20,
       "norm_label": ".mp()"
     },
     {
@@ -17970,7 +17990,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_xp",
-      "community": 63,
+      "community": 20,
       "norm_label": ".xp()"
     },
     {
@@ -17980,7 +18000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_fp",
-      "community": 39,
+      "community": 22,
       "norm_label": ".fp()"
     },
     {
@@ -17990,7 +18010,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_hm",
-      "community": 39,
+      "community": 22,
       "norm_label": ".hm()"
     },
     {
@@ -18000,7 +18020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_pp",
-      "community": 60,
+      "community": 20,
       "norm_label": ".pp()"
     },
     {
@@ -18030,7 +18050,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_qm",
-      "community": 45,
+      "community": 59,
       "norm_label": ".qm()"
     },
     {
@@ -18070,7 +18090,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_ym",
-      "community": 22,
+      "community": 11,
       "norm_label": ".ym()"
     },
     {
@@ -18100,7 +18120,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_zm",
-      "community": 39,
+      "community": 22,
       "norm_label": ".zm()"
     },
     {
@@ -18120,7 +18140,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_t",
-      "community": 39,
+      "community": 22,
       "norm_label": ".$t()"
     },
     {
@@ -18130,7 +18150,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_w",
-      "community": 45,
+      "community": 44,
       "norm_label": ".w()"
     },
     {
@@ -18140,7 +18160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_qp",
-      "community": 63,
+      "community": 25,
       "norm_label": ".qp()"
     },
     {
@@ -18150,7 +18170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_cb",
-      "community": 67,
+      "community": 84,
       "norm_label": ".cb()"
     },
     {
@@ -18170,7 +18190,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_ob",
-      "community": 66,
+      "community": 67,
       "norm_label": ".ob()"
     },
     {
@@ -18260,7 +18280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_kb",
-      "community": 15,
+      "community": 116,
       "norm_label": ".kb()"
     },
     {
@@ -18270,7 +18290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_jp",
-      "community": 15,
+      "community": 116,
       "norm_label": ".jp()"
     },
     {
@@ -18340,7 +18360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_eb",
-      "community": 82,
+      "community": 43,
       "norm_label": ".eb()"
     },
     {
@@ -18360,7 +18380,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_ns",
-      "community": 66,
+      "community": 28,
       "norm_label": ".ns()"
     },
     {
@@ -18370,7 +18390,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_dc",
-      "community": 67,
+      "community": 89,
       "norm_label": ".dc()"
     },
     {
@@ -18390,7 +18410,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_ab",
-      "community": 39,
+      "community": 22,
       "norm_label": ".ab()"
     },
     {
@@ -18400,7 +18420,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_vb",
-      "community": 128,
+      "community": 67,
       "norm_label": ".vb()"
     },
     {
@@ -18410,7 +18430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_hb",
-      "community": 128,
+      "community": 67,
       "norm_label": ".hb()"
     },
     {
@@ -18480,7 +18500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ie",
-      "community": 38,
+      "community": 73,
       "norm_label": "ie()"
     },
     {
@@ -18530,7 +18550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_he",
-      "community": 45,
+      "community": 44,
       "norm_label": "he"
     },
     {
@@ -18540,7 +18560,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_he_constructor",
-      "community": 45,
+      "community": 44,
       "norm_label": ".constructor()"
     },
     {
@@ -18550,7 +18570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_he_s",
-      "community": 45,
+      "community": 44,
       "norm_label": ".s()"
     },
     {
@@ -18570,7 +18590,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_he_fd",
-      "community": 39,
+      "community": 22,
       "norm_label": ".fd()"
     },
     {
@@ -18720,7 +18740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ve",
-      "community": 38,
+      "community": 73,
       "norm_label": "ve()"
     },
     {
@@ -18860,7 +18880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_s",
-      "community": 38,
+      "community": 25,
       "norm_label": ".s()"
     },
     {
@@ -18880,7 +18900,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_pricetocoordinate",
-      "community": 44,
+      "community": 60,
       "norm_label": ".pricetocoordinate()"
     },
     {
@@ -18890,7 +18910,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_coordinatetoprice",
-      "community": 72,
+      "community": 60,
       "norm_label": ".coordinatetoprice()"
     },
     {
@@ -18940,7 +18960,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_data",
-      "community": 38,
+      "community": 73,
       "norm_label": ".data()"
     },
     {
@@ -18950,7 +18970,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_subscribedatachanged",
-      "community": 84,
+      "community": 82,
       "norm_label": ".subscribedatachanged()"
     },
     {
@@ -18990,7 +19010,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_applyoptions",
-      "community": 67,
+      "community": 38,
       "norm_label": ".applyoptions()"
     },
     {
@@ -19020,7 +19040,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_createpriceline",
-      "community": 126,
+      "community": 38,
       "norm_label": ".createpriceline()"
     },
     {
@@ -19110,7 +19130,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_scrolltoposition",
-      "community": 84,
+      "community": 126,
       "norm_label": ".scrolltoposition()"
     },
     {
@@ -19140,7 +19160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_setvisiblerange",
-      "community": 66,
+      "community": 128,
       "norm_label": ".setvisiblerange()"
     },
     {
@@ -19150,7 +19170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_getvisiblelogicalrange",
-      "community": 120,
+      "community": 84,
       "norm_label": ".getvisiblelogicalrange()"
     },
     {
@@ -19160,7 +19180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_setvisiblelogicalrange",
-      "community": 84,
+      "community": 128,
       "norm_label": ".setvisiblelogicalrange()"
     },
     {
@@ -19170,7 +19190,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_resettimescale",
-      "community": 84,
+      "community": 66,
       "norm_label": ".resettimescale()"
     },
     {
@@ -19200,7 +19220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_coordinatetological",
-      "community": 84,
+      "community": 48,
       "norm_label": ".coordinatetological()"
     },
     {
@@ -19220,7 +19240,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_coordinatetotime",
-      "community": 64,
+      "community": 48,
       "norm_label": ".coordinatetotime()"
     },
     {
@@ -19250,7 +19270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_subscribevisibletimerangechange",
-      "community": 84,
+      "community": 82,
       "norm_label": ".subscribevisibletimerangechange()"
     },
     {
@@ -19260,7 +19280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_unsubscribevisibletimerangechange",
-      "community": 68,
+      "community": 84,
       "norm_label": ".unsubscribevisibletimerangechange()"
     },
     {
@@ -19270,7 +19290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_subscribevisiblelogicalrangechange",
-      "community": 84,
+      "community": 82,
       "norm_label": ".subscribevisiblelogicalrangechange()"
     },
     {
@@ -19280,7 +19300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_unsubscribevisiblelogicalrangechange",
-      "community": 68,
+      "community": 84,
       "norm_label": ".unsubscribevisiblelogicalrangechange()"
     },
     {
@@ -19290,7 +19310,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_subscribesizechange",
-      "community": 84,
+      "community": 82,
       "norm_label": ".subscribesizechange()"
     },
     {
@@ -19300,7 +19320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_unsubscribesizechange",
-      "community": 68,
+      "community": 84,
       "norm_label": ".unsubscribesizechange()"
     },
     {
@@ -19310,7 +19330,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_applyoptions",
-      "community": 67,
+      "community": 84,
       "norm_label": ".applyoptions()"
     },
     {
@@ -19320,7 +19340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_options",
-      "community": 45,
+      "community": 44,
       "norm_label": ".options()"
     },
     {
@@ -19340,7 +19360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_gw",
-      "community": 128,
+      "community": 84,
       "norm_label": ".gw()"
     },
     {
@@ -19350,7 +19370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_mw",
-      "community": 128,
+      "community": 84,
       "norm_label": ".mw()"
     },
     {
@@ -19470,7 +19490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_removeseries",
-      "community": 39,
+      "community": 22,
       "norm_label": ".removeseries()"
     },
     {
@@ -19480,7 +19500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_fw",
-      "community": 38,
+      "community": 94,
       "norm_label": ".fw()"
     },
     {
@@ -19490,7 +19510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_mw",
-      "community": 38,
+      "community": 94,
       "norm_label": ".mw()"
     },
     {
@@ -19500,7 +19520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_subscribeclick",
-      "community": 84,
+      "community": 82,
       "norm_label": ".subscribeclick()"
     },
     {
@@ -19510,7 +19530,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_unsubscribeclick",
-      "community": 68,
+      "community": 84,
       "norm_label": ".unsubscribeclick()"
     },
     {
@@ -19520,7 +19540,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_subscribecrosshairmove",
-      "community": 84,
+      "community": 82,
       "norm_label": ".subscribecrosshairmove()"
     },
     {
@@ -19530,7 +19550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_unsubscribecrosshairmove",
-      "community": 68,
+      "community": 84,
       "norm_label": ".unsubscribecrosshairmove()"
     },
     {
@@ -19540,7 +19560,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_subscribedblclick",
-      "community": 84,
+      "community": 82,
       "norm_label": ".subscribedblclick()"
     },
     {
@@ -19550,7 +19570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_unsubscribedblclick",
-      "community": 68,
+      "community": 84,
       "norm_label": ".unsubscribedblclick()"
     },
     {
@@ -19580,7 +19600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_applyoptions",
-      "community": 67,
+      "community": 68,
       "norm_label": ".applyoptions()"
     },
     {
@@ -19590,7 +19610,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_options",
-      "community": 38,
+      "community": 73,
       "norm_label": ".options()"
     },
     {
@@ -19600,7 +19620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_takescreenshot",
-      "community": 128,
+      "community": 68,
       "norm_label": ".takescreenshot()"
     },
     {
@@ -19620,7 +19640,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_chartelement",
-      "community": 15,
+      "community": 116,
       "norm_label": ".chartelement()"
     },
     {
@@ -19640,7 +19660,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_setcrosshairposition",
-      "community": 39,
+      "community": 44,
       "norm_label": ".setcrosshairposition()"
     },
     {
@@ -19650,7 +19670,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_clearcrosshairposition",
-      "community": 89,
+      "community": 68,
       "norm_label": ".clearcrosshairposition()"
     },
     {
@@ -19670,7 +19690,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_ow",
-      "community": 28,
+      "community": 64,
       "norm_label": ".ow()"
     },
     {
@@ -19680,7 +19700,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_bw",
-      "community": 68,
+      "community": 84,
       "norm_label": ".bw()"
     },
     {
@@ -19690,7 +19710,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_pw",
-      "community": 68,
+      "community": 84,
       "norm_label": ".pw()"
     },
     {
@@ -19800,18 +19820,18 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "core_analysis_tests",
-      "community": 52,
+      "community": 124,
       "norm_label": "tests.py"
     },
     {
-      "label": "EmailActivationTests",
+      "label": "AdminApprovalTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L44",
+      "source_location": "L40",
       "_origin": "ast",
-      "id": "core_analysis_tests_emailactivationtests",
+      "id": "core_analysis_tests_adminapprovaltests",
       "community": 118,
-      "norm_label": "emailactivationtests"
+      "norm_label": "adminapprovaltests"
     },
     {
       "label": "TestCase",
@@ -19824,70 +19844,50 @@
       "norm_label": "testcase"
     },
     {
-      "label": ".setUp()",
-      "file_type": "code",
-      "source_file": "core_analysis/tests.py",
-      "source_location": "L45",
-      "_origin": "ast",
-      "id": "core_analysis_tests_emailactivationtests_setup",
-      "community": 118,
-      "norm_label": ".setup()"
-    },
-    {
       "label": "._register()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L48",
+      "source_location": "L41",
       "_origin": "ast",
-      "id": "core_analysis_tests_emailactivationtests_register",
+      "id": "core_analysis_tests_adminapprovaltests_register",
       "community": 118,
       "norm_label": "._register()"
     },
     {
-      "label": "._activation_path_from_email()",
+      "label": ".test_registration_creates_inactive_user_and_pending_admin_request()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L59",
+      "source_location": "L52",
       "_origin": "ast",
-      "id": "core_analysis_tests_emailactivationtests_activation_path_from_email",
+      "id": "core_analysis_tests_adminapprovaltests_test_registration_creates_inactive_user_and_pending_admin_request",
       "community": 118,
-      "norm_label": "._activation_path_from_email()"
+      "norm_label": ".test_registration_creates_inactive_user_and_pending_admin_request()"
     },
     {
-      "label": ".test_registration_creates_inactive_user_and_sends_activation_email()",
+      "label": ".test_admin_approval_activates_user()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L64",
+      "source_location": "L65",
       "_origin": "ast",
-      "id": "core_analysis_tests_emailactivationtests_test_registration_creates_inactive_user_and_sends_activation_email",
+      "id": "core_analysis_tests_adminapprovaltests_test_admin_approval_activates_user",
       "community": 118,
-      "norm_label": ".test_registration_creates_inactive_user_and_sends_activation_email()"
+      "norm_label": ".test_admin_approval_activates_user()"
     },
     {
-      "label": ".test_valid_activation_link_activates_and_logs_user_in()",
+      "label": ".test_admin_rejection_keeps_user_inactive()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L77",
+      "source_location": "L84",
       "_origin": "ast",
-      "id": "core_analysis_tests_emailactivationtests_test_valid_activation_link_activates_and_logs_user_in",
+      "id": "core_analysis_tests_adminapprovaltests_test_admin_rejection_keeps_user_inactive",
       "community": 118,
-      "norm_label": ".test_valid_activation_link_activates_and_logs_user_in()"
-    },
-    {
-      "label": ".test_activation_sent_page_can_resend_email()",
-      "file_type": "code",
-      "source_file": "core_analysis/tests.py",
-      "source_location": "L91",
-      "_origin": "ast",
-      "id": "core_analysis_tests_emailactivationtests_test_activation_sent_page_can_resend_email",
-      "community": 118,
-      "norm_label": ".test_activation_sent_page_can_resend_email()"
+      "norm_label": ".test_admin_rejection_keeps_user_inactive()"
     },
     {
       "label": "IndicatorHistoryWindowTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L102",
+      "source_location": "L105",
       "_origin": "ast",
       "id": "core_analysis_tests_indicatorhistorywindowtests",
       "community": 124,
@@ -19907,7 +19907,7 @@
       "label": ".test_history_window_parses_udf_dates_and_countback()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L103",
+      "source_location": "L106",
       "_origin": "ast",
       "id": "core_analysis_tests_indicatorhistorywindowtests_test_history_window_parses_udf_dates_and_countback",
       "community": 124,
@@ -19917,7 +19917,7 @@
       "label": ".test_indicator_data_uses_windowed_chart_rows()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L117",
+      "source_location": "L120",
       "_origin": "ast",
       "id": "core_analysis_tests_indicatorhistorywindowtests_test_indicator_data_uses_windowed_chart_rows",
       "community": 124,
@@ -19927,7 +19927,7 @@
       "label": "UdfChartBarsTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L158",
+      "source_location": "L161",
       "_origin": "ast",
       "id": "core_analysis_tests_udfchartbarstests",
       "community": 124,
@@ -19937,7 +19937,7 @@
       "label": ".test_index_search_returns_all_configured_subindices()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L159",
+      "source_location": "L162",
       "_origin": "ast",
       "id": "core_analysis_tests_udfchartbarstests_test_index_search_returns_all_configured_subindices",
       "community": 124,
@@ -19947,7 +19947,7 @@
       "label": ".test_chart_bars_appends_live_index_bar()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L173",
+      "source_location": "L176",
       "_origin": "ast",
       "id": "core_analysis_tests_udfchartbarstests_test_chart_bars_appends_live_index_bar",
       "community": 124,
@@ -19957,7 +19957,7 @@
       "label": "RrgAnalyticsTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L187",
+      "source_location": "L190",
       "_origin": "ast",
       "id": "core_analysis_tests_rrganalyticstests",
       "community": 69,
@@ -19967,7 +19967,7 @@
       "label": "._price_frame()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L189",
+      "source_location": "L192",
       "_origin": "ast",
       "id": "core_analysis_tests_rrganalyticstests_price_frame",
       "community": 69,
@@ -19977,7 +19977,7 @@
       "label": ".test_rrg_formula_reports_overlap_quality()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L195",
+      "source_location": "L198",
       "_origin": "ast",
       "id": "core_analysis_tests_rrganalyticstests_test_rrg_formula_reports_overlap_quality",
       "community": 69,
@@ -19987,7 +19987,7 @@
       "label": ".test_rrg_formula_rejects_sparse_overlap()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L213",
+      "source_location": "L216",
       "_origin": "ast",
       "id": "core_analysis_tests_rrganalyticstests_test_rrg_formula_rejects_sparse_overlap",
       "community": 69,
@@ -19997,7 +19997,7 @@
       "label": ".test_indices_rrg_preserves_skip_reason_and_shared_bar_count()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L227",
+      "source_location": "L230",
       "_origin": "ast",
       "id": "core_analysis_tests_rrganalyticstests_test_indices_rrg_preserves_skip_reason_and_shared_bar_count",
       "community": 69,
@@ -20007,7 +20007,7 @@
       "label": "WorkbenchSecurityTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L251",
+      "source_location": "L254",
       "_origin": "ast",
       "id": "core_analysis_tests_workbenchsecuritytests",
       "community": 124,
@@ -20017,7 +20017,7 @@
       "label": ".test_workbench_routes_redirect_anonymous_users_to_admin_login()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L252",
+      "source_location": "L255",
       "_origin": "ast",
       "id": "core_analysis_tests_workbenchsecuritytests_test_workbench_routes_redirect_anonymous_users_to_admin_login",
       "community": 124,
@@ -20027,7 +20027,7 @@
       "label": "FakeTechnicalAnalysis",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L271",
+      "source_location": "L274",
       "_origin": "ast",
       "id": "core_analysis_tests_faketechnicalanalysis",
       "community": 125,
@@ -20037,7 +20037,7 @@
       "label": ".sma()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L273",
+      "source_location": "L276",
       "_origin": "ast",
       "id": "core_analysis_tests_faketechnicalanalysis_sma",
       "community": 125,
@@ -20047,7 +20047,7 @@
       "label": ".rsi()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L282",
+      "source_location": "L285",
       "_origin": "ast",
       "id": "core_analysis_tests_faketechnicalanalysis_rsi",
       "community": 125,
@@ -20057,7 +20057,7 @@
       "label": ".macd()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L286",
+      "source_location": "L289",
       "_origin": "ast",
       "id": "core_analysis_tests_faketechnicalanalysis_macd",
       "community": 125,
@@ -20067,7 +20067,7 @@
       "label": ".supertrend()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L301",
+      "source_location": "L304",
       "_origin": "ast",
       "id": "core_analysis_tests_faketechnicalanalysis_supertrend",
       "community": 125,
@@ -20077,7 +20077,7 @@
       "label": ".vwap()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L314",
+      "source_location": "L317",
       "_origin": "ast",
       "id": "core_analysis_tests_faketechnicalanalysis_vwap",
       "community": 125,
@@ -20087,7 +20087,7 @@
       "label": ".atr()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L318",
+      "source_location": "L321",
       "_origin": "ast",
       "id": "core_analysis_tests_faketechnicalanalysis_atr",
       "community": 125,
@@ -20097,57 +20097,57 @@
       "label": "MarketInsightsHeadlineTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L323",
+      "source_location": "L326",
       "_origin": "ast",
       "id": "core_analysis_tests_marketinsightsheadlinetests",
-      "community": 130,
+      "community": 124,
       "norm_label": "marketinsightsheadlinetests"
     },
     {
       "label": ".test_payload_prefers_contributor_headline_over_stale_subindex()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L324",
+      "source_location": "L327",
       "_origin": "ast",
       "id": "core_analysis_tests_marketinsightsheadlinetests_test_payload_prefers_contributor_headline_over_stale_subindex",
-      "community": 130,
+      "community": 124,
       "norm_label": ".test_payload_prefers_contributor_headline_over_stale_subindex()"
     },
     {
       "label": ".test_stale_live_feed_falls_back_to_eod_for_stock_widgets()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L384",
+      "source_location": "L387",
       "_origin": "ast",
       "id": "core_analysis_tests_marketinsightsheadlinetests_test_stale_live_feed_falls_back_to_eod_for_stock_widgets",
-      "community": 130,
+      "community": 124,
       "norm_label": ".test_stale_live_feed_falls_back_to_eod_for_stock_widgets()"
     },
     {
       "label": ".test_after_close_serves_eod_from_sql_and_skips_live_feeds()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L458",
+      "source_location": "L461",
       "_origin": "ast",
       "id": "core_analysis_tests_marketinsightsheadlinetests_test_after_close_serves_eod_from_sql_and_skips_live_feeds",
-      "community": 130,
+      "community": 124,
       "norm_label": ".test_after_close_serves_eod_from_sql_and_skips_live_feeds()"
     },
     {
       "label": ".test_after_close_empty_contributor_cache_does_not_block_payload()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L531",
+      "source_location": "L534",
       "_origin": "ast",
       "id": "core_analysis_tests_marketinsightsheadlinetests_test_after_close_empty_contributor_cache_does_not_block_payload",
-      "community": 130,
+      "community": 124,
       "norm_label": ".test_after_close_empty_contributor_cache_does_not_block_payload()"
     },
     {
       "label": "SubindexComparisonTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L586",
+      "source_location": "L589",
       "_origin": "ast",
       "id": "core_analysis_tests_subindexcomparisontests",
       "community": 118,
@@ -20157,7 +20157,7 @@
       "label": ".setUpTestData()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L591",
+      "source_location": "L594",
       "_origin": "ast",
       "id": "core_analysis_tests_subindexcomparisontests_setuptestdata",
       "community": 118,
@@ -20167,7 +20167,7 @@
       "label": ".test_comparison_aligns_indices_over_window()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L617",
+      "source_location": "L620",
       "_origin": "ast",
       "id": "core_analysis_tests_subindexcomparisontests_test_comparison_aligns_indices_over_window",
       "community": 118,
@@ -20177,7 +20177,7 @@
       "label": ".test_comparison_window_limits_to_recent_sessions()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L633",
+      "source_location": "L636",
       "_origin": "ast",
       "id": "core_analysis_tests_subindexcomparisontests_test_comparison_window_limits_to_recent_sessions",
       "community": 118,
@@ -20187,27 +20187,27 @@
       "label": "NepseContributorsParserTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L645",
+      "source_location": "L648",
       "_origin": "ast",
       "id": "core_analysis_tests_nepsecontributorsparsertests",
-      "community": 52,
+      "community": 124,
       "norm_label": "nepsecontributorsparsertests"
     },
     {
       "label": ".test_sector_view_parser_extracts_top_gainers_and_losers()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L646",
+      "source_location": "L649",
       "_origin": "ast",
       "id": "core_analysis_tests_nepsecontributorsparsertests_test_sector_view_parser_extracts_top_gainers_and_losers",
-      "community": 52,
+      "community": 124,
       "norm_label": ".test_sector_view_parser_extracts_top_gainers_and_losers()"
     },
     {
       "label": "BrokerFlowRadarTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L669",
+      "source_location": "L672",
       "_origin": "ast",
       "id": "core_analysis_tests_brokerflowradartests",
       "community": 124,
@@ -20217,7 +20217,7 @@
       "label": ".test_broker_flow_radar_ranks_and_labels_flow()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L670",
+      "source_location": "L673",
       "_origin": "ast",
       "id": "core_analysis_tests_brokerflowradartests_test_broker_flow_radar_ranks_and_labels_flow",
       "community": 124,
@@ -20227,77 +20227,77 @@
       "label": "make_price_frame()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L697",
+      "source_location": "L700",
       "_origin": "ast",
       "id": "core_analysis_tests_make_price_frame",
-      "community": 52,
+      "community": 124,
       "norm_label": "make_price_frame()"
     },
     {
       "label": "IMMScoringTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L712",
+      "source_location": "L715",
       "_origin": "ast",
       "id": "core_analysis_tests_immscoringtests",
-      "community": 52,
+      "community": 124,
       "norm_label": "immscoringtests"
     },
     {
       "label": ".test_generate_sell_signal_tolerates_missing_atr_stop()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L713",
+      "source_location": "L716",
       "_origin": "ast",
       "id": "core_analysis_tests_immscoringtests_test_generate_sell_signal_tolerates_missing_atr_stop",
-      "community": 52,
+      "community": 124,
       "norm_label": ".test_generate_sell_signal_tolerates_missing_atr_stop()"
     },
     {
       "label": ".test_position_builder_sells_on_atr_stop_and_resets_after_exit()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L730",
+      "source_location": "L733",
       "_origin": "ast",
       "id": "core_analysis_tests_immscoringtests_test_position_builder_sells_on_atr_stop_and_resets_after_exit",
-      "community": 52,
+      "community": 124,
       "norm_label": ".test_position_builder_sells_on_atr_stop_and_resets_after_exit()"
     },
     {
       "label": ".test_run_imm_scoring_system_returns_stop_aware_sell_event()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L756",
+      "source_location": "L759",
       "_origin": "ast",
       "id": "core_analysis_tests_immscoringtests_test_run_imm_scoring_system_returns_stop_aware_sell_event",
-      "community": 52,
+      "community": 124,
       "norm_label": ".test_run_imm_scoring_system_returns_stop_aware_sell_event()"
     },
     {
       "label": "MSVStrategyTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L775",
+      "source_location": "L778",
       "_origin": "ast",
       "id": "core_analysis_tests_msvstrategytests",
-      "community": 52,
+      "community": 124,
       "norm_label": "msvstrategytests"
     },
     {
       "label": ".test_msv_vwap_works_with_standard_business_date_column()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L777",
+      "source_location": "L780",
       "_origin": "ast",
       "id": "core_analysis_tests_msvstrategytests_test_msv_vwap_works_with_standard_business_date_column",
-      "community": 52,
+      "community": 124,
       "norm_label": ".test_msv_vwap_works_with_standard_business_date_column()"
     },
     {
       "label": "SupportResistanceTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L788",
+      "source_location": "L791",
       "_origin": "ast",
       "id": "core_analysis_tests_supportresistancetests",
       "community": 1,
@@ -20307,7 +20307,7 @@
       "label": "._sample_support_resistance_frame()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L789",
+      "source_location": "L792",
       "_origin": "ast",
       "id": "core_analysis_tests_supportresistancetests_sample_support_resistance_frame",
       "community": 1,
@@ -20317,7 +20317,7 @@
       "label": ".test_support_resistance_pivots_match_standard_formula()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L800",
+      "source_location": "L803",
       "_origin": "ast",
       "id": "core_analysis_tests_supportresistancetests_test_support_resistance_pivots_match_standard_formula",
       "community": 1,
@@ -20327,7 +20327,7 @@
       "label": ".test_support_resistance_honors_selected_level_families()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L821",
+      "source_location": "L824",
       "_origin": "ast",
       "id": "core_analysis_tests_supportresistancetests_test_support_resistance_honors_selected_level_families",
       "community": 1,
@@ -20337,7 +20337,7 @@
       "label": ".test_nearest_headline_levels_use_confluence()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L840",
+      "source_location": "L843",
       "_origin": "ast",
       "id": "core_analysis_tests_supportresistancetests_test_nearest_headline_levels_use_confluence",
       "community": 1,
@@ -20347,7 +20347,7 @@
       "label": "AdvancedMarketStructureTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L867",
+      "source_location": "L870",
       "_origin": "ast",
       "id": "core_analysis_tests_advancedmarketstructuretests",
       "community": 52,
@@ -20357,7 +20357,7 @@
       "label": ".test_advanced_market_structure_runs_on_dummy_ohlcv()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L868",
+      "source_location": "L871",
       "_origin": "ast",
       "id": "core_analysis_tests_advancedmarketstructuretests_test_advanced_market_structure_runs_on_dummy_ohlcv",
       "community": 52,
@@ -20367,7 +20367,7 @@
       "label": ".test_advanced_market_structure_rejects_short_data()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L881",
+      "source_location": "L884",
       "_origin": "ast",
       "id": "core_analysis_tests_advancedmarketstructuretests_test_advanced_market_structure_rejects_short_data",
       "community": 52,
@@ -20377,7 +20377,7 @@
       "label": "InstitutionalAnalysisTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L889",
+      "source_location": "L892",
       "_origin": "ast",
       "id": "core_analysis_tests_institutionalanalysistests",
       "community": 52,
@@ -20387,7 +20387,7 @@
       "label": ".test_institutional_analysis_returns_exact_framework_table_contract()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L890",
+      "source_location": "L893",
       "_origin": "ast",
       "id": "core_analysis_tests_institutionalanalysistests_test_institutional_analysis_returns_exact_framework_table_contract",
       "community": 52,
@@ -20650,7 +20650,7 @@
       "source_location": "L117",
       "_origin": "ast",
       "id": "core_analysis_views_trigger_sync_and_calculate",
-      "community": 13,
+      "community": 53,
       "norm_label": "trigger_sync_and_calculate()"
     },
     {
@@ -20760,7 +20760,7 @@
       "source_location": "L427",
       "_origin": "ast",
       "id": "core_analysis_views_build_rrg_index_choices",
-      "community": 69,
+      "community": 53,
       "norm_label": "_build_rrg_index_choices()"
     },
     {
@@ -20770,7 +20770,7 @@
       "source_location": "L448",
       "_origin": "ast",
       "id": "core_analysis_views_symbol_autocomplete_view",
-      "community": 53,
+      "community": 13,
       "norm_label": "symbol_autocomplete_view()"
     },
     {
@@ -20830,7 +20830,7 @@
       "source_location": "L1374",
       "_origin": "ast",
       "id": "core_analysis_views_crud_operations_handler",
-      "community": 53,
+      "community": 13,
       "norm_label": "crud_operations_handler()"
     },
     {
@@ -20840,7 +20840,7 @@
       "source_location": "L1436",
       "_origin": "ast",
       "id": "core_analysis_views_crud_delete_handler",
-      "community": 53,
+      "community": 13,
       "norm_label": "crud_delete_handler()"
     },
     {
@@ -20850,7 +20850,7 @@
       "source_location": "L1445",
       "_origin": "ast",
       "id": "core_analysis_views_trigger_daily_api_sync_view",
-      "community": 53,
+      "community": 13,
       "norm_label": "trigger_daily_api_sync_view()"
     },
     {
@@ -20860,7 +20860,7 @@
       "source_location": "L1482",
       "_origin": "ast",
       "id": "core_analysis_views_trigger_floorsheet_sync_view",
-      "community": 53,
+      "community": 13,
       "norm_label": "trigger_floorsheet_sync_view()"
     },
     {
@@ -20910,7 +20910,7 @@
       "source_location": "L449",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_449",
-      "community": 53,
+      "community": 13,
       "norm_label": "optimized: lightweight json endpoint for the search-as-you-type dropdown.     th"
     },
     {
@@ -20970,7 +20970,7 @@
       "source_location": "L1375",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_1375",
-      "community": 53,
+      "community": 13,
       "norm_label": "create & update operations handler via html form actions."
     },
     {
@@ -20980,7 +20980,7 @@
       "source_location": "L1437",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_1437",
-      "community": 53,
+      "community": 13,
       "norm_label": "delete operation route (post only, csrf-protected)."
     },
     {
@@ -20990,7 +20990,7 @@
       "source_location": "L1446",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_1446",
-      "community": 53,
+      "community": 13,
       "norm_label": "on-demand daily sync engine endpoint. post-only so the heavy external sync     c"
     },
     {
@@ -21000,7 +21000,7 @@
       "source_location": "L1483",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_1483",
-      "community": 53,
+      "community": 13,
       "norm_label": "on-demand floorsheet sync endpoint. post-only so the heavy trade-level pull"
     },
     {
@@ -21185,6 +21185,78 @@
       "confidence_score": 1.0,
       "source": "dsx_smoke",
       "target": "services_broker_analytics"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/admin.py",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "core_analysis_admin",
+      "target": "core_analysis_admin_accountapprovaladmin",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/admin.py",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "core_analysis_admin",
+      "target": "core_analysis_admin_approve_requests",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/admin.py",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "core_analysis_admin",
+      "target": "core_analysis_admin_reject_requests",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/admin.py",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "core_analysis_admin",
+      "target": "core_analysis_models",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/admin.py",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "core_analysis_admin",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/admin.py",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "core_analysis_admin_accountapprovaladmin",
+      "target": "core_analysis_admin_accountapprovaladmin_save_model",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/admin.py",
+      "source_location": "L4",
+      "weight": 0.8,
+      "source": "core_analysis_admin_accountapprovaladmin",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
     },
     {
       "relation": "imports_from",
@@ -23322,7 +23394,7 @@
       "source_location": "L8",
       "weight": 1.0,
       "source": "core_analysis_forms",
-      "target": "core_analysis_forms_emailregistrationform",
+      "target": "core_analysis_forms_adminapprovalregistrationform",
       "confidence_score": 1.0
     },
     {
@@ -23344,7 +23416,7 @@
       "source_location": "L5",
       "weight": 1.0,
       "source": "core_analysis_forms",
-      "target": "core_analysis_models_emailactivation",
+      "target": "core_analysis_models_accountapproval",
       "confidence_score": 1.0
     },
     {
@@ -23364,8 +23436,8 @@
       "source_file": "core_analysis/forms.py",
       "source_location": "L21",
       "weight": 1.0,
-      "source": "core_analysis_forms_emailregistrationform",
-      "target": "core_analysis_forms_emailregistrationform_clean_email",
+      "source": "core_analysis_forms_adminapprovalregistrationform",
+      "target": "core_analysis_forms_adminapprovalregistrationform_clean_email",
       "confidence_score": 1.0
     },
     {
@@ -23374,8 +23446,8 @@
       "source_file": "core_analysis/forms.py",
       "source_location": "L30",
       "weight": 1.0,
-      "source": "core_analysis_forms_emailregistrationform",
-      "target": "core_analysis_forms_emailregistrationform_save",
+      "source": "core_analysis_forms_adminapprovalregistrationform",
+      "target": "core_analysis_forms_adminapprovalregistrationform_save",
       "confidence_score": 1.0
     },
     {
@@ -23384,8 +23456,8 @@
       "source_file": "core_analysis/forms.py",
       "source_location": "L5",
       "weight": 0.8,
-      "source": "core_analysis_forms_emailregistrationform",
-      "target": "core_analysis_models_emailactivation",
+      "source": "core_analysis_forms_adminapprovalregistrationform",
+      "target": "core_analysis_models_accountapproval",
       "confidence_score": 0.5
     },
     {
@@ -23394,7 +23466,7 @@
       "source_file": "core_analysis/forms.py",
       "source_location": "L8",
       "weight": 1.0,
-      "source": "core_analysis_forms_emailregistrationform",
+      "source": "core_analysis_forms_adminapprovalregistrationform",
       "target": "usercreationform",
       "confidence_score": 1.0
     },
@@ -23403,10 +23475,10 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L31",
+      "source_location": "L23",
       "weight": 1.0,
       "source": "core_analysis_portfolio_views",
-      "target": "core_analysis_forms_emailregistrationform",
+      "target": "core_analysis_forms_adminapprovalregistrationform",
       "confidence_score": 1.0
     },
     {
@@ -23414,10 +23486,10 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L189",
+      "source_location": "L128",
       "weight": 1.0,
       "source": "core_analysis_portfolio_views_register_view",
-      "target": "core_analysis_forms_emailregistrationform",
+      "target": "core_analysis_forms_adminapprovalregistrationform",
       "confidence_score": 1.0
     },
     {
@@ -26342,8 +26414,38 @@
       "source_file": "core_analysis/migrations/0007_emailactivation.py",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "migrations_0007_emailactivation",
-      "target": "migrations_0007_emailactivation_migration",
+      "target": "migrations_0007_emailactivation_migration"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/migrations/0008_accountapproval.py",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "migrations_0008_accountapproval",
+      "target": "migrations_0008_accountapproval_mark_existing_approved",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/migrations/0008_accountapproval.py",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "migrations_0008_accountapproval",
+      "target": "migrations_0008_accountapproval_migration",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/models.py",
+      "source_location": "L335",
+      "weight": 1.0,
+      "source": "core_analysis_models",
+      "target": "core_analysis_models_accountapproval",
       "confidence_score": 1.0
     },
     {
@@ -26365,16 +26467,6 @@
       "confidence_score": 1.0,
       "source": "core_analysis_models",
       "target": "core_analysis_models_companyprofile"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/models.py",
-      "source_location": "L335",
-      "weight": 1.0,
-      "source": "core_analysis_models",
-      "target": "core_analysis_models_emailactivation",
-      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -26482,6 +26574,17 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "core_analysis_tests",
+      "target": "core_analysis_models",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "core_analysis/udf_views.py",
       "source_location": "L28",
       "weight": 1.0,
@@ -26527,9 +26630,9 @@
       "source_file": "core_analysis/models.py",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_models_rationale_6",
-      "target": "core_analysis_models_broker",
-      "confidence_score": 1.0
+      "target": "core_analysis_models_broker"
     },
     {
       "relation": "imports",
@@ -26558,9 +26661,9 @@
       "source_file": "core_analysis/models.py",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_models_rationale_34",
-      "target": "core_analysis_models_companyprofile",
-      "confidence_score": 1.0
+      "target": "core_analysis_models_companyprofile"
     },
     {
       "relation": "imports",
@@ -26704,9 +26807,9 @@
       "source_file": "core_analysis/models.py",
       "source_location": "L52",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_models_rationale_52",
-      "target": "core_analysis_models_stockpriceadjustment",
-      "confidence_score": 1.0
+      "target": "core_analysis_models_stockpriceadjustment"
     },
     {
       "relation": "method",
@@ -26826,9 +26929,9 @@
       "source_file": "core_analysis/models.py",
       "source_location": "L90",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_models_rationale_90",
-      "target": "core_analysis_models_nepsedailystockprice",
-      "confidence_score": 1.0
+      "target": "core_analysis_models_nepsedailystockprice"
     },
     {
       "relation": "imports",
@@ -26982,9 +27085,9 @@
       "source_file": "core_analysis/models.py",
       "source_location": "L130",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_models_rationale_130",
-      "target": "core_analysis_models_nepsemarketindex",
-      "confidence_score": 1.0
+      "target": "core_analysis_models_nepsemarketindex"
     },
     {
       "relation": "imports",
@@ -27082,6 +27185,16 @@
       "relation": "uses",
       "confidence": "INFERRED",
       "source_file": "core_analysis/tests.py",
+      "source_location": "L595",
+      "weight": 0.8,
+      "source": "core_analysis_tests_adminapprovaltests",
+      "target": "core_analysis_models_nepsemarketindex",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
       "source_location": "L332",
       "weight": 0.8,
       "confidence_score": 0.5,
@@ -27097,16 +27210,6 @@
       "confidence_score": 0.5,
       "source": "core_analysis_tests_brokerflowradartests",
       "target": "core_analysis_models_nepsemarketindex"
-    },
-    {
-      "relation": "uses",
-      "confidence": "INFERRED",
-      "source_file": "core_analysis/tests.py",
-      "source_location": "L592",
-      "weight": 0.8,
-      "source": "core_analysis_tests_emailactivationtests",
-      "target": "core_analysis_models_nepsemarketindex",
-      "confidence_score": 0.5
     },
     {
       "relation": "uses",
@@ -27288,9 +27391,9 @@
       "source_file": "core_analysis/models.py",
       "source_location": "L169",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_models_rationale_169",
-      "target": "core_analysis_models_nepsefloorsheet",
-      "confidence_score": 1.0
+      "target": "core_analysis_models_nepsefloorsheet"
     },
     {
       "relation": "imports",
@@ -27400,9 +27503,9 @@
       "source_file": "core_analysis/models.py",
       "source_location": "L224",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_models_rationale_224",
-      "target": "core_analysis_models_financialstatement",
-      "confidence_score": 1.0
+      "target": "core_analysis_models_financialstatement"
     },
     {
       "relation": "imports",
@@ -27501,9 +27604,9 @@
       "source_file": "core_analysis/models.py",
       "source_location": "L285",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_models_rationale_285",
-      "target": "core_analysis_models_portfolio",
-      "confidence_score": 1.0
+      "target": "core_analysis_models_portfolio"
     },
     {
       "relation": "imports",
@@ -27532,9 +27635,9 @@
       "source_file": "core_analysis/models.py",
       "source_location": "L309",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_models_rationale_309",
-      "target": "core_analysis_models_holding",
-      "confidence_score": 1.0
+      "target": "core_analysis_models_holding"
     },
     {
       "relation": "imports",
@@ -27562,30 +27665,40 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/models.py",
-      "source_location": "L357",
+      "source_location": "L376",
       "weight": 1.0,
-      "source": "core_analysis_models_emailactivation",
-      "target": "core_analysis_models_emailactivation_is_activated",
+      "source": "core_analysis_models_accountapproval",
+      "target": "core_analysis_models_accountapproval_approve",
       "confidence_score": 1.0
     },
     {
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/models.py",
-      "source_location": "L360",
+      "source_location": "L373",
       "weight": 1.0,
-      "source": "core_analysis_models_emailactivation",
-      "target": "core_analysis_models_emailactivation_mark_sent",
+      "source": "core_analysis_models_accountapproval",
+      "target": "core_analysis_models_accountapproval_is_pending",
       "confidence_score": 1.0
     },
     {
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/models.py",
-      "source_location": "L353",
+      "source_location": "L385",
       "weight": 1.0,
-      "source": "core_analysis_models_emailactivation",
-      "target": "core_analysis_models_emailactivation_str",
+      "source": "core_analysis_models_accountapproval",
+      "target": "core_analysis_models_accountapproval_reject",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/models.py",
+      "source_location": "L369",
+      "weight": 1.0,
+      "source": "core_analysis_models_accountapproval",
+      "target": "core_analysis_models_accountapproval_str",
       "confidence_score": 1.0
     },
     {
@@ -27595,7 +27708,7 @@
       "source_location": "L336",
       "weight": 1.0,
       "source": "core_analysis_models_rationale_336",
-      "target": "core_analysis_models_emailactivation",
+      "target": "core_analysis_models_accountapproval",
       "confidence_score": 1.0
     },
     {
@@ -27603,60 +27716,181 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L32",
+      "source_location": "L24",
       "weight": 1.0,
       "source": "core_analysis_portfolio_views",
-      "target": "core_analysis_models_emailactivation",
+      "target": "core_analysis_models_accountapproval",
       "confidence_score": 1.0
     },
     {
-      "relation": "contains",
+      "relation": "imports",
+      "context": "import",
       "confidence": "EXTRACTED",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L249",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
       "weight": 1.0,
-      "source": "core_analysis_portfolio_views",
-      "target": "core_analysis_portfolio_views_activate_email_view",
+      "source": "core_analysis_tests",
+      "target": "core_analysis_models_accountapproval",
       "confidence_score": 1.0
     },
     {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L155",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_portfolio_views",
-      "target": "core_analysis_portfolio_views_activation_from_uid"
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_adminapprovaltests",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_advancedmarketstructuretests",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_brokerflowradartests",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_faketechnicalanalysis",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_immscoringtests",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_indicatorhistorywindowtests",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_institutionalanalysistests",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_marketinsightsheadlinetests",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_msvstrategytests",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_nepsecontributorsparsertests",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_rrganalyticstests",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_subindexcomparisontests",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_supportresistancetests",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_udfchartbarstests",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L14",
+      "weight": 0.8,
+      "source": "core_analysis_tests_workbenchsecuritytests",
+      "target": "core_analysis_models_accountapproval",
+      "confidence_score": 0.5
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L147",
+      "source_location": "L149",
       "weight": 1.0,
       "source": "core_analysis_portfolio_views",
-      "target": "core_analysis_portfolio_views_activation_link",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L142",
-      "weight": 1.0,
-      "source": "core_analysis_portfolio_views",
-      "target": "core_analysis_portfolio_views_activation_sent_url",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L213",
-      "weight": 1.0,
-      "source": "core_analysis_portfolio_views",
-      "target": "core_analysis_portfolio_views_activation_sent_view",
+      "target": "core_analysis_portfolio_views_approval_pending_view",
       "confidence_score": 1.0
     },
     {
@@ -27688,16 +27922,6 @@
       "confidence_score": 1.0,
       "source": "core_analysis_portfolio_views",
       "target": "core_analysis_portfolio_views_map_columns"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L131",
-      "weight": 1.0,
-      "source": "core_analysis_portfolio_views",
-      "target": "core_analysis_portfolio_views_mask_email",
-      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -27770,16 +27994,6 @@
       "target": "core_analysis_portfolio_views_register_view"
     },
     {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L170",
-      "weight": 1.0,
-      "source": "core_analysis_portfolio_views",
-      "target": "core_analysis_portfolio_views_send_activation_email",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "imports_from",
       "context": "submodule_import",
       "confidence": "EXTRACTED",
@@ -27816,20 +28030,9 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L255",
+      "source_location": "L153",
       "weight": 1.0,
-      "source": "core_analysis_portfolio_views_activate_email_view",
-      "target": "core_analysis_portfolio_views_asset_version",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L219",
-      "weight": 1.0,
-      "source": "core_analysis_portfolio_views_activation_sent_view",
+      "source": "core_analysis_portfolio_views_approval_pending_view",
       "target": "core_analysis_portfolio_views_asset_version",
       "confidence_score": 1.0
     },
@@ -27870,11 +28073,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L51",
+      "source_location": "L43",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_portfolio_views_rationale_51",
-      "target": "core_analysis_portfolio_views_num"
+      "source": "core_analysis_portfolio_views_rationale_43",
+      "target": "core_analysis_portfolio_views_num",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -27891,11 +28094,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L64",
+      "source_location": "L56",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_portfolio_views_rationale_64",
-      "target": "core_analysis_portfolio_views_map_columns"
+      "source": "core_analysis_portfolio_views_rationale_56",
+      "target": "core_analysis_portfolio_views_map_columns",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -27912,98 +28115,20 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L88",
+      "source_location": "L80",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_portfolio_views_rationale_88",
-      "target": "core_analysis_portfolio_views_parse_holdings_csv"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L232",
-      "weight": 1.0,
-      "source": "core_analysis_portfolio_views_activation_sent_view",
-      "target": "core_analysis_portfolio_views_mask_email",
+      "source": "core_analysis_portfolio_views_rationale_80",
+      "target": "core_analysis_portfolio_views_parse_holdings_csv",
       "confidence_score": 1.0
     },
     {
-      "relation": "calls",
-      "context": "call",
+      "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L198",
+      "source_location": "L124",
       "weight": 1.0,
-      "source": "core_analysis_portfolio_views_register_view",
-      "target": "core_analysis_portfolio_views_mask_email",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L202",
-      "weight": 1.0,
-      "source": "core_analysis_portfolio_views_register_view",
-      "target": "core_analysis_portfolio_views_activation_sent_url",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L171",
-      "weight": 1.0,
-      "source": "core_analysis_portfolio_views_send_activation_email",
-      "target": "core_analysis_portfolio_views_activation_link",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L250",
-      "weight": 1.0,
-      "source": "core_analysis_portfolio_views_activate_email_view",
-      "target": "core_analysis_portfolio_views_activation_from_uid",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L214",
-      "weight": 1.0,
-      "source": "core_analysis_portfolio_views_activation_sent_view",
-      "target": "core_analysis_portfolio_views_activation_from_uid",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L231",
-      "weight": 1.0,
-      "source": "core_analysis_portfolio_views_activation_sent_view",
-      "target": "core_analysis_portfolio_views_send_activation_email",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L197",
-      "weight": 1.0,
-      "source": "core_analysis_portfolio_views_register_view",
-      "target": "core_analysis_portfolio_views_send_activation_email",
+      "source": "core_analysis_portfolio_views_rationale_124",
+      "target": "core_analysis_portfolio_views_register_view",
       "confidence_score": 1.0
     },
     {
@@ -28012,9 +28137,9 @@
       "source_file": "core_analysis/portfolio_views.py",
       "source_location": "L185",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_portfolio_views_rationale_185",
-      "target": "core_analysis_portfolio_views_register_view",
-      "confidence_score": 1.0
+      "target": "core_analysis_portfolio_views_register_view"
     },
     {
       "relation": "imports",
@@ -28035,18 +28160,7 @@
       "source_location": "L3",
       "weight": 1.0,
       "source": "core_analysis_urls",
-      "target": "core_analysis_portfolio_views_activation_sent_view",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/urls.py",
-      "source_location": "L3",
-      "weight": 1.0,
-      "source": "core_analysis_urls",
-      "target": "core_analysis_portfolio_views_activate_email_view",
+      "target": "core_analysis_portfolio_views_approval_pending_view",
       "confidence_score": 1.0
     },
     {
@@ -28097,9 +28211,9 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L294",
+      "source_location": "L171",
       "weight": 1.0,
-      "source": "core_analysis_portfolio_views_rationale_294",
+      "source": "core_analysis_portfolio_views_rationale_171",
       "target": "core_analysis_portfolio_views_portfolio_view",
       "confidence_score": 1.0
     },
@@ -28118,9 +28232,9 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L308",
+      "source_location": "L185",
       "weight": 1.0,
-      "source": "core_analysis_portfolio_views_rationale_308",
+      "source": "core_analysis_portfolio_views_rationale_185",
       "target": "core_analysis_portfolio_views_portfolio_data_api",
       "confidence_score": 1.0
     },
@@ -28139,9 +28253,9 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L322",
+      "source_location": "L199",
       "weight": 1.0,
-      "source": "core_analysis_portfolio_views_rationale_322",
+      "source": "core_analysis_portfolio_views_rationale_199",
       "target": "core_analysis_portfolio_views_portfolio_import",
       "confidence_score": 1.0
     },
@@ -28160,9 +28274,9 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/portfolio_views.py",
-      "source_location": "L370",
+      "source_location": "L247",
       "weight": 1.0,
-      "source": "core_analysis_portfolio_views_rationale_370",
+      "source": "core_analysis_portfolio_views_rationale_247",
       "target": "core_analysis_portfolio_views_portfolio_clear",
       "confidence_score": 1.0
     },
@@ -74752,6 +74866,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/tests.py",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "core_analysis_tests",
+      "target": "core_analysis_tests_adminapprovaltests",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/tests.py",
       "source_location": "L578",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -74767,16 +74891,6 @@
       "confidence_score": 1.0,
       "source": "core_analysis_tests",
       "target": "core_analysis_tests_brokerflowradartests"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/tests.py",
-      "source_location": "L44",
-      "weight": 1.0,
-      "source": "core_analysis_tests",
-      "target": "core_analysis_tests_emailactivationtests",
-      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -74923,69 +75037,49 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L59",
+      "source_location": "L41",
       "weight": 1.0,
-      "source": "core_analysis_tests_emailactivationtests",
-      "target": "core_analysis_tests_emailactivationtests_activation_path_from_email",
+      "source": "core_analysis_tests_adminapprovaltests",
+      "target": "core_analysis_tests_adminapprovaltests_register",
       "confidence_score": 1.0
     },
     {
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L48",
+      "source_location": "L65",
       "weight": 1.0,
-      "source": "core_analysis_tests_emailactivationtests",
-      "target": "core_analysis_tests_emailactivationtests_register",
+      "source": "core_analysis_tests_adminapprovaltests",
+      "target": "core_analysis_tests_adminapprovaltests_test_admin_approval_activates_user",
       "confidence_score": 1.0
     },
     {
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L45",
+      "source_location": "L84",
       "weight": 1.0,
-      "source": "core_analysis_tests_emailactivationtests",
-      "target": "core_analysis_tests_emailactivationtests_setup",
+      "source": "core_analysis_tests_adminapprovaltests",
+      "target": "core_analysis_tests_adminapprovaltests_test_admin_rejection_keeps_user_inactive",
       "confidence_score": 1.0
     },
     {
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L91",
+      "source_location": "L52",
       "weight": 1.0,
-      "source": "core_analysis_tests_emailactivationtests",
-      "target": "core_analysis_tests_emailactivationtests_test_activation_sent_page_can_resend_email",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "method",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/tests.py",
-      "source_location": "L64",
-      "weight": 1.0,
-      "source": "core_analysis_tests_emailactivationtests",
-      "target": "core_analysis_tests_emailactivationtests_test_registration_creates_inactive_user_and_sends_activation_email",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "method",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/tests.py",
-      "source_location": "L77",
-      "weight": 1.0,
-      "source": "core_analysis_tests_emailactivationtests",
-      "target": "core_analysis_tests_emailactivationtests_test_valid_activation_link_activates_and_logs_user_in",
+      "source": "core_analysis_tests_adminapprovaltests",
+      "target": "core_analysis_tests_adminapprovaltests_test_registration_creates_inactive_user_and_pending_admin_request",
       "confidence_score": 1.0
     },
     {
       "relation": "inherits",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L44",
+      "source_location": "L40",
       "weight": 1.0,
-      "source": "core_analysis_tests_emailactivationtests",
+      "source": "core_analysis_tests_adminapprovaltests",
       "target": "testcase",
       "confidence_score": 1.0
     },
@@ -75004,10 +75098,10 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L92",
+      "source_location": "L66",
       "weight": 1.0,
-      "source": "core_analysis_tests_emailactivationtests_test_activation_sent_page_can_resend_email",
-      "target": "core_analysis_tests_emailactivationtests_register",
+      "source": "core_analysis_tests_adminapprovaltests_test_admin_approval_activates_user",
+      "target": "core_analysis_tests_adminapprovaltests_register",
       "confidence_score": 1.0
     },
     {
@@ -75015,10 +75109,10 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L65",
+      "source_location": "L85",
       "weight": 1.0,
-      "source": "core_analysis_tests_emailactivationtests_test_registration_creates_inactive_user_and_sends_activation_email",
-      "target": "core_analysis_tests_emailactivationtests_register",
+      "source": "core_analysis_tests_adminapprovaltests_test_admin_rejection_keeps_user_inactive",
+      "target": "core_analysis_tests_adminapprovaltests_register",
       "confidence_score": 1.0
     },
     {
@@ -75026,21 +75120,10 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L78",
+      "source_location": "L53",
       "weight": 1.0,
-      "source": "core_analysis_tests_emailactivationtests_test_valid_activation_link_activates_and_logs_user_in",
-      "target": "core_analysis_tests_emailactivationtests_register",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "core_analysis/tests.py",
-      "source_location": "L79",
-      "weight": 1.0,
-      "source": "core_analysis_tests_emailactivationtests_test_valid_activation_link_activates_and_logs_user_in",
-      "target": "core_analysis_tests_emailactivationtests_activation_path_from_email",
+      "source": "core_analysis_tests_adminapprovaltests_test_registration_creates_inactive_user_and_pending_admin_request",
+      "target": "core_analysis_tests_adminapprovaltests_register",
       "confidence_score": 1.0
     },
     {
@@ -76686,5 +76769,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "2d1aa400687da3c3784c3e541fac37408d0d51c9"
+  "built_at_commit": "2cedf10fe971f11973b96733a1354a4074430c17"
 }

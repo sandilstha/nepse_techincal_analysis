@@ -1,8 +1,7 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 from .portfolio_views import (
-    activate_email_view,
-    activation_sent_view,
+    approval_pending_view,
     register_view,
     portfolio_view,
     portfolio_data_api,
@@ -65,8 +64,7 @@ urlpatterns = [
     path('accounts/login/', auth_views.LoginView.as_view(next_page='portfolio'), name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('accounts/register/', register_view, name='register'),
-    path('accounts/activation-sent/<str:uidb64>/', activation_sent_view, name='activation_sent'),
-    path('accounts/activate/<str:uidb64>/<str:token>/', activate_email_view, name='activate_email'),
+    path('accounts/approval-pending/', approval_pending_view, name='approval_pending'),
 
     # Risk & Portfolio Desk — private, per-user holdings + risk analytics.
     path('portfolio/', portfolio_view, name='portfolio'),

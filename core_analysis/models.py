@@ -332,30 +332,61 @@ class Holding(models.Model):
         return f"{self.symbol} x{self.quantity}"
 
 
-class EmailActivation(models.Model):
-    """
-    Email state for activating a self-service portfolio account.
-    The signed activation token is generated from Django's auth token generator;
-    this table keeps the email unique and tracks sent/activated timestamps.
-    """
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="email_activation"
+class AccountApproval(models.Model):
+    """Admin review state for a self-service portfolio account request."""
+
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    STATUS_CHOICES = (
+        (PENDING, "Pending"),
+        (APPROVED, "Approved"),
+        (REJECTED, "Rejected"),
     )
-    email = models.EmailField(unique=True)
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="account_approval"
+    )
+    contact_email = models.EmailField(unique=True)
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default=PENDING, db_index=True
+    )
+    review_note = models.CharField(max_length=255, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
-    sent_at = models.DateTimeField(null=True, blank=True)
-    activated_at = models.DateTimeField(null=True, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reviewed_account_approvals",
+    )
 
     class Meta:
-        db_table = "account_email_activation"
+        db_table = "account_approval_request"
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.email} (user {self.user_id})"
+        return f"{self.contact_email} ({self.get_status_display()})"
 
     @property
-    def is_activated(self):
-        return self.activated_at is not None
+    def is_pending(self):
+        return self.status == self.PENDING
 
-    def mark_sent(self):
-        self.sent_at = timezone.now()
+    def approve(self, reviewer=None, note=""):
+        self.status = self.APPROVED
+        self.reviewed_by = reviewer
+        self.review_note = note or ""
+        self.reviewed_at = timezone.now()
+        self.user.is_active = True
+        self.user.save(update_fields=["is_active"])
+        self.save(update_fields=["status", "reviewed_by", "review_note", "reviewed_at"])
+
+    def reject(self, reviewer=None, note=""):
+        self.status = self.REJECTED
+        self.reviewed_by = reviewer
+        self.review_note = note or ""
+        self.reviewed_at = timezone.now()
+        self.user.is_active = False
+        self.user.save(update_fields=["is_active"])
+        self.save(update_fields=["status", "reviewed_by", "review_note", "reviewed_at"])

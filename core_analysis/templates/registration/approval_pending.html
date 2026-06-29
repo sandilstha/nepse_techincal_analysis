@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Activate account &mdash; Risk &amp; Portfolio Desk</title>
+  <title>Request pending &mdash; Risk &amp; Portfolio Desk</title>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
   <link rel="stylesheet" href="{% static 'core_analysis/css/portfolio.css' %}?v={{ asset_version }}">
@@ -13,14 +13,8 @@
   <div class="auth-wrap">
     <div class="auth-card">
       <div class="auth-logo">RP</div>
-      <h1 class="auth-title">Activate your account</h1>
-
-      {% if invalid_link %}
-      <p class="auth-sub">This activation link is invalid or has expired.</p>
-      <div class="auth-error">Create a new account or request a fresh activation email.</div>
-      <p class="auth-alt"><a href="{% url 'register' %}">Create account</a> <span>&middot;</span> <a href="{% url 'login' %}">Sign in</a></p>
-      {% else %}
-      <p class="auth-sub">Open the activation link sent to {{ masked_email }}.</p>
+      <h1 class="auth-title">Request sent</h1>
+      <p class="auth-sub">An admin will review your account request. You can sign in after approval.</p>
 
       {% if messages %}
         {% for message in messages %}
@@ -28,12 +22,7 @@
         {% endfor %}
       {% endif %}
 
-      <form class="auth-resend" method="post">
-        {% csrf_token %}
-        <button type="submit" class="auth-btn">Send activation email again</button>
-      </form>
-      <p class="auth-alt">Already active? <a href="{% url 'login' %}">Sign in</a></p>
-      {% endif %}
+      <p class="auth-alt">Already approved? <a href="{% url 'login' %}">Sign in</a></p>
     </div>
     <p class="auth-foot">Your holdings are private and visible only to you.</p>
   </div>
