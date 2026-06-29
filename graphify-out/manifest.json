@@ -55,8 +55,8 @@
     "semantic_hash": "71e15a286b4cf4f6c11d9dfeb50aa086"
   },
   "core_analysis/insights_views.py": {
-    "mtime": 1782713324.7060153,
-    "ast_hash": "114e360777f1097e00cb7bb10672d67e",
+    "mtime": 1782727940.8378227,
+    "ast_hash": "eb28ad15fb6570f8017335f643eeaa6c",
     "semantic_hash": ""
   },
   "core_analysis/management/commands/sync_and_calculate.py": {
@@ -270,13 +270,13 @@
     "semantic_hash": "70b73d1d51d8343fe5fdbeac546aa186"
   },
   "core_analysis/urls.py": {
-    "mtime": 1782720478.208587,
-    "ast_hash": "aec08484ad9194f233c7f6e61771a9c8",
+    "mtime": 1782727849.1608596,
+    "ast_hash": "d3b7d4804dd3c47ac5d91b885ce607e2",
     "semantic_hash": ""
   },
   "core_analysis/views.py": {
-    "mtime": 1782721771.3575137,
-    "ast_hash": "30559205f14403500fa91e78debfc53f",
+    "mtime": 1782728922.365826,
+    "ast_hash": "13ecc80839c0755706e22cb3c290146d",
     "semantic_hash": ""
   },
   "manage.py": {
@@ -382,6 +382,16 @@
   "core_analysis/migrations/0008_accountapproval.py": {
     "mtime": 1782720526.5775,
     "ast_hash": "4fb801d151e5a18a565efd5840848cbd",
+    "semantic_hash": ""
+  },
+  "core_analysis/fundamental_views.py": {
+    "mtime": 1782727823.0013356,
+    "ast_hash": "3ce77ad80192ead726c7315db0f7b367",
+    "semantic_hash": ""
+  },
+  "core_analysis/static/core_analysis/js/fundamentals.js": {
+    "mtime": 1782727927.723953,
+    "ast_hash": "d6a4126ce71bfe768f19a7f793e5425b",
     "semantic_hash": ""
   }
 }

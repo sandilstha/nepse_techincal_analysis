@@ -19,7 +19,13 @@ insights | technical | rrg | floorsheet, e.g.:
      class="mi-nav-link {% if active_section == 'technical' %}active{% endif %}">
     <span class="mi-nav-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l3 8 4-16 3 8h5"/></svg>
-    </span>Technical Analysis Desk</a>
+    </span>Technical Analysis</a>
+  <a href="{% url 'fundamental_analysis' %}"
+     class="mi-nav-link {% if active_section == 'fundamental' %}active{% endif %}"
+     {% if active_section == 'fundamental' %}aria-current="page"{% endif %}>
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11M14 4v16"/></svg>
+    </span>Fundamental Analysis</a>
   <a href="{% url 'crud_dashboard' %}?active_tab=rrg_backtest"
      class="mi-nav-link {% if active_section == 'rrg' %}active{% endif %}">
     <span class="mi-nav-icon" aria-hidden="true">

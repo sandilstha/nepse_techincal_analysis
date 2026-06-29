@@ -1,6 +1,7 @@
 import os
 from datetime import date
 from decimal import Decimal, InvalidOperation
+from functools import wraps
 
 import numpy as np
 import pandas as pd
@@ -551,7 +552,30 @@ def symbol_autocomplete_view(request):
 
 # ── Main dashboard ────────────────────────────────────────────────────────────
 
-@staff_member_required
+# Workbench tabs open to anonymous visitors: the Strategy Simulator,
+# Technical Analysis (Stage) and RRG Analytics desks. Every other tab — Raw
+# Inventory Manager, the remaining strategy desks, and the default landing —
+# stays behind the staff login, as do all data edit / sync endpoints.
+PUBLIC_WORKBENCH_TABS = {"backtest", "stage_backtest", "rrg_backtest"}
+
+
+def _staff_or_public_tab(view):
+    """Open the public desks to everyone; defer to the staff gate otherwise.
+
+    The decision is per-request, keyed on ?active_tab=: a request for one of the
+    PUBLIC_WORKBENCH_TABS is served to anyone, anything else (including a bare
+    request with no tab) goes through ``staff_member_required`` unchanged.
+    """
+    @wraps(view)
+    def _wrapped(request, *args, **kwargs):
+        if request.GET.get("active_tab", "") in PUBLIC_WORKBENCH_TABS:
+            return view(request, *args, **kwargs)
+        return staff_member_required(view)(request, *args, **kwargs)
+
+    return _wrapped
+
+
+@_staff_or_public_tab
 def crud_dashboard_view(request):
     """Render the analytics workbench shell (full page).
 
@@ -1259,7 +1283,7 @@ TAB_RESULTS_PARTIALS = {
 }
 
 
-@staff_member_required
+@_staff_or_public_tab
 @require_GET
 def dashboard_tab_calc(request):
     """Run one workbench tab's calculation and return ONLY its results partial.

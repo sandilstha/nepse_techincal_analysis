@@ -1,0 +1,161 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fundamental Analysis · {% if symbol %}{{ symbol }} · {% endif %}NEPSE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <style>
+    /* Fundamental Analysis desk — headline ratios, multi-year trend, statements. */
+    html, body { height: 100%; margin: 0; }
+    .fa-shell { display: flex; flex-direction: column; min-height: 100vh; }
+
+    .fa-topbar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 7px 12px; border-bottom: 1px solid var(--line, rgba(128,128,128,.25));
+      flex: 0 0 auto; position: sticky; top: 0; z-index: 5;
+      background: var(--bg, #0d1117);
+    }
+    .fa-brand { font-weight: 700; letter-spacing: .03em; }
+    .fa-spacer { flex: 1 1 auto; }
+    .fa-input, .fa-select {
+      background: var(--surface, rgba(128,128,128,.08));
+      color: inherit; border: 1px solid var(--line, rgba(128,128,128,.3));
+      border-radius: 8px; padding: 5px 8px; font: inherit;
+    }
+    .fa-input { width: 150px; text-transform: uppercase; }
+    .fa-btn {
+      background: var(--accent, #4a90e2); color: #fff; border: 0;
+      border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit;
+    }
+    .fa-btn.ghost { background: transparent; color: inherit; border: 1px solid var(--line, rgba(128,128,128,.3)); }
+    .fa-icon-btn { text-decoration: none; font-size: 18px; padding: 4px 8px; border-radius: 8px; }
+    .fa-icon-btn:hover { background: rgba(128,128,128,.18); }
+
+    .fa-main { padding: 16px; max-width: 1280px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+
+    .fa-company { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .fa-company h1 { font-size: 22px; margin: 0; letter-spacing: .02em; }
+    .fa-company .fa-name { opacity: .8; font-size: 15px; }
+    .fa-company .fa-sector {
+      font-size: 12px; padding: 2px 9px; border-radius: 999px;
+      background: var(--surface, rgba(128,128,128,.14)); opacity: .85;
+    }
+    .fa-period { font-size: 12px; opacity: .7; }
+
+    .fa-cards {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 10px; margin-bottom: 22px;
+    }
+    .fa-card {
+      background: var(--surface, rgba(128,128,128,.07));
+      border: 1px solid var(--line, rgba(128,128,128,.22));
+      border-radius: 12px; padding: 12px 14px;
+    }
+    .fa-card .fa-card-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; }
+    .fa-card .fa-card-value { font-size: 20px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+    .fa-section-title { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; opacity: .65; margin: 4px 0 10px; }
+
+    .fa-trend {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px; margin-bottom: 26px;
+    }
+    .fa-trend-card {
+      background: var(--surface, rgba(128,128,128,.06));
+      border: 1px solid var(--line, rgba(128,128,128,.22));
+      border-radius: 12px; padding: 12px 14px;
+    }
+    .fa-trend-card .fa-trend-head { display: flex; justify-content: space-between; align-items: baseline; }
+    .fa-trend-card .fa-trend-label { font-size: 12px; opacity: .7; }
+    .fa-trend-card .fa-trend-latest { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .fa-spark { width: 100%; height: 56px; display: block; margin-top: 8px; }
+    .fa-spark .bar { fill: var(--accent, #4a90e2); opacity: .85; }
+    .fa-spark .bar.neg { fill: #e25563; }
+
+    .fa-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .fa-tab {
+      border: 1px solid var(--line, rgba(128,128,128,.3)); background: transparent;
+      color: inherit; border-radius: 8px; padding: 6px 14px; cursor: pointer; font: inherit;
+    }
+    .fa-tab.active { background: var(--accent, #4a90e2); color: #fff; border-color: transparent; }
+
+    .fa-table-wrap { overflow-x: auto; border: 1px solid var(--line, rgba(128,128,128,.22)); border-radius: 12px; }
+    table.fa-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.fa-table th, table.fa-table td { padding: 8px 14px; text-align: left; }
+    table.fa-table td.fa-amt { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    table.fa-table thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; border-bottom: 1px solid var(--line, rgba(128,128,128,.25)); }
+    table.fa-table tbody tr:nth-child(even) { background: rgba(128,128,128,.05); }
+    table.fa-table tr.fa-row-header td { font-weight: 700; background: rgba(128,128,128,.12); text-transform: uppercase; letter-spacing: .02em; }
+    table.fa-table tr.fa-row-header td.fa-amt { font-weight: 700; }
+
+    .fa-status { padding: 40px 12px; text-align: center; opacity: .7; }
+    .fa-hidden { display: none; }
+  </style>
+</head>
+<body>
+<div class="fa-shell">
+
+  <header class="fa-topbar">
+    <span class="fa-brand">NEPSE · Fundamentals</span>
+
+    <input id="fa-symbol" class="fa-input" list="fa-symlist" value="{{ symbol }}"
+           placeholder="Symbol" aria-label="Symbol" autocomplete="off">
+    <datalist id="fa-symlist">
+      {% for s in symbols %}<option value="{{ s.symbol }}">{{ s.symbol }}{% if s.name %} — {{ s.name }}{% endif %}</option>{% endfor %}
+    </datalist>
+    <button id="fa-go" class="fa-btn ghost" title="Load company">Go</button>
+
+    <select id="fa-period" class="fa-select" aria-label="Fiscal period"></select>
+
+    <span class="fa-spacer"></span>
+
+    <a href="{% url 'technical_analysis' %}" class="fa-btn ghost" title="Technical Analysis">📈 Technical</a>
+    <a href="{% url 'market_insights' %}" class="fa-icon-btn" title="Home" aria-label="Home">🏠</a>
+  </header>
+
+  <main class="fa-main">
+    {% include "core_analysis/includes/_primary_nav.html" with active_section='fundamental' %}
+
+    <div id="fa-status" class="fa-status">Search a company to view its fundamentals.</div>
+
+    <div id="fa-content" class="fa-hidden">
+      <div class="fa-company">
+        <h1 id="fa-ticker">—</h1>
+        <span class="fa-name" id="fa-secname"></span>
+        <span class="fa-sector fa-hidden" id="fa-sector"></span>
+        <span class="fa-period" id="fa-periodlabel"></span>
+      </div>
+
+      <div class="fa-cards" id="fa-cards"></div>
+
+      <div id="fa-trend-section">
+        <div class="fa-section-title">Multi-year trend (annual)</div>
+        <div class="fa-trend" id="fa-trend"></div>
+      </div>
+
+      <div class="fa-section-title">Financial statements</div>
+      <div class="fa-tabs" id="fa-tabs"></div>
+      <div class="fa-table-wrap">
+        <table class="fa-table">
+          <thead><tr><th>Line item</th><th style="text-align:right">Amount</th></tr></thead>
+          <tbody id="fa-stmt-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  window.FA_CONFIG = {
+    apiUrl: "{% url 'fundamental_data_api' %}",
+    symbol: "{{ symbol|escapejs }}",
+  };
+</script>
+<script defer src="{% static 'core_analysis/js/fundamentals.js' %}?v={{ asset_version }}"></script>
+</body>
+</html>

@@ -231,9 +231,9 @@
        these .mi-* rules only resolve here since dashboard.css is workbench-only. */
     .mi-primary-nav {
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.65rem;
-      padding: 0.5rem;
+      flex-wrap: nowrap;
+      gap: 0.25rem;
+      padding: 0.3rem;
       margin: 0 0 1.4rem;
       background: linear-gradient(180deg, var(--bg-raised) 0%, var(--bg-surface) 100%);
       border: 1px solid var(--line);
@@ -241,18 +241,22 @@
       box-shadow: 0 4px 24px -8px rgba(0,0,0,0.5);
     }
     .mi-nav-link {
-      flex: 1 1 auto;
+      flex: 1 1 0;
+      min-width: 0;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.55rem;
+      gap: 0.3rem;
       text-align: center;
-      padding: 0.6rem 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0.5rem 0.4rem;
       border-radius: var(--radius-sm);
       font-family: 'Manrope', sans-serif;
-      font-weight: 800;
-      font-size: 0.9375rem;
-      letter-spacing: 0.055em;
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.02em;
       text-transform: uppercase;
       color: var(--ink-1);
       text-decoration: none;
@@ -263,10 +267,11 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      flex: 0 0 auto;
     }
     .mi-nav-icon svg {
-      width: 1.15em;
-      height: 1.15em;
+      width: 1em;
+      height: 1em;
       stroke: currentColor;
     }
     .mi-nav-link:hover {

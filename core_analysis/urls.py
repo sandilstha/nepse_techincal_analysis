@@ -45,6 +45,10 @@ from .udf_views import (
     udf_history,
 )
 from .indicator_views import indicator_catalog, indicator_data
+from .fundamental_views import (
+    fundamental_analysis_view,
+    fundamental_data_api,
+)
 
 urlpatterns = [
 
@@ -59,6 +63,11 @@ urlpatterns = [
     path('chart/indicators', indicator_catalog, name='indicator_catalog'),
     path('chart/indicator', indicator_data, name='indicator_data'),
     path('chart/<str:symbol>/', technical_analysis_view, name='technical_analysis_symbol'),
+
+    # Fundamental Analysis Desk — company financial statements + ratios.
+    path('fundamentals/', fundamental_analysis_view, name='fundamental_analysis'),
+    path('fundamentals/api/', fundamental_data_api, name='fundamental_data_api'),
+    path('fundamentals/<str:symbol>/', fundamental_analysis_view, name='fundamental_analysis_symbol'),
 
     # Auth (user-facing; the workbench keeps its separate admin/staff login).
     path('accounts/login/', auth_views.LoginView.as_view(next_page='portfolio'), name='login'),

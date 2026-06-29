@@ -45,6 +45,7 @@ _ASSET_FILES = (
     "core_analysis/js/floorsheet-brokers.js",
     "core_analysis/css/portfolio.css",
     "core_analysis/js/portfolio.js",
+    "core_analysis/js/fundamentals.js",
 )
 
 
