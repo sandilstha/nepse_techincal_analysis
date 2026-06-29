@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 class Broker(models.Model):
     """
@@ -329,3 +330,32 @@ class Holding(models.Model):
 
     def __str__(self):
         return f"{self.symbol} x{self.quantity}"
+
+
+class EmailActivation(models.Model):
+    """
+    Email state for activating a self-service portfolio account.
+    The signed activation token is generated from Django's auth token generator;
+    this table keeps the email unique and tracks sent/activated timestamps.
+    """
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="email_activation"
+    )
+    email = models.EmailField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    activated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "account_email_activation"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.email} (user {self.user_id})"
+
+    @property
+    def is_activated(self):
+        return self.activated_at is not None
+
+    def mark_sent(self):
+        self.sent_at = timezone.now()

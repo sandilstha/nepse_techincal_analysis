@@ -6,8 +6,11 @@ from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+from django.contrib.auth import get_user_model
+from django.core import mail
 from django.core.exceptions import ImproperlyConfigured
-from django.test import Client, RequestFactory, SimpleTestCase, TestCase
+from django.test import Client, RequestFactory, SimpleTestCase, TestCase, override_settings
+from django.urls import reverse
 
 from core_analysis.services import IMM, msv_strategy
 from core_analysis.services.advanced_market_structure import (
@@ -31,6 +34,68 @@ try:
 except ImproperlyConfigured:  # Allows `python core_analysis/tests.py` outside Django.
     indicator_views = None
     udf_views = None
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="noreply@example.com",
+    ALLOWED_HOSTS=["testserver"],
+)
+class EmailActivationTests(TestCase):
+    def setUp(self):
+        mail.outbox = []
+
+    def _register(self, username, email):
+        return self.client.post(
+            reverse("register"),
+            {
+                "username": username,
+                "email": email,
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            },
+        )
+
+    def _activation_path_from_email(self):
+        body = mail.outbox[-1].body
+        link = next(line for line in body.splitlines() if "/accounts/activate/" in line)
+        return link.replace("http://testserver", "")
+
+    def test_registration_creates_inactive_user_and_sends_activation_email(self):
+        response = self._register("emailuser", "emailuser@example.com")
+        user = get_user_model().objects.get(username="emailuser")
+        activation = user.email_activation
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/activation-sent/", response["Location"])
+        self.assertFalse(user.is_active)
+        self.assertEqual(user.email, "emailuser@example.com")
+        self.assertEqual(activation.email, "emailuser@example.com")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("/accounts/activate/", mail.outbox[0].body)
+
+    def test_valid_activation_link_activates_and_logs_user_in(self):
+        self._register("activateuser", "activateuser@example.com")
+        activation_path = self._activation_path_from_email()
+
+        response = self.client.get(activation_path)
+        user = get_user_model().objects.get(username="activateuser")
+        activation = user.email_activation
+
+        self.assertTrue(user.is_active)
+        self.assertIsNotNone(activation.activated_at)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("portfolio"))
+        self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
+
+    def test_activation_sent_page_can_resend_email(self):
+        register_response = self._register("resenduser", "resenduser@example.com")
+
+        response = self.client.post(register_response["Location"])
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertIn("/accounts/activate/", mail.outbox[-1].body)
 
 
 @unittest.skipIf(indicator_views is None, "Django settings unavailable")

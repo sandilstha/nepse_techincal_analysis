@@ -30,11 +30,9 @@
 .auth-title { font: 800 22px/1.1 'Manrope', sans-serif; color: var(--ink-1); margin: 6px 0 0; }
 .auth-sub { font: 500 13px/1.4 'Manrope', sans-serif; color: var(--ink-3); margin: 0 0 4px; }
 .auth-field { display: flex; flex-direction: column; gap: 5px; }
-.auth-field > span {
-  font: 600 11px/1 'Manrope', sans-serif; letter-spacing: .04em;
-  text-transform: uppercase; color: var(--ink-3);
-}
+.auth-label { font: 600 12px/1 'Manrope', sans-serif; color: var(--ink-3); }
 .auth-card input[type=text],
+.auth-card input[type=email],
 .auth-card input[type=password] {
   width: 100%;
   background: var(--surface-2); color: var(--ink-1);
@@ -55,8 +53,16 @@
   border: 1px solid var(--down); border-radius: var(--radius-sm);
   padding: 9px 12px; font: 500 12.5px/1.35 'Manrope', sans-serif;
 }
+.auth-message {
+  background: var(--surface-2); color: var(--ink-2);
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 9px 12px; font: 600 12.5px/1.35 'Manrope', sans-serif;
+}
+.auth-message.success { background: var(--up-soft); color: var(--up); border-color: var(--up); }
+.auth-message.error { background: var(--down-soft); color: var(--down); border-color: var(--down); }
+.auth-resend { display: flex; justify-content: center; margin: 0; }
 .auth-fielderr { font: 500 11.5px/1.35 'Manrope', sans-serif; color: var(--down); }
-.auth-help { font: 500 11px/1.4 'Manrope', sans-serif; color: var(--ink-3); }
+.auth-help { font: 500 11px/1.4 'Manrope', sans-serif; color: var(--ink-3); letter-spacing: 0; text-transform: none; }
 .auth-alt { font: 500 13px/1 'Manrope', sans-serif; color: var(--ink-2); text-align: center; margin: 6px 0 0; }
 .auth-alt a, .auth-foot a { color: var(--accent); text-decoration: none; }
 .auth-foot { font: 500 12px/1 'Manrope', sans-serif; color: var(--ink-3); }

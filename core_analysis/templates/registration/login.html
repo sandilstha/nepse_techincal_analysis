@@ -19,8 +19,8 @@
       {% if form.errors %}
       <div class="auth-error">Incorrect username or password. Please try again.</div>
       {% endif %}
-      <label class="auth-field"><span>Username</span>{{ form.username }}</label>
-      <label class="auth-field"><span>Password</span>{{ form.password }}</label>
+      <label class="auth-field"><span class="auth-label">Username</span>{{ form.username }}</label>
+      <label class="auth-field"><span class="auth-label">Password</span>{{ form.password }}</label>
       <input type="hidden" name="next" value="{{ next }}">
       <button type="submit" class="auth-btn">Sign in</button>
       <p class="auth-alt">New here? <a href="{% url 'register' %}">Create an account</a></p>
