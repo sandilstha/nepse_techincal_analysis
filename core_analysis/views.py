@@ -4,30 +4,33 @@ from decimal import Decimal, InvalidOperation
 
 import numpy as np
 import pandas as pd
-# Workbench / sync / CRUD views are gated behind Django's admin-login check in
-# any real deployment. The gate is relaxed ONLY when DEBUG is True, so local
-# development needs no admin login; with DEBUG False (staging, production, and
-# the test suite, which forces DEBUG False) the real staff_member_required is
-# enforced. DEBUG is checked per request so import order can't bypass the gate.
+# Workbench / sync / CRUD views require a logged-in *staff* user in any real
+# deployment. Anonymous visitors are sent to the SAME user-facing login page as
+# My Portfolio (/accounts/login/) — not the separate admin login — so one account
+# can serve both once it's granted staff access (`manage.py grant_staff <user>`).
+# The gate is relaxed ONLY in local DEBUG runs for convenience; DEBUG is checked
+# per request so import order can't bypass it.
 from functools import wraps as _wraps
 
 from django.conf import settings as _settings
-from django.contrib.admin.views.decorators import (
-    staff_member_required as _staff_member_required,
-)
+from django.contrib.auth.views import redirect_to_login as _redirect_to_login
+from django.core.exceptions import PermissionDenied as _PermissionDenied
 
 
 def staff_member_required(view_func=None, **kwargs):  # noqa: N802
-    """Require admin login except in local DEBUG runs (checked per request)."""
+    """Gate Workbench views behind the unified login, staff-only (open in DEBUG)."""
 
     def decorate(func):
-        gated = _staff_member_required(func, **kwargs)
-
         @_wraps(func)
         def wrapper(request, *args, **inner):
             if _settings.DEBUG:
                 return func(request, *args, **inner)
-            return gated(request, *args, **inner)
+            user = request.user
+            if not user.is_authenticated:
+                return _redirect_to_login(request.get_full_path(), login_url="login")
+            if not user.is_staff:
+                raise _PermissionDenied
+            return func(request, *args, **inner)
 
         return wrapper
 

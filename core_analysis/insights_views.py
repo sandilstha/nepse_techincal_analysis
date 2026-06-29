@@ -43,6 +43,8 @@ _ASSET_FILES = (
     "core_analysis/js/ta-chart.js",
     "core_analysis/css/floorsheet.css",
     "core_analysis/js/floorsheet-brokers.js",
+    "core_analysis/css/portfolio.css",
+    "core_analysis/js/portfolio.js",
 )
 
 

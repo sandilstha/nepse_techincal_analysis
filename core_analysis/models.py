@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 class Broker(models.Model):
@@ -216,3 +217,115 @@ class NepseFloorsheet(models.Model):
 
     def __str__(self):
         return f"{self.contract_no} - {self.stock_symbol} - {self.business_date}"
+
+
+class FinancialStatement(models.Model):
+    """
+    Table: fundamentals_financialstatdbs (read-only mapping).
+
+    Company financial-statement line items (one row per
+    ticker × fiscal year × quarter × statement type × item), as harvested by the
+    separate ``fundamentals`` app that owns this table. We map it here only to
+    *read* fundamentals alongside the price/floorsheet data — hence
+    ``managed = False`` so Django never creates, alters or drops it, and the two
+    foreign-key columns are mapped as plain integer ids (their parent tables,
+    ``nepali_datetime_fiscalyear`` and ``fundamentals_accountdictionary``, are not
+    modelled in this project).
+    """
+    id = models.BigAutoField(primary_key=True)
+
+    # Identity / classification.
+    sector = models.CharField(max_length=100, db_index=True)
+    fiscal_year_ad = models.CharField(
+        max_length=10, db_index=True, help_text="Gregorian fiscal year label, e.g. '2024/25'"
+    )
+    quarter = models.PositiveSmallIntegerField(db_index=True, help_text="0 = annual / 1–4 = quarter")
+    data_source = models.CharField(max_length=20, db_index=True)
+    ticker = models.CharField(max_length=20, db_index=True)
+    fs_type = models.CharField(
+        max_length=10, db_index=True, help_text="Statement type, e.g. BS / PL / CF"
+    )
+
+    # Line item.
+    item_name = models.CharField(max_length=255)
+    item_code = models.CharField(max_length=80, db_index=True)
+    sorting_code = models.CharField(max_length=20, db_index=True)
+    unit = models.CharField(max_length=10)
+    amount = models.DecimalField(max_digits=20, decimal_places=4)
+    remarks = models.CharField(max_length=255, blank=True, default="")
+
+    created_at = models.DateTimeField()
+
+    # Foreign-key columns from the source schema, kept as raw ids (their parent
+    # tables live in other apps and aren't modelled here).
+    fiscal_year_bs = models.BigIntegerField(
+        db_column="fiscal_year_bs_id",
+        help_text="FK id -> nepali_datetime_fiscalyear.id (not modelled here)",
+    )
+    item = models.BigIntegerField(
+        db_column="item_id",
+        help_text="FK id -> fundamentals_accountdictionary.id (not modelled here)",
+    )
+
+    class Meta:
+        db_table = "fundamentals_financialstatdbs"
+        managed = False  # owned by the `fundamentals` app; never migrate it here
+        ordering = ["ticker", "fiscal_year_ad", "quarter", "sorting_code"]
+        # Mirrors the source table's natural key (financialstatdbs_unique_row).
+        unique_together = (
+            ("sector", "fiscal_year_ad", "quarter", "data_source", "ticker", "fs_type", "item_code"),
+        )
+
+    def __str__(self):
+        return f"{self.ticker} {self.fiscal_year_ad} Q{self.quarter} {self.fs_type} {self.item_code}"
+
+
+class Portfolio(models.Model):
+    """
+    Table: portfolio_portfolio
+    A logged-in user's private holdings portfolio — typically imported from a
+    Meroshare "My Shares" CSV. One user may keep several named portfolios. Risk /
+    valuation analytics are derived on the fly from the linked NEPSE EOD prices,
+    so only the positions live here.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="portfolios"
+    )
+    name = models.CharField(max_length=120, default="My Portfolio")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "portfolio_portfolio"
+        ordering = ["-updated_at"]
+        unique_together = (("user", "name"),)
+
+    def __str__(self):
+        return f"{self.name} (user {self.user_id})"
+
+
+class Holding(models.Model):
+    """
+    Table: portfolio_holding
+    One scrip position inside a portfolio. ``quantity`` is the demat balance; the
+    two price columns are the *snapshot* the CSV was exported with (kept for
+    reference only). Live valuation always re-prices against the latest
+    ``NepseDailyStockPrice`` close so every holding is marked to the same session.
+    """
+    portfolio = models.ForeignKey(
+        Portfolio, on_delete=models.CASCADE, related_name="holdings"
+    )
+    symbol = models.CharField(max_length=20, db_index=True)
+    quantity = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    # Import-time snapshot prices (informational; not used for live valuation).
+    last_close = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    ltp = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "portfolio_holding"
+        ordering = ["symbol"]
+        unique_together = (("portfolio", "symbol"),)
+
+    def __str__(self):
+        return f"{self.symbol} x{self.quantity}"

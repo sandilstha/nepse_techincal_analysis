@@ -1,4 +1,12 @@
+from django.contrib.auth import views as auth_views
 from django.urls import path
+from .portfolio_views import (
+    register_view,
+    portfolio_view,
+    portfolio_data_api,
+    portfolio_import,
+    portfolio_clear,
+)
 from .views import (
     crud_dashboard_view,
     dashboard_tab_calc,
@@ -50,6 +58,17 @@ urlpatterns = [
     path('chart/indicators', indicator_catalog, name='indicator_catalog'),
     path('chart/indicator', indicator_data, name='indicator_data'),
     path('chart/<str:symbol>/', technical_analysis_view, name='technical_analysis_symbol'),
+
+    # Auth (user-facing; the workbench keeps its separate admin/staff login).
+    path('accounts/login/', auth_views.LoginView.as_view(next_page='portfolio'), name='login'),
+    path('accounts/logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path('accounts/register/', register_view, name='register'),
+
+    # Risk & Portfolio Desk — private, per-user holdings + risk analytics.
+    path('portfolio/', portfolio_view, name='portfolio'),
+    path('portfolio/api/data/', portfolio_data_api, name='portfolio_data_api'),
+    path('portfolio/import/', portfolio_import, name='portfolio_import'),
+    path('portfolio/clear/', portfolio_clear, name='portfolio_clear'),
 
     # Floor sheet — Dalal Street X broker analytics (built on the floorsheet feed).
     path('floorsheet/', floorsheet_view, name='floorsheet'),

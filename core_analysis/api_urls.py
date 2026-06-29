@@ -11,6 +11,7 @@ from rest_framework.routers import DefaultRouter
 
 from core_analysis.api_views import (
     CompanyProfileViewSet,
+    FinancialStatementViewSet,
     NepseDailyStockPriceViewSet,
     NepseFloorsheetViewSet,
     NepseMarketIndexViewSet,
@@ -23,5 +24,6 @@ router.register("price-adjustments", StockPriceAdjustmentViewSet, basename="pric
 router.register("daily-prices", NepseDailyStockPriceViewSet, basename="daily-price")
 router.register("indices", NepseMarketIndexViewSet, basename="index")
 router.register("floorsheet", NepseFloorsheetViewSet, basename="floorsheet")
+router.register("financials", FinancialStatementViewSet, basename="financial")
 
 urlpatterns = router.urls

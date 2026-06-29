@@ -12,6 +12,7 @@ from rest_framework import serializers
 
 from core_analysis.models import (
     CompanyProfile,
+    FinancialStatement,
     NepseDailyStockPrice,
     NepseFloorsheet,
     NepseMarketIndex,
@@ -92,6 +93,34 @@ class NepseFloorsheetSerializer(serializers.ModelSerializer):
             "rate",
             "amount",
             "trade_time",
+        ]
+
+
+class FinancialStatementSerializer(serializers.ModelSerializer):
+    # The two FK columns are stored as raw ids (their parent tables aren't
+    # modelled here); expose them under their *_id names so the row reads flat.
+    fiscal_year_bs_id = serializers.IntegerField(source="fiscal_year_bs", read_only=True)
+    item_id = serializers.IntegerField(source="item", read_only=True)
+
+    class Meta:
+        model = FinancialStatement
+        fields = [
+            "id",
+            "ticker",
+            "sector",
+            "fiscal_year_ad",
+            "quarter",
+            "data_source",
+            "fs_type",
+            "item_name",
+            "item_code",
+            "sorting_code",
+            "unit",
+            "amount",
+            "remarks",
+            "created_at",
+            "fiscal_year_bs_id",
+            "item_id",
         ]
 
 

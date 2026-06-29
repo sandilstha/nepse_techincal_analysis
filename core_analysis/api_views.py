@@ -16,6 +16,8 @@ Routes (wired in api_urls.py under /api/v1/):
     GET /api/v1/indices/                   index rows            (?sector=, ?date_from=, ?date_to=)
     GET /api/v1/floorsheet/                trade-level rows      (?symbol=, ?sector=, ?buyer=, ?seller=, ?date_from=, ?date_to=)
     GET /api/v1/floorsheet/<id>/           one trade
+    GET /api/v1/financials/                financial-stmt rows   (?ticker=, ?fiscal_year=, ?quarter=, ?fs_type=, ?sector=, ?data_source=, ?item_code=, ?search=)
+    GET /api/v1/financials/<id>/           one statement line
 """
 from __future__ import annotations
 
@@ -28,6 +30,7 @@ from rest_framework.pagination import PageNumberPagination
 
 from core_analysis.models import (
     CompanyProfile,
+    FinancialStatement,
     NepseDailyStockPrice,
     NepseFloorsheet,
     NepseMarketIndex,
@@ -35,6 +38,7 @@ from core_analysis.models import (
 )
 from core_analysis.serializers import (
     CompanyProfileSerializer,
+    FinancialStatementSerializer,
     NepseDailyStockPriceSerializer,
     NepseFloorsheetSerializer,
     NepseMarketIndexSerializer,
@@ -200,3 +204,52 @@ class NepseFloorsheetViewSet(_DateRangeFilterMixin, viewsets.ReadOnlyModelViewSe
         if seller is not None:
             qs = qs.filter(seller=seller)
         return self.filter_date_range(qs)
+
+
+class FinancialStatementViewSet(viewsets.ReadOnlyModelViewSet):
+    """Company financial-statement line items (fundamentals_financialstatdbs).
+
+    Filters: ?ticker=, ?fiscal_year= (e.g. 2024/25), ?quarter= (0 annual / 1–4),
+    ?fs_type= (BS / PL / CF…), ?sector=, ?data_source=, ?item_code=, plus free-text
+    ?search= over item name / code / ticker.
+
+    This is a large table (~1M rows), so a ?ticker filter — ideally narrowed
+    further by ?fiscal_year / ?fs_type — is strongly recommended; pagination
+    otherwise walks the whole table page by page.
+    """
+
+    serializer_class = FinancialStatementSerializer
+    pagination_class = StandardPagination
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ["item_name", "item_code", "ticker"]
+    ordering_fields = [
+        "ticker", "fiscal_year_ad", "quarter", "sorting_code", "fs_type", "amount", "created_at",
+    ]
+    ordering = ["ticker", "fiscal_year_ad", "quarter", "sorting_code"]
+
+    def get_queryset(self):
+        qs = FinancialStatement.objects.all()
+        params = self.request.query_params
+        ticker = (params.get("ticker") or "").strip().upper()
+        sector = (params.get("sector") or "").strip()
+        # Accept either the friendly ?fiscal_year= or the raw column name.
+        fiscal_year = (params.get("fiscal_year") or params.get("fiscal_year_ad") or "").strip()
+        fs_type = (params.get("fs_type") or "").strip()
+        data_source = (params.get("data_source") or "").strip()
+        item_code = (params.get("item_code") or "").strip()
+        quarter = _parse_int(params.get("quarter"), "quarter")
+        if ticker:
+            qs = qs.filter(ticker=ticker)
+        if sector:
+            qs = qs.filter(sector__iexact=sector)
+        if fiscal_year:
+            qs = qs.filter(fiscal_year_ad=fiscal_year)
+        if fs_type:
+            qs = qs.filter(fs_type__iexact=fs_type)
+        if data_source:
+            qs = qs.filter(data_source__iexact=data_source)
+        if item_code:
+            qs = qs.filter(item_code=item_code)
+        if quarter is not None:
+            qs = qs.filter(quarter=quarter)
+        return qs
