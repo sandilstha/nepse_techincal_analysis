@@ -95,6 +95,90 @@
 
     .fa-status { padding: 40px 12px; text-align: center; opacity: .7; }
     .fa-hidden { display: none; }
+
+    /* ── Sub-tabs (Financial Statement / Morningstar) ──────────────────── */
+    .fa-subtabs {
+      display: flex; gap: 4px; flex-wrap: wrap;
+      margin: 2px 0 20px; border-bottom: 1px solid var(--line, rgba(128,128,128,.25));
+    }
+    .fa-subtab {
+      border: 0; background: transparent; color: inherit; cursor: pointer; font: inherit;
+      font-weight: 700; font-size: 14px; letter-spacing: .01em;
+      padding: 10px 18px; margin-bottom: -1px; opacity: .58;
+      border-bottom: 2px solid transparent;
+    }
+    .fa-subtab:hover { opacity: .85; }
+    .fa-subtab.active { opacity: 1; color: var(--accent, #4a90e2); border-bottom-color: var(--accent, #4a90e2); }
+
+    /* ── Morningstar-style research ────────────────────────────────────── */
+    .ms-summary {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 18px;
+      background: var(--surface, rgba(128,128,128,.07));
+      border: 1px solid var(--line, rgba(128,128,128,.22));
+      border-radius: 14px; padding: 16px 18px; margin-bottom: 24px;
+    }
+    .ms-rating { display: flex; flex-direction: column; gap: 2px; min-width: 150px; }
+    .ms-stars { color: #f5a623; font-size: 24px; letter-spacing: 3px; line-height: 1; }
+    .ms-stars .off { opacity: .25; }
+    .ms-verdict { font-size: 13px; font-weight: 700; }
+    .ms-verdict-sub { font-size: 12px; opacity: .65; }
+    .ms-summary-stats { display: flex; flex-wrap: wrap; gap: 18px; margin-left: auto; }
+    .ms-summary-stats .ms-s { display: flex; flex-direction: column; }
+    .ms-summary-stats .ms-s b { font-size: 18px; font-variant-numeric: tabular-nums; }
+    .ms-summary-stats .ms-s span { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; }
+
+    .ms-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px; margin-bottom: 24px;
+    }
+    .ms-metric {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      background: var(--surface, rgba(128,128,128,.06));
+      border: 1px solid var(--line, rgba(128,128,128,.22));
+      border-radius: 12px; padding: 11px 14px;
+    }
+    .ms-metric .ms-k { font-size: 12px; opacity: .75; }
+    .ms-metric .ms-rhs { display: flex; align-items: center; gap: 10px; }
+    .ms-metric .ms-v { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .ms-grade {
+      font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 999px;
+      min-width: 22px; text-align: center;
+    }
+    .grade-A { background: rgba(46,204,113,.18); color: #2ecc71; }
+    .grade-B { background: rgba(46,204,113,.14); color: #59c785; }
+    .grade-C { background: rgba(245,166,35,.18); color: #f5a623; }
+    .grade-D { background: rgba(226,85,99,.16); color: #e2807a; }
+    .grade-F { background: rgba(226,85,99,.20); color: #e25563; }
+    .ms-note { font-size: 12px; opacity: .55; margin-top: 6px; line-height: 1.5; }
+
+    /* Fair value estimate (Morningstar Equity Research style). */
+    .ms-fv {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 22px;
+      background: var(--surface, rgba(128,128,128,.06));
+      border: 1px solid var(--line, rgba(128,128,128,.22));
+      border-radius: 14px; padding: 16px 18px; margin-bottom: 24px;
+    }
+    .ms-fv .ms-fv-cell { display: flex; flex-direction: column; gap: 2px; }
+    .ms-fv .ms-fv-cell b { font-size: 19px; font-variant-numeric: tabular-nums; }
+    .ms-fv .ms-fv-cell span { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; }
+    .ms-verdict-pill {
+      font-size: 13px; font-weight: 800; padding: 5px 14px; border-radius: 999px; margin-left: auto;
+    }
+    .verdict-under { background: rgba(46,204,113,.18); color: #2ecc71; }
+    .verdict-fair { background: rgba(245,166,35,.18); color: #f5a623; }
+    .verdict-over { background: rgba(226,85,99,.18); color: #e25563; }
+
+    /* Sector percentile ranks ("% Rank in Category"). */
+    .ms-rank { margin-bottom: 12px; }
+    .ms-rank-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; }
+    .ms-rank-head .ms-rank-val { font-variant-numeric: tabular-nums; font-weight: 700; }
+    .ms-rank-head .ms-rank-pct { font-size: 12px; opacity: .7; }
+    .ms-rank-bar {
+      position: relative; height: 9px; border-radius: 999px; margin-top: 6px;
+      background: rgba(128,128,128,.18); overflow: hidden;
+    }
+    .ms-rank-bar > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--accent, #4a90e2); }
+    .ms-rank-sub { font-size: 11px; opacity: .55; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -114,6 +198,7 @@
 
     <span class="fa-spacer"></span>
 
+    <button type="button" id="mi-theme-btn" class="fa-btn ghost" title="Switch theme" aria-label="Switch theme">Light</button>
     <a href="{% url 'technical_analysis' %}" class="fa-btn ghost" title="Technical Analysis">📈 Technical</a>
     <a href="{% url 'market_insights' %}" class="fa-icon-btn" title="Home" aria-label="Home">🏠</a>
   </header>
@@ -131,25 +216,59 @@
         <span class="fa-period" id="fa-periodlabel"></span>
       </div>
 
-      <div class="fa-cards" id="fa-cards"></div>
-
-      <div id="fa-trend-section">
-        <div class="fa-section-title">Multi-year trend (annual)</div>
-        <div class="fa-trend" id="fa-trend"></div>
+      <div class="fa-subtabs" id="fa-subtabs" role="tablist">
+        <button type="button" class="fa-subtab active" data-subtab="statement" role="tab" aria-selected="true">Financial Statement</button>
+        <button type="button" class="fa-subtab" data-subtab="morningstar" role="tab" aria-selected="false">Morningstar</button>
       </div>
 
-      <div class="fa-section-title">Financial statements</div>
-      <div class="fa-tabs" id="fa-tabs"></div>
-      <div class="fa-table-wrap">
-        <table class="fa-table">
-          <thead><tr><th>Line item</th><th style="text-align:right">Amount</th></tr></thead>
-          <tbody id="fa-stmt-body"></tbody>
-        </table>
-      </div>
+      <section id="fa-panel-statement" class="fa-subpanel" role="tabpanel">
+        <div class="fa-cards" id="fa-cards"></div>
+
+        <div id="fa-trend-section">
+          <div class="fa-section-title">Multi-year trend (annual)</div>
+          <div class="fa-trend" id="fa-trend"></div>
+        </div>
+
+        <div class="fa-section-title">Financial statements</div>
+        <div class="fa-tabs" id="fa-tabs"></div>
+        <div class="fa-table-wrap">
+          <table class="fa-table">
+            <thead><tr><th>Line item</th><th style="text-align:right">Amount</th></tr></thead>
+            <tbody id="fa-stmt-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="fa-panel-morningstar" class="fa-subpanel fa-hidden" role="tabpanel">
+        <div id="fa-morningstar"></div>
+      </section>
     </div>
   </main>
 </div>
 
+<script>
+  // Theme toggle — shares the "mi-theme" key with the Market Insights dashboard
+  // so the chosen light/dark theme persists across every page.
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem('mi-theme'); } catch (e) {}
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    var btn = document.getElementById('mi-theme-btn');
+    function sync() {
+      if (!btn) return;
+      var light = document.documentElement.getAttribute('data-theme') === 'light';
+      btn.textContent = light ? 'Dark' : 'Light';
+      btn.title = light ? 'Switch to dark theme' : 'Switch to light theme';
+    }
+    sync();
+    if (btn) btn.addEventListener('click', function () {
+      var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('mi-theme', next); } catch (e) {}
+      sync();
+    });
+  })();
+</script>
 <script>
   window.FA_CONFIG = {
     apiUrl: "{% url 'fundamental_data_api' %}",

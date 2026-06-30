@@ -414,7 +414,9 @@ def _build_rrg_index_choices(benchmark_symbol="NEPSE INDEX"):
 
 # ── Symbol autocomplete API (used by the JS search boxes) ────────────────────
 
-@staff_member_required
+# Public: read-only ticker/index name lookup. The public analysis desks
+# (PUBLIC_WORKBENCH_TABS) need this for their search boxes, and it exposes only
+# names already shown on the public Market Insights / chart pages.
 @require_GET
 def symbol_autocomplete_view(request):
     """
@@ -552,11 +554,23 @@ def symbol_autocomplete_view(request):
 
 # ── Main dashboard ────────────────────────────────────────────────────────────
 
-# Workbench tabs open to anonymous visitors: the Strategy Simulator,
-# Technical Analysis (Stage) and RRG Analytics desks. Every other tab — Raw
-# Inventory Manager, the remaining strategy desks, and the default landing —
-# stays behind the staff login, as do all data edit / sync endpoints.
-PUBLIC_WORKBENCH_TABS = {"backtest", "stage_backtest", "rrg_backtest"}
+# Workbench tabs open to anonymous visitors: every read-only analysis desk
+# (the strategy simulators, scoring consoles, support/resistance, and both RRG
+# modes). Only the Raw Inventory Manager (data CRUD) and the default landing
+# stay behind the staff login, as do all data edit / sync endpoints. This is
+# exactly the set of computable desks — see TAB_RESULTS_PARTIALS.
+PUBLIC_WORKBENCH_TABS = {
+    "backtest",            # T3MA Ribbon Simulation Desk
+    "ema_backtest",        # EMA 50/200 Crossover Desk
+    "cci_backtest",        # CCI +100 Long-Only Desk
+    "rsi_backtest",        # RSI/SMA Long-Only Desk
+    "msv_backtest",        # Momentum Scan Desk
+    "imm_backtest",        # IMM Technical Scoring Console
+    "stage_backtest",      # Stage Analysis Desk (Technical Analysis)
+    "support_resistance",  # Support & Resistance
+    "rrg_backtest",        # RRG Analytics — Stocks vs NEPSE
+    "rrg_indices",         # RRG Analytics — Indices vs NEPSE
+}
 
 
 def _staff_or_public_tab(view):

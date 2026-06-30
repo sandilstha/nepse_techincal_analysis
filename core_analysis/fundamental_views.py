@@ -20,6 +20,8 @@ as thousands of rupees, everything else as a plain number).
 from __future__ import annotations
 
 import logging
+import re
+import statistics
 
 from django.db.models import Count
 from django.http import JsonResponse
@@ -33,33 +35,172 @@ logger = logging.getLogger(__name__)
 
 # Statement types present in the source table, in display order, with labels.
 STATEMENT_TYPES = (
-    ("KS", "Key Statistics"),
-    ("IS", "Income Statement"),
     ("BS", "Balance Sheet"),
+    ("IS", "Income Statement"),
+    ("KS", "Key Statistics"),
 )
 
-# Headline ratio cards, by KS item_code, in display order. fmt drives the
+# KS item codes are sector-prefixed (cb_ / hp_ / mfg_ …) but share a stable
+# numeric key after "_ks_": 501=revenue, 505=net income, 507=ROA, 508=ROE,
+# 509=EPS, 510=P/E, 511=book value, 512=market price, 513=DPS, 504=gross margin.
+# Keying on that number (not the full prefixed code) makes every metric below
+# work across all sectors, not just banks.
+_KS_NUM_RE = re.compile(r"_ks_(\d+)")
+
+
+def _ks_num(item_code):
+    """Numeric KS key from a (possibly sector-prefixed) item_code, or None."""
+    m = _KS_NUM_RE.search(item_code or "")
+    return m.group(1) if m else None
+
+
+# Headline ratio cards, by KS numeric code, in display order. fmt drives the
 # client formatter: pct (fraction → %), rs000 (thousands of Rs), num (plain).
 HEADLINE_METRICS = (
-    ("cb_ks_512_market_value_per_share", "Market Price", "num"),
-    ("cb_ks_509_eps_annualized", "EPS (Annualized)", "num"),
-    ("cb_ks_510_reported_pe_annualized", "P/E (Annualized)", "num"),
-    ("cb_ks_511_book_value_per_share", "Book Value / Share", "num"),
-    ("cb_ks_508_return_on_equity_ttm", "ROE (TTM)", "pct"),
-    ("cb_ks_507_return_on_asset_ttm", "ROA (TTM)", "pct"),
-    ("cb_ks_513_dividend_per_share_rs", "Dividend / Share", "num"),
-    ("cb_ks_505_net_income_rs_000", "Net Income", "rs000"),
-    ("cb_ks_501_total_revenue_rs_000", "Total Revenue", "rs000"),
-    ("cb_ks_504_margin_mrq_percent", "Gross Margin (MRQ)", "pct"),
+    ("512", "Market Price", "num"),
+    ("509", "EPS (Annualized)", "num"),
+    ("510", "P/E (Annualized)", "num"),
+    ("511", "Book Value / Share", "num"),
+    ("508", "ROE (TTM)", "pct"),
+    ("507", "ROA (TTM)", "pct"),
+    ("513", "Dividend / Share", "num"),
+    ("505", "Net Income", "rs000"),
+    ("501", "Total Revenue", "rs000"),
+    ("504", "Gross Margin (MRQ)", "pct"),
 )
 
 # Marquee metrics charted across fiscal years (annual = Q4 rows).
 TREND_METRICS = (
-    ("cb_ks_501_total_revenue_rs_000", "Total Revenue", "rs000"),
-    ("cb_ks_505_net_income_rs_000", "Net Income", "rs000"),
-    ("cb_ks_509_eps_annualized", "EPS", "num"),
-    ("cb_ks_508_return_on_equity_ttm", "ROE", "pct"),
+    ("501", "Total Revenue", "rs000"),
+    ("505", "Net Income", "rs000"),
+    ("509", "EPS", "num"),
+    ("508", "ROE", "pct"),
 )
+
+
+# ── Morningstar tab: sector-peer ranking + fair-value estimate ──────────────
+# Mirrors two Morningstar concepts: "% Rank in Category" (relative standing vs a
+# peer group) and the Equity Research "Fair Value Estimate" / Price-to-Fair-Value.
+# Everything is computed from the same KS line items, scoped to one fiscal period.
+
+# (key, label, fmt, higher_is_better) for each ranked metric.
+MS_METRICS = (
+    ("pe", "Price / Earnings", "num", False),
+    ("pb", "Price / Book", "num", False),
+    ("div_yield", "Dividend Yield", "pct", True),
+    ("roe", "Return on Equity", "pct", True),
+    ("roa", "Return on Assets", "pct", True),
+    ("net_margin", "Net Margin", "pct", True),
+)
+
+
+def _ms_derive(d):
+    """Derive the comparable metrics for one ticker from its KS amounts.
+
+    ``d`` is keyed by numeric KS code (see _ks_num), so this is sector-agnostic.
+    """
+    pe = d.get("510")
+    price = d.get("512")
+    bvps = d.get("511")
+    dps = d.get("513")
+    revenue = d.get("501")
+    net_income = d.get("505")
+    return {
+        "pe": pe if (pe and pe > 0) else None,
+        "pb": (price / bvps) if (price is not None and bvps and bvps > 0) else None,
+        "div_yield": (dps / price) if (dps is not None and price and price > 0) else None,
+        "roe": d.get("508"),
+        "roa": d.get("507"),
+        "net_margin": (net_income / revenue) if (net_income is not None and revenue and revenue > 0) else None,
+    }
+
+
+def _percentile(series, value, higher_better):
+    """Percentile (0–100) of ``value`` within ``series`` — always 'better than N%
+    of the sector', so a cheap P/E and a high ROE both score high."""
+    clean = [v for v in series if v is not None]
+    if value is None or len(clean) < 3:
+        return None
+    if higher_better:
+        beaten = sum(1 for v in clean if value >= v)
+    else:
+        beaten = sum(1 for v in clean if value <= v)
+    return round(100 * beaten / len(clean))
+
+
+def _morningstar_block(sector, fy, quarter, sym):
+    """Sector-peer percentile ranks + a fair-value estimate for one company.
+
+    Returns None when there aren't at least three sector peers in the period —
+    a rank against one or two names would be meaningless.
+    """
+    if not sector:
+        return None
+
+    rows = FinancialStatement.objects.filter(
+        sector=sector, fiscal_year_ad=fy, quarter=quarter, fs_type="KS",
+    ).values("ticker", "item_code", "amount")
+
+    by_ticker = {}
+    for r in rows:
+        num = _ks_num(r["item_code"])
+        if not num:
+            continue
+        amt = float(r["amount"]) if r["amount"] is not None else None
+        by_ticker.setdefault(r["ticker"], {})[num] = amt
+    if len(by_ticker) < 3 or sym not in by_ticker:
+        return None
+
+    derived = {t: _ms_derive(d) for t, d in by_ticker.items()}
+    self_d = derived[sym]
+
+    ranks = []
+    for key, label, fmt, higher_better in MS_METRICS:
+        value = self_d.get(key)
+        if value is None:
+            continue
+        series = [d.get(key) for d in derived.values()]
+        clean = [v for v in series if v is not None]
+        ranks.append({
+            "label": label,
+            "fmt": fmt,
+            "value": value,
+            "percentile": _percentile(series, value, higher_better),
+            "median": statistics.median(clean) if clean else None,
+            "higher_better": higher_better,
+        })
+
+    # Fair value: the sector's median P/E applied to the company's own EPS.
+    pes = [d["pe"] for d in derived.values() if d.get("pe")]
+    eps = by_ticker[sym].get("509")
+    price = by_ticker[sym].get("512")
+    fair_value = None
+    if pes and eps and eps > 0:
+        sector_pe = statistics.median(pes)
+        estimate = sector_pe * eps
+        ratio = (price / estimate) if (price and estimate) else None
+        if ratio is None:
+            verdict = "—"
+        elif ratio < 0.85:
+            verdict = "Undervalued"
+        elif ratio <= 1.15:
+            verdict = "Fairly valued"
+        else:
+            verdict = "Overvalued"
+        fair_value = {
+            "estimate": estimate,
+            "price": price,
+            "ratio": ratio,
+            "verdict": verdict,
+            "sector_pe": sector_pe,
+        }
+
+    return {
+        "sector": sector,
+        "peer_count": len(by_ticker),
+        "ranks": ranks,
+        "fair_value": fair_value,
+    }
 
 
 def _fmt_for(unit: str) -> str:
@@ -73,21 +214,19 @@ def _fmt_for(unit: str) -> str:
 
 
 def _fundamental_tickers():
-    """Distinct tickers that actually have fundamentals, with company names."""
-    tickers = list(
-        FinancialStatement.objects.order_by()
-        .values_list("ticker", flat=True)
-        .distinct()
+    """Active companies that have fundamentals, with names — for the search box.
+
+    Restricted to CompanyProfile.status == Active so the picker never offers
+    delisted / suspended scrips (the API still serves any ticker typed in by
+    hand). Tickers with fundamentals but no active profile are omitted.
+    """
+    fund_tickers = set(
+        FinancialStatement.objects.order_by().values_list("ticker", flat=True).distinct()
     )
-    names = dict(
-        CompanyProfile.objects.filter(symbol__in=tickers).values_list(
-            "symbol", "security_name"
-        )
-    )
-    return [
-        {"symbol": t, "name": names.get(t, "")}
-        for t in sorted(tickers)
-    ]
+    active = CompanyProfile.objects.filter(
+        status__iexact="Active", symbol__in=fund_tickers
+    ).values_list("symbol", "security_name")
+    return [{"symbol": s, "name": n or ""} for s, n in sorted(active)]
 
 
 @require_GET
@@ -186,31 +325,39 @@ def fundamental_data_api(request):
         rows_by_type[code] = {r["code"]: r["amount"] for r in rows}
         statements.append({"type": code, "label": label, "rows": rows})
 
-    ks_amounts = rows_by_type.get("KS", {})
+    # Index the selected period's KS rows by their numeric code (sector-agnostic).
+    ks_rows = next((s["rows"] for s in statements if s["type"] == "KS"), [])
+    ks_by_num = {}
+    for r in ks_rows:
+        num = _ks_num(r["code"])
+        if num and num not in ks_by_num:
+            ks_by_num[num] = r["amount"]
     headline = [
         {
             "label": label,
-            "value": ks_amounts.get(item_code),
+            "value": ks_by_num.get(num),
             "fmt": fmt,
         }
-        for item_code, label, fmt in HEADLINE_METRICS
-        if ks_amounts.get(item_code) is not None
+        for num, label, fmt in HEADLINE_METRICS
+        if ks_by_num.get(num) is not None
     ]
 
     # Multi-year trend: annual (Q4) KS rows for the marquee metrics.
     annual_qs = base.filter(fs_type="KS", quarter=4).order_by("fiscal_year_ad")
     trend_index = {}
     for r in annual_qs.values("fiscal_year_ad", "item_code", "amount"):
-        trend_index.setdefault(r["fiscal_year_ad"], {})[r["item_code"]] = (
-            float(r["amount"]) if r["amount"] is not None else None
-        )
+        num = _ks_num(r["item_code"])
+        if not num:
+            continue
+        amt = float(r["amount"]) if r["amount"] is not None else None
+        trend_index.setdefault(r["fiscal_year_ad"], {})[num] = amt
     trend_years = sorted(trend_index.keys())
     trend = []
-    for item_code, label, fmt in TREND_METRICS:
+    for num, label, fmt in TREND_METRICS:
         points = [
-            {"fy": fy, "value": trend_index[fy].get(item_code)}
+            {"fy": fy, "value": trend_index[fy].get(num)}
             for fy in trend_years
-            if trend_index[fy].get(item_code) is not None
+            if trend_index[fy].get(num) is not None
         ]
         if points:
             trend.append({"label": label, "fmt": fmt, "points": points})
@@ -220,6 +367,16 @@ def fundamental_data_api(request):
         .values("symbol", "security_name", "sector_name")
         .first()
     )
+
+    # Morningstar tab: rank against sector peers for the selected period. The
+    # peer group is keyed on the source table's own sector label (not the
+    # CompanyProfile one) so it matches the rows being compared.
+    sector = period_qs.values_list("sector", flat=True).first()
+    try:
+        morningstar = _morningstar_block(sector, selected["fy"], selected["quarter"], sym)
+    except Exception:  # pragma: no cover - defensive: never 500 the desk
+        logger.exception("Morningstar peer block failed for %s", sym)
+        morningstar = None
 
     return JsonResponse(
         {
@@ -232,5 +389,6 @@ def fundamental_data_api(request):
             "headline": headline,
             "statements": statements,
             "trend": trend,
+            "morningstar": morningstar,
         }
     )

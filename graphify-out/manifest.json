@@ -275,8 +275,8 @@
     "semantic_hash": ""
   },
   "core_analysis/views.py": {
-    "mtime": 1782728922.365826,
-    "ast_hash": "13ecc80839c0755706e22cb3c290146d",
+    "mtime": 1782791140.9949415,
+    "ast_hash": "75ecb0dbb5f0491f423687ae541ad306",
     "semantic_hash": ""
   },
   "manage.py": {
@@ -385,13 +385,13 @@
     "semantic_hash": ""
   },
   "core_analysis/fundamental_views.py": {
-    "mtime": 1782727823.0013356,
-    "ast_hash": "3ce77ad80192ead726c7315db0f7b367",
+    "mtime": 1782732855.0077343,
+    "ast_hash": "71f14cf16b8cd6d7d0ab1e61851bbcc6",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/fundamentals.js": {
-    "mtime": 1782727927.723953,
-    "ast_hash": "d6a4126ce71bfe768f19a7f793e5425b",
+    "mtime": 1782731798.033976,
+    "ast_hash": "4b1349e5329899c830b5c3a254d3cfbc",
     "semantic_hash": ""
   }
 }
