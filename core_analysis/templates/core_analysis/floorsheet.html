@@ -1,0 +1,283 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Floorsheet Analytics Desk</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/floorsheet.css' %}?v={{ asset_version }}">
+</head>
+<body>
+<div class="mi-shell">
+
+  <!-- ── Top bar ──────────────────────────────────────────────────────── -->
+  <header class="mi-topbar">
+    <div class="mi-brand">
+      <span class="mi-logo">FS</span>
+      <div>
+        <h1 class="mi-title">Floorsheet Analytics Desk</h1>
+        <p class="mi-subtitle">Advanced broker flow and trading activity analysis</p>
+      </div>
+    </div>
+    <div class="mi-controls">
+      <span class="fs-updated" id="fs-updated">
+        {% if meta.latest_date %}Last Updated On {{ meta.latest_date }}{% endif %}
+      </span>
+      <a href="{% url 'market_insights' %}" class="mi-icon-btn mi-home-link" title="Home" aria-label="Home">Home</a>
+      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch to light theme" aria-label="Switch to light theme">Light</button>
+      <a href="{% url 'crud_dashboard' %}" class="mi-icon-btn" title="Analytics workbench" aria-label="Analytics workbench">Workbench</a>
+    </div>
+  </header>
+
+  {% include "core_analysis/includes/_primary_nav.html" with active_section='floorsheet' %}
+
+  <!-- ── DSX tab bar ──────────────────────────────────────────────────── -->
+  <nav class="dsx-tabs" id="dsx-tabs">
+    <button class="dsx-tab active" data-tab="flowradar">Broker Flow Radar</button>
+    <button class="dsx-tab" data-tab="favorites">Broker Analysis</button>
+    <button class="dsx-tab" data-tab="signals">Signal Desk</button>
+    <button class="dsx-tab" data-tab="stockwise">Script Deep Dive</button>
+    <button class="dsx-tab" data-tab="hotstocks">Market Heatmap</button>
+    <button class="dsx-tab" data-tab="netholding">Net Position Analytics</button>
+    <button class="dsx-tab" data-tab="concentration">Broker Exposure Monitor</button>
+  </nav>
+
+  {% if not meta.ok %}
+  <div class="dsx-banner" id="dsx-banner">Floorsheet feed unavailable — showing no data. It will populate once the feed responds.</div>
+  {% endif %}
+
+  <!-- shared range / view controls (each panel toggles which it shows) -->
+  <section class="dsx-panel" id="panel-favorites">
+    <div class="dsx-controls">
+      <div class="dsx-field">Choose Broker Number(s)
+        <div class="dsx-multi" id="fav-broker-multi">
+          <button type="button" class="dsx-multi-btn" id="fav-broker-btn">Select brokers ▾</button>
+          <div class="dsx-multi-menu" id="fav-broker-menu" hidden>
+            <input type="text" class="dsx-multi-search" id="fav-broker-search" placeholder="Search broker…">
+            <div class="dsx-multi-actions">
+              <button type="button" data-act="all">Select all</button>
+              <button type="button" data-act="clear">Clear</button>
+            </div>
+            <div class="dsx-multi-list" id="fav-broker-list"></div>
+          </div>
+        </div>
+      </div>
+      {% include "core_analysis/includes/_date_range.html" with prefix="fav" %}
+      <button type="button" id="fav-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+
+    <!-- KPI strip: the desk's stance at a glance (derived from favorites/) -->
+    <div class="dsx-kpis" id="fav-kpis"></div>
+
+    <div class="dsx-grid-2">
+      <div class="dsx-card">
+        <div class="dsx-card-head buy">BROKER TOP BUY</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="fav-buy"></table></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head sell">BROKER TOP SELL</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="fav-sell"></table></div>
+      </div>
+    </div>
+
+    <!-- Persistent Accumulation / Distribution: multi-session net per stock with
+         conviction streak + all-broker concentration (HHI). Broker-tagged data
+         (NEPSE floorsheet) makes the streak computable; HHI reads supply control. -->
+    <div class="dsx-card dsx-ad-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span>PERSISTENT ACCUMULATION / DISTRIBUTION</span>
+        <span class="dsx-ad-sub" id="fav-ad-sub"></span>
+      </div>
+      <div class="dsx-ad-filter">
+        <label for="fav-persist-sector">Sector</label>
+        <select id="fav-persist-sector" class="dsx-mini-select dsx-sector"></select>
+        <div class="dsx-seg" data-group="fav-persist-side">
+          <button type="button" class="dsx-pill active" data-val="all">All</button>
+          <button type="button" class="dsx-pill" data-val="buy">Accumulating</button>
+          <button type="button" class="dsx-pill" data-val="sell">Distributing</button>
+        </div>
+      </div>
+      <div class="dsx-ad-cols" id="fav-ad-cols">
+        <span class="sortable" data-sort="symbol" data-type="str">Ticker</span>
+        <span class="sortable" data-sort="streak" data-type="num">Streak</span>
+        <span class="dsx-ad-cols-bar sortable" data-sort="cum_net" data-type="num">Distribution ◂ Net flow ▸ Accumulation</span>
+        <span class="r sortable" data-sort="cum_net" data-type="num">Net Qty</span>
+        <span class="r sortable" data-sort="hhi" data-type="num" title="Herfindahl concentration of all-broker trading (0 fragmented · 10000 single broker)">Conc. (HHI)</span>
+      </div>
+      <div class="dsx-ad" id="fav-ad"></div>
+    </div>
+  </section>
+
+  <!-- Broker Flow Radar: market-wide broker activity ranking -->
+  <section class="dsx-panel active" id="panel-flowradar">
+    <div class="dsx-controls">
+      {% include "core_analysis/includes/_date_range.html" with prefix="flow" %}
+      <button type="button" id="flow-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-flow-head">
+        <span>Broker Flow Radar</span>
+        <span>Ranks brokers by gross activity, directional pressure, and two-sided matching flow.</span>
+      </div>
+      <div class="dsx-table-wrap dsx-flow-wrap">
+        <table class="dsx-table dsx-flow-table" id="flow-table"></table>
+      </div>
+    </div>
+  </section>
+
+  <section class="dsx-panel" id="panel-signals">
+    <div class="dsx-controls">
+      <div class="dsx-field">Choose Broker Number(s)
+        <div class="dsx-multi" id="sig-broker-multi">
+          <button type="button" class="dsx-multi-btn" id="sig-broker-btn">Select brokers ▾</button>
+          <div class="dsx-multi-menu" id="sig-broker-menu" hidden>
+            <input type="text" class="dsx-multi-search" id="sig-broker-search" placeholder="Search broker…">
+            <div class="dsx-multi-actions">
+              <button type="button" data-act="all">Select all</button>
+              <button type="button" data-act="clear">Clear</button>
+            </div>
+            <div class="dsx-multi-list" id="sig-broker-list"></div>
+          </div>
+        </div>
+      </div>
+      {% include "core_analysis/includes/_date_range.html" with prefix="sig" %}
+      <button type="button" id="sig-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+    <div class="dsx-grid-2 dsx-signals">
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral">PRICE–FLOW DIVERGENCE · DESK</div>
+        <div class="dsx-sig" id="sig-div"></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral">SECTOR ROTATION · DESK NET</div>
+        <div class="dsx-sig" id="sig-sec"></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral">BUYER / SELLER BREADTH · ALL BROKERS</div>
+        <div class="dsx-sig" id="sig-breadth"></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral">TWO-SIDED ACTIVITY · DESK</div>
+        <div class="dsx-sig" id="sig-two"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dsx-panel" id="panel-stockwise">
+    <div class="dsx-controls">
+      <label class="dsx-field">Choose Ticker
+        <select id="sw-symbol" class="dsx-select"></select>
+      </label>
+      {% include "core_analysis/includes/_date_range.html" with prefix="sw" %}
+      <button type="button" id="sw-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+    <div class="dsx-grid-3">
+      <div class="dsx-card">
+        <div class="dsx-card-head buy">BROKER TOP BUY</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="sw-buy"></table></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head sell">BROKER TOP SELL</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="sw-sell"></table></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head hold">BROKER TOP HOLDINGS</div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="sw-hold"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dsx-panel" id="panel-hotstocks">
+    <div class="dsx-controls">
+      {% include "core_analysis/includes/_date_range.html" with prefix="hot" %}
+      <label class="dsx-field">Choose Sector
+        <select id="hot-sector" class="dsx-select dsx-sector"></select>
+      </label>
+      <button type="button" id="hot-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral">HOT STOCKS — MOST ACTIVE</div>
+      <div class="dsx-table-wrap"><table class="dsx-table" id="hot-table"></table></div>
+    </div>
+  </section>
+
+  <section class="dsx-panel" id="panel-netholding">
+    <div class="dsx-controls">
+      <div class="dsx-field">Net Holding For Broker(s)
+        <div class="dsx-multi" id="nh-broker-multi">
+          <button type="button" class="dsx-multi-btn" id="nh-broker-btn">Select brokers ▾</button>
+          <div class="dsx-multi-menu" id="nh-broker-menu" hidden>
+            <input type="text" class="dsx-multi-search" id="nh-broker-search" placeholder="Search broker…">
+            <div class="dsx-multi-actions">
+              <button type="button" data-act="all">Select all</button>
+              <button type="button" data-act="clear">Clear</button>
+            </div>
+            <div class="dsx-multi-list" id="nh-broker-list"></div>
+          </div>
+        </div>
+      </div>
+      {% include "core_analysis/includes/_date_range.html" with prefix="nh" %}
+      <label class="dsx-check"><input type="checkbox" id="nh-exclude-mf"> Exclude Mutual Funds</label>
+      <label class="dsx-field">Choose Sector
+        <select id="nh-sector" class="dsx-select dsx-sector"></select>
+      </label>
+      <button type="button" id="nh-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+    <div class="dsx-legend">
+      <span><i class="dot buy"></i> Net Buy</span>
+      <span><i class="dot sell"></i> Net Sell</span>
+    </div>
+    <div class="dsx-treemap" id="nh-treemap"></div>
+  </section>
+
+  <section class="dsx-panel" id="panel-concentration">
+    <div class="dsx-controls">
+      <span class="dsx-blurb">Broker activity concentration in each stock based on % of total transactions</span>
+      {% include "core_analysis/includes/_date_range.html" with prefix="conc" %}
+      <label class="dsx-field">Choose Sector
+        <select id="conc-sector" class="dsx-select dsx-sector"></select>
+      </label>
+      <button type="button" id="conc-analyze" class="dsx-analyze">Analyze</button>
+    </div>
+    <div class="dsx-card">
+      <div class="dsx-table-wrap"><table class="dsx-table dsx-conc" id="conc-table"></table></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  // Theme toggle — shares the "mi-theme" key with the Market Insights dashboard.
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem('mi-theme'); } catch (e) {}
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    var btn = document.getElementById('mi-theme-btn');
+    function syncThemeButton() {
+      if (!btn) return;
+      var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      btn.textContent = isLight ? 'Dark' : 'Light';
+      btn.title = isLight ? 'Switch to dark theme' : 'Switch to light theme';
+      btn.setAttribute('aria-label', btn.title);
+    }
+    syncThemeButton();
+    if (btn) btn.addEventListener('click', function () {
+      var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('mi-theme', next); } catch (e) {}
+      syncThemeButton();
+    });
+  })();
+</script>
+{{ meta|json_script:"dsx-meta-json" }}
+<script>
+  try { window.DSX_BOOTSTRAP = JSON.parse(document.getElementById('dsx-meta-json').textContent); }
+  catch (e) { window.DSX_BOOTSTRAP = null; }
+</script>
+<script src="{% static 'core_analysis/js/floorsheet-brokers.js' %}?v={{ asset_version }}"></script>
+</body>
+</html>

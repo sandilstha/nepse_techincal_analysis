@@ -1,0 +1,174 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Risk &amp; Portfolio Desk</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/portfolio.css' %}?v={{ asset_version }}">
+</head>
+<body>
+<div class="mi-shell">
+
+  <header class="mi-topbar">
+    <div class="mi-brand">
+      <span class="mi-logo">RP</span>
+      <div>
+        <h1 class="mi-title">Risk &amp; Portfolio Desk</h1>
+        <p class="mi-subtitle">Your private holdings — valuation, exposure &amp; risk</p>
+      </div>
+    </div>
+    <div class="mi-controls">
+      <span class="pf-user">{{ request.user.username }}</span>
+      <a href="{% url 'market_insights' %}" class="mi-icon-btn" title="Home">Home</a>
+      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch theme">Light</button>
+      <form method="post" action="{% url 'logout' %}" class="pf-logout">
+        {% csrf_token %}
+        <button type="submit" class="mi-icon-btn" title="Sign out">Sign out</button>
+      </form>
+    </div>
+  </header>
+
+  {% include "core_analysis/includes/_primary_nav.html" with active_section='portfolio' %}
+
+  {% if messages %}
+  <div class="pf-flash">
+    {% for message in messages %}
+    <div class="pf-flash-item {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if not has_holdings %}
+  <!-- ── First-time import (full explainer) ───────────────────────────── -->
+  <section class="pf-import-card">
+    <div class="pf-import-text">
+      <h2>Import holdings</h2>
+      <p>Upload your Meroshare <b>“My Shares”</b> CSV (Scrip · Current Balance · Last Closing Price · LTP).
+         Holdings are re-priced live against the latest NEPSE close.</p>
+    </div>
+    <form class="pf-import-form" method="post" action="{% url 'portfolio_import' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="file" name="file" accept=".csv,text/csv" id="pf-file" required>
+      <button type="submit" class="pf-btn pf-btn-primary">Upload CSV</button>
+    </form>
+  </section>
+  <div class="pf-empty" id="pf-empty">
+    <div class="pf-empty-icon">📂</div>
+    <h3>No holdings yet</h3>
+    <p>Upload your Meroshare CSV above to see your portfolio value, sector exposure, concentration and risk.</p>
+  </div>
+  {% else %}
+
+  <!-- ── Compact toolbar (re-import / delete) ─────────────────────────── -->
+  <section class="pf-toolbar">
+    <div class="pf-toolbar-left">
+      <span class="pf-toolbar-label">My Portfolio</span>
+      <span class="pf-toolbar-asof" id="pf-asof"></span>
+    </div>
+    <div class="pf-toolbar-actions">
+      <form class="pf-toolbar-form" method="post" action="{% url 'portfolio_import' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="file" accept=".csv,text/csv" id="pf-file" required>
+        <button type="submit" class="pf-btn pf-btn-primary">Update Portfolio</button>
+      </form>
+      <!-- Separate form so deleting never trips the import form's required file input. -->
+      <form method="post" action="{% url 'portfolio_clear' %}" class="pf-delete-form">
+        {% csrf_token %}
+        <button type="submit" class="pf-btn pf-btn-danger"
+                onclick="return confirm('Delete your uploaded portfolio? This removes all holdings and cannot be undone.');">
+          Delete portfolio
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ══ Overview ═════════════════════════════════════════════════════ -->
+  <div class="pf-section"><span>Overview</span></div>
+  <div class="pf-kpis" id="pf-kpis"></div>
+
+  <!-- ══ Risk & Allocation ════════════════════════════════════════════ -->
+  <div class="pf-section"><span>Risk &amp; Allocation</span></div>
+
+  <!-- Row 1: Compliance · Value at Risk -->
+  <div class="pf-grid">
+    <div class="pf-card">
+      <div class="pf-card-head pf-compliance-head">
+        <span>Compliance &amp; Risk Limits</span>
+        <span class="pf-compliance-summary" id="pf-compliance-summary"></span>
+      </div>
+      <div class="pf-compliance" id="pf-compliance"></div>
+    </div>
+    <div class="pf-card">
+      <div class="pf-card-head">Value at Risk &amp; Drawdown</div>
+      <div class="pf-var" id="pf-var"></div>
+    </div>
+  </div>
+
+  <!-- Row 2: Stress · Factor decomposition · Liquidity -->
+  <div class="pf-grid-3">
+    <div class="pf-card">
+      <div class="pf-card-head">Stress Scenarios</div>
+      <div class="pf-stress" id="pf-stress"></div>
+    </div>
+    <div class="pf-card">
+      <div class="pf-card-head">Risk Decomposition — Factor Model</div>
+      <div class="pf-factors" id="pf-factors"></div>
+    </div>
+    <div class="pf-card">
+      <div class="pf-card-head">Liquidity Risk — Days to Liquidate</div>
+      <div class="pf-liq" id="pf-liq"></div>
+    </div>
+  </div>
+
+  <!-- Row 3: Sector exposure · Concentration -->
+  <div class="pf-grid">
+    <div class="pf-card">
+      <div class="pf-card-head">Sector Exposure</div>
+      <div class="pf-sectors" id="pf-sectors"></div>
+    </div>
+    <div class="pf-card">
+      <div class="pf-card-head">Concentration &amp; Diversification</div>
+      <div class="pf-conc" id="pf-conc"></div>
+    </div>
+  </div>
+
+  <!-- ══ Holdings ═════════════════════════════════════════════════════ -->
+  <div class="pf-section"><span>Holdings</span></div>
+  <div class="pf-card">
+    <div class="pf-table-wrap">
+      <table class="pf-table" id="pf-table"></table>
+    </div>
+    <div class="pf-note" id="pf-note"></div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem('mi-theme'); } catch (e) {}
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    var btn = document.getElementById('mi-theme-btn');
+    function sync() {
+      if (!btn) return;
+      var light = document.documentElement.getAttribute('data-theme') === 'light';
+      btn.textContent = light ? 'Dark' : 'Light';
+    }
+    sync();
+    if (btn) btn.addEventListener('click', function () {
+      var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('mi-theme', next); } catch (e) {}
+      sync();
+    });
+  })();
+</script>
+<script>window.PF_HAS_HOLDINGS = {% if has_holdings %}true{% else %}false{% endif %};</script>
+<script src="{% static 'core_analysis/js/portfolio.js' %}?v={{ asset_version }}"></script>
+</body>
+</html>

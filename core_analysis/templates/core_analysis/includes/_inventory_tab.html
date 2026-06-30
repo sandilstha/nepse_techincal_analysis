@@ -1,0 +1,130 @@
+    <div class="tab-pane fade {% if active_tab == 'inventory' %}show active{% endif %}" id="inventory-pane" role="tabpanel">
+
+      <!-- Data sync toolbar — scoped to the Raw Inventory Manager tab. -->
+      <div class="d-flex flex-column gap-2 sync-toolbar mb-4">
+          <!-- Row 1: Sync Price Data -->
+          <form method="POST" action="{% url 'trigger_daily_sync' %}" class="d-flex align-items-center gap-2 sync-form">
+            {% csrf_token %}
+            <span class="sync-row-label">Sync Price</span>
+            <input type="text" id="headerSyncFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" autocomplete="off">
+            <span class="sync-sep">→</span>
+            <input type="text" id="headerSyncToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" autocomplete="off">
+            <select name="source" class="form-control form-control-sm sync-scope-input">
+              <option value="both">Stocks + Indices</option>
+              <option value="stocks">Stocks Only</option>
+              <option value="indices">Indices Only</option>
+            </select>
+            <button type="submit" class="btn btn-dark btn-sm sync-btn" data-loading-label="Syncing...">
+              Sync Price Data
+            </button>
+          </form>
+          <!-- Row 2: Sync & Calculate -->
+          <form method="POST" action="{% url 'trigger_sync_and_calculate' %}" class="d-flex align-items-center gap-2 sync-form">
+            {% csrf_token %}
+            <span class="sync-row-label">Sync &amp; Calc</span>
+            <input type="text" id="headerCalcFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" autocomplete="off">
+            <span class="sync-sep">→</span>
+            <input type="text" id="headerCalcToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" autocomplete="off">
+            <button type="submit" class="btn btn-primary btn-sm sync-btn" data-loading-label="Calculating...">
+              Sync &amp; Calculate
+            </button>
+          </form>
+          <!-- Row 3: Sync Floorsheet (trade-level broker feed) -->
+          <form method="POST" action="{% url 'trigger_floorsheet_sync' %}" class="d-flex align-items-center gap-2 sync-form">
+            {% csrf_token %}
+            <span class="sync-row-label">Sync Floorsheet</span>
+            <button type="button" class="btn btn-outline-success btn-sm sync-latest-btn"
+                    data-date-range="latest" data-from-id="headerFloorFromDate" data-to-id="headerFloorToDate"
+                    title="Set both dates to the latest trading day">
+              Latest
+            </button>
+            <input type="text" id="headerFloorFromDate" name="from_date" class="form-control form-control-sm sync-date-input" placeholder="From date" autocomplete="off">
+            <span class="sync-sep">→</span>
+            <input type="text" id="headerFloorToDate" name="to_date" class="form-control form-control-sm sync-date-input" placeholder="To date" autocomplete="off">
+            <button type="submit" class="btn btn-success btn-sm sync-btn" data-loading-label="Syncing...">
+              Sync Floorsheet
+            </button>
+          </form>
+      </div>{# /sync-toolbar #}
+
+      <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
+        <h5 class="mb-3" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">Add New Stock Record Coordinates</h5>
+        <form method="POST" action="{% url 'crud_operations' %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="create">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label text-muted small">Company Ticker</label>
+              <input type="text" name="company" class="form-control form-control-sm text-uppercase" required placeholder="e.g. ADBL">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-muted small">Business Date</label>
+              <input type="text" id="inventoryBusinessDate" name="business_date" class="form-control form-control-sm" required autocomplete="off" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small">External ID</label>
+              <input type="number" name="external_id" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small">Security ID</label>
+              <input type="number" name="security_id" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label text-muted small">Close Price (Adj)</label>
+              <input type="number" step="0.01" name="close_price_adj" class="form-control form-control-sm" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-dark btn-sm mt-3 px-4 rounded-2">Commit Transaction Row</button>
+        </form>
+        <div class="mt-3 small text-muted">
+          <strong>SOP:</strong> Stage 2 Buy Logic = Close &gt; Resistance AND Close &gt; 30W EMA AND Volume Ratio &gt; 1.5.
+        </div>
+      </div>
+
+      <div class="panel-outer">
+        <table class="minimal-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Ticker Symbol</th>
+              <th class="th-num">Close Price (Adjusted)</th>
+              <th>Security Reference ID</th>
+              <th style="width: 240px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in records %}
+            <tr class="inventory-row">
+              <td class="td-date">{{ record.business_date }}</td>
+              <td><span class="td-ticker">{{ record.company_id }}</span></td>
+              <td class="td-num">
+                <form method="POST" action="{% url 'crud_operations' %}" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update">
+                  <input type="hidden" name="record_id" value="{{ record.id }}">
+                  <input type="number" step="0.01" name="close_price_adj" value="{{ record.close_price_adj }}" class="input-close">
+                  <button type="submit" class="btn-action-update ms-1">Update</button>
+                </form>
+              </td>
+              <td class="text-muted">{{ record.security_id }}</td>
+              <td>
+                <form method="POST" action="{% url 'crud_delete' record.id %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-action-del"
+                          onclick="return confirm('Confirm data wipe for {{ record.company_id }} on {{ record.business_date }}?')">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-5">No dataset vectors found in local storage schema.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         TAB 2 — T3MA RIBBON
+    ══════════════════════════════════════════════════════════════════ -->

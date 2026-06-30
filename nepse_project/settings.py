@@ -10,22 +10,124 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def _load_dotenv(path):
+    """Load KEY=VALUE pairs from a .env file into os.environ.
+
+    Uses python-dotenv when available, otherwise a minimal built-in parser so
+    the project works without the dependency. Real environment variables always
+    win — values already set in the environment are never overwritten.
+    """
+    if not path.exists():
+        return
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(path, override=False)
+        return
+    except ImportError:
+        pass
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+# Load .env before any settings read os.environ.
+_load_dotenv(BASE_DIR / ".env")
+
+
+def _env_bool(name, default=False):
+    """Parse a boolean from an environment variable ('1', 'true', 'yes', 'on')."""
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_or_dev_default(name, default):
+    value = os.environ.get(name)
+    if value is not None:
+        return value
+    if DEBUG:
+        return default
+    raise ImproperlyConfigured(f"{name} must be set when DJANGO_DEBUG=0.")
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-rog4sy4xp-#2c!%f%%yf)8j^@qtf*8&_e9ikcb5(td!q*l2ngb'
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Defaults to True for local dev; set DJANGO_DEBUG=0 in production.
+DEBUG = _env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = []
+# SECURITY WARNING: keep the secret key used in production secret!
+# Read from the environment in production. The insecure fallback is dev-only and
+# intentionally refused when DJANGO_DEBUG=0.
+SECRET_KEY = _env_or_dev_default(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-rog4sy4xp-#2c!%f%%yf)8j^@qtf*8&_e9ikcb5(td!q*l2ngb',
+)
+
+# Comma-separated list via DJANGO_ALLOWED_HOSTS in production.
+_allowed_hosts_raw = os.environ.get('DJANGO_ALLOWED_HOSTS')
+if not _allowed_hosts_raw:
+    if DEBUG:
+        _allowed_hosts_raw = '127.0.0.1,localhost,192.168.1.31,nepstockswatch.sandilstha.com.np'
+    else:
+        raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must be set when DJANGO_DEBUG=0.")
+
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in _allowed_hosts_raw.split(',')
+    if host.strip()
+]
+
+# Baseline browser protections that are safe in every environment.
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'same-origin'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+X_FRAME_OPTIONS = 'DENY'
+
+# Comma-separated list via DJANGO_CSRF_TRUSTED_ORIGINS in production.
+# Note: unlike ALLOWED_HOSTS, each origin must include the scheme (https://).
+_csrf_origins_raw = os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS')
+if not _csrf_origins_raw:
+    _csrf_origins_raw = 'https://nepstockswatch.sandilstha.com.np'
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in _csrf_origins_raw.split(',')
+    if origin.strip()
+]
+
+# ── Production security hardening (only enforced when DEBUG is off) ────────────
+# These are no-ops in local development but switch on TLS/cookie protections in
+# production. Front-end must terminate HTTPS for SECURE_SSL_REDIRECT to be safe.
+if not DEBUG:
+    SECURE_SSL_REDIRECT = _env_bool('DJANGO_SECURE_SSL_REDIRECT', True)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition
@@ -43,8 +145,38 @@ INSTALLED_APPS = [
     'core_analysis',
 ]
 
+# Django REST Framework — config for the read-only Data API (core_analysis/api_*).
+# Read-only public market data (consistent with the already-public Insights feed),
+# paginated, throttled, and ordering/search enabled out of the box.
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 100,
+    'DEFAULT_FILTER_BACKENDS': [
+        'rest_framework.filters.OrderingFilter',
+        'rest_framework.filters.SearchFilter',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '120/min',
+        'user': '600/min',
+    },
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise serves static files (with compression + far-future caching)
+    # directly from the app in production. Must sit right after SecurityMiddleware.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -54,6 +186,11 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'nepse_project.urls'
+
+# The operational workbench is protected with Django's staff check and uses the
+# existing admin login rather than requiring a separate auth UI.
+LOGIN_URL = 'admin:login'
+LOGIN_REDIRECT_URL = 'crud_dashboard'
 
 TEMPLATES = [
     {
@@ -76,14 +213,22 @@ WSGI_APPLICATION = 'nepse_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# Credentials are read from the environment so they are never committed to VCS.
+# The fallbacks keep local development working out-of-the-box.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'nepse_database',             # Your schema name from your screenshot
-        'USER': 'root',                      # Your username from your screenshot
-        'PASSWORD': '1234', # Replace this with your actual MySQL root password
-        'HOST': '127.0.0.1',                  # Your Hostname from your screenshot
-        'PORT': '3306',                      # Your Port from your screenshot
+        'NAME': _env_or_dev_default('DB_NAME', 'nepse_database'),
+        'USER': _env_or_dev_default('DB_USER', 'root'),
+        'PASSWORD': _env_or_dev_default('DB_PASSWORD', '1234'),
+        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('DB_PORT', '3306'),
+        # Reuse a MySQL connection across requests (persistent connections) instead
+        # of opening + tearing one down on every request. Cuts per-request latency,
+        # especially on the dashboard polls. CONN_HEALTH_CHECKS revalidates a reused
+        # connection so a dropped socket is replaced transparently.
+        'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', '60')),
+        'CONN_HEALTH_CHECKS': True,
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
@@ -110,7 +255,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
@@ -127,3 +271,79 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+# Target for `manage.py collectstatic` in production deployments.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Static file storage:
+#   - DEBUG (dev): plain storage — runserver/staticfiles serves straight from the
+#     app dir, so no `collectstatic` is needed to work locally.
+#   - Production (DEBUG=0): WhiteNoise compresses assets and appends a content
+#     hash to each filename (cache-busting) so they can be cached forever.
+#     Requires `python manage.py collectstatic` at deploy time.
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': (
+            'django.contrib.staticfiles.storage.StaticFilesStorage'
+            if DEBUG
+            else 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+        ),
+    },
+}
+
+# Default primary-key type for new models (silences Django system check W042).
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ── Caching ───────────────────────────────────────────────────────────────────
+# The Market Insights dashboard leans on the cache heavily: the 15s payload cache,
+# the cold-build stampede lock, the last-good payload, and the symbol-autocomplete
+# cache all live here. The default LocMemCache is per-process — correct and fast
+# for a single-process server (runserver, or a single Gunicorn/Waitress worker),
+# where those keys are shared across that process's request threads.
+#
+# Running MULTIPLE worker processes? Set REDIS_URL so the cache AND the stampede
+# lock are shared across every worker (otherwise each worker has its own cache and
+# can trigger its own cold rebuild). Requires the redis client:  pip install redis
+REDIS_URL = os.environ.get('REDIS_URL', '').strip()
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'nepse-insights',
+            # Generous ceiling so the payload / last-good / autocomplete entries are
+            # never evicted under normal churn (default MAX_ENTRIES is only 300).
+            'OPTIONS': {'MAX_ENTRIES': 2000},
+        }
+    }
+
+# ── Market Insights dashboard ───────────────────────────────────────────────
+# Default auto-refresh interval (seconds) for the /insights/ dashboard. The UI
+# lets users override this per-session; this is just the initial value. Can be
+# overridden via the INSIGHTS_REFRESH_SECONDS environment variable.
+INSIGHTS_REFRESH_SECONDS = int(os.environ.get('INSIGHTS_REFRESH_SECONDS', '30'))
+
+# ── Gemini AI narrative (Support & Resistance tab) ──────────────────────────
+# Powers the "AI Narrative Analysis" panel under the Institutional Multi-Framework
+# table. Leave GEMINI_API_KEY blank to disable the panel (it degrades gracefully).
+# Get a key at https://aistudio.google.com/apikey and put it in .env.
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-pro').strip()
+GEMINI_TIMEOUT_SECONDS = int(os.environ.get('GEMINI_TIMEOUT_SECONDS', '45'))
+
+# Fallback provider (OpenRouter, OpenAI-compatible) used when Gemini is missing,
+# errors, times out, or returns nothing. Must be a CHAT model — embedding models
+# (e.g. *-embed-*) cannot generate the narrative. Get a key at
+# https://openrouter.ai/keys and put it in .env.
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '').strip()
+OPENROUTER_MODEL = os.environ.get(
+    'OPENROUTER_MODEL', 'nvidia/nemotron-3-super-120b-a12b:free'
+).strip()

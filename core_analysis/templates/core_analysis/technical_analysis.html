@@ -1,0 +1,167 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Technical Analysis · {{ symbol }} · NEPSE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <style>
+    /* MetaStock-style terminal: price + volume on top, indicator panes below. */
+    html, body { height: 100%; margin: 0; }
+    .ta-shell { display: flex; flex-direction: column; height: 100vh; }
+
+    .ta-topbar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 7px 12px; border-bottom: 1px solid var(--line, rgba(128,128,128,.25));
+      flex: 0 0 auto;
+    }
+    .ta-brand { font-weight: 700; letter-spacing: .03em; }
+    .ta-quote { font-variant-numeric: tabular-nums; font-size: 13px; opacity: .85; }
+    .ta-spacer { flex: 1 1 auto; }
+    .ta-input, .ta-select {
+      background: var(--surface, rgba(128,128,128,.08));
+      color: inherit; border: 1px solid var(--line, rgba(128,128,128,.3));
+      border-radius: 8px; padding: 5px 8px; font: inherit;
+    }
+    .ta-input { width: 130px; text-transform: uppercase; }
+    .ta-index-select { min-width: 190px; max-width: 260px; }
+    .ta-btn {
+      background: var(--accent, #4a90e2); color: #fff; border: 0;
+      border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit;
+    }
+    .ta-btn.ghost { background: transparent; color: inherit; border: 1px solid var(--line, rgba(128,128,128,.3)); }
+    .ta-icon-btn { text-decoration: none; font-size: 18px; padding: 4px 8px; border-radius: 8px; }
+    .ta-icon-btn:hover { background: rgba(128,128,128,.18); }
+
+    .ta-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .ta-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--surface, rgba(128,128,128,.12));
+      border: 1px solid var(--line, rgba(128,128,128,.3));
+      border-radius: 999px; padding: 3px 6px 3px 10px; font-size: 12px;
+    }
+    .ta-chip button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 14px; line-height: 1; }
+
+    .ta-workspace { display: flex; flex: 1 1 auto; min-height: 0; }
+    .ta-drawbar {
+      flex: 0 0 36px; width: 36px; display: flex; flex-direction: column; align-items: center; gap: 5px;
+      padding: 6px 4px; border-right: 1px solid var(--line, rgba(128,128,128,.25));
+      background: var(--surface, rgba(128,128,128,.06)); overflow-y: auto;
+    }
+    .ta-tool {
+      width: 27px; height: 27px; position: relative; display: inline-grid; place-items: center;
+      color: inherit; border: 1px solid transparent; border-radius: 4px;
+      background: transparent; cursor: pointer; opacity: .82;
+    }
+    .ta-tool:hover, .ta-tool.active {
+      opacity: 1; background: rgba(128,128,128,.16); border-color: var(--line, rgba(128,128,128,.35));
+    }
+    .ta-tool span, .ta-tool span::before, .ta-tool span::after {
+      position: absolute; display: block; content: ""; box-sizing: border-box;
+    }
+    .tool-pointer::before {
+      left: 7px; top: 4px; width: 0; height: 0;
+      border-left: 10px solid currentColor; border-top: 6px solid transparent; border-bottom: 6px solid transparent;
+      transform: rotate(-28deg);
+    }
+    .tool-cross::before { left: 5px; right: 5px; top: 13px; border-top: 1px solid currentColor; }
+    .tool-cross::after { top: 5px; bottom: 5px; left: 13px; border-left: 1px solid currentColor; }
+    .tool-line::before, .tool-ray::before { left: 5px; top: 17px; width: 18px; border-top: 1px solid currentColor; transform: rotate(-38deg); }
+    .tool-ray::after { right: 4px; top: 7px; width: 5px; height: 5px; border-top: 1px solid currentColor; border-right: 1px solid currentColor; transform: rotate(45deg); }
+    .tool-hline::before { left: 5px; right: 5px; top: 13px; border-top: 1px solid currentColor; }
+    .tool-vline::before { top: 5px; bottom: 5px; left: 13px; border-left: 1px solid currentColor; }
+    .tool-rect::before { left: 6px; top: 6px; width: 15px; height: 15px; border: 1px solid currentColor; }
+    .tool-undo::before { left: 7px; top: 7px; width: 13px; height: 13px; border: 1px solid currentColor; border-right-color: transparent; border-radius: 50%; }
+    .tool-undo::after { left: 5px; top: 6px; width: 6px; height: 6px; border-left: 1px solid currentColor; border-top: 1px solid currentColor; transform: rotate(-45deg); }
+    .tool-clear::before, .tool-clear::after { left: 6px; top: 13px; width: 15px; border-top: 1px solid currentColor; }
+    .tool-clear::before { transform: rotate(45deg); }
+    .tool-clear::after { transform: rotate(-45deg); }
+
+    .ta-body { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    #ta-price { flex: 1 1 auto; min-height: 220px; position: relative; }
+    .ta-drawing-canvas { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+    #ta-price.ta-drawing-active .ta-drawing-canvas { pointer-events: auto; cursor: crosshair; }
+    #ta-price.ta-drawing-move .ta-drawing-canvas { cursor: move; }
+    #ta-osc-stack { flex: 0 0 auto; }
+    .ta-osc-pane { position: relative; height: 150px; border-top: 1px solid var(--line, rgba(128,128,128,.25)); }
+    .ta-osc-label {
+      position: absolute; top: 4px; left: 8px; z-index: 3; font-size: 11px;
+      opacity: .7; pointer-events: none;
+    }
+    .ta-osc-close {
+      position: absolute; top: 2px; right: 6px; z-index: 3; cursor: pointer;
+      border: 0; background: transparent; color: inherit; font-size: 14px; opacity: .6;
+    }
+    .ta-osc-close:hover { opacity: 1; }
+    #ta-loading { position: absolute; inset: 0; z-index: 4; display: flex; align-items: center; justify-content: center; opacity: .7; }
+  </style>
+</head>
+<body>
+<div class="ta-shell">
+
+  <header class="ta-topbar">
+    <span class="ta-brand">NEPSE · TA</span>
+
+    <input id="ta-symbol" class="ta-input" list="ta-symlist" value="{{ symbol }}"
+           placeholder="Symbol" aria-label="Symbol" autocomplete="off">
+    <datalist id="ta-symlist"></datalist>
+    <button id="ta-go" class="ta-btn ghost" title="Load symbol">Go</button>
+    <select id="ta-index" class="ta-select ta-index-select" aria-label="Index or sub-index">
+      <option value="">Indices</option>
+    </select>
+
+    <span class="ta-quote" id="ta-quote">—</span>
+
+    <span class="ta-spacer"></span>
+
+    <select id="ta-type" class="ta-select" aria-label="Chart type">
+      <option value="bars" selected>Bars</option>
+      <option value="candles">Candles</option>
+      <option value="line">Line</option>
+    </select>
+
+    <select id="ta-ind" class="ta-select" aria-label="Add indicator"></select>
+    <button id="ta-add" class="ta-btn" title="Add indicator">+ Add</button>
+
+    <div class="ta-chips" id="ta-chips"></div>
+
+    <a href="{% url 'market_insights' %}" class="ta-icon-btn" title="Home" aria-label="Home">🏠</a>
+  </header>
+
+  <div class="ta-workspace">
+    <aside class="ta-drawbar" aria-label="Drawing tools">
+      <button type="button" class="ta-tool active" data-tool="select" title="Select / pan" aria-label="Select / pan"><span class="tool-pointer"></span></button>
+      <button type="button" class="ta-tool" data-tool="crosshair" title="Crosshair" aria-label="Crosshair"><span class="tool-cross"></span></button>
+      <button type="button" class="ta-tool" data-tool="line" title="Trend line" aria-label="Trend line"><span class="tool-line"></span></button>
+      <button type="button" class="ta-tool" data-tool="ray" title="Ray" aria-label="Ray"><span class="tool-ray"></span></button>
+      <button type="button" class="ta-tool" data-tool="hline" title="Horizontal line" aria-label="Horizontal line"><span class="tool-hline"></span></button>
+      <button type="button" class="ta-tool" data-tool="vline" title="Vertical line" aria-label="Vertical line"><span class="tool-vline"></span></button>
+      <button type="button" class="ta-tool" data-tool="rect" title="Rectangle" aria-label="Rectangle"><span class="tool-rect"></span></button>
+      <button type="button" class="ta-tool" data-action="undo" title="Undo drawing" aria-label="Undo drawing"><span class="tool-undo"></span></button>
+      <button type="button" class="ta-tool" data-action="clear" title="Clear drawings" aria-label="Clear drawings"><span class="tool-clear"></span></button>
+    </aside>
+
+    <div class="ta-body">
+    <div id="ta-price"><div id="ta-loading">Loading {{ symbol }}…</div></div>
+      <div id="ta-osc-stack"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.TA_CONFIG = {
+    udfBase: "/insights/udf",
+    catalogUrl: "{% url 'indicator_catalog' %}",
+    indicatorUrl: "{% url 'indicator_data' %}",
+    symbol: "{{ symbol|escapejs }}",
+    interval: "1D"
+  };
+</script>
+<script defer src="{% static 'core_analysis/vendor/lightweight-charts.standalone.production.js' %}"></script>
+<script defer src="{% static 'core_analysis/js/ta-chart.js' %}?v={{ asset_version }}"></script>
+</body>
+</html>

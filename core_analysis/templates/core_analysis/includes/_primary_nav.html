@@ -1,0 +1,44 @@
+{% comment %}
+Home dashboard primary navigation. Include with an active_section of
+insights | technical | rrg | floorsheet, e.g.:
+  {% include "core_analysis/includes/_primary_nav.html" with active_section="insights" %}
+{% endcomment %}
+<nav class="mi-primary-nav" aria-label="Primary sections">
+  <a href="{% url 'market_insights' %}"
+     class="mi-nav-link {% if active_section == 'insights' %}active{% endif %}"
+     {% if active_section == 'insights' %}aria-current="page"{% endif %}>
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>
+    </span>Market Insights</a>
+  <a href="{% url 'crud_dashboard' %}?active_tab=backtest"
+     class="mi-nav-link {% if active_section == 'strategy' %}active{% endif %}">
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 7-8"/><path d="M16 4h5v5"/></svg>
+    </span>Strategy Simulator</a>
+  <a href="{% url 'crud_dashboard' %}?active_tab=stage_backtest"
+     class="mi-nav-link {% if active_section == 'technical' %}active{% endif %}">
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l3 8 4-16 3 8h5"/></svg>
+    </span>Technical Analysis</a>
+  <a href="{% url 'fundamental_analysis' %}"
+     class="mi-nav-link {% if active_section == 'fundamental' %}active{% endif %}"
+     {% if active_section == 'fundamental' %}aria-current="page"{% endif %}>
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11M14 4v16"/></svg>
+    </span>Fundamental Analysis</a>
+  <a href="{% url 'crud_dashboard' %}?active_tab=rrg_backtest"
+     class="mi-nav-link {% if active_section == 'rrg' %}active{% endif %}">
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/><circle cx="16.5" cy="7.5" r="2"/><circle cx="7.5" cy="16" r="2"/></svg>
+    </span>RRG Analytics</a>
+  <a href="{% url 'floorsheet' %}"
+     class="mi-nav-link {% if active_section == 'floorsheet' %}active{% endif %}">
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M3 14h18M9 4v16"/></svg>
+    </span>Floor sheet</a>
+  <a href="{% url 'portfolio' %}"
+     class="mi-nav-link {% if active_section == 'portfolio' %}active{% endif %}">
+    <span class="mi-nav-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 12l2.5 2.5L16 9"/></svg>
+    </span>My Portfolio</a>
+</nav>

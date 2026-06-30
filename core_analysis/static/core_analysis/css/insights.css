@@ -1,0 +1,742 @@
+/* ============================================================================
+   Market Insights dashboard — theme tokens, card grid, widgets.
+   Dark is the default theme; [data-theme="light"] overrides the palette.
+   ========================================================================== */
+
+:root,
+[data-theme="dark"] {
+  --bg:          #020b1f;
+  --bg-grad-a:   rgba(33, 88, 255, 0.16);
+  --bg-grad-b:   rgba(18, 211, 154, 0.10);
+  --surface:     #07142e;
+  --surface-2:   #0b1d3f;
+  --raised:      #0e2348;
+  --line:        #17345c;
+  --line-soft:   rgba(92, 179, 255, 0.10);
+
+  --ink-1:       #edf4ff;
+  --ink-2:       #a9bedf;
+  --ink-3:       #6f88ad;
+
+  --accent:      #12d39a;
+  --accent-soft: rgba(18, 211, 154, 0.16);
+
+  --up:          #14e7a0;
+  --up-soft:     rgba(20, 231, 160, 0.14);
+  --down:        #ff6e72;
+  --down-soft:   rgba(255, 110, 114, 0.14);
+  --flat:        #9bb0d3;
+  --flat-soft:   rgba(155, 176, 211, 0.14);
+
+  --shadow:      0 18px 44px -22px rgba(0, 0, 0, 0.72);
+  --radius:      18px;
+  --radius-sm:   11px;
+}
+
+[data-theme="light"] {
+  --bg:          #eef2f9;
+  --bg-grad-a:   rgba(33, 88, 255, 0.10);
+  --bg-grad-b:   rgba(18, 159, 117, 0.08);
+  --surface:     #ffffff;
+  --surface-2:   #f5f8fd;
+  --raised:      #ffffff;
+  --line:        #d7e0ee;
+  --line-soft:   rgba(20, 50, 100, 0.08);
+
+  --ink-1:       #0e1b33;
+  --ink-2:       #41587c;
+  --ink-3:       #7186a4;
+
+  --accent:      #0c9c72;
+  --accent-soft: rgba(12, 156, 114, 0.12);
+
+  --up:          #0ba36e;
+  --up-soft:     rgba(11, 163, 110, 0.12);
+  --down:        #e0414b;
+  --down-soft:   rgba(224, 65, 75, 0.12);
+  --flat:        #6b7d99;
+  --flat-soft:   rgba(107, 125, 153, 0.12);
+
+  --shadow:      0 12px 30px -18px rgba(20, 40, 80, 0.45);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Manrope', system-ui, sans-serif;
+  color: var(--ink-1);
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 900px 600px at 0% 0%, var(--bg-grad-a) 0%, transparent 60%),
+    radial-gradient(ellipse 760px 520px at 100% 100%, var(--bg-grad-b) 0%, transparent 62%);
+  background-attachment: fixed;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.mono, .num, .mi-stat-value, .mi-table td.num {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.mi-shell {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 1.7rem clamp(16px, 2.6vw, 48px) 3.4rem;
+}
+
+/* ── Top bar ──────────────────────────────────────────────────────────── */
+.mi-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.3rem;
+  margin-bottom: 1.3rem;
+  background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+/* ── Primary section nav (home dashboard) ─────────────────────────────── */
+.mi-primary-nav {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  margin-bottom: 1.3rem;
+  background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.mi-nav-link {
+  flex: 1 1 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0.5rem 0.4rem;
+  border-radius: var(--radius-sm);
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink-1);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+/* Icons appear on main tabs only — sub-tabs stay text-only */
+.mi-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+.mi-nav-icon svg {
+  width: 1em;
+  height: 1em;
+  stroke: currentColor;
+}
+.mi-nav-link:hover {
+  color: var(--ink-1);
+  background: var(--raised);
+  border-color: var(--line);
+}
+.mi-nav-link.active {
+  color: #04111f;
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 8px 22px -8px var(--accent-soft),
+              inset 0 -3px 0 0 rgba(4, 17, 31, 0.28);
+}
+
+/* ── Coming-soon placeholder (Floor sheet) ────────────────────────────── */
+.mi-coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.8rem;
+  padding: clamp(2.5rem, 8vw, 6rem) 1.4rem;
+  background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.mi-coming-soon-icon { font-size: 3rem; line-height: 1; }
+.mi-coming-soon-title { font-family: 'Manrope', system-ui, sans-serif; font-weight: 700; color: var(--ink-1); margin: 0; }
+.mi-coming-soon-text { max-width: 540px; color: var(--ink-2); margin: 0; font-size: 0.95rem; line-height: 1.6; }
+.mi-coming-soon-cta {
+  margin-top: 0.6rem;
+  padding: 0.55rem 1.2rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.mi-coming-soon-cta:hover { border-color: var(--accent); color: var(--ink-1); }
+
+.mi-brand { display: flex; align-items: center; gap: 0.9rem; }
+.mi-logo {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  color: #021018;
+  background: var(--accent);
+  padding: 0.45rem 0.6rem;
+  border-radius: var(--radius-sm);
+}
+.mi-title {
+  margin: 0;
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.mi-subtitle { margin: 0; font-size: 0.8rem; color: var(--ink-3); }
+
+.mi-controls { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.mi-asof { display: flex; flex-direction: column; line-height: 1.1; padding-right: 0.4rem; }
+.mi-asof-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
+.mi-asof-date { font-family: 'Manrope', system-ui, sans-serif; font-size: 0.85rem; color: var(--ink-1); }
+
+.mi-live-badge {
+  display: inline-flex; align-items: center; gap: 0.32rem;
+  font-size: 0.62rem; font-weight: 800; letter-spacing: 0.09em;
+  color: #021018; background: var(--up);
+  padding: 0.22rem 0.5rem; border-radius: 999px;
+}
+.mi-live-badge::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: #021018; animation: mi-pulse 1.6s infinite;
+}
+
+.mi-status {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.72rem; color: var(--ink-2);
+  padding: 0.3rem 0.55rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.mi-status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--flat);
+  box-shadow: 0 0 0 0 currentColor;
+}
+.mi-status.is-live .mi-status-dot { background: var(--up); animation: mi-pulse 2s infinite; }
+.mi-status.is-stale .mi-status-dot { background: var(--down); }
+@keyframes mi-pulse {
+  0%   { box-shadow: 0 0 0 0 var(--up-soft); }
+  70%  { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.mi-select {
+  background: var(--surface-2);
+  color: var(--ink-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.55rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.mi-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 36px; height: 36px;
+  width: auto;
+  padding: 0 0.72rem;
+  font-size: 0.78rem; font-weight: 700; line-height: 1; text-decoration: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+  color: var(--ink-1);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
+}
+.mi-icon-btn:hover { border-color: var(--accent); transform: translateY(-1px); }
+#mi-refresh-btn.is-spinning {
+  border-color: var(--accent);
+  color: var(--accent);
+  opacity: 0.78;
+}
+
+.mi-banner {
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.2rem;
+  background: var(--down-soft);
+  border: 1px solid var(--down);
+  border-radius: var(--radius-sm);
+  color: var(--ink-1);
+  font-size: 0.85rem;
+}
+
+/* ── Overview stat cards ──────────────────────────────────────────────── */
+.mi-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+.mi-stat {
+  display: flex; flex-direction: column; gap: 0.35rem;
+  padding: 1.2rem 1.3rem;
+  background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.mi-stat:hover { border-color: var(--line); transform: translateY(-2px); }
+.mi-stat-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-3); }
+.mi-stat-value { font-size: 1.7rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
+.mi-stat-delta { font-size: 0.85rem; font-weight: 600; }
+/* Keep the value and its delta on one row (e.g. turnover "Rs 2.84 Ar (-35.77%)"). */
+.mi-stat-valrow { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; }
+.mi-stat-sub { font-size: 0.74rem; color: var(--ink-3); }
+
+/* High / Low range value — both bounds equally prominent (not a dim sub-line). */
+.mi-stat-range {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.mi-stat-range .mi-range-div { font-size: 1.05rem; font-weight: 500; color: var(--ink-3); }
+
+/* Secondary metric tucked under the main value, in a smaller size. */
+.mi-stat-sub-metric {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+  font-size: 0.74rem;
+  color: var(--ink-3);
+}
+.mi-stat-sub-metric b {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+.mi-stat-sub-metric .mi-sub-delta { font-weight: 600; }
+
+.up   { color: var(--up); }
+.down { color: var(--down); }
+.flat { color: var(--flat); }
+
+/* ── Card grids ───────────────────────────────────────────────────────── */
+.mi-grid { display: grid; gap: 1.1rem; margin-bottom: 1.5rem; }
+.mi-grid-1    { grid-template-columns: 1fr; }
+.mi-grid-3    { grid-template-columns: repeat(3, 1fr); }
+.mi-grid-2-1  { grid-template-columns: 2fr 1fr; }
+.mi-grid-1-2  { grid-template-columns: 1fr 2fr; }
+.mi-grid-1-1  { grid-template-columns: 1fr 1fr; }
+.mi-grid-market-pulse {
+  grid-template-columns: minmax(520px, 3fr) minmax(430px, 2fr);
+  align-items: stretch;
+}
+.mi-grid-sector-compare {
+  grid-template-columns: minmax(0, 60fr) minmax(320px, 40fr);
+  align-items: stretch;
+}
+
+.mi-card {
+  background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.3rem 1.45rem 1.4rem;
+  min-width: 0;
+}
+.mi-card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.mi-card-title {
+  margin: 0; font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 1.08rem; font-weight: 600; letter-spacing: -0.01em;
+}
+.mi-card-subtitle {
+  margin: 0.2rem 0 0;
+  color: var(--ink-3);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+.mi-card-hint { font-size: 0.7rem; color: var(--ink-3); }
+.mi-card-tools { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; justify-content: flex-end; }
+.mi-card-tools .mi-select { padding: 0.3rem 0.5rem; font-size: 0.74rem; }
+.mi-pill {
+  font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 999px;
+  background: var(--flat-soft); color: var(--ink-2);
+}
+.mi-pill-up { background: var(--up-soft); color: var(--up); }
+.mi-pill-down { background: var(--down-soft); color: var(--down); }
+
+.mi-chart { width: 100%; min-height: 260px; }
+.mi-chart-donut { min-height: 230px; }
+.mi-chart-heatmap { min-height: 420px; }
+
+/* ── Sector Index Comparison card ─────────────────────────────────────── */
+.mi-chart-compare { min-height: 460px; }
+.mi-range { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.mi-range-btn {
+  font: inherit; font-size: 0.74rem; font-weight: 600;
+  color: var(--ink-2); background: transparent;
+  border: 1px solid transparent; border-radius: 6px;
+  padding: 3px 11px; cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.mi-range-btn:hover { color: var(--ink-1); background: var(--line-soft); }
+.mi-range-btn.is-active { color: #021018; background: var(--accent); border-color: var(--accent); }
+
+/* ── Index OHLC (Lightweight Charts) card ─────────────────────────────── */
+.mi-ohlc-card { display: flex; flex-direction: column; }
+.mi-draw-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.55rem;
+}
+.mi-draw-group {
+  display: flex; gap: 4px; flex-wrap: wrap;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: 4px;
+}
+.mi-draw-btn {
+  font: inherit; font-size: 0.74rem; font-weight: 600;
+  color: var(--ink-2); background: transparent;
+  border: 1px solid transparent; border-radius: 6px;
+  padding: 4px 11px; cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.mi-draw-btn:hover { color: var(--ink-1); background: var(--line-soft); }
+.mi-draw-btn.is-active { color: #021018; background: var(--accent); border-color: var(--accent); }
+.mi-draw-clear { color: var(--down); }
+.mi-draw-clear:hover { background: var(--down-soft); color: var(--down); }
+.mi-draw-hint { font-size: 0.7rem; color: var(--ink-3); }
+
+.mi-ohlc-wrap {
+  position: relative; width: 100%; flex: 1 1 auto;
+  min-height: clamp(380px, 46vh, 560px);
+}
+.mi-chart-ohlc { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mi-draw-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
+
+/* Market pulse row: OHLC and Market Breadth share the first dashboard row. */
+.mi-market-pulse > .mi-card { display: flex; flex-direction: column; }
+.mi-market-pulse .mi-card-head { gap: 0.75rem; flex-wrap: wrap; }
+.mi-market-pulse .mi-ohlc-wrap {
+  min-height: clamp(285px, 30vh, 340px);
+}
+.mi-market-pulse .mi-draw-toolbar {
+  gap: 0.45rem;
+  margin-bottom: 0.5rem;
+}
+.mi-market-pulse .mi-draw-hint { display: none; }
+.mi-sector-compare-row > .mi-card { display: flex; flex-direction: column; }
+.mi-sector-compare-row .mi-chart-compare {
+  flex: 1 1 auto;
+}
+.mi-sector-compare-row .mi-sector-card .mi-chart {
+  flex: 1 1 auto; min-height: 0;
+  height: 460px;
+  margin: auto 0;
+}
+/* TradingView Advanced Charts container (hidden until the library is installed) */
+.mi-tv { display: none; position: absolute; inset: 0; width: 100%; height: 100%; border-radius: var(--radius-sm); overflow: hidden; z-index: 4; }
+
+/* ── Tables ───────────────────────────────────────────────────────────── */
+.mi-table-wrap { overflow-x: auto; }
+.mi-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+.mi-table thead th {
+  text-align: left; font-weight: 600; color: var(--ink-3);
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line);
+}
+.mi-table th.num, .mi-table td.num { text-align: right; }
+.mi-table tbody td { padding: 0.5rem; border-bottom: 1px solid var(--line-soft); }
+.mi-table tbody tr:last-child td { border-bottom: none; }
+.mi-table tbody tr:hover { background: var(--line-soft); }
+.mi-sym { font-weight: 700; }
+.mi-sym small { display: block; font-weight: 400; font-size: 0.66rem; color: var(--ink-3); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mi-chg-badge {
+  display: inline-block; padding: 0.1rem 0.4rem; border-radius: 6px;
+  font-weight: 600; font-size: 0.78rem;
+}
+.mi-chg-badge.up { background: var(--up-soft); }
+.mi-chg-badge.down { background: var(--down-soft); }
+.mi-chg-badge.flat { background: var(--flat-soft); }
+
+.mi-empty { padding: 1.2rem 0.5rem; text-align: center; color: var(--ink-3); font-size: 0.82rem; }
+
+/* ── Market sentiment: Fear & Greed + breadth ─────────────────────────── */
+.mi-breadth-table-wrap {
+  margin-top: auto;
+  padding-top: 0.35rem;
+}
+.mi-breadth-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 0.63rem;
+}
+.mi-breadth-table caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.mi-breadth-table th,
+.mi-breadth-table td {
+  padding: 0.26rem 0.35rem;
+  border-bottom: 1px solid var(--line-soft);
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.mi-breadth-table tr:last-child th,
+.mi-breadth-table tr:last-child td { border-bottom: 0; }
+.mi-breadth-table th { width: 47%; color: var(--ink-2); font-weight: 600; text-align: left; }
+.mi-breadth-table td { font-family: 'Manrope', system-ui, sans-serif; font-weight: 700; text-align: right; }
+.mi-breadth-label { display: inline-flex; align-items: center; gap: 0.28rem; }
+.mi-breadth-dot { width: 7px; height: 7px; border-radius: 2px; flex: 0 0 auto; }
+.mi-breadth-dot.up { background: var(--up); }
+.mi-breadth-dot.down { background: var(--down); }
+.mi-breadth-dot.flat { background: var(--flat); }
+
+.mi-card-breadth { display: flex; flex-direction: column; }
+.mi-breadth-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  align-items: stretch;
+  gap: 0.7rem;
+  flex: 1 1 auto;
+}
+.mi-pulse-widget {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 0.7rem 0.65rem;
+  background: var(--line-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.mi-widget-head { min-height: 3.1rem; }
+.mi-widget-title {
+  margin: 0;
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.mi-widget-subtitle,
+.mi-widget-note {
+  margin: 0.15rem 0 0;
+  color: var(--ink-3);
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+.mi-widget-note { margin-top: auto; padding-top: 0.35rem; text-align: center; }
+.mi-card-breadth .mi-chart-donut {
+  flex: 0 0 auto;
+  min-height: 190px;
+}
+
+/* ── NEPSE Greed / Fear gauge ─────────────────────────────────────────── */
+.mi-greed { width: 100%; min-width: 0; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.mi-greed svg { width: 100%; max-width: 300px; height: auto; display: block; margin: 0 auto; }
+.mi-greed-seg { font-size: 8.7px; font-weight: 700; letter-spacing: 0.02em; }
+.mi-greed-tick { font-size: 10px; font-family: 'Manrope', system-ui, sans-serif; opacity: 0.9; }
+.mi-greed-num { font-size: 35px; font-weight: 800; font-family: 'Manrope', system-ui, sans-serif; }
+.mi-greed-band { font-size: 13.5px; font-weight: 700; letter-spacing: 0.025em; }
+.mi-greed-cap { fill: var(--ink-3); font-size: 8.5px; letter-spacing: 0.06em; }
+.mi-greed-empty { color: var(--ink-3); font-size: 0.9rem; padding: 1.2rem 0; }
+.mi-greed-components {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  min-height: 1.35rem;
+}
+.mi-greed-component {
+  padding: 0.16rem 0.38rem;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.61rem;
+  white-space: nowrap;
+}
+.mi-greed-component b {
+  color: var(--ink-1);
+  font-family: 'Manrope', system-ui, sans-serif;
+}
+/* CNN-style historical readings under the gauge (previous close / 1w / 1m / 1y). */
+.mi-greed-history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0.5rem auto 0;
+  width: 100%;
+  max-width: 270px;
+}
+.mi-greed-history:empty { display: none; }
+.mi-greed-hist-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.74rem;
+}
+.mi-greed-hist-label { color: var(--ink-2); }
+.mi-greed-hist-score {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+.mi-greed-hist-score b {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+.mi-greed-hist-band {
+  color: var(--ink-3);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+/* Page-level "live feed delayed" marker: the heatmap is built purely from the
+   per-scrip live feed, so when that feed lags, dim it and reveal the hint. */
+.mi-stale-hint { color: var(--down); font-weight: 600; }
+body:not(.mi-feed-delayed) .mi-stale-hint { display: none; }
+.mi-feed-delayed .mi-chart-heatmap { opacity: 0.6; filter: grayscale(0.4); }
+
+/* ── Index contributors ───────────────────────────────────────────────── */
+.mi-contrib { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+.mi-contrib-head { font-size: 0.78rem; font-weight: 700; margin-bottom: 0.5rem; }
+.mi-contrib-head.up { color: var(--up); }
+.mi-contrib-head.down { color: var(--down); }
+.mi-contrib-row {
+  display: grid; grid-template-columns: 64px 1fr 54px 60px; align-items: center;
+  gap: 0.5rem; padding: 0.28rem 0; border-bottom: 1px solid var(--line-soft);
+}
+.mi-contrib-row:last-child { border-bottom: none; }
+.mi-contrib-sym { font-weight: 700; font-size: 0.82rem; }
+.mi-contrib-track { height: 8px; border-radius: 999px; background: var(--flat-soft); overflow: hidden; }
+.mi-contrib-track i { display: block; height: 100%; border-radius: 999px; }
+.mi-contrib-track i.up { background: var(--up); }
+.mi-contrib-track i.down { background: var(--down); }
+.mi-contrib-pts { font-family: 'Manrope', system-ui, sans-serif; font-weight: 700; font-size: 0.8rem; text-align: right; }
+.mi-contrib-pct { font-family: 'Manrope', system-ui, sans-serif; font-size: 0.76rem; text-align: right; }
+.mi-contrib-pts.up, .mi-contrib-pct.up { color: var(--up); }
+.mi-contrib-pts.down, .mi-contrib-pct.down { color: var(--down); }
+.mi-sector-movers-card { min-width: 0; }
+.mi-sector-movers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.1rem;
+}
+.mi-sector-mover-col { min-width: 0; }
+.mi-sector-mover-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.34rem;
+  padding: 0.44rem 0.58rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.mi-sector-mover-row.up { background: var(--up-soft); color: var(--up); }
+.mi-sector-mover-row.down { background: var(--down-soft); color: var(--down); }
+.mi-sector-mover-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mi-sector-mover-pts {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+@media (max-width: 700px) {
+  .mi-contrib,
+  .mi-sector-movers { grid-template-columns: 1fr; }
+}
+
+/* ── Sector list ──────────────────────────────────────────────────────── */
+.mi-sector-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.mi-sector-row { display: grid; grid-template-columns: 1.4fr 2.2fr auto; align-items: center; gap: 0.6rem; }
+.mi-sector-name { font-size: 0.82rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mi-sector-track { height: 9px; border-radius: 999px; background: var(--flat-soft); position: relative; overflow: hidden; }
+.mi-sector-fill { position: absolute; top: 0; bottom: 0; border-radius: 999px; }
+.mi-sector-fill.up { background: var(--up); }
+.mi-sector-fill.down { background: var(--down); }
+.mi-sector-pct { font-family: 'Manrope', system-ui, sans-serif; font-size: 0.8rem; font-weight: 600; text-align: right; min-width: 56px; }
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+.mi-footer {
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;
+  margin-top: 0.5rem; padding-top: 1rem;
+  border-top: 1px solid var(--line-soft);
+  font-size: 0.72rem; color: var(--ink-3);
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 1180px) {
+  .mi-grid-market-pulse { grid-template-columns: 1fr; }
+  .mi-market-pulse .mi-ohlc-wrap { min-height: clamp(340px, 42vh, 480px); }
+  .mi-grid-sector-compare { grid-template-columns: 1fr; }
+  .mi-sector-compare-row .mi-sector-card .mi-chart { height: clamp(320px, 38vh, 460px); }
+}
+@media (max-width: 960px) {
+  .mi-market-pulse .mi-ohlc-wrap { min-height: clamp(320px, 40vh, 460px); }
+}
+@media (max-width: 1100px) {
+  .mi-stats { grid-template-columns: repeat(3, 1fr); }
+  .mi-grid-2-1, .mi-grid-1-2, .mi-grid-1-1 { grid-template-columns: 1fr; }
+}
+@media (max-width: 820px) {
+  .mi-grid-market-pulse { grid-template-columns: 1fr; }
+  .mi-grid-3 { grid-template-columns: 1fr; }
+  .mi-topbar { flex-direction: column; align-items: stretch; }
+  .mi-controls { justify-content: space-between; }
+  .mi-card-breadth .mi-chart-donut { min-height: 190px; }
+}
+@media (max-width: 560px) {
+  .mi-breadth-layout { grid-template-columns: 1fr; }
+  .mi-greed svg { max-width: 310px; }
+  .mi-market-pulse .mi-ohlc-wrap { min-height: 330px; }
+  .mi-stats { grid-template-columns: repeat(2, 1fr); }
+  .mi-stat-value { font-size: 1.3rem; }
+  .mi-stat-range { font-size: 1.05rem; gap: 0.3rem; }
+}

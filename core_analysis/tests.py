@@ -1,3 +1,916 @@
-from django.test import TestCase
+import json
+import unittest
+from contextlib import ExitStack
+from datetime import date, datetime, timezone
+from unittest.mock import patch
 
-# Create your tests here.
+import numpy as np
+import pandas as pd
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ImproperlyConfigured
+from django.test import Client, RequestFactory, SimpleTestCase, TestCase
+from django.urls import reverse
+
+from core_analysis.models import AccountApproval
+
+from core_analysis.services import IMM, msv_strategy
+from core_analysis.services.advanced_market_structure import (
+    generate_dummy_ohlcv,
+    run_advanced_market_structure_analysis,
+)
+from core_analysis.services.support_resistance import (
+    build_institutional_analysis_rows,
+    run_support_resistance_analysis,
+)
+
+try:
+    from core_analysis.services import broker_analytics, market_insights, nepse_contributors
+except ImproperlyConfigured:  # Allows `python core_analysis/tests.py` outside Django.
+    broker_analytics = None
+    market_insights = None
+    nepse_contributors = None
+
+try:
+    from core_analysis import indicator_views, udf_views
+except ImproperlyConfigured:  # Allows `python core_analysis/tests.py` outside Django.
+    indicator_views = None
+    udf_views = None
+
+
+class AdminApprovalTests(TestCase):
+    def _register(self, username, email):
+        return self.client.post(
+            reverse("register"),
+            {
+                "username": username,
+                "email": email,
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            },
+        )
+
+    def test_registration_creates_inactive_user_and_pending_admin_request(self):
+        response = self._register("pendinguser", "pendinguser@example.com")
+        user = get_user_model().objects.get(username="pendinguser")
+        approval = user.account_approval
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("approval_pending"))
+        self.assertFalse(user.is_active)
+        self.assertEqual(user.email, "pendinguser@example.com")
+        self.assertEqual(approval.contact_email, "pendinguser@example.com")
+        self.assertEqual(approval.status, AccountApproval.PENDING)
+        self.assertIsNone(approval.reviewed_at)
+
+    def test_admin_approval_activates_user(self):
+        self._register("approveuser", "approveuser@example.com")
+        UserModel = get_user_model()
+        reviewer = UserModel.objects.create_user(
+            username="reviewer", email="reviewer@example.com", password="StrongPass123!"
+        )
+        user = UserModel.objects.get(username="approveuser")
+        approval = user.account_approval
+
+        approval.approve(reviewer=reviewer, note="Approved for access")
+
+        user.refresh_from_db()
+        approval.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertEqual(approval.status, AccountApproval.APPROVED)
+        self.assertEqual(approval.reviewed_by, reviewer)
+        self.assertEqual(approval.review_note, "Approved for access")
+        self.assertIsNotNone(approval.reviewed_at)
+
+    def test_admin_rejection_keeps_user_inactive(self):
+        self._register("rejectuser", "rejectuser@example.com")
+        UserModel = get_user_model()
+        reviewer = UserModel.objects.create_user(
+            username="reviewer", email="reviewer@example.com", password="StrongPass123!"
+        )
+        user = UserModel.objects.get(username="rejectuser")
+        approval = user.account_approval
+
+        approval.reject(reviewer=reviewer, note="Rejected")
+
+        user.refresh_from_db()
+        approval.refresh_from_db()
+        self.assertFalse(user.is_active)
+        self.assertEqual(approval.status, AccountApproval.REJECTED)
+        self.assertEqual(approval.reviewed_by, reviewer)
+        self.assertEqual(approval.review_note, "Rejected")
+        self.assertIsNotNone(approval.reviewed_at)
+
+
+@unittest.skipIf(indicator_views is None, "Django settings unavailable")
+class IndicatorHistoryWindowTests(SimpleTestCase):
+    def test_history_window_parses_udf_dates_and_countback(self):
+        factory = RequestFactory()
+        from_ts = int(datetime(2026, 6, 1, tzinfo=timezone.utc).timestamp())
+        to_ts = int(datetime(2026, 6, 16, tzinfo=timezone.utc).timestamp())
+        request = factory.get(
+            "/chart/indicator",
+            {"from": str(from_ts), "to": str(to_ts), "countback": "5000"},
+        )
+
+        self.assertEqual(
+            indicator_views._history_window(request),
+            (date(2026, 6, 1), date(2026, 6, 16), 5000),
+        )
+
+    def test_indicator_data_uses_windowed_chart_rows(self):
+        factory = RequestFactory()
+        to_ts = int(datetime(2026, 6, 16, tzinfo=timezone.utc).timestamp())
+        rows = [
+            (date(2026, 6, day), 100.0 + day, 102.0 + day, 99.0 + day, 101.0 + day, 1000 + day)
+            for day in range(1, 21)
+        ]
+        captured = {}
+
+        def fake_chart_bars(kind, key, from_date, to_date, countback):
+            captured.update(
+                {
+                    "kind": kind,
+                    "key": key,
+                    "from_date": from_date,
+                    "to_date": to_date,
+                    "countback": countback,
+                }
+            )
+            return rows
+
+        request = factory.get(
+            "/chart/indicator",
+            {"symbol": "NEPSE", "name": "RSI", "to": str(to_ts), "countback": "5000"},
+        )
+
+        with (
+            patch.object(indicator_views, "_resolve", return_value=("index", "NEPSE INDEX")),
+            patch.object(indicator_views, "_chart_bars", side_effect=fake_chart_bars),
+            patch.object(indicator_views.talib, "RSI", return_value=np.arange(len(rows), dtype=float)),
+        ):
+            response = indicator_views.indicator_data(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(captured["kind"], "index")
+        self.assertEqual(captured["key"], "NEPSE INDEX")
+        self.assertEqual(captured["to_date"], date(2026, 6, 16))
+        self.assertEqual(captured["countback"], 5000)
+
+
+@unittest.skipIf(udf_views is None, "Django settings unavailable")
+class UdfChartBarsTests(SimpleTestCase):
+    def test_index_search_returns_all_configured_subindices(self):
+        request = RequestFactory().get(
+            "/insights/udf/search",
+            {"type": "index", "limit": "50"},
+        )
+
+        response = udf_views.udf_search(request)
+        payload = json.loads(response.content)
+
+        self.assertEqual(
+            {row["symbol"] for row in payload},
+            set(udf_views.INDEX_TICKERS),
+        )
+
+    def test_chart_bars_appends_live_index_bar(self):
+        stored = [(date(2026, 6, 15), 1.0, 2.0, 0.5, 1.5, 1000)]
+        live = (date(2026, 6, 16), 2.0, 3.0, 1.5, 2.5, 2000)
+
+        with (
+            patch.object(udf_views, "_bars", return_value=stored) as bars,
+            patch.object(udf_views, "_live_index_bar", return_value=live),
+        ):
+            result = udf_views._chart_bars("index", "NEPSE INDEX", None, date(2026, 6, 16), 5000)
+
+        bars.assert_called_once_with("index", "NEPSE INDEX", None, date(2026, 6, 16), 5000)
+        self.assertEqual(result, stored + [live])
+
+
+class RrgAnalyticsTests(unittest.TestCase):
+    @staticmethod
+    def _price_frame(start, closes):
+        return pd.DataFrame({
+            "business_date": pd.date_range(start, periods=len(closes), freq="D"),
+            "close_price_adj": closes,
+        })
+
+    def test_rrg_formula_reports_overlap_quality(self):
+        from core_analysis.services.RGG_Chart import run_rrg_simulation
+
+        stock = self._price_frame("2026-01-01", [100 + i * 1.8 for i in range(30)])
+        benchmark = self._price_frame("2026-01-01", [1000 + i * 4.0 for i in range(30)])
+
+        metrics, rows = run_rrg_simulation(stock, benchmark, lookback=5)
+
+        self.assertNotIn("error", metrics)
+        self.assertEqual(metrics["source_bars"], 30)
+        self.assertEqual(metrics["benchmark_bars"], 30)
+        self.assertEqual(metrics["matched_bars"], 30)
+        self.assertEqual(metrics["data_points"], len(rows))
+        self.assertEqual(len(rows), 22)
+        self.assertAlmostEqual(rows.iloc[-1]["RS"], (stock.iloc[-1]["close_price_adj"] / benchmark.iloc[-1]["close_price_adj"]) * 100.0)
+        self.assertTrue(np.isfinite(rows.iloc[-1]["RS_Ratio"]))
+        self.assertTrue(np.isfinite(rows.iloc[-1]["RS_Momentum"]))
+
+    def test_rrg_formula_rejects_sparse_overlap(self):
+        from core_analysis.services.RGG_Chart import run_rrg_simulation
+
+        stock = self._price_frame("2026-01-01", [100 + i for i in range(30)])
+        benchmark = self._price_frame("2026-01-01", [1000 + i for i in range(8)])
+
+        metrics, rows = run_rrg_simulation(stock, benchmark, lookback=5)
+
+        self.assertIn("Insufficient overlapping data", metrics["error"])
+        self.assertEqual(metrics["source_bars"], 30)
+        self.assertEqual(metrics["benchmark_bars"], 8)
+        self.assertEqual(metrics["matched_bars"], 8)
+        self.assertTrue(rows.empty)
+
+    def test_indices_rrg_preserves_skip_reason_and_shared_bar_count(self):
+        from core_analysis.services.RGG_indices import run_rrg_indices_simulation
+
+        benchmark = self._price_frame("2026-01-01", [1000 + i * 3.0 for i in range(30)])
+        index_frames = {
+            "BANKING SUBINDEX": self._price_frame("2026-01-01", [500 + i * 2.0 for i in range(30)]),
+            "HYDROPOWER INDEX": self._price_frame("2026-01-01", [300 + i for i in range(8)]),
+        }
+
+        metrics, points, trails, skipped = run_rrg_indices_simulation(
+            index_frames,
+            benchmark,
+            lookback=5,
+            selected_symbols=["BANKING SUBINDEX", "HYDROPOWER INDEX"],
+        )
+
+        self.assertEqual(metrics["indices_plotted"], 1)
+        self.assertEqual(points[0]["symbol"], "BANKING SUBINDEX")
+        self.assertEqual(points[0]["matched_bars"], 30)
+        self.assertTrue(trails)
+        self.assertEqual(skipped[0]["symbol"], "HYDROPOWER INDEX")
+        self.assertIn("Insufficient overlapping data", skipped[0]["reason"])
+
+
+class WorkbenchSecurityTests(SimpleTestCase):
+    def test_workbench_routes_redirect_anonymous_users_to_admin_login(self):
+        client = Client()
+        checks = [
+            ("get", "/workbench/"),
+            ("get", "/dashboard/symbols/?q=NABIL"),
+            ("post", "/dashboard/process/"),
+            ("post", "/dashboard/delete/1/"),
+            ("post", "/dashboard/sync/"),
+            ("post", "/dashboard/sync-calculate/"),
+        ]
+
+        for method, path in checks:
+            with self.subTest(path=path):
+                response = getattr(client, method)(path)
+
+                self.assertEqual(response.status_code, 302)
+                self.assertIn("/admin/login/", response["Location"])
+
+
+class FakeTechnicalAnalysis:
+    @staticmethod
+    def sma(series, length):
+        values = pd.to_numeric(series, errors="coerce")
+        if series.name == "volume":
+            return pd.Series(values * 0.5, index=series.index)
+
+        offset = {20: 1.0, 50: 2.0, 200: 3.0}.get(length, 1.0)
+        return pd.Series(values - offset, index=series.index)
+
+    @staticmethod
+    def rsi(series, length):
+        return pd.Series(60.0, index=series.index)
+
+    @staticmethod
+    def macd(series, fast, slow, signal):
+        line = pd.Series(-1.0, index=series.index)
+        if len(line) > 200:
+            line.iloc[200:] = 1.0
+        signal_line = pd.Series(0.0, index=series.index)
+        return pd.DataFrame(
+            {
+                "MACD": line,
+                "MACDh": line - signal_line,
+                "MACDs": signal_line,
+            },
+            index=series.index,
+        )
+
+    @staticmethod
+    def supertrend(high, low, close, length, multiplier):
+        direction = pd.Series(1, index=close.index)
+        if len(direction) > 205:
+            direction.iloc[205] = -1
+        return pd.DataFrame(
+            {
+                "SUPERT_10_3.0": pd.to_numeric(close, errors="coerce") - 5.0,
+                "SUPERTd_10_3.0": direction,
+            },
+            index=close.index,
+        )
+
+    @staticmethod
+    def vwap(high, low, close, volume):
+        return pd.Series(pd.to_numeric(close, errors="coerce") - 1.0, index=close.index)
+
+    @staticmethod
+    def atr(high, low, close, length):
+        return pd.Series(2.0, index=close.index)
+
+
+@unittest.skipIf(market_insights is None, "Django settings unavailable")
+class MarketInsightsHeadlineTests(unittest.TestCase):
+    def test_payload_prefers_contributor_headline_over_stale_subindex(self):
+        stale_subindex = {
+            "NepseIndex": {
+                "closingIndex": 2731.53,
+                "absChange": 3.50,
+                "percentageChange": 0.13,
+                "highIndex": 2731.53,
+                "lowIndex": 2721.40,
+                "turnoverValue": 0,
+                "businessDate": "2026-06-11",
+            }
+        }
+        live_contributors = {
+            "index": {
+                "value": 2721.72,
+                "change": -6.31,
+                "prev_close": 2728.03,
+                "pct": -0.23,
+            },
+            "positive": [],
+            "negative": [],
+        }
+        summary = [{
+            "businessDate": "2026-06-12",
+            "totalTurnover": 1164469269.88,
+            "totalTradedShares": 2524762,
+            "totalTransactions": 0,
+            "tradedScrips": 0,
+        }]
+
+        patches = [
+            patch.object(market_insights.cache, "get", return_value=None),
+            patch.object(market_insights.cache, "set"),
+            patch.object(market_insights, "fetch_live_rows", return_value=None),
+            patch.object(market_insights, "fetch_subindices", return_value=stale_subindex),
+            patch.object(market_insights, "fetch_market_summary", return_value=summary),
+            patch.object(market_insights, "fetch_contributors", return_value=live_contributors),
+            patch.object(market_insights, "fetch_top_gainers", return_value=None),
+            patch.object(market_insights, "fetch_top_losers", return_value=None),
+            patch.object(market_insights, "fetch_top_active", return_value=None),
+            patch.object(market_insights, "_sector_map", return_value={}),
+            patch.object(market_insights, "_latest_stock_rows", return_value=(date(2026, 6, 11), [])),
+            patch.object(market_insights, "_nepse_history", return_value=[]),
+            # Pin the clock to the live (pre-3 PM NPT) session so this exercises
+            # the feed-driven path regardless of when the suite runs.
+            patch.object(market_insights, "_after_market_close", return_value=False),
+        ]
+
+        with ExitStack() as stack:
+            for p in patches:
+                stack.enter_context(p)
+            payload = market_insights.build_payload(force=True)
+
+        self.assertEqual(payload["as_of"], "2026-06-12")
+        self.assertEqual(payload["overview"]["nepse_index"], 2721.72)
+        self.assertEqual(payload["overview"]["nepse_change"], -6.31)
+        self.assertEqual(payload["overview"]["nepse_pct"], -0.23)
+        self.assertEqual(payload["overview"]["turnover"], 1164469269.88)
+        self.assertEqual(payload["overview"]["volume"], 2524762)
+
+    def test_stale_live_feed_falls_back_to_eod_for_stock_widgets(self):
+        # The per-scrip live feed serves prior-session quotes (Jun 8) while the
+        # official index headline reports the real trading day (Jun 16). The
+        # heatmap/breadth must reflect the fresher end-of-day DB rows, not the
+        # stale live quotes. Regression for the heatmap showing week-old prices.
+        stale_live_rows = [{
+            "symbol": "CFCL",
+            "securityName": "Central Finance",
+            "closePrice": 641.8,
+            "previousDayClosePrice": 630.0,
+            "openPrice": 630.0,
+            "highPrice": 645.0,
+            "lowPrice": 628.0,
+            "totalTradedQuantity": 1000,
+            "totalTradedValue": 641800.0,
+            "totalTrades": 50,
+            "marketCapitalization": 0.0,
+            "businessDate": "2026-06-08",
+            "lastUpdatedTime": "2026-06-08 15:00:00",
+        }]
+        eod_rows = [{
+            "symbol": "CFCL",
+            "security_name": "Central Finance",
+            "open_price": 689.0,
+            "high_price": 689.0,
+            "low_price": 616.0,
+            "close_price": 620.0,
+            "previous_close": 659.0,
+            "total_traded_quantity": 2000,
+            "total_traded_value": 1240000.0,
+            "total_trades": 80,
+            "market_capitalization": 0.0,
+        }]
+        live_contributors = {
+            "index": {"value": 2699.66, "change": -5.79, "prev_close": 2705.45, "pct": -0.21},
+            "positive": [],
+            "negative": [],
+        }
+        summary = [{
+            "businessDate": "2026-06-16",
+            "totalTurnover": 4047858084.12,
+            "totalTradedShares": 100,
+            "totalTransactions": 0,
+            "tradedScrips": 0,
+        }]
+
+        patches = [
+            patch.object(market_insights.cache, "get", return_value=None),
+            patch.object(market_insights.cache, "set"),
+            patch.object(market_insights, "fetch_live_rows", return_value=stale_live_rows),
+            patch.object(market_insights, "fetch_subindices", return_value=None),
+            patch.object(market_insights, "fetch_market_summary", return_value=summary),
+            patch.object(market_insights, "fetch_contributors", return_value=live_contributors),
+            patch.object(market_insights, "fetch_top_gainers", return_value=None),
+            patch.object(market_insights, "fetch_top_losers", return_value=None),
+            patch.object(market_insights, "fetch_top_active", return_value=None),
+            patch.object(market_insights, "_sector_map", return_value={"CFCL": "Finance"}),
+            patch.object(market_insights, "_latest_stock_rows", return_value=(date(2026, 6, 15), eod_rows)),
+            patch.object(market_insights, "_nepse_history", return_value=[]),
+            patch.object(market_insights, "_after_market_close", return_value=False),
+        ]
+
+        with ExitStack() as stack:
+            for p in patches:
+                stack.enter_context(p)
+            payload = market_insights.build_payload(force=True)
+
+        # Stale live feed must not be badged LIVE, and the stock widgets must use EOD.
+        self.assertFalse(payload["live"])
+        self.assertEqual(payload["source"], "eod")
+        cfcl = next(t for t in payload["heatmap"] if t["symbol"] == "CFCL")
+        self.assertEqual(cfcl["ltp"], 620.0)      # EOD close, not the stale 641.8
+        self.assertEqual(cfcl["pct"], -5.92)      # (620-659)/659, not the stale +1.87
+
+    def test_after_close_serves_eod_from_sql_and_skips_live_feeds(self):
+        # After 3 PM NPT the dashboard must ignore the intraday live feeds and
+        # build the payload from the settled end-of-day DB rows, while kicking
+        # off the one-shot background sync exactly once.
+        eod_rows = [{
+            "symbol": "NABIL",
+            "security_name": "Nabil Bank",
+            "open_price": 500.0,
+            "high_price": 510.0,
+            "low_price": 495.0,
+            "close_price": 505.0,
+            "previous_close": 500.0,
+            "total_traded_quantity": 1000,
+            "total_traded_value": 505000.0,
+            "total_trades": 60,
+            "market_capitalization": 0.0,
+        }]
+
+        def boom(*a, **k):
+            raise AssertionError("a per-scrip live feed was called after market close")
+
+        def contributor_boom(*a, **k):
+            raise AssertionError("contributors were fetched synchronously after market close")
+
+        # Contributors have no SQL equivalent, so use the cached feed after the
+        # close and refresh it separately; the numeric-widget feeds are not used.
+        contrib = {
+            "positive": [{"symbol": "NABIL", "points": 1.2}],
+            "negative": [],
+            # Sector Movers rides on the same contributors feed and must survive.
+            "sectors": {"positive": [{"sector": "Banking", "points": 0.8}], "negative": []},
+        }
+
+        patches = [
+            patch.object(market_insights.cache, "get", return_value=None),
+            patch.object(market_insights.cache, "set"),
+            patch.object(market_insights, "_after_market_close", return_value=True),
+            patch.object(market_insights, "_sector_map", return_value={"NABIL": "Banking"}),
+            patch.object(market_insights, "_latest_stock_rows", return_value=(date(2026, 6, 25), eod_rows)),
+            patch.object(market_insights, "_nepse_history", return_value=[]),
+            patch.object(market_insights, "_greed_history", return_value=[]),
+            patch.object(market_insights, "_overview", return_value={}),
+            patch.object(market_insights, "_sectors", return_value=[]),
+            patch.object(market_insights, "_cached_contributors", return_value=contrib),
+            patch.object(market_insights, "fetch_contributors", contributor_boom),
+            # The per-scrip / index feeds must NOT be consulted after the close.
+            patch.object(market_insights, "fetch_live_rows", boom),
+            patch.object(market_insights, "fetch_subindices", boom),
+        ]
+
+        with ExitStack() as stack:
+            trigger = stack.enter_context(
+                patch.object(market_insights, "_maybe_trigger_eod_sync")
+            )
+            refresh = stack.enter_context(
+                patch.object(market_insights, "_refresh_contributors_async")
+            )
+            for p in patches:
+                stack.enter_context(p)
+            payload = market_insights.build_payload(force=True)
+
+        self.assertFalse(payload["live"])
+        self.assertEqual(payload["source"], "eod")
+        self.assertEqual(payload["index_source"], "eod")
+        nabil = next(t for t in payload["heatmap"] if t["symbol"] == "NABIL")
+        self.assertEqual(nabil["ltp"], 505.0)
+        self.assertEqual(nabil["pct"], 1.0)       # (505-500)/500
+        # Index Contributors AND Sector Movers stay populated after close.
+        self.assertEqual(payload["contributors"]["positive"], contrib["positive"])
+        self.assertEqual(payload["contributors"]["sectors"], contrib["sectors"])
+        trigger.assert_called_once()
+        refresh.assert_called_once()
+
+    def test_after_close_empty_contributor_cache_does_not_block_payload(self):
+        eod_rows = [{
+            "symbol": "NABIL",
+            "security_name": "Nabil Bank",
+            "open_price": 500.0,
+            "high_price": 510.0,
+            "low_price": 495.0,
+            "close_price": 505.0,
+            "previous_close": 500.0,
+            "total_traded_quantity": 1000,
+            "total_traded_value": 505000.0,
+            "total_trades": 60,
+            "market_capitalization": 0.0,
+        }]
+
+        def boom(*a, **k):
+            raise AssertionError("a live feed was called while building post-close EOD payload")
+
+        patches = [
+            patch.object(market_insights.cache, "get", return_value=None),
+            patch.object(market_insights.cache, "set"),
+            patch.object(market_insights, "_after_market_close", return_value=True),
+            patch.object(market_insights, "_sector_map", return_value={"NABIL": "Banking"}),
+            patch.object(market_insights, "_latest_stock_rows", return_value=(date(2026, 6, 25), eod_rows)),
+            patch.object(market_insights, "_nepse_history", return_value=[]),
+            patch.object(market_insights, "_greed_history", return_value=[]),
+            patch.object(market_insights, "_overview", return_value={}),
+            patch.object(market_insights, "_sectors", return_value=[]),
+            patch.object(market_insights, "_cached_contributors", return_value=None),
+            patch.object(market_insights, "fetch_contributors", boom),
+            patch.object(market_insights, "fetch_live_rows", boom),
+            patch.object(market_insights, "fetch_subindices", boom),
+        ]
+
+        with ExitStack() as stack:
+            trigger = stack.enter_context(
+                patch.object(market_insights, "_maybe_trigger_eod_sync")
+            )
+            refresh = stack.enter_context(
+                patch.object(market_insights, "_refresh_contributors_async")
+            )
+            for p in patches:
+                stack.enter_context(p)
+            payload = market_insights.build_payload(force=False)
+
+        self.assertFalse(payload["live"])
+        self.assertEqual(payload["source"], "eod")
+        self.assertEqual(payload["contributors"]["positive"], [])
+        self.assertEqual(payload["contributors"]["negative"], [])
+        self.assertEqual(payload["contributors"]["sectors"], {"positive": [], "negative": []})
+        trigger.assert_called_once()
+        refresh.assert_called_once()
+
+
+@unittest.skipIf(market_insights is None, "Django settings unavailable")
+class SubindexComparisonTests(TestCase):
+    # Eight consecutive NEPSE sessions (Jun 1–8) anchor the window.
+    NEPSE_DATES = [date(2026, 6, d) for d in range(1, 9)]
+
+    @classmethod
+    def setUpTestData(cls):
+        from core_analysis.models import NepseMarketIndex
+        created = datetime(2026, 6, 16, tzinfo=timezone.utc)
+        api_id = 0
+
+        def add(sector, bdate, close):
+            nonlocal api_id
+            api_id += 1
+            NepseMarketIndex.objects.create(
+                api_id=api_id, business_date=bdate, sector_name=sector,
+                open_index=close, high_index=close, low_index=close, close_index=close,
+                absolute_change=0, percentage_change=0,
+                turnover_values=0, turnover_volume=0, total_transaction=0,
+                number_52_weeks_high=close, number_52_weeks_low=close, created_at=created,
+            )
+
+        for i, d in enumerate(cls.NEPSE_DATES):
+            add("NEPSE INDEX", d, 1000.0 + i * 10)
+        # The bucketing is case-insensitive, so store the sub-indices in the DB's
+        # mixed case to prove the upper()-keyed match works regardless of casing.
+        for i, d in enumerate(cls.NEPSE_DATES):
+            add("Banking SubIndex", d, 500.0 + i * 5)
+        # A sparser sub-index that only traded on two of the eight sessions.
+        add("HydroPower Index", cls.NEPSE_DATES[0], 200.0)
+        add("HydroPower Index", cls.NEPSE_DATES[-1], 190.0)
+
+    def test_comparison_aligns_indices_over_window(self):
+        from django.core.cache import cache
+        cache.clear()  # the function caches per-window; isolate this test
+        result = market_insights.subindex_comparison(days=50)
+
+        self.assertEqual(result["start"], "2026-06-01")
+        self.assertEqual(result["sessions"], 8)  # all eight NEPSE dates
+        labels = {s["label"]: s for s in result["series"]}
+        self.assertEqual(set(labels), {"NEPSE", "Banking", "Hydropower"})
+
+        nepse = labels["NEPSE"]["points"]
+        self.assertEqual(nepse[0], ["2026-06-01", 1000.0])  # raw closes, oldest first
+        self.assertEqual(nepse[-1], ["2026-06-08", 1070.0])
+        # Sparser sub-index keeps only the sessions it actually traded.
+        self.assertEqual(len(labels["Hydropower"]["points"]), 2)
+
+    def test_comparison_window_limits_to_recent_sessions(self):
+        from django.core.cache import cache
+        cache.clear()
+        result = market_insights.subindex_comparison(days=5)
+        # Window = the most recent 5 NEPSE sessions (Jun 4–8).
+        self.assertEqual(result["start"], "2026-06-04")
+        self.assertEqual(result["sessions"], 5)
+        nepse = next(s for s in result["series"] if s["label"] == "NEPSE")["points"]
+        self.assertEqual([p[0] for p in nepse], ["2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08"])
+
+
+@unittest.skipIf(nepse_contributors is None, "Django settings unavailable")
+class NepseContributorsParserTests(unittest.TestCase):
+    def test_sector_view_parser_extracts_top_gainers_and_losers(self):
+        html = """
+        <div class="pill-stream">
+          <div class="stream-title up">▲ Top Gainers</div>
+          <div class="pill up"><span>Investment</span><span class="pill-pts">+0.50</span></div>
+          <div class="pill up"><span>Finance</span><span class="pill-pts">+0.18</span></div>
+        </div>
+        <div class="pill-stream">
+          <div class="stream-title down">▼ Top Losers</div>
+          <div class="pill down"><span>Microfinance</span><span class="pill-pts">-0.94</span></div>
+          <div class="pill down"><span>Commercial Banks</span><span class="pill-pts">-0.74</span></div>
+        </div>
+        """
+
+        movers = nepse_contributors._parse_sector_movers(html)
+
+        self.assertEqual(movers["positive"][0], {"sector": "Investment", "points": 0.5})
+        self.assertEqual(movers["positive"][1], {"sector": "Finance", "points": 0.18})
+        self.assertEqual(movers["negative"][0], {"sector": "Microfinance", "points": -0.94})
+        self.assertEqual(movers["negative"][1], {"sector": "Commercial Banks", "points": -0.74})
+
+
+@unittest.skipIf(broker_analytics is None, "Django settings unavailable")
+class BrokerFlowRadarTests(SimpleTestCase):
+    def test_broker_flow_radar_ranks_and_labels_flow(self):
+        agg = {
+            "dates": ["2026-06-19"],
+            "buy": {
+                "AAA": {1: [100, 1000.0], 2: [20, 300.0]},
+                "BBB": {1: [10, 200.0], 3: [50, 500.0]},
+            },
+            "sell": {
+                "AAA": {1: [30, 450.0], 2: [50, 800.0]},
+                "CCC": {2: [20, 700.0], 3: [10, 150.0]},
+            },
+            "sector": {},
+        }
+
+        with patch.object(broker_analytics, "_window_aggregate", return_value=agg):
+            result = broker_analytics.broker_flow_radar()
+
+        rows = result["rows"]
+        self.assertTrue(result["ok"])
+        self.assertEqual([row["broker"] for row in rows], [2, 1, 3])
+        self.assertEqual(rows[0]["total_amount"], 1800.0)
+        self.assertEqual(rows[0]["difference"], -1200.0)
+        self.assertEqual(rows[0]["matching_amount"], 300.0)
+        self.assertEqual(rows[0]["stance"], "Distributing")
+        self.assertEqual(rows[1]["stance"], "Accumulating")
+
+
+def make_price_frame(close_values):
+    dates = pd.date_range("2025-01-01", periods=len(close_values), freq="D")
+    close = pd.Series(close_values, dtype=float)
+    return pd.DataFrame(
+        {
+            "business_date": dates,
+            "open_price_adj": close,
+            "high_price_adj": close + 1.0,
+            "low_price_adj": close - 1.0,
+            "close_price_adj": close,
+            "volume": 1000.0,
+        }
+    )
+
+
+class IMMScoringTests(unittest.TestCase):
+    def test_generate_sell_signal_tolerates_missing_atr_stop(self):
+        df = pd.DataFrame(
+            {
+                "close_price_adj": [100.0, 99.0],
+                "SMA_20": [95.0, 100.0],
+                "RSI_14": [60.0, 60.0],
+                "MACD_line": [1.0, 1.0],
+                "MACD_signal": [0.0, 0.0],
+                "supertrend_bullish": [True, False],
+            }
+        )
+
+        sell_signal = IMM.generate_sell_signal(df)
+
+        self.assertFalse(bool(sell_signal.iloc[0]))
+        self.assertTrue(bool(sell_signal.iloc[1]))
+
+    def test_position_builder_sells_on_atr_stop_and_resets_after_exit(self):
+        df = pd.DataFrame(
+            {
+                "close_price_adj": [100.0, 105.0, 103.0, 99.0, 101.0, 102.0],
+                "ATR": [2.0] * 6,
+                "SMA_20": [90.0, 90.0, 90.0, 100.0, 90.0, 90.0],
+                "RSI_14": [60.0] * 6,
+                "MACD_line": [1.0] * 6,
+                "MACD_signal": [0.0] * 6,
+                "supertrend_bullish": [True, True, True, False, True, True],
+            }
+        )
+        raw_buy = pd.Series([True, True, False, False, True, False])
+
+        buy_signal, sell_signal, stop = IMM._build_position_signals_with_atr_stop(
+            df,
+            raw_buy,
+            multiplier=2.0,
+        )
+
+        self.assertEqual(buy_signal[buy_signal].index.tolist(), [0, 4])
+        self.assertEqual(sell_signal[sell_signal].index.tolist(), [3])
+        self.assertEqual(stop.iloc[1], 101.0)
+        self.assertEqual(stop.iloc[3], 101.0)
+        self.assertEqual(stop.iloc[4], 97.0)
+
+    def test_run_imm_scoring_system_returns_stop_aware_sell_event(self):
+        stock_close = np.arange(100.0, 310.0)
+        stock_close[205:] = stock_close[205:] - 80.0
+        nepse_close = np.arange(1000.0, 1210.0)
+
+        stock_df = make_price_frame(stock_close)
+        nepse_df = make_price_frame(nepse_close)
+
+        with patch.object(IMM, "ta", FakeTechnicalAnalysis):
+            metrics, output = IMM.run_imm_scoring_system(stock_df, nepse_df)
+
+        self.assertNotIn("error", metrics)
+        self.assertEqual(metrics["buy_count"], 1)
+        self.assertEqual(metrics["sell_count"], 1)
+        self.assertTrue(bool(output.loc[200, "buy_signal"]))
+        self.assertTrue(bool(output.loc[205, "sell_signal"]))
+        self.assertTrue(pd.isna(output.loc[206, "atr_trailing_stop"]))
+
+
+class MSVStrategyTests(unittest.TestCase):
+    @unittest.skipIf(msv_strategy.ta is None, "pandas_ta unavailable")
+    def test_msv_vwap_works_with_standard_business_date_column(self):
+        close_values = np.arange(100.0, 180.0)
+        stock_df = make_price_frame(close_values)
+
+        metrics, trades, output = msv_strategy.run_msv_long_only_simulation(stock_df)
+
+        self.assertNotIn("error", metrics)
+        self.assertEqual(len(output), len(stock_df))
+        self.assertFalse(output["VWAP"].isna().all())
+
+
+class SupportResistanceTests(unittest.TestCase):
+    def _sample_support_resistance_frame(self):
+        return pd.DataFrame(
+            {
+                "business_date": pd.to_datetime(["2025-06-01", "2025-06-02"]),
+                "high_price_adj": [29.20, 28.64],
+                "low_price_adj": [28.70, 28.01],
+                "close_price_adj": [28.99, 28.17],
+                "price_source": ["Adjusted", "Adjusted"],
+            }
+        )
+
+    def test_support_resistance_pivots_match_standard_formula(self):
+        df = self._sample_support_resistance_frame()
+
+        metrics, rows = run_support_resistance_analysis(df, symbol="KGC")
+        levels_by_label = {
+            label: row["price"]
+            for row in rows
+            for label in row["level_names"]
+        }
+
+        self.assertNotIn("error", metrics)
+        self.assertEqual(metrics["pivot"], 28.27)
+        self.assertEqual(levels_by_label["Pivot Point 1st Resistance Point"], 28.54)
+        self.assertEqual(levels_by_label["Pivot Point 2nd Level Resistance"], 28.90)
+        self.assertEqual(levels_by_label["Pivot Point 3rd Level Resistance"], 29.17)
+        self.assertEqual(levels_by_label["Pivot Point 1st Support Point"], 27.91)
+        self.assertEqual(levels_by_label["Pivot Point 2nd Support Point"], 27.64)
+        self.assertEqual(levels_by_label["Pivot Point 3rd Support Point"], 27.28)
+        self.assertEqual(len(metrics["simple_level_rows"]), 8)
+        self.assertEqual(metrics["simple_level_rows"][-1]["basis"], "Pivot S1/S2/R1/R2")
+
+    def test_support_resistance_honors_selected_level_families(self):
+        df = self._sample_support_resistance_frame()
+
+        metrics, rows = run_support_resistance_analysis(
+            df,
+            symbol="KGC",
+            enabled_families=["hlc"],
+        )
+        labels = {
+            label
+            for row in rows
+            for label in row["level_names"]
+        }
+
+        self.assertEqual(metrics["enabled_families"], ["hlc"])
+        self.assertIn("High", labels)
+        self.assertIn("Low", labels)
+        self.assertNotIn("Pivot Point", labels)
+
+    def test_nearest_headline_levels_use_confluence(self):
+        df = pd.DataFrame(
+            {
+                "business_date": pd.to_datetime(["2025-06-01", "2025-06-02", "2025-06-03"]),
+                "open_price_adj": [90.0, 118.0, 101.0],
+                "high_price_adj": [120.0, 116.0, 105.0],
+                "low_price_adj": [80.0, 96.0, 95.0],
+                "close_price_adj": [118.0, 102.0, 100.0],
+                "volume": [1000, 1200, 900],
+            }
+        )
+
+        metrics, _ = run_support_resistance_analysis(df, symbol="BB")
+
+        # Headline cards now use the confluence engine (real reaction levels with
+        # >= 2 agreeing methods), not the raw Bollinger band.
+        self.assertEqual(metrics["nearest_level_basis"], "Confluence")
+        self.assertEqual(metrics["nearest_resistance"]["basis"], "Confluence")
+        self.assertEqual(metrics["nearest_support"]["basis"], "Confluence")
+        self.assertGreaterEqual(metrics["nearest_resistance"]["method_count"], 2)
+        self.assertGreaterEqual(metrics["nearest_support"]["method_count"], 2)
+        self.assertGreaterEqual(metrics["nearest_resistance"]["price"], metrics["latest_price"])
+        self.assertLessEqual(metrics["nearest_support"]["price"], metrics["latest_price"])
+        # Bollinger bands are still computed and exposed as a reference.
+        self.assertIn("middle_band", metrics["bollinger_bands"])
+
+
+class AdvancedMarketStructureTests(unittest.TestCase):
+    def test_advanced_market_structure_runs_on_dummy_ohlcv(self):
+        df = generate_dummy_ohlcv(rows=180, seed=7)
+
+        metrics = run_advanced_market_structure_analysis(df, symbol="DUMMY", fractal_window=5)
+
+        self.assertNotIn("error", metrics)
+        self.assertEqual(metrics["symbol"], "DUMMY")
+        self.assertGreater(metrics["pivot_count"], 0)
+        self.assertIn("density_zones", metrics)
+        self.assertIn("profile", metrics)
+        self.assertIn("chart", metrics)
+        self.assertGreater(len(metrics["chart"]["candles"]), 0)
+
+    def test_advanced_market_structure_rejects_short_data(self):
+        df = generate_dummy_ohlcv(rows=8, seed=7)
+
+        metrics = run_advanced_market_structure_analysis(df, symbol="SHORT", fractal_window=5)
+
+        self.assertIn("error", metrics)
+
+
+class InstitutionalAnalysisTests(unittest.TestCase):
+    def test_institutional_analysis_returns_exact_framework_table_contract(self):
+        df = generate_dummy_ohlcv(rows=160, seed=11)
+        support_metrics, _ = run_support_resistance_analysis(df)
+        advanced_metrics = run_advanced_market_structure_analysis(df, symbol="DUMMY", fractal_window=5)
+
+        rows = build_institutional_analysis_rows(support_metrics, advanced_metrics)
+
+        # 9 framework systems plus the appended "Institutional Consensus" row.
+        self.assertEqual(len(rows), 10)
+        self.assertEqual(rows[-1]["system"], "Institutional Consensus")
+        # Keys are lowercase snake_case to match the template ({{ row.system }}).
+        for row in rows:
+            self.assertIn("system", row)
+            self.assertIn("institutional_logic", row)
+            self.assertIn("price_sentiment", row)
+            self.assertIn("status", row)
+            self.assertTrue(row["system"])
+            self.assertTrue(row["institutional_logic"])
+            self.assertTrue(row["price_sentiment"])
+            self.assertTrue(row["status"])
+
+
+if __name__ == "__main__":
+    unittest.main()

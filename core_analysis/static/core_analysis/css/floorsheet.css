@@ -1,0 +1,611 @@
+/* ============================================================================
+   Dalal Street X — broker analytics overlay on the Floor sheet page.
+   Reuses the Market Insights theme tokens (insights.css) for colours.
+   ========================================================================== */
+
+.fs-updated {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-family: 'Manrope', system-ui, sans-serif;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+
+/* ── tab bar ─────────────────────────────────────────────────────────── */
+.dsx-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px 0 14px;
+  border-bottom: 1px solid var(--line);
+}
+.dsx-tab {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-2);
+  font: 600 14px/1 'Manrope', sans-serif;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.dsx-tab:hover { color: var(--ink-1); }
+.dsx-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.dsx-banner {
+  background: var(--down-soft);
+  color: var(--down);
+  border: 1px solid var(--down);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+
+/* ── panels ──────────────────────────────────────────────────────────── */
+.dsx-panel { display: none; }
+.dsx-panel.active { display: block; }
+
+/* ── controls row ────────────────────────────────────────────────────── */
+.dsx-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 14px;
+  margin-bottom: 16px;
+}
+.dsx-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font: 600 11px/1 'Manrope', sans-serif;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.dsx-select {
+  min-width: 200px;
+  background: var(--surface-2);
+  color: var(--ink-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font: 500 14px/1 'Manrope', sans-serif;
+}
+.dsx-sector { min-width: 160px; }
+
+/* shared date-range panel (Date Range preset + custom start/end + Analyze) */
+.dsx-dr-preset { min-width: 160px; }
+.dsx-date-input {
+  min-width: 150px;
+  background: var(--surface-2);
+  color: var(--ink-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font: 500 14px/1 'Manrope', sans-serif;
+  color-scheme: dark light;
+}
+.dsx-date-input:hover:not(:disabled) { border-color: var(--accent); }
+.dsx-date-input:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  background: var(--surface);
+}
+.dsx-analyze {
+  align-self: flex-end;
+  margin-left: 0;
+  min-width: 112px;
+  appearance: none;
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 9px 26px;
+  font: 700 13px/1 'Manrope', sans-serif;
+  letter-spacing: .02em;
+  cursor: pointer;
+  transition: filter .15s;
+}
+.dsx-analyze:hover { filter: brightness(1.08); }
+.dsx-analyze:active { filter: brightness(.95); }
+
+/* multi-select broker checklist */
+.dsx-multi { position: relative; }
+.dsx-multi-btn {
+  min-width: 200px;
+  text-align: left;
+  background: var(--surface-2);
+  color: var(--ink-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font: 500 14px/1 'Manrope', sans-serif;
+  cursor: pointer;
+}
+.dsx-multi-btn:hover { border-color: var(--accent); }
+.dsx-multi-menu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 296px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  padding: 10px;
+}
+.dsx-multi-search {
+  width: 100%;
+  background: var(--surface-2);
+  color: var(--ink-1);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font: 500 13px/1 'Manrope', sans-serif;
+  margin-bottom: 8px;
+}
+.dsx-multi-actions { display: flex; gap: 8px; margin-bottom: 8px; }
+.dsx-multi-actions button {
+  flex: 1;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 0;
+  font: 600 12px/1 'Manrope', sans-serif;
+  cursor: pointer;
+}
+.dsx-multi-actions button:hover { color: var(--accent); border-color: var(--accent); }
+.dsx-multi-count {
+  font: 600 11px/1 'Manrope', sans-serif;
+  color: var(--ink-3); letter-spacing: .02em;
+  margin-bottom: 8px;
+}
+.dsx-multi-list {
+  max-height: 240px; overflow-y: auto; padding-right: 2px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+}
+.dsx-broker-chip {
+  appearance: none;
+  background: var(--surface-2);
+  color: var(--ink-1);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 8px 0;
+  font: 600 12.5px/1 'Manrope', system-ui, sans-serif;
+  text-align: center; cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.dsx-broker-chip:hover { border-color: var(--accent); color: var(--accent); }
+.dsx-broker-chip.on {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
+.dsx-multi-none {
+  grid-column: 1 / -1; text-align: center; padding: 14px 0;
+  color: var(--ink-3); font: 500 12px/1 'Manrope', sans-serif;
+}
+/* selected-broker chips (shown under the button, each removable via ×) */
+.dsx-multi-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-top: 7px; max-width: 320px;
+}
+.dsx-multi-chips:empty { display: none; }
+.dsx-sel-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--accent-soft); color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px; padding: 3px 4px 3px 9px;
+  font: 600 12px/1 'Manrope', system-ui, sans-serif;
+}
+.dsx-sel-chip b { font-weight: 700; }
+/* collapsed "All N brokers" pill shown when many are selected */
+.dsx-sel-chip.summary {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
+.dsx-sel-chip.summary .dsx-sel-x:hover { background: rgba(255,255,255,.25); }
+.dsx-sel-x {
+  appearance: none; border: none; cursor: pointer;
+  background: transparent; color: inherit;
+  font: 700 14px/1 'Manrope', sans-serif;
+  width: 16px; height: 16px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  opacity: .7; transition: opacity .12s, background .12s;
+}
+.dsx-sel-x:hover { opacity: 1; background: rgba(0,0,0,.15); }
+.dsx-blurb { font-size: 13px; color: var(--ink-2); }
+.dsx-check {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 13px; color: var(--ink-2); cursor: pointer; user-select: none;
+}
+
+.dsx-seg { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.dsx-seg-label {
+  font: 600 11px/1 'Manrope', sans-serif;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
+  margin-right: 2px;
+}
+.dsx-pill {
+  appearance: none;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: 600 12.5px/1 'Manrope', sans-serif;
+  cursor: pointer;
+  transition: all .15s;
+}
+.dsx-pill:hover { color: var(--ink-1); border-color: var(--accent); }
+.dsx-pill.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ── KPI strip (Broker Analysis) ─────────────────────────────────────── */
+.dsx-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+@media (max-width: 1100px) { .dsx-kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px)  { .dsx-kpis { grid-template-columns: 1fr; } }
+.dsx-kpi {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 13px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dsx-kpi-label {
+  font: 600 10.5px/1 'Manrope', sans-serif;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.dsx-kpi-val {
+  font: 700 19px/1.1 'Manrope', system-ui, sans-serif;
+  color: var(--ink-1);
+}
+.dsx-kpi-sub {
+  font: 500 11px/1.2 'Manrope', sans-serif;
+  color: var(--ink-3);
+}
+.dsx-kpi-val.num-pos { color: var(--up); }
+.dsx-kpi-val.num-neg { color: var(--down); }
+
+/* ── Persistent Accumulation / Distribution (multi-day net + streak + HHI) ── */
+.dsx-ad-card { margin-bottom: 16px; }
+.dsx-ad-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+}
+.dsx-ad-sub {
+  font: 500 11px/1 'Manrope', sans-serif;
+  text-transform: none; letter-spacing: 0; color: var(--ink-3);
+}
+.dsx-ad-filter {
+  display: flex; align-items: center; gap: 9px;
+  padding: 10px 16px 0;
+}
+.dsx-ad-filter label {
+  font: 600 10.5px/1 'Manrope', sans-serif;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3);
+}
+.dsx-mini-select {
+  background: var(--surface-2);
+  color: var(--ink-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font: 500 13px/1 'Manrope', sans-serif;
+}
+.dsx-mini-select:hover { border-color: var(--accent); }
+/* column-title row, aligned to the .dsx-ad-row grid below it */
+.dsx-ad-cols {
+  display: grid;
+  grid-template-columns: 62px 60px 1fr 96px 64px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px 6px;
+  font: 600 10px/1.2 'Manrope', sans-serif;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
+  border-bottom: 1px solid var(--line);
+}
+.dsx-ad-cols .r { text-align: right; }
+.dsx-ad-cols-bar { text-align: center; }
+.dsx-ad-cols .sortable { cursor: pointer; user-select: none; transition: color .12s; }
+.dsx-ad-cols .sortable:hover { color: var(--ink-1); }
+.dsx-ad-cols .sorted-asc, .dsx-ad-cols .sorted-desc { color: var(--accent); }
+.dsx-ad-cols .sorted-asc::after { content: " ▲"; font-size: 8px; }
+.dsx-ad-cols .sorted-desc::after { content: " ▼"; font-size: 8px; }
+@media (max-width: 700px) {
+  .dsx-ad-cols { grid-template-columns: 54px 52px 1fr 78px; }
+  .dsx-ad-cols > :last-child { display: none; }
+}
+.dsx-ad { padding: 8px 16px 14px; max-height: 420px; overflow: auto; }
+.dsx-ad-row {
+  display: grid;
+  grid-template-columns: 62px 60px 1fr 96px 64px;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 0;
+}
+@media (max-width: 700px) { .dsx-ad-row { grid-template-columns: 54px 52px 1fr 78px; } .dsx-ad-row .dsx-hhi { display: none; } }
+.dsx-ad-row:hover { background: var(--surface-2); }
+.dsx-ad-sym {
+  font: 700 13px/1 'Manrope', system-ui, sans-serif;
+  color: var(--accent);
+}
+/* conviction streak badge (consecutive same-side sessions) */
+.dsx-streak {
+  font: 700 11px/1 'Manrope', system-ui, sans-serif;
+  text-align: center;
+  padding: 3px 0; border-radius: 5px;
+  border: 1px solid var(--line);
+}
+.dsx-streak.buy  { color: var(--up);   background: var(--up-soft); }
+.dsx-streak.sell { color: var(--down); background: var(--down-soft); }
+.dsx-streak.flat { color: var(--ink-3); }
+/* concentration (HHI) chip, coloured by risk band */
+.dsx-hhi {
+  font: 700 11px/1 'Manrope', system-ui, sans-serif;
+  text-align: center;
+  padding: 3px 4px; border-radius: 5px;
+  cursor: help;
+}
+.dsx-hhi.risk-low      { color: var(--ink-3); background: var(--surface-2); }
+.dsx-hhi.risk-moderate { color: #d8941f; background: rgba(216,148,31,.14); }
+.dsx-hhi.risk-high     { color: var(--down); background: var(--down-soft); }
+
+/* ── research-desk signal cards (2×2 grid) ───────────────────────────── */
+.dsx-signals { margin-bottom: 16px; }
+.dsx-sig { padding: 6px 14px 12px; max-height: 320px; overflow: auto; }
+.dsx-sig-tbl {
+  width: 100%; border-collapse: collapse;
+  font: 500 12.5px/1.2 'Manrope', system-ui, sans-serif;
+}
+.dsx-sig-tbl thead th {
+  position: sticky; top: 0; background: var(--surface);
+  color: var(--ink-3); font: 600 10px/1.3 'Manrope', sans-serif;
+  text-transform: uppercase; letter-spacing: .03em;
+  padding: 7px 8px; text-align: right; border-bottom: 1px solid var(--line);
+}
+.dsx-sig-tbl thead th.l { text-align: left; }
+.dsx-sig-tbl td {
+  padding: 7px 8px; text-align: right;
+  border-bottom: 1px solid var(--line-soft); color: var(--ink-1); white-space: nowrap;
+}
+.dsx-sig-tbl td.l { text-align: left; }
+.dsx-sig-tbl .tkr { color: var(--accent); font-weight: 700; }
+.dsx-sig-tbl .num-pos { color: var(--up); }
+.dsx-sig-tbl .num-neg { color: var(--down); }
+
+/* divergence direction tag */
+.dsx-tag {
+  display: inline-block; padding: 2px 7px; border-radius: 5px;
+  font: 700 10px/1.4 'Manrope', sans-serif; letter-spacing: .02em;
+}
+.dsx-tag.buy  { color: var(--up);   background: var(--up-soft); }
+.dsx-tag.sell { color: var(--down); background: var(--down-soft); }
+
+/* sector rotation rows (reuse the diverging .dsx-ad-track / .dsx-ad-fill) */
+.dsx-sec-row {
+  display: grid; grid-template-columns: 1fr 1fr 96px;
+  align-items: center; gap: 10px; padding: 5px 0;
+}
+.dsx-sec-name {
+  font: 600 12px/1.2 'Manrope', sans-serif; color: var(--ink-1);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* breadth buyers/sellers split bar */
+.dsx-split {
+  display: inline-block; width: 42px; height: 6px; border-radius: 3px;
+  background: var(--down); vertical-align: middle; margin-left: 6px; overflow: hidden;
+}
+.dsx-split i.buy { display: block; height: 100%; background: var(--up); }
+
+/* two-sided churn chip */
+.dsx-churn {
+  display: inline-block; padding: 2px 7px; border-radius: 5px;
+  background: rgba(216,148,31,.14); color: #d8941f;
+  font: 700 11px/1.4 'Manrope', system-ui, sans-serif; cursor: help;
+}
+.dsx-ad-track {
+  position: relative;
+  height: 18px;
+  background: var(--surface-2);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.dsx-ad-track::before {           /* centre zero line */
+  content: ""; position: absolute; left: 50%; top: 0; bottom: 0;
+  width: 1px; background: var(--line);
+}
+.dsx-ad-fill {
+  position: absolute; top: 0; bottom: 0;
+  border-radius: 5px;
+}
+.dsx-ad-fill.buy  { left: 50%;  background: linear-gradient(90deg, #15c08a, #1fae7e); }
+.dsx-ad-fill.sell { right: 50%; background: linear-gradient(90deg, #ff6e72, #e0575b); }
+.dsx-ad-net {
+  text-align: right;
+  font: 700 13px/1 'Manrope', system-ui, sans-serif;
+}
+.dsx-ad-net.num-pos { color: var(--up); }
+.dsx-ad-net.num-neg { color: var(--down); }
+
+/* inline %-of-total bar inside the favorites table's last column */
+.dsx-pctcell { position: relative; }
+.dsx-pctcell .dsx-pctbar {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  height: 6px; border-radius: 3px; background: var(--accent-soft);
+  pointer-events: none;
+}
+.dsx-pctcell .dsx-pctnum { position: relative; }
+
+/* ── card grids ──────────────────────────────────────────────────────── */
+.dsx-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.dsx-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 1100px) { .dsx-grid-2, .dsx-grid-3 { grid-template-columns: 1fr; } }
+
+.dsx-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.dsx-card-head {
+  padding: 11px 16px;
+  font: 700 13px/1 'Manrope', sans-serif;
+  letter-spacing: .03em;
+  color: #fff;
+  text-align: right;
+}
+.dsx-card-head.buy  { background: linear-gradient(90deg, #1fae7e, #15c08a); text-align: left; }
+.dsx-card-head.sell { background: linear-gradient(90deg, #e0575b, #ff6e72); }
+.dsx-card-head.hold { background: linear-gradient(90deg, #2f6fe0, #3f8cff); }
+.dsx-card-head.neutral { background: var(--surface-2); color: var(--ink-1); text-align: left; }
+.dsx-flow-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+.dsx-flow-head span:last-child {
+  font: 500 11px/1.35 'Manrope', sans-serif;
+  color: var(--ink-3);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.dsx-flow-wrap { max-height: 680px; }
+
+/* ── tables ──────────────────────────────────────────────────────────── */
+.dsx-table-wrap { max-height: 560px; overflow: auto; }
+.dsx-table-wrap.dsx-flow-wrap { max-height: 680px; }
+.dsx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 500 13px/1.2 'Manrope', system-ui, sans-serif;
+}
+.dsx-table thead th {
+  position: sticky; top: 0;
+  background: var(--surface-2);
+  color: var(--ink-3);
+  font: 600 11px/1.3 'Manrope', sans-serif;
+  text-transform: uppercase; letter-spacing: .03em;
+  padding: 10px 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.dsx-table thead th:first-child,
+.dsx-table thead th.l { text-align: left; }
+.dsx-table tbody td {
+  padding: 9px 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink-1);
+  white-space: nowrap;
+}
+.dsx-table tbody td:first-child,
+.dsx-table tbody td.l { text-align: left; }
+.dsx-table tbody tr:hover { background: var(--surface-2); }
+.dsx-table .tkr { color: var(--accent); font-weight: 700; }
+.dsx-table .num-pos { color: var(--up); }
+.dsx-table .num-neg { color: var(--down); }
+
+/* The 3-up grid (Script Deep Dive: Buy / Sell / Holdings) packs 4–5 numeric
+   columns into a narrow card. Compact font + padding so every column fits and
+   the table no longer needs horizontal scrolling. */
+.dsx-grid-3 .dsx-table { font-size: 12px; }
+.dsx-grid-3 .dsx-table thead th {
+  padding: 9px 6px;
+  font-size: 10px;
+  letter-spacing: .01em;
+}
+.dsx-grid-3 .dsx-table tbody td { padding: 8px 6px; }
+
+/* sortable column headers */
+.dsx-table thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color .12s, background .12s;
+}
+.dsx-table thead th.sortable:hover { color: var(--ink-1); background: var(--surface); }
+.dsx-table thead th.sorted { color: var(--accent); }
+.dsx-table thead th .dsx-arrow { font-size: 9px; }
+.dsx-empty { padding: 28px; text-align: center; color: var(--ink-3); font-family: 'Manrope', sans-serif; }
+
+/* concentration heat cells */
+.dsx-conc .buysum  { background: var(--up-soft);   color: var(--up);   font-weight: 700; }
+.dsx-conc .sellsum { background: var(--down-soft); color: var(--down); font-weight: 700; }
+.dsx-conc .grp { border-left: 1px solid var(--line); }
+
+/* ── treemap ─────────────────────────────────────────────────────────── */
+.dsx-legend { display: flex; gap: 18px; margin-bottom: 10px; font-size: 13px; color: var(--ink-2); }
+.dsx-legend .dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.dsx-legend .dot.buy  { background: #58c98f; }
+.dsx-legend .dot.sell { background: #e06b6e; }
+.dsx-treemap {
+  position: relative;
+  width: 100%;
+  height: 640px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+.dsx-tm-cell {
+  position: absolute;
+  border: 1px solid rgba(255,255,255,.18);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  color: #0b1d12;
+  font: 700 12px/1.1 'Manrope', sans-serif;
+  text-align: center;
+  padding: 2px;
+  transition: filter .12s;
+}
+.dsx-tm-cell:hover { filter: brightness(1.08); }
+.dsx-tm-cell.buy  { background: #5ec98f; }
+.dsx-tm-cell.sell { background: #e06b6e; color: #fff; }
+.dsx-tm-label { pointer-events: none; }
+
+/* treemap hover/tap tooltip (Buy / Sell / Net) */
+.dsx-tm-tip {
+  position: absolute;
+  z-index: 50;
+  pointer-events: none;
+  min-width: 140px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  box-shadow: var(--shadow);
+  padding: 9px 11px;
+  font: 600 12px/1.35 'Manrope', sans-serif;
+  color: var(--ink-1);
+}
+.dsx-tm-tip[hidden] { display: none; }
+.dsx-tm-tip-sym {
+  font: 800 13px/1 'Manrope', sans-serif;
+  color: var(--accent);
+  margin-bottom: 5px;
+}
+.dsx-tm-tip-row { display: flex; justify-content: space-between; gap: 18px; }
+.dsx-tm-tip-row span { color: var(--ink-3); }
+.dsx-tm-tip-row b { font-family: 'Manrope', system-ui, sans-serif; font-weight: 700; }
+.dsx-tm-tip-row.net {
+  margin-top: 4px; padding-top: 4px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.dsx-loading { padding: 30px; text-align: center; color: var(--ink-3); font-family: 'Manrope', sans-serif; }

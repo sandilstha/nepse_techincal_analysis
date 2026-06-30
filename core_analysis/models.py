@@ -1,4 +1,34 @@
+from django.conf import settings
 from django.db import models
+from django.utils import timezone
+
+class Broker(models.Model):
+    """
+    Table: nepse_brokers
+    Reference list of NEPSE stock brokers (and stock dealers), keyed by the
+    broker number that appears as ``buyer`` / ``seller`` in the floorsheet feed.
+    Used to resolve a broker number to a human-readable name across the broker
+    analytics dashboard (Floor sheet page).
+    """
+    broker_number = models.IntegerField(
+        primary_key=True, help_text="NEPSE broker code; matches floorsheet buyer/seller"
+    )
+    name = models.CharField(max_length=255)
+    contact_person = models.CharField(max_length=255, null=True, blank=True)
+    contact_number = models.CharField(max_length=255, null=True, blank=True)
+    status = models.CharField(max_length=20, default="ACTIVE", db_index=True)
+    tms_link = models.CharField(max_length=255, null=True, blank=True)
+    is_dealer = models.BooleanField(
+        default=False, help_text="True if the firm also operates as a NEPSE stock dealer"
+    )
+
+    class Meta:
+        db_table = 'nepse_brokers'
+        ordering = ['broker_number']
+
+    def __str__(self):
+        return f"{self.broker_number} - {self.name}"
+
 
 class CompanyProfile(models.Model):
     """
@@ -133,3 +163,230 @@ class NepseMarketIndex(models.Model):
 
     def __str__(self):
         return f"{self.sector_name} - {self.business_date}"
+
+
+class NepseFloorsheet(models.Model):
+    """
+    Table: floorsheet_raw
+    Stores trade-level floorsheet rows (one row per executed trade) from
+    /api/nepse-data/api/floorsheet/. This is a high-volume table — tens of
+    millions of rows — so it is synced day-by-day filtered on calculation_date.
+
+    The upstream JSON 'id' is used directly as this table's primary key (it is a
+    stable, globally-unique trade id), so there is no separate surrogate key and
+    no `api_id` column. Most trade-economics columns are nullable to mirror the
+    raw feed, which occasionally omits them.
+    """
+    # Source 'id' is the primary key (not auto-generated locally).
+    id = models.BigIntegerField(primary_key=True, help_text="Maps to JSON 'id'")
+    contract_no = models.CharField(
+        max_length=255, null=True, blank=True, db_index=True, help_text="Maps to JSON 'contract_no'"
+    )
+    stock_symbol = models.CharField(max_length=50, db_index=True)
+
+    # Counterparties (broker numbers).
+    buyer = models.IntegerField(null=True, blank=True, db_index=True)
+    seller = models.IntegerField(null=True, blank=True, db_index=True)
+
+    # Trade economics.
+    quantity = models.IntegerField(null=True, blank=True)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    amount = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+
+    sector = models.CharField(max_length=100, null=True, blank=True, db_index=True)
+
+    # DB column is `calculation_date`; kept as `business_date` in Python for
+    # parity with the other NEPSE models and the analytics layer.
+    business_date = models.DateField(
+        db_column='calculation_date', db_index=True, help_text="Maps to JSON 'calculation_date'"
+    )
+
+    # Execution clock time (HH:MM:SS.ffffff), nullable for malformed rows.
+    trade_time = models.TimeField(
+        db_column='time', null=True, blank=True, help_text="Maps to JSON 'time'"
+    )
+
+    class Meta:
+        db_table = 'floorsheet_raw'
+        ordering = ['-business_date', 'stock_symbol']
+        indexes = [
+            models.Index(fields=['stock_symbol', 'business_date']),
+            models.Index(fields=['business_date', 'buyer']),
+            models.Index(fields=['business_date', 'seller']),
+            models.Index(fields=['business_date', 'sector']),
+        ]
+
+    def __str__(self):
+        return f"{self.contract_no} - {self.stock_symbol} - {self.business_date}"
+
+
+class FinancialStatement(models.Model):
+    """
+    Table: fundamentals_financialstatdbs (read-only mapping).
+
+    Company financial-statement line items (one row per
+    ticker × fiscal year × quarter × statement type × item), as harvested by the
+    separate ``fundamentals`` app that owns this table. We map it here only to
+    *read* fundamentals alongside the price/floorsheet data — hence
+    ``managed = False`` so Django never creates, alters or drops it, and the two
+    foreign-key columns are mapped as plain integer ids (their parent tables,
+    ``nepali_datetime_fiscalyear`` and ``fundamentals_accountdictionary``, are not
+    modelled in this project).
+    """
+    id = models.BigAutoField(primary_key=True)
+
+    # Identity / classification.
+    sector = models.CharField(max_length=100, db_index=True)
+    fiscal_year_ad = models.CharField(
+        max_length=10, db_index=True, help_text="Gregorian fiscal year label, e.g. '2024/25'"
+    )
+    quarter = models.PositiveSmallIntegerField(db_index=True, help_text="0 = annual / 1–4 = quarter")
+    data_source = models.CharField(max_length=20, db_index=True)
+    ticker = models.CharField(max_length=20, db_index=True)
+    fs_type = models.CharField(
+        max_length=10, db_index=True, help_text="Statement type, e.g. BS / PL / CF"
+    )
+
+    # Line item.
+    item_name = models.CharField(max_length=255)
+    item_code = models.CharField(max_length=80, db_index=True)
+    sorting_code = models.CharField(max_length=20, db_index=True)
+    unit = models.CharField(max_length=10)
+    amount = models.DecimalField(max_digits=20, decimal_places=4)
+    remarks = models.CharField(max_length=255, blank=True, default="")
+
+    created_at = models.DateTimeField()
+
+    # Foreign-key columns from the source schema, kept as raw ids (their parent
+    # tables live in other apps and aren't modelled here).
+    fiscal_year_bs = models.BigIntegerField(
+        db_column="fiscal_year_bs_id",
+        help_text="FK id -> nepali_datetime_fiscalyear.id (not modelled here)",
+    )
+    item = models.BigIntegerField(
+        db_column="item_id",
+        help_text="FK id -> fundamentals_accountdictionary.id (not modelled here)",
+    )
+
+    class Meta:
+        db_table = "fundamentals_financialstatdbs"
+        managed = False  # owned by the `fundamentals` app; never migrate it here
+        ordering = ["ticker", "fiscal_year_ad", "quarter", "sorting_code"]
+        # Mirrors the source table's natural key (financialstatdbs_unique_row).
+        unique_together = (
+            ("sector", "fiscal_year_ad", "quarter", "data_source", "ticker", "fs_type", "item_code"),
+        )
+
+    def __str__(self):
+        return f"{self.ticker} {self.fiscal_year_ad} Q{self.quarter} {self.fs_type} {self.item_code}"
+
+
+class Portfolio(models.Model):
+    """
+    Table: portfolio_portfolio
+    A logged-in user's private holdings portfolio — typically imported from a
+    Meroshare "My Shares" CSV. One user may keep several named portfolios. Risk /
+    valuation analytics are derived on the fly from the linked NEPSE EOD prices,
+    so only the positions live here.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="portfolios"
+    )
+    name = models.CharField(max_length=120, default="My Portfolio")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "portfolio_portfolio"
+        ordering = ["-updated_at"]
+        unique_together = (("user", "name"),)
+
+    def __str__(self):
+        return f"{self.name} (user {self.user_id})"
+
+
+class Holding(models.Model):
+    """
+    Table: portfolio_holding
+    One scrip position inside a portfolio. ``quantity`` is the demat balance; the
+    two price columns are the *snapshot* the CSV was exported with (kept for
+    reference only). Live valuation always re-prices against the latest
+    ``NepseDailyStockPrice`` close so every holding is marked to the same session.
+    """
+    portfolio = models.ForeignKey(
+        Portfolio, on_delete=models.CASCADE, related_name="holdings"
+    )
+    symbol = models.CharField(max_length=20, db_index=True)
+    quantity = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    # Import-time snapshot prices (informational; not used for live valuation).
+    last_close = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    ltp = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "portfolio_holding"
+        ordering = ["symbol"]
+        unique_together = (("portfolio", "symbol"),)
+
+    def __str__(self):
+        return f"{self.symbol} x{self.quantity}"
+
+
+class AccountApproval(models.Model):
+    """Admin review state for a self-service portfolio account request."""
+
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    STATUS_CHOICES = (
+        (PENDING, "Pending"),
+        (APPROVED, "Approved"),
+        (REJECTED, "Rejected"),
+    )
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="account_approval"
+    )
+    contact_email = models.EmailField(unique=True)
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default=PENDING, db_index=True
+    )
+    review_note = models.CharField(max_length=255, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reviewed_account_approvals",
+    )
+
+    class Meta:
+        db_table = "account_approval_request"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.contact_email} ({self.get_status_display()})"
+
+    @property
+    def is_pending(self):
+        return self.status == self.PENDING
+
+    def approve(self, reviewer=None, note=""):
+        self.status = self.APPROVED
+        self.reviewed_by = reviewer
+        self.review_note = note or ""
+        self.reviewed_at = timezone.now()
+        self.user.is_active = True
+        self.user.save(update_fields=["is_active"])
+        self.save(update_fields=["status", "reviewed_by", "review_note", "reviewed_at"])
+
+    def reject(self, reviewer=None, note=""):
+        self.status = self.REJECTED
+        self.reviewed_by = reviewer
+        self.review_note = note or ""
+        self.reviewed_at = timezone.now()
+        self.user.is_active = False
+        self.user.save(update_fields=["is_active"])
+        self.save(update_fields=["status", "reviewed_by", "review_note", "reviewed_at"])
