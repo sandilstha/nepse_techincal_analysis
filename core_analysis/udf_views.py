@@ -225,9 +225,15 @@ def _append_live_index_bar(kind, key, rows, to_date):
 
     rows = list(rows)
     if rows and rows[-1][0] == live[0]:
-        rows[-1] = live          # replace a stale same-day bar
-    elif not rows or live[0] > rows[-1][0]:
-        rows.append(live)        # add today
+        # Today's bar is already stored from the post-close index sync. That EOD
+        # row is the authoritative close, so keep it — do NOT overwrite it with
+        # the live snapshot. The live headline (fetch_contributors) can lag a
+        # session behind the official close once the market has shut: it reported
+        # value=2584.79 with prev_close=2608.33 while the synced bar's true close
+        # was 2608.33, producing a bogus candle whose close fell below its own low.
+        return rows
+    if not rows or live[0] > rows[-1][0]:
+        rows.append(live)        # intraday: today's bar isn't synced yet, show live
     return rows
 
 

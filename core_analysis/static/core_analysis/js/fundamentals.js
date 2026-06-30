@@ -285,8 +285,39 @@
       { label: "EPS CAGR", value: epsCagr, fmt: "pct", bounds: [0.20, 0.12, 0.06, 0.0], higherBetter: true },
     ]);
 
+    // Dividend sustainability — BFI sectors only (banks/finance/insurance),
+    // gated on the backend emitting `bfi` (i.e. the company reports a
+    // Distributable Profit line). Distributable profit and net income are both
+    // in Rs '000 and outstanding shares in '000, so dividing the rupee figures
+    // by shares yields a clean per-share value in rupees.
+    var bfi = data.bfi;
+    var bfiSection = null;
+    if (bfi) {
+      var distPS = null;
+      if (bfi.distributable_profit != null) {
+        if (bfi.shares) distPS = bfi.distributable_profit / bfi.shares;
+        else if (bfi.net_income && bfi.eps != null) distPS = (bfi.distributable_profit / bfi.net_income) * bfi.eps;
+      }
+      // DPS coverage: distributable profit per share ÷ declared dividend per
+      // share — how many times the dividend is backed by distributable profit.
+      // DPS is 0/undeclared for many latest (unaudited) years → leave N/A.
+      var dpsCov = (distPS != null && bfi.dps && bfi.dps > 0) ? distPS / bfi.dps : null;
+      // Reserve haircut: profit forced into the regulatory reserve as a share of
+      // net income — the slice of earnings the regulator walls off from dividends.
+      var haircut = (bfi.regulatory_reserve_transfer != null && bfi.net_income)
+        ? Math.abs(bfi.regulatory_reserve_transfer) / Math.abs(bfi.net_income)
+        : null;
+      bfiSection = msSection("Dividend Sustainability (BFI)", [
+        { label: "Distributable Profit", value: bfi.distributable_profit, fmt: "rs000" },
+        { label: "Distributable Profit / Share", value: distPS, fmt: "num" },
+        { label: "DPS Coverage", value: dpsCov, fmt: "num", bounds: [2, 1.5, 1.2, 1], higherBetter: true },
+        { label: "Reserve Haircut", value: haircut, fmt: "pct", bounds: [0.05, 0.12, 0.20, 0.35], higherBetter: false },
+      ]);
+    }
+
     // Composite star rating from every graded metric (4=A … 0=F → 1–5 stars).
     var allGrades = valuation.grades.concat(profitability.grades, growth.grades);
+    if (bfiSection) allGrades = allGrades.concat(bfiSection.grades);
     var stars = null, avg = null;
     if (allGrades.length) {
       var sum = allGrades.reduce(function (a, g) { return a + GRADE_POINTS[g]; }, 0);
@@ -311,6 +342,7 @@
     host.appendChild(valuation.frag);
     host.appendChild(profitability.frag);
     host.appendChild(growth.frag);
+    if (bfiSection) host.appendChild(bfiSection.frag);
 
     var note = el("div", "ms-note");
     note.textContent =

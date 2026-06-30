@@ -257,6 +257,33 @@ def fundamental_data_api(request):
         if points:
             trend.append({"label": label, "fmt": fmt, "points": points})
 
+    # BFI dividend-sustainability inputs. Only emitted when the selected period's
+    # Income Statement carries a Distributable Profit line — i.e. the banks,
+    # finance and insurance sectors whose IS runs the NRB/Beema-mandated
+    # distributable-profit waterfall. The item_code prefix is sector-specific
+    # (cb_/db_/fi_/inv_/li_/nli_…) but always ends in "_distributable_profit",
+    # so a suffix match covers every BFI sub-sector with one branch. The client
+    # turns these into DPS-coverage and reserve-haircut grades.
+    is_rows = rows_by_type.get("IS", {})
+    distributable = next(
+        (amt for code, amt in is_rows.items() if code.endswith("_distributable_profit")),
+        None,
+    )
+    bfi = None
+    if distributable is not None:
+        reg_reserve = next(
+            (amt for code, amt in is_rows.items() if "transferred_to_regulatory_reserve" in code),
+            None,
+        )
+        bfi = {
+            "distributable_profit": distributable,        # Rs '000
+            "regulatory_reserve_transfer": reg_reserve,   # Rs '000 (negative = moved into reserve)
+            "net_income": ks_by_key.get("net_income"),    # Rs '000
+            "dps": ks_by_key.get("dps"),                  # Rs / share
+            "shares": ks_by_key.get("shares"),            # '000 shares
+            "eps": ks_by_key.get("eps"),                  # Rs / share
+        }
+
     profile = (
         CompanyProfile.objects.filter(symbol=sym)
         .values("symbol", "security_name", "sector_name")
@@ -274,6 +301,7 @@ def fundamental_data_api(request):
             "headline": headline,
             "statements": statements,
             "trend": trend,
+            "bfi": bfi,
         }
     )
 

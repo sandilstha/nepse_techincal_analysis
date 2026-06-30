@@ -56,7 +56,7 @@
       autosize: true,
       theme: themeName(),
       timezone: cfg.tvTimezone || "Asia/Kathmandu",
-      disabled_features: ["use_localstorage_for_settings"],
+      disabled_features: ["use_localstorage_for_settings", "left_toolbar"],
       enabled_features: [],
       loading_screen: { backgroundColor: "transparent" }
     });

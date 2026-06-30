@@ -211,6 +211,22 @@ class UdfChartBarsTests(SimpleTestCase):
         bars.assert_called_once_with("index", "NEPSE INDEX", None, date(2026, 6, 16), 5000)
         self.assertEqual(result, stored + [live])
 
+    def test_chart_bars_keeps_synced_bar_over_live_same_day(self):
+        # Once the post-close sync has written today's row, that EOD bar is
+        # authoritative — the live snapshot (which can lag a session behind the
+        # official close) must NOT overwrite it, or the candle's close can fall
+        # below its own low. See _append_live_index_bar.
+        stored = [(date(2026, 6, 16), 2632.96, 2638.17, 2603.44, 2608.33, 6592209)]
+        live = (date(2026, 6, 16), 2631.55, 2638.17, 2584.79, 2584.79, 6592209)
+
+        with (
+            patch.object(udf_views, "_bars", return_value=stored),
+            patch.object(udf_views, "_live_index_bar", return_value=live),
+        ):
+            result = udf_views._chart_bars("index", "NEPSE INDEX", None, date(2026, 6, 16), 5000)
+
+        self.assertEqual(result, stored)
+
 
 class RrgAnalyticsTests(unittest.TestCase):
     @staticmethod
