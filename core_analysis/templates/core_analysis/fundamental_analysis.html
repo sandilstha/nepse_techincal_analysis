@@ -14,12 +14,6 @@
     html, body { height: 100%; margin: 0; }
     .fa-shell { display: flex; flex-direction: column; min-height: 100vh; }
 
-    .fa-topbar {
-      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-      padding: 7px 12px; border-bottom: 1px solid var(--line, rgba(128,128,128,.25));
-      flex: 0 0 auto; position: sticky; top: 0; z-index: 5;
-      background: var(--bg, #0d1117);
-    }
     .fa-brand { font-weight: 700; letter-spacing: .03em; }
     .fa-spacer { flex: 1 1 auto; }
     .fa-input, .fa-select {
@@ -33,10 +27,12 @@
       border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit;
     }
     .fa-btn.ghost { background: transparent; color: inherit; border: 1px solid var(--line, rgba(128,128,128,.3)); }
-    .fa-icon-btn { text-decoration: none; font-size: 18px; padding: 4px 8px; border-radius: 8px; }
-    .fa-icon-btn:hover { background: rgba(128,128,128,.18); }
 
     .fa-main { padding: 16px; max-width: 1280px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+
+    .fa-searchbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+    .fa-searchbar .fa-brand { font-size: 15px; letter-spacing: .02em; opacity: .85; }
+    .fa-searchbar .fa-input { width: 280px; max-width: 60vw; text-transform: none; }
 
     .fa-company { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
     .fa-company h1 { font-size: 22px; margin: 0; letter-spacing: .02em; }
@@ -179,32 +175,70 @@
     }
     .ms-rank-bar > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--accent, #4a90e2); }
     .ms-rank-sub { font-size: 11px; opacity: .55; margin-top: 4px; }
+
+    /* ── Company Financials matrix (multi-period statement table) ───────── */
+    .fm-controls {
+      display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;
+      background: var(--surface, rgba(128,128,128,.07));
+      border: 1px solid var(--line, rgba(128,128,128,.22));
+      border-radius: 12px; padding: 12px 14px; margin-bottom: 12px;
+    }
+    .fm-ctrl { display: flex; flex-direction: column; gap: 4px; }
+    .fm-ctrl > span { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; }
+    .fm-ctrl .fa-select { min-width: 160px; }
+
+    .fm-wrap {
+      overflow: auto; max-height: 78vh;
+      border: 1px solid var(--line, rgba(128,128,128,.22)); border-radius: 12px;
+    }
+    table.fm-table { border-collapse: separate; border-spacing: 0; font-size: 12.5px; white-space: nowrap; width: 100%; }
+    .fm-table th, .fm-table td {
+      padding: 7px 13px; text-align: right; font-variant-numeric: tabular-nums;
+      border-bottom: 1px solid var(--line, rgba(128,128,128,.16));
+    }
+    .fm-table thead th {
+      position: sticky; top: 0; z-index: 3; font-size: 11px; font-weight: 700;
+      background: var(--surface-2, #0b1d3f);
+      border-bottom: 2px solid var(--line, rgba(128,128,128,.35));
+    }
+    .fm-table .fm-yr { display: block; }
+    .fm-table .fm-q { display: block; font-size: 10px; font-weight: 500; opacity: .6; }
+    .fm-table th.fm-firstcol, .fm-table td.fm-firstcol {
+      position: sticky; left: 0; z-index: 2; text-align: left; min-width: 240px;
+      background: var(--bg, #0d1117);
+      border-right: 1px solid var(--line, rgba(128,128,128,.3));
+    }
+    .fm-table thead th.fm-firstcol { z-index: 4; background: var(--surface-2, #0b1d3f); }
+    .fm-table td.fm-band:not(.fm-firstcol) { background: rgba(128,128,128,.05); }
+
+    .fm-table tr.fm-row-section td { background: rgba(74,144,226,.12); font-weight: 700; }
+    .fm-table tr.fm-row-section td.fm-firstcol { background: rgba(74,144,226,.18); text-transform: uppercase; letter-spacing: .02em; }
+    .fm-table tr.fm-row-total td { background: rgba(245,166,35,.14); font-weight: 800; }
+    .fm-table tr.fm-row-total td.fm-firstcol { background: rgba(245,166,35,.20); text-transform: uppercase; }
+    .fm-table tr.fm-growth td { font-style: italic; font-size: 11px; border-bottom: 1px solid var(--line, rgba(128,128,128,.10)); }
+    .fm-table tr.fm-growth td.fm-firstcol { opacity: .55; padding-left: 26px; font-style: italic; }
+    .fm-up { color: #2ecc71; }
+    .fm-down { color: #e25563; }
+    .fm-empty { padding: 30px 14px; text-align: center; opacity: .6; }
   </style>
 </head>
 <body>
 <div class="fa-shell">
 
-  <header class="fa-topbar">
-    <span class="fa-brand">NEPSE · Fundamentals</span>
-
-    <input id="fa-symbol" class="fa-input" list="fa-symlist" value="{{ symbol }}"
-           placeholder="Symbol" aria-label="Symbol" autocomplete="off">
-    <datalist id="fa-symlist">
-      {% for s in symbols %}<option value="{{ s.symbol }}">{{ s.symbol }}{% if s.name %} — {{ s.name }}{% endif %}</option>{% endfor %}
-    </datalist>
-    <button id="fa-go" class="fa-btn ghost" title="Load company">Go</button>
-
-    <select id="fa-period" class="fa-select" aria-label="Fiscal period"></select>
-
-    <span class="fa-spacer"></span>
-
-    <button type="button" id="mi-theme-btn" class="fa-btn ghost" title="Switch theme" aria-label="Switch theme">Light</button>
-    <a href="{% url 'technical_analysis' %}" class="fa-btn ghost" title="Technical Analysis">📈 Technical</a>
-    <a href="{% url 'market_insights' %}" class="fa-icon-btn" title="Home" aria-label="Home">🏠</a>
-  </header>
-
   <main class="fa-main">
     {% include "core_analysis/includes/_primary_nav.html" with active_section='fundamental' %}
+
+    <div class="fa-searchbar">
+      <strong class="fa-brand">Fundamentals</strong>
+      <input id="fa-symbol" class="fa-input" list="fa-symlist" value="{{ symbol }}"
+             placeholder="Search company / symbol" aria-label="Symbol" autocomplete="off">
+      <datalist id="fa-symlist">
+        {% for s in symbols %}<option value="{{ s.symbol }}">{{ s.symbol }}{% if s.name %} — {{ s.name }}{% endif %}</option>{% endfor %}
+      </datalist>
+      <button id="fa-go" class="fa-btn">Go</button>
+      <span class="fa-spacer"></span>
+      <button type="button" id="mi-theme-btn" class="fa-btn ghost" title="Switch theme" aria-label="Switch theme">Light</button>
+    </div>
 
     <div id="fa-status" class="fa-status">Search a company to view its fundamentals.</div>
 
@@ -230,13 +264,26 @@
         </div>
 
         <div class="fa-section-title">Financial statements</div>
-        <div class="fa-tabs" id="fa-tabs"></div>
-        <div class="fa-table-wrap">
-          <table class="fa-table">
-            <thead><tr><th>Line item</th><th style="text-align:right">Amount</th></tr></thead>
-            <tbody id="fa-stmt-body"></tbody>
-          </table>
+        <div class="fm-controls">
+          <label class="fm-ctrl"><span>Statement</span>
+            <select id="fm-statement" class="fa-select">
+              <option value="BS">Balance Sheet</option>
+              <option value="IS">Income Statement</option>
+              <option value="KS">Key Statistics</option>
+            </select></label>
+          <label class="fm-ctrl"><span>Data Version</span>
+            <select id="fm-version" class="fa-select"></select></label>
+          <label class="fm-ctrl"><span>Periods</span>
+            <select id="fm-periods" class="fa-select">
+              <option value="8">8</option>
+              <option value="12" selected>12</option>
+              <option value="16">16</option>
+              <option value="24">24</option>
+            </select></label>
+          <button type="button" id="fm-load" class="fa-btn">↻ Load Data</button>
+          <button type="button" id="fm-export" class="fa-btn ghost">⭳ Export CSV</button>
         </div>
+        <div class="fm-wrap"><table class="fm-table" id="fm-table"></table></div>
       </section>
 
       <section id="fa-panel-morningstar" class="fa-subpanel fa-hidden" role="tabpanel">
@@ -272,6 +319,7 @@
 <script>
   window.FA_CONFIG = {
     apiUrl: "{% url 'fundamental_data_api' %}",
+    matrixUrl: "{% url 'fundamental_matrix_api' %}",
     symbol: "{{ symbol|escapejs }}",
   };
 </script>

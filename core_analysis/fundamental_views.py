@@ -392,3 +392,96 @@ def fundamental_data_api(request):
             "morningstar": morningstar,
         }
     )
+
+
+@require_GET
+def fundamental_matrix_api(request):
+    """Multi-period statement matrix: one line item per row, one fiscal period
+    per column (newest first) — the spreadsheet-style "Company Financials" view.
+
+    Query params:
+      symbol       — ticker (required)
+      statement    — BS | IS | KS (default BS)
+      data_version — source label (default: the company's only / first source)
+      periods      — number of period columns to return (default 12)
+    """
+    sym = (request.GET.get("symbol") or "").strip().upper()
+    fs_type = (request.GET.get("statement") or "BS").strip().upper()
+    if fs_type not in {"BS", "IS", "KS"}:
+        fs_type = "BS"
+    try:
+        limit = int(request.GET.get("periods") or 12)
+    except (TypeError, ValueError):
+        limit = 12
+    limit = max(4, min(40, limit))
+
+    base = FinancialStatement.objects.filter(ticker=sym, fs_type=fs_type)
+    if not sym or not base.exists():
+        return JsonResponse(
+            {"ok": False, "error": f"No {fs_type} data for {sym or '—'}."},
+            status=404,
+        )
+
+    versions = list(
+        FinancialStatement.objects.filter(ticker=sym)
+        .order_by()
+        .values_list("data_source", flat=True)
+        .distinct()
+    )
+    data_version = (request.GET.get("data_version") or "").strip()
+    if data_version not in versions:
+        data_version = versions[0] if versions else ""
+    if data_version:
+        base = base.filter(data_source=data_version)
+
+    raw = base.values(
+        "fiscal_year_ad", "quarter", "item_code", "item_name", "sorting_code", "unit", "amount"
+    )
+
+    # Columns: newest fiscal periods first, capped at `limit`.
+    periods = sorted(
+        {(r["fiscal_year_ad"], r["quarter"]) for r in raw},
+        key=lambda p: (p[0], p[1]),
+        reverse=True,
+    )[:limit]
+    period_set = set(periods)
+    columns = [{"key": f"{fy}|{q}", "fy": fy, "quarter": q} for fy, q in periods]
+
+    # Rows: one entry per line item, ordered by the source's sorting_code.
+    items = {}
+    for r in raw:
+        if (r["fiscal_year_ad"], r["quarter"]) not in period_set:
+            continue
+        code = r["item_code"]
+        it = items.get(code)
+        if it is None:
+            name = r["item_name"] or ""
+            it = {
+                "code": code,
+                "name": name,
+                "unit": r["unit"] or "",
+                "fmt": _fmt_for(r["unit"]),
+                "header": name.isupper() and len(name) > 1,
+                "_sort": r["sorting_code"] or "",
+                "values": {},
+            }
+            items[code] = it
+        it["values"][f"{r['fiscal_year_ad']}|{r['quarter']}"] = (
+            float(r["amount"]) if r["amount"] is not None else None
+        )
+
+    rows = sorted(items.values(), key=lambda x: (x["_sort"], x["code"]))
+    for r in rows:
+        r.pop("_sort", None)
+
+    return JsonResponse(
+        {
+            "ok": True,
+            "symbol": sym,
+            "statement": fs_type,
+            "data_version": data_version,
+            "data_versions": versions,
+            "columns": columns,
+            "rows": rows,
+        }
+    )

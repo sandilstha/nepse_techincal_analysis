@@ -270,8 +270,8 @@
     "semantic_hash": "70b73d1d51d8343fe5fdbeac546aa186"
   },
   "core_analysis/urls.py": {
-    "mtime": 1782727849.1608596,
-    "ast_hash": "d3b7d4804dd3c47ac5d91b885ce607e2",
+    "mtime": 1782792561.4351697,
+    "ast_hash": "871f06f9b9118f698870e883242c25fb",
     "semantic_hash": ""
   },
   "core_analysis/views.py": {
@@ -385,13 +385,13 @@
     "semantic_hash": ""
   },
   "core_analysis/fundamental_views.py": {
-    "mtime": 1782732855.0077343,
-    "ast_hash": "71f14cf16b8cd6d7d0ab1e61851bbcc6",
+    "mtime": 1782792548.6366506,
+    "ast_hash": "abd05cfeb27a22ea43200b20bdf463c3",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/fundamentals.js": {
-    "mtime": 1782731798.033976,
-    "ast_hash": "4b1349e5329899c830b5c3a254d3cfbc",
+    "mtime": 1782792728.5457318,
+    "ast_hash": "39ac67829b0bd124e40e30630bb329fa",
     "semantic_hash": ""
   }
 }

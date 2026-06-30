@@ -12,7 +12,6 @@
   var els = {
     symbol: document.getElementById("fa-symbol"),
     go: document.getElementById("fa-go"),
-    period: document.getElementById("fa-period"),
     status: document.getElementById("fa-status"),
     content: document.getElementById("fa-content"),
     ticker: document.getElementById("fa-ticker"),
@@ -22,15 +21,20 @@
     cards: document.getElementById("fa-cards"),
     trendSection: document.getElementById("fa-trend-section"),
     trend: document.getElementById("fa-trend"),
-    tabs: document.getElementById("fa-tabs"),
-    stmtBody: document.getElementById("fa-stmt-body"),
     subtabs: document.getElementById("fa-subtabs"),
     panelStatement: document.getElementById("fa-panel-statement"),
     panelMorningstar: document.getElementById("fa-panel-morningstar"),
     morningstar: document.getElementById("fa-morningstar"),
+    // Company Financials matrix controls.
+    fmStatement: document.getElementById("fm-statement"),
+    fmVersion: document.getElementById("fm-version"),
+    fmPeriods: document.getElementById("fm-periods"),
+    fmLoad: document.getElementById("fm-load"),
+    fmExport: document.getElementById("fm-export"),
+    fmTable: document.getElementById("fm-table"),
   };
 
-  var state = { data: null, activeType: null, activeSubtab: "statement" };
+  var state = { data: null, activeSubtab: "statement", matrix: null };
 
   // --- formatting -----------------------------------------------------------
 
@@ -144,53 +148,8 @@
     });
   }
 
-  function renderTabs(statements) {
-    els.tabs.innerHTML = "";
-    statements.forEach(function (s) {
-      var btn = el("button", "fa-tab" + (s.type === state.activeType ? " active" : ""), s.label);
-      btn.dataset.type = s.type;
-      btn.addEventListener("click", function () {
-        state.activeType = s.type;
-        renderTabs(statements);
-        renderStatement(s);
-      });
-      els.tabs.appendChild(btn);
-    });
-  }
-
-  function renderStatement(stmt) {
-    els.stmtBody.innerHTML = "";
-    if (!stmt || !stmt.rows.length) {
-      var tr = el("tr");
-      var td = el("td", null, "No line items for this statement/period.");
-      td.colSpan = 2;
-      td.style.opacity = ".6";
-      td.style.padding = "20px 14px";
-      tr.appendChild(td);
-      els.stmtBody.appendChild(tr);
-      return;
-    }
-    stmt.rows.forEach(function (r) {
-      var tr = el("tr", r.header ? "fa-row-header" : null);
-      tr.appendChild(el("td", null, r.name || r.code));
-      tr.appendChild(el("td", "fa-amt", fmtValue(r.amount, r.fmt)));
-      els.stmtBody.appendChild(tr);
-    });
-  }
-
-  function renderPeriods(periods, selected) {
-    els.period.innerHTML = "";
-    periods.forEach(function (p) {
-      var opt = el("option", null, periodLabel(p));
-      opt.value = p.fy + "|" + p.quarter;
-      if (p.fy === selected.fy && p.quarter === selected.quarter) opt.selected = true;
-      els.period.appendChild(opt);
-    });
-  }
-
   function render(data) {
     state.data = data;
-    state.activeType = (data.statements[0] || {}).type || null;
 
     els.ticker.textContent = data.symbol;
     els.secname.textContent = data.profile.security_name || "";
@@ -200,15 +159,12 @@
     } else {
       els.sector.classList.add("fa-hidden");
     }
-    els.periodLabel.textContent = periodLabel(data.selected);
+    els.periodLabel.textContent = "Ratios as of " + periodLabel(data.selected);
 
-    renderPeriods(data.periods, data.selected);
     renderCards(data.headline);
     renderTrend(data.trend);
-    renderTabs(data.statements);
-    var active = data.statements.find(function (s) { return s.type === state.activeType; });
-    renderStatement(active || data.statements[0]);
     renderMorningstar(data);
+    loadMatrix();  // multi-period Company Financials matrix (own request)
 
     els.status.classList.add("fa-hidden");
     els.content.classList.remove("fa-hidden");
@@ -447,6 +403,184 @@
     return box;
   }
 
+  // --- Company Financials matrix (multi-period statement table) -------------
+
+  // Numbers in the matrix mirror the source scale (e.g. Rs '000 shown as-is,
+  // grouped) rather than the compact card formatting.
+  function fmtCell(v, fmt) {
+    if (v == null || isNaN(v)) return "—";
+    if (fmt === "pct") return (v * 100).toFixed(2) + "%";
+    if (fmt === "rs000") return Math.round(v).toLocaleString();
+    return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  function fmtGrowth(curr, prev) {
+    if (curr == null || prev == null || prev === 0) return { text: "", cls: "" };
+    var g = curr / prev - 1;
+    return { text: (g * 100).toFixed(2) + "%", cls: g >= 0 ? "fm-up" : "fm-down" };
+  }
+
+  // "2025/26" → "2024/25" (the same quarter one fiscal year earlier).
+  function prevFy(fy) {
+    var m = (fy || "").split("/");
+    if (m.length !== 2) return null;
+    var a = parseInt(m[0], 10), b = parseInt(m[1], 10);
+    if (isNaN(a) || isNaN(b)) return null;
+    var pb = String((b - 1 + 100) % 100);
+    if (pb.length < 2) pb = "0" + pb;
+    return (a - 1) + "/" + pb;
+  }
+
+  function loadMatrix() {
+    if (!state.data) return;
+    var url = cfg.matrixUrl + "?symbol=" + encodeURIComponent(state.data.symbol) +
+      "&statement=" + encodeURIComponent(els.fmStatement.value) +
+      "&periods=" + encodeURIComponent(els.fmPeriods.value);
+    if (els.fmVersion.value) url += "&data_version=" + encodeURIComponent(els.fmVersion.value);
+    els.fmTable.innerHTML = '<tbody><tr><td class="fm-empty">Loading…</td></tr></tbody>';
+    fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+      .then(function (r) { return r.json(); })
+      .then(function (m) {
+        if (!m.ok) {
+          els.fmTable.innerHTML = '<tbody><tr><td class="fm-empty">' +
+            (m.error || "No data.") + "</td></tr></tbody>";
+          return;
+        }
+        state.matrix = m;
+        syncVersionOptions(m);
+        renderMatrix(m);
+      })
+      .catch(function () {
+        els.fmTable.innerHTML = '<tbody><tr><td class="fm-empty">Network error.</td></tr></tbody>';
+      });
+  }
+
+  function syncVersionOptions(m) {
+    if (els.fmVersion.options.length === m.data_versions.length && els.fmVersion.value) return;
+    els.fmVersion.innerHTML = "";
+    m.data_versions.forEach(function (v) {
+      var label = v.charAt(0) + v.slice(1).toLowerCase(); // PUBLISHED → Published
+      var opt = el("option", null, label);
+      opt.value = v;
+      if (v === m.data_version) opt.selected = true;
+      els.fmVersion.appendChild(opt);
+    });
+  }
+
+  function renderMatrix(m) {
+    els.fmTable.innerHTML = "";
+    if (!m.columns.length || !m.rows.length) {
+      els.fmTable.innerHTML = '<tbody><tr><td class="fm-empty">No line items.</td></tr></tbody>';
+      return;
+    }
+
+    // Alternate a subtle band per fiscal-year group of columns.
+    var bandByKey = {}, fyOrder = [];
+    m.columns.forEach(function (c) {
+      if (fyOrder.indexOf(c.fy) === -1) fyOrder.push(c.fy);
+      bandByKey[c.key] = fyOrder.indexOf(c.fy) % 2 === 1;
+    });
+
+    // Header.
+    var thead = el("thead");
+    var htr = el("tr");
+    htr.appendChild(thEl("Financial Year", "fm-firstcol"));
+    m.columns.forEach(function (c) {
+      var th = thEl("", bandByKey[c.key] ? "fm-band" : null);
+      th.appendChild(el("span", "fm-yr", c.fy));
+      th.appendChild(el("span", "fm-q", "Q" + c.quarter));
+      htr.appendChild(th);
+    });
+    thead.appendChild(htr);
+    els.fmTable.appendChild(thead);
+
+    var tbody = el("tbody");
+    m.rows.forEach(function (row) {
+      var isTotal = /\bTOTAL\b/.test(row.name || "");
+      var cls = isTotal ? "fm-row-total" : (row.header ? "fm-row-section" : null);
+      var tr = el("tr", cls);
+      tr.appendChild(tdEl(row.name || row.code, "fm-firstcol"));
+      m.columns.forEach(function (c) {
+        var td = tdEl(fmtCell(row.values[c.key], row.fmt), bandByKey[c.key] ? "fm-band" : null);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+
+      // Growth sub-rows under section/total rows: QoQ and YoY.
+      if (row.header) {
+        tbody.appendChild(growthRow(row, m.columns, bandByKey, "↳ Over Prior Period", "qoq"));
+        tbody.appendChild(growthRow(row, m.columns, bandByKey, "↳ Period on Period", "yoy"));
+      }
+    });
+    els.fmTable.appendChild(tbody);
+  }
+
+  function growthRow(row, columns, bandByKey, label, mode) {
+    var tr = el("tr", "fm-growth");
+    tr.appendChild(tdEl(label, "fm-firstcol"));
+    columns.forEach(function (c, i) {
+      var curr = row.values[c.key], prev;
+      if (mode === "qoq") {
+        var nxt = columns[i + 1];                 // next column = previous period
+        prev = nxt ? row.values[nxt.key] : null;
+      } else {                                     // yoy: same quarter, prior fy
+        prev = row.values[prevFy(c.fy) + "|" + c.quarter];
+      }
+      var g = fmtGrowth(curr, prev);
+      var td = tdEl(g.text, (bandByKey[c.key] ? "fm-band " : "") + g.cls);
+      tr.appendChild(td);
+    });
+    return tr;
+  }
+
+  function thEl(text, cls) {
+    var th = document.createElement("th");
+    if (cls) th.className = cls;
+    if (text) th.textContent = text;
+    return th;
+  }
+  function tdEl(text, cls) {
+    var td = document.createElement("td");
+    if (cls) td.className = cls;
+    if (text != null) td.textContent = text;
+    return td;
+  }
+
+  function exportMatrixCSV() {
+    var m = state.matrix;
+    if (!m) return;
+    var lines = [];
+    var head = ["Line item"].concat(m.columns.map(function (c) { return c.fy + " Q" + c.quarter; }));
+    lines.push(head.map(csvCell).join(","));
+    m.rows.forEach(function (row) {
+      var cells = [row.name || row.code].concat(m.columns.map(function (c) {
+        var v = row.values[c.key];
+        return v == null ? "" : v;
+      }));
+      lines.push(cells.map(csvCell).join(","));
+    });
+    var blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = m.symbol + "_" + m.statement + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+  function csvCell(v) {
+    var s = String(v == null ? "" : v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  if (els.fmStatement) {
+    els.fmStatement.addEventListener("change", loadMatrix);
+    els.fmVersion.addEventListener("change", loadMatrix);
+    els.fmPeriods.addEventListener("change", loadMatrix);
+    els.fmLoad.addEventListener("click", loadMatrix);
+    els.fmExport.addEventListener("click", exportMatrixCSV);
+  }
+
   // --- sub-tab switching ----------------------------------------------------
 
   function setSubtab(name) {
@@ -509,11 +643,6 @@
     if (e.key === "Enter") loadFromInput();
   });
   els.symbol.addEventListener("change", loadFromInput);
-  els.period.addEventListener("change", function () {
-    if (!state.data) return;
-    var parts = els.period.value.split("|");
-    load(state.data.symbol, parts[0], parts[1]);
-  });
 
   // --- boot -----------------------------------------------------------------
 

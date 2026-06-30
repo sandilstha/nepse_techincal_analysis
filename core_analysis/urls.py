@@ -48,6 +48,7 @@ from .indicator_views import indicator_catalog, indicator_data
 from .fundamental_views import (
     fundamental_analysis_view,
     fundamental_data_api,
+    fundamental_matrix_api,
 )
 
 urlpatterns = [
@@ -67,6 +68,7 @@ urlpatterns = [
     # Fundamental Analysis Desk — company financial statements + ratios.
     path('fundamentals/', fundamental_analysis_view, name='fundamental_analysis'),
     path('fundamentals/api/', fundamental_data_api, name='fundamental_data_api'),
+    path('fundamentals/matrix/', fundamental_matrix_api, name='fundamental_matrix_api'),
     path('fundamentals/<str:symbol>/', fundamental_analysis_view, name='fundamental_analysis_symbol'),
 
     # Auth (user-facing; the workbench keeps its separate admin/staff login).
