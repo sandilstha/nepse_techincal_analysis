@@ -260,8 +260,8 @@
     "semantic_hash": "bb318371ce8811435f42f4a6ba8d64a7"
   },
   "core_analysis/tests.py": {
-    "mtime": 1782720580.3967245,
-    "ast_hash": "28b2b9aca5e465a55c47fcfc8790618e",
+    "mtime": 1782802077.1148534,
+    "ast_hash": "b4f1dcbe91d91af404a8b0257028ce37",
     "semantic_hash": ""
   },
   "core_analysis/udf_views.py": {
@@ -270,8 +270,8 @@
     "semantic_hash": "70b73d1d51d8343fe5fdbeac546aa186"
   },
   "core_analysis/urls.py": {
-    "mtime": 1782792561.4351697,
-    "ast_hash": "871f06f9b9118f698870e883242c25fb",
+    "mtime": 1782795214.1904554,
+    "ast_hash": "468f5ab1df1c8cf748e33f47ef82aea7",
     "semantic_hash": ""
   },
   "core_analysis/views.py": {
@@ -385,13 +385,13 @@
     "semantic_hash": ""
   },
   "core_analysis/fundamental_views.py": {
-    "mtime": 1782792548.6366506,
-    "ast_hash": "abd05cfeb27a22ea43200b20bdf463c3",
+    "mtime": 1782803793.9509792,
+    "ast_hash": "2f94eee9e69c00869350ecb18d7ea638",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/fundamentals.js": {
-    "mtime": 1782792728.5457318,
-    "ast_hash": "39ac67829b0bd124e40e30630bb329fa",
+    "mtime": 1782803262.3411932,
+    "ast_hash": "adf38706713e265117c32b28dc1594ca",
     "semantic_hash": ""
   }
 }

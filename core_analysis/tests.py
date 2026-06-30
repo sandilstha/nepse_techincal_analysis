@@ -36,6 +36,31 @@ except ImproperlyConfigured:  # Allows `python core_analysis/tests.py` outside D
     indicator_views = None
     udf_views = None
 
+try:
+    from core_analysis import fundamental_views
+except ImproperlyConfigured:  # Allows `python core_analysis/tests.py` outside Django.
+    fundamental_views = None
+
+
+@unittest.skipIf(fundamental_views is None, "Django settings unavailable")
+class FundamentalGrowthValueModelTests(unittest.TestCase):
+    def test_cap_segments_use_cumulative_market_cap_share(self):
+        segments = fundamental_views._gv_cap_segments(
+            {"AAA": 70.0, "BBB": 20.0, "CCC": 10.0, "DDD": None}
+        )
+
+        self.assertEqual(segments["AAA"], "Large")
+        self.assertEqual(segments["BBB"], "Mid")
+        self.assertEqual(segments["CCC"], "Small")
+        self.assertEqual(segments["DDD"], "Unclassified")
+
+    def test_cap_segments_handle_dominant_large_cap(self):
+        segments = fundamental_views._gv_cap_segments({"AAA": 95.0, "BBB": 3.0, "CCC": 2.0})
+
+        self.assertEqual(segments["AAA"], "Large")
+        self.assertEqual(segments["BBB"], "Small")
+        self.assertEqual(segments["CCC"], "Small")
+
 
 class AdminApprovalTests(TestCase):
     def _register(self, username, email):

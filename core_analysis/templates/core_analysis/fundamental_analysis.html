@@ -30,6 +30,8 @@
 
     .fa-main { padding: 16px; max-width: 1280px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 
+    .fa-tabrow { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .fa-tabrow .fa-subtabs { flex: 1 1 auto; margin: 0; }
     .fa-searchbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
     .fa-searchbar .fa-brand { font-size: 15px; letter-spacing: .02em; opacity: .85; }
     .fa-searchbar .fa-input { width: 280px; max-width: 60vw; text-transform: none; }
@@ -220,6 +222,68 @@
     .fm-up { color: #2ecc71; }
     .fm-down { color: #e25563; }
     .fm-empty { padding: 30px 14px; text-align: center; opacity: .6; }
+
+    /* ── Growth & Value model (Morningstar-style sector scoring) ────────── */
+    .gv-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 26px 0 12px; }
+    .gv-head h3 { margin: 0; font-size: 15px; }
+    .gv-head .gv-sub { font-size: 12px; opacity: .6; }
+
+    .gv-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
+    .gv-card { background: var(--surface, rgba(128,128,128,.07)); border: 1px solid var(--line, rgba(128,128,128,.22)); border-radius: 12px; padding: 12px 14px; }
+    .gv-card b { font-size: 22px; font-variant-numeric: tabular-nums; }
+    .gv-card span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; margin-top: 2px; }
+    .gv-card.s3 b { color: #2ecc71; } .gv-card.s2 b { color: #f5a623; } .gv-card.s1 b { color: #e25563; }
+
+    .gv-scatter-wrap { background: var(--surface, rgba(128,128,128,.06)); border: 1px solid var(--line, rgba(128,128,128,.22)); border-radius: 12px; padding: 12px; margin-bottom: 18px; }
+    .gv-scatter { width: 100%; height: auto; display: block; cursor: grab; touch-action: none; }
+    .gv-scatter.grabbing { cursor: grabbing; }
+    .gv-chart-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .gv-chart-bar .fa-section-title { margin: 0; }
+    .gv-zoom { display: flex; align-items: center; gap: 6px; }
+    .gv-zoom .fa-btn { padding: 2px 11px; font-size: 14px; line-height: 1.2; }
+    .gv-zoom-hint { font-size: 11px; opacity: .5; margin-right: 4px; }
+    .gv-scatter text { fill: currentColor; }
+    .gv-axis { stroke: var(--line, rgba(128,128,128,.4)); stroke-width: 1; }
+    .gv-mid { stroke: var(--line, rgba(128,128,128,.35)); stroke-dasharray: 4 4; }
+    .gv-dot-3 { fill: #2ecc71; } .gv-dot-2 { fill: #f5a623; } .gv-dot-1 { fill: #e25563; }
+    .gv-dot-sel { stroke: var(--ink-1, #fff); stroke-width: 2; }
+    .gv-grid { stroke: var(--line, rgba(128,128,128,.18)); stroke-width: 1; }
+    .gv-tick { fill: currentColor; opacity: .55; }
+    .gv-axis-label { fill: currentColor; opacity: .7; }
+    .gv-dotlabel { fill: currentColor; opacity: .8; font-size: 10px; }
+
+    .gv-cap-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .gv-cap-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; margin-right: 4px; }
+    .gv-cap-btn {
+      border: 1px solid var(--line, rgba(128,128,128,.3)); background: transparent; color: inherit;
+      border-radius: 999px; padding: 4px 14px; cursor: pointer; font: inherit; font-size: 12.5px;
+    }
+    .gv-cap-btn:hover { background: rgba(128,128,128,.12); }
+    .gv-cap-btn.active { background: var(--accent, #4a90e2); color: #fff; border-color: transparent; }
+
+    .gv-filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
+    .gv-filters .fm-ctrl .fa-select, .gv-filters .fa-input { min-width: 130px; }
+
+    .gv-table-wrap { overflow-x: auto; border: 1px solid var(--line, rgba(128,128,128,.22)); border-radius: 12px; }
+    table.gv-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .gv-table th, .gv-table td { padding: 8px 12px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .gv-table th:first-child, .gv-table td:first-child,
+    .gv-table th.gv-l, .gv-table td.gv-l { text-align: left; }
+    .gv-table thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; border-bottom: 1px solid var(--line, rgba(128,128,128,.3)); }
+    .gv-table thead th.gv-sortable { cursor: pointer; user-select: none; }
+    .gv-table thead th.gv-sortable:hover { opacity: .9; }
+    .gv-table .gv-arrow { font-size: 10px; }
+    .gv-pager { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    .gv-pager .fa-btn[disabled] { opacity: .4; cursor: default; }
+    .gv-page-size { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; opacity: .8; }
+    .gv-page-size .fa-select { min-width: 76px; padding: 4px 8px; }
+    .gv-page-info { font-size: 12px; opacity: .7; }
+    .gv-table tbody tr:nth-child(even) { background: rgba(128,128,128,.05); }
+    .gv-table tr.gv-sel { background: rgba(74,144,226,.18) !important; }
+    .gv-pill { font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 999px; }
+    .gv-pill.s3 { background: rgba(46,204,113,.18); color: #2ecc71; }
+    .gv-pill.s2 { background: rgba(245,166,35,.18); color: #f5a623; }
+    .gv-pill.s1 { background: rgba(226,85,99,.18); color: #e25563; }
   </style>
 </head>
 <body>
@@ -228,34 +292,36 @@
   <main class="fa-main">
     {% include "core_analysis/includes/_primary_nav.html" with active_section='fundamental' %}
 
-    <div class="fa-searchbar">
-      <strong class="fa-brand">Fundamentals</strong>
-      <input id="fa-symbol" class="fa-input" list="fa-symlist" value="{{ symbol }}"
-             placeholder="Search company / symbol" aria-label="Symbol" autocomplete="off">
-      <datalist id="fa-symlist">
-        {% for s in symbols %}<option value="{{ s.symbol }}">{{ s.symbol }}{% if s.name %} — {{ s.name }}{% endif %}</option>{% endfor %}
-      </datalist>
-      <button id="fa-go" class="fa-btn">Go</button>
-      <span class="fa-spacer"></span>
-      <button type="button" id="mi-theme-btn" class="fa-btn ghost" title="Switch theme" aria-label="Switch theme">Light</button>
-    </div>
-
-    <div id="fa-status" class="fa-status">Search a company to view its fundamentals.</div>
-
-    <div id="fa-content" class="fa-hidden">
-      <div class="fa-company">
-        <h1 id="fa-ticker">—</h1>
-        <span class="fa-name" id="fa-secname"></span>
-        <span class="fa-sector fa-hidden" id="fa-sector"></span>
-        <span class="fa-period" id="fa-periodlabel"></span>
-      </div>
-
+    <div class="fa-tabrow">
       <div class="fa-subtabs" id="fa-subtabs" role="tablist">
         <button type="button" class="fa-subtab active" data-subtab="statement" role="tab" aria-selected="true">Financial Statement</button>
         <button type="button" class="fa-subtab" data-subtab="morningstar" role="tab" aria-selected="false">Morningstar</button>
       </div>
+      <button type="button" id="mi-theme-btn" class="fa-btn ghost" title="Switch theme" aria-label="Switch theme">Light</button>
+    </div>
 
-      <section id="fa-panel-statement" class="fa-subpanel" role="tabpanel">
+    <!-- ── Financial Statement: company search + that company's statements ── -->
+    <section id="fa-panel-statement" class="fa-subpanel" role="tabpanel">
+      <div class="fa-searchbar">
+        <strong class="fa-brand">Company</strong>
+        <input id="fa-symbol" class="fa-input" list="fa-symlist" value="{{ symbol }}"
+               placeholder="Search company / symbol" aria-label="Symbol" autocomplete="off">
+        <datalist id="fa-symlist">
+          {% for s in symbols %}<option value="{{ s.symbol }}">{{ s.symbol }}{% if s.name %} — {{ s.name }}{% endif %}</option>{% endfor %}
+        </datalist>
+        <button id="fa-go" class="fa-btn">Go</button>
+      </div>
+
+      <div id="fa-status" class="fa-status">Search a company to view its fundamentals.</div>
+
+      <div id="fa-content" class="fa-hidden">
+        <div class="fa-company">
+          <h1 id="fa-ticker">—</h1>
+          <span class="fa-name" id="fa-secname"></span>
+          <span class="fa-sector fa-hidden" id="fa-sector"></span>
+          <span class="fa-period" id="fa-periodlabel"></span>
+        </div>
+
         <div class="fa-cards" id="fa-cards"></div>
 
         <div id="fa-trend-section">
@@ -281,15 +347,15 @@
               <option value="24">24</option>
             </select></label>
           <button type="button" id="fm-load" class="fa-btn">↻ Load Data</button>
-          <button type="button" id="fm-export" class="fa-btn ghost">⭳ Export CSV</button>
         </div>
         <div class="fm-wrap"><table class="fm-table" id="fm-table"></table></div>
-      </section>
+      </div>
+    </section>
 
-      <section id="fa-panel-morningstar" class="fa-subpanel fa-hidden" role="tabpanel">
-        <div id="fa-morningstar"></div>
-      </section>
-    </div>
+    <!-- ── Morningstar: sector-driven Growth & Value model (independent) ── -->
+    <section id="fa-panel-morningstar" class="fa-subpanel fa-hidden" role="tabpanel">
+      <div id="fa-model"></div>
+    </section>
   </main>
 </div>
 
@@ -320,6 +386,7 @@
   window.FA_CONFIG = {
     apiUrl: "{% url 'fundamental_data_api' %}",
     matrixUrl: "{% url 'fundamental_matrix_api' %}",
+    modelUrl: "{% url 'fundamental_model_api' %}",
     symbol: "{{ symbol|escapejs }}",
   };
 </script>
