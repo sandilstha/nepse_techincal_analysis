@@ -49,6 +49,7 @@ from .fundamental_views import (
     fundamental_analysis_view,
     fundamental_data_api,
     fundamental_matrix_api,
+    fundamental_model_api,
 )
 
 urlpatterns = [
@@ -69,6 +70,7 @@ urlpatterns = [
     path('fundamentals/', fundamental_analysis_view, name='fundamental_analysis'),
     path('fundamentals/api/', fundamental_data_api, name='fundamental_data_api'),
     path('fundamentals/matrix/', fundamental_matrix_api, name='fundamental_matrix_api'),
+    path('fundamentals/model/', fundamental_model_api, name='fundamental_model_api'),
     path('fundamentals/<str:symbol>/', fundamental_analysis_view, name='fundamental_analysis_symbol'),
 
     # Auth (user-facing; the workbench keeps its separate admin/staff login).
