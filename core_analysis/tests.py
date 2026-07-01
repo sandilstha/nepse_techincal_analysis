@@ -228,6 +228,29 @@ class UdfChartBarsTests(SimpleTestCase):
         self.assertEqual(result, stored)
 
 
+class WaccImportTests(SimpleTestCase):
+    def test_normalize_maps_newline_headers_and_skips_noise(self):
+        from core_analysis.portfolio_views import _normalize_wacc_table
+        # Mirrors pdfplumber's extraction: header cells carry embedded newlines.
+        table = [
+            ["S.N.", "Scrip Name", "WACC\nCalculated\nQuantity", "WACC Rate",
+             "Total Cost of\nCapital", "Last\nModification\nDate"],
+            ["1.", "GCIL", "2", "252.2728", "504.5455", "2026-03-12 14:28:46"],
+            ["2.", "HBL", "10", "157.0", "1570.0", "2025-09-26 13:19:15"],
+            ["", "", "", "", "", ""],                       # blank row
+            ["", "Total :", "", "", "", ""],                # summary row
+        ]
+        rows, skipped = _normalize_wacc_table(table)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0], {
+            "symbol": "GCIL", "wacc_rate": 252.2728, "quantity": 2.0,
+            "total_cost": 504.5455, "modified": "2026-03-12 14:28:46",
+        })
+        self.assertEqual(rows[1]["symbol"], "HBL")
+        self.assertEqual(rows[1]["wacc_rate"], 157.0)
+        self.assertGreaterEqual(skipped, 1)  # the "Total :" line is skipped
+
+
 class RrgAnalyticsTests(unittest.TestCase):
     @staticmethod
     def _price_frame(start, closes):

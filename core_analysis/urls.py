@@ -6,6 +6,7 @@ from .portfolio_views import (
     portfolio_view,
     portfolio_data_api,
     portfolio_import,
+    portfolio_wacc_import,
     portfolio_clear,
 )
 from .views import (
@@ -44,6 +45,7 @@ from .udf_views import (
     udf_search,
     udf_history,
 )
+from .analytics_views import site_stats_view
 from .indicator_views import indicator_catalog, indicator_data
 from .fundamental_views import (
     fundamental_analysis_view,
@@ -83,6 +85,7 @@ urlpatterns = [
     path('portfolio/', portfolio_view, name='portfolio'),
     path('portfolio/api/data/', portfolio_data_api, name='portfolio_data_api'),
     path('portfolio/import/', portfolio_import, name='portfolio_import'),
+    path('portfolio/wacc/', portfolio_wacc_import, name='portfolio_wacc_import'),
     path('portfolio/clear/', portfolio_clear, name='portfolio_clear'),
 
     # Floor sheet — Dalal Street X broker analytics (built on the floorsheet feed).
@@ -110,6 +113,9 @@ urlpatterns = [
     path('dashboard/sync-calculate/', trigger_sync_and_calculate, name='trigger_sync_and_calculate'),
     # NEW — lightweight autocomplete endpoint for symbol search boxes
     path('dashboard/symbols/', symbol_autocomplete_view, name='symbol_autocomplete'),
+
+    # Self-hosted visit analytics — "how many times the site was opened" (staff only).
+    path('stats/', site_stats_view, name='site_stats'),
 
     # TradingView Advanced Charts UDF datafeed (no trailing slashes — UDF spec)
     path('insights/udf/config', udf_config, name='udf_config'),

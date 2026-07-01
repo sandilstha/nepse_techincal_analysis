@@ -26,7 +26,8 @@ from core_analysis.models import AccountApproval
 logger = logging.getLogger(__name__)
 
 DEFAULT_PORTFOLIO_NAME = "My Portfolio"
-MAX_UPLOAD_BYTES = 2 * 1024 * 1024  # a holdings CSV is tiny; cap to be safe
+MAX_UPLOAD_BYTES = 2 * 1024 * 1024      # a holdings CSV is tiny; cap to be safe
+MAX_WACC_UPLOAD_BYTES = 8 * 1024 * 1024  # WACC report can be a multi-page PDF
 _SYMBOL_RE = re.compile(r"^[A-Z0-9]+$")
 
 
@@ -115,6 +116,111 @@ def parse_holdings_csv(text):
             "ltp": _num(raw[col["ltp"]]) if "ltp" in col and col["ltp"] < len(raw) else None,
         })
     return rows, skipped
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# WACC / cost-basis parsing (broker "My WACC" report — CSV, Excel or PDF)
+# ─────────────────────────────────────────────────────────────────────────────
+def _map_wacc_columns(header):
+    """Locate the WACC report's columns by header name (order-independent).
+
+    Header labels may carry embedded newlines in the PDF ("WACC\\nCalculated\\n
+    Quantity"); callers pass whitespace-collapsed cells so the substring match
+    below is stable across CSV / Excel / PDF exports.
+    """
+    col = {}
+    for i, raw in enumerate(header):
+        h = (raw or "").strip().lower()
+        if h.startswith("scrip") and "symbol" not in col:
+            col["symbol"] = i
+        elif "wacc rate" in h and "rate" not in col:
+            col["rate"] = i
+        elif "calculated quantity" in h and "qty" not in col:
+            col["qty"] = i
+        elif "total cost" in h and "cost" not in col:
+            col["cost"] = i
+        elif "modification" in h and "modified" not in col:
+            col["modified"] = i
+    return col
+
+
+def _normalize_wacc_table(table):
+    """Map a raw table (list of cell-lists) to WACC rows + a skipped count.
+
+    Returns ``(rows, skipped)`` where each row is
+    ``{symbol, wacc_rate, quantity, total_cost, modified}``. Rows without a
+    usable rate/cost, the header, and any total line are skipped.
+    """
+    rows, skipped, col, seen = [], 0, None, set()
+    for raw in table:
+        norm = [" ".join(str(c or "").split()) for c in raw]
+        if not norm or all(not c for c in norm):
+            continue
+        if col is None:
+            if any("scrip" in c.lower() for c in norm):
+                col = _map_wacc_columns(norm)
+                continue
+            skipped += 1
+            continue
+        if "symbol" not in col or col["symbol"] >= len(norm):
+            skipped += 1
+            continue
+        sym = norm[col["symbol"]].strip().upper()
+        if not sym or sym.startswith("TOTAL") or not _SYMBOL_RE.match(sym) or sym in seen:
+            skipped += 1
+            continue
+        cell = lambda k: norm[col[k]] if k in col and col[k] < len(norm) else None
+        rate, cost = _num(cell("rate")), _num(cell("cost"))
+        if rate is None and cost is None:
+            skipped += 1
+            continue
+        seen.add(sym)
+        rows.append({
+            "symbol": sym,
+            "wacc_rate": rate,
+            "quantity": _num(cell("qty")),
+            "total_cost": cost,
+            "modified": (cell("modified") or "")[:32],
+        })
+    return rows, skipped
+
+
+def _wacc_table_from_pdf(data):
+    import pdfplumber
+
+    out = []
+    with pdfplumber.open(io.BytesIO(data)) as pdf:
+        for page in pdf.pages:
+            for tbl in page.extract_tables():
+                out.extend(tbl)
+    return out
+
+
+def _wacc_table_from_excel(data):
+    from openpyxl import load_workbook
+
+    wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+    ws = wb.active
+    return [list(row) for row in ws.iter_rows(values_only=True)]
+
+
+def parse_wacc_report(upload):
+    """Parse an uploaded broker 'My WACC' report (CSV / Excel / PDF) -> rows.
+
+    Dispatches on the filename extension; every branch yields a raw table that
+    ``_normalize_wacc_table`` maps to ``{symbol, wacc_rate, quantity,
+    total_cost, modified}`` rows.
+    """
+    name = (upload.name or "").lower()
+    data = upload.read()
+    if name.endswith(".pdf"):
+        table = _wacc_table_from_pdf(data)
+    elif name.endswith((".xlsx", ".xlsm", ".xls")):
+        table = _wacc_table_from_excel(data)
+    else:
+        text = data.decode("utf-8-sig", errors="replace")
+        table = list(csv.reader(io.StringIO(text)))
+    return _normalize_wacc_table(table)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -237,6 +343,67 @@ def portfolio_import(request):
     note = f"Imported {len(rows)} holdings."
     if skipped:
         note += f" ({skipped} non-position lines skipped.)"
+    messages.success(request, note)
+    return redirect("portfolio")
+
+
+@login_required(login_url="login")
+@require_POST
+def portfolio_wacc_import(request):
+    """Import cost basis from the broker 'My WACC' report (CSV / Excel / PDF).
+
+    Replaces the portfolio's ``HoldingCost`` rows and matches them to the current
+    holdings by symbol. Independent of the 'My Shares' import, so cost basis
+    survives a holdings re-upload.
+    """
+    from core_analysis.models import HoldingCost
+
+    upload = request.FILES.get("file")
+    if not upload:
+        messages.error(request, "Please choose your 'My WACC' report to upload.")
+        return redirect("portfolio")
+    if upload.size and upload.size > MAX_WACC_UPLOAD_BYTES:
+        messages.error(request, "That file is too large to be a WACC report.")
+        return redirect("portfolio")
+
+    try:
+        rows, skipped = parse_wacc_report(upload)
+    except Exception:
+        logger.exception("WACC parse failed for user %s", request.user.id)
+        messages.error(
+            request,
+            "Could not read that file — upload the broker 'My WACC' report (CSV, Excel or PDF).",
+        )
+        return redirect("portfolio")
+
+    if not rows:
+        messages.error(request, "No WACC rows found in that file. Check the format and try again.")
+        return redirect("portfolio")
+
+    portfolio = _get_or_create_portfolio(request.user)
+    held = set(portfolio.holdings.values_list("symbol", flat=True))
+    with transaction.atomic():
+        portfolio.costs.all().delete()
+        HoldingCost.objects.bulk_create([
+            HoldingCost(
+                portfolio=portfolio,
+                symbol=r["symbol"],
+                wacc_rate=r["wacc_rate"],
+                quantity=r["quantity"] or 0,
+                total_cost=r["total_cost"],
+                modified=r["modified"] or "",
+            )
+            for r in rows
+        ])
+        portfolio.save()  # bump updated_at so cached payloads invalidate
+
+    matched = sum(1 for r in rows if r["symbol"] in held)
+    note = f"Imported cost basis for {len(rows)} scrips — {matched} matched your holdings."
+    missing = len(held) - matched
+    if missing > 0:
+        note += f" ({missing} holding(s) still without cost.)"
+    if skipped:
+        note += f" ({skipped} non-data lines skipped.)"
     messages.success(request, note)
     return redirect("portfolio")
 
