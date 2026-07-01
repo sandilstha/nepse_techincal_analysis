@@ -240,9 +240,9 @@
     "semantic_hash": "51ae7b44d848aa4b74d534f94425e242"
   },
   "core_analysis/static/core_analysis/js/tv-chart.js": {
-    "mtime": 1780895344.1555388,
-    "ast_hash": "db6c5958a0a0b957141f15f6fd59e383",
-    "semantic_hash": "db6c5958a0a0b957141f15f6fd59e383"
+    "mtime": 1782818051.4650064,
+    "ast_hash": "b5c029fd83a5064283626eea09b99166",
+    "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/workbench-ajax.js": {
     "mtime": 1781688896.2661755,
@@ -260,14 +260,14 @@
     "semantic_hash": "bb318371ce8811435f42f4a6ba8d64a7"
   },
   "core_analysis/tests.py": {
-    "mtime": 1782802077.1148534,
-    "ast_hash": "b4f1dcbe91d91af404a8b0257028ce37",
+    "mtime": 1782817428.773253,
+    "ast_hash": "6b111869b7584a5dd072743b754c397f",
     "semantic_hash": ""
   },
   "core_analysis/udf_views.py": {
-    "mtime": 1781672833.6627846,
-    "ast_hash": "70b73d1d51d8343fe5fdbeac546aa186",
-    "semantic_hash": "70b73d1d51d8343fe5fdbeac546aa186"
+    "mtime": 1782817349.2376246,
+    "ast_hash": "51b90b12c657a6262cc115d472fa8613",
+    "semantic_hash": ""
   },
   "core_analysis/urls.py": {
     "mtime": 1782795214.1904554,
@@ -385,13 +385,13 @@
     "semantic_hash": ""
   },
   "core_analysis/fundamental_views.py": {
-    "mtime": 1782803793.9509792,
-    "ast_hash": "2f94eee9e69c00869350ecb18d7ea638",
+    "mtime": 1782813452.9201643,
+    "ast_hash": "d5b1bbfca516662b0dd7bc4226270fc7",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/fundamentals.js": {
-    "mtime": 1782803262.3411932,
-    "ast_hash": "adf38706713e265117c32b28dc1594ca",
+    "mtime": 1782813473.2564762,
+    "ast_hash": "46ae7a41232499c3e678e01d77bcc0a6",
     "semantic_hash": ""
   }
 }

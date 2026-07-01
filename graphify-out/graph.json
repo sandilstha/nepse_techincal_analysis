@@ -660,7 +660,7 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_ks_key",
-      "community": 128,
+      "community": 10,
       "norm_label": "_ks_key()"
     },
     {
@@ -670,7 +670,7 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_fmt_for",
-      "community": 128,
+      "community": 10,
       "norm_label": "_fmt_for()"
     },
     {
@@ -680,7 +680,7 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_fundamental_tickers",
-      "community": 40,
+      "community": 23,
       "norm_label": "_fundamental_tickers()"
     },
     {
@@ -690,7 +690,7 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_fundamental_analysis_view",
-      "community": 40,
+      "community": 23,
       "norm_label": "fundamental_analysis_view()"
     },
     {
@@ -700,7 +700,7 @@
       "source_location": "L142",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_statement_rows",
-      "community": 128,
+      "community": 10,
       "norm_label": "_statement_rows()"
     },
     {
@@ -710,24 +710,24 @@
       "source_location": "L165",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_fundamental_data_api",
-      "community": 128,
+      "community": 10,
       "norm_label": "fundamental_data_api()"
     },
     {
       "label": "fundamental_matrix_api()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L282",
+      "source_location": "L310",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_fundamental_matrix_api",
-      "community": 128,
+      "community": 10,
       "norm_label": "fundamental_matrix_api()"
     },
     {
       "label": "_gv_clamp()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L408",
+      "source_location": "L436",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_gv_clamp",
       "community": 128,
@@ -737,7 +737,7 @@
       "label": "_gv_norm_growth()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L412",
+      "source_location": "L440",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_gv_norm_growth",
       "community": 128,
@@ -747,7 +747,7 @@
       "label": "_gv_inv()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L419",
+      "source_location": "L447",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_gv_inv",
       "community": 128,
@@ -757,7 +757,7 @@
       "label": "_gv_dir()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L429",
+      "source_location": "L457",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_gv_dir",
       "community": 128,
@@ -767,7 +767,7 @@
       "label": "_gv_weighted()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L435",
+      "source_location": "L463",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_gv_weighted",
       "community": 128,
@@ -777,7 +777,7 @@
       "label": "_prev_fy()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L442",
+      "source_location": "L470",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_prev_fy",
       "community": 128,
@@ -787,7 +787,7 @@
       "label": "_gv_value_inputs()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L454",
+      "source_location": "L482",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_gv_value_inputs",
       "community": 128,
@@ -797,7 +797,7 @@
       "label": "_gv_growth_score()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L473",
+      "source_location": "L501",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_gv_growth_score",
       "community": 128,
@@ -807,7 +807,7 @@
       "label": "_gv_value_score()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L482",
+      "source_location": "L510",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_gv_value_score",
       "community": 128,
@@ -817,7 +817,7 @@
       "label": "_gv_final()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L492",
+      "source_location": "L520",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_gv_final",
       "community": 128,
@@ -827,7 +827,7 @@
       "label": "_positive_float()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L502",
+      "source_location": "L530",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_positive_float",
       "community": 128,
@@ -837,7 +837,7 @@
       "label": "_latest_market_caps()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L512",
+      "source_location": "L540",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_latest_market_caps",
       "community": 128,
@@ -847,7 +847,7 @@
       "label": "_gv_market_cap()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L535",
+      "source_location": "L563",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_gv_market_cap",
       "community": 128,
@@ -857,7 +857,7 @@
       "label": "_gv_cap_segments()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L547",
+      "source_location": "L575",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_gv_cap_segments",
       "community": 128,
@@ -867,7 +867,7 @@
       "label": "_is_aggregate_ticker()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L578",
+      "source_location": "L606",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_is_aggregate_ticker",
       "community": 128,
@@ -877,7 +877,7 @@
       "label": "_sector_model()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L582",
+      "source_location": "L610",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_sector_model",
       "community": 128,
@@ -887,7 +887,7 @@
       "label": "fundamental_model_api()",
       "file_type": "code",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L637",
+      "source_location": "L665",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_fundamental_model_api",
       "community": 128,
@@ -910,7 +910,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_rationale_45",
-      "community": 128,
+      "community": 10,
       "norm_label": "map a ks item_code to a canonical metric key by its descriptive name."
     },
     {
@@ -920,7 +920,7 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_rationale_101",
-      "community": 128,
+      "community": 10,
       "norm_label": "map a source ``unit`` string to a client formatter hint."
     },
     {
@@ -930,7 +930,7 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_rationale_111",
-      "community": 40,
+      "community": 23,
       "norm_label": "active companies that have fundamentals, with names \u2014 for the search box.      r"
     },
     {
@@ -940,7 +940,7 @@
       "source_location": "L128",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_rationale_128",
-      "community": 40,
+      "community": 23,
       "norm_label": "render the fundamental analysis desk shell.      the symbol is only the initial"
     },
     {
@@ -950,7 +950,7 @@
       "source_location": "L143",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_rationale_143",
-      "community": 128,
+      "community": 10,
       "norm_label": "order a queryset of line items for tabular display.      a row is flagged ``head"
     },
     {
@@ -960,26 +960,26 @@
       "source_location": "L166",
       "_origin": "ast",
       "id": "core_analysis_fundamental_views_rationale_166",
-      "community": 128,
+      "community": 10,
       "norm_label": "json feed for one company's fundamentals.      query params:       symbol  \u2014 tic"
     },
     {
       "label": "Multi-period statement matrix: one line item per row, one fiscal period     per",
       "file_type": "rationale",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L283",
+      "source_location": "L311",
       "_origin": "ast",
-      "id": "core_analysis_fundamental_views_rationale_283",
-      "community": 128,
+      "id": "core_analysis_fundamental_views_rationale_311",
+      "community": 10,
       "norm_label": "multi-period statement matrix: one line item per row, one fiscal period     per"
     },
     {
       "label": "25% YoY growth \u2192 100; linear; clamped. ``frac`` is a fraction (0.12).",
       "file_type": "rationale",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L413",
+      "source_location": "L441",
       "_origin": "ast",
-      "id": "core_analysis_fundamental_views_rationale_413",
+      "id": "core_analysis_fundamental_views_rationale_441",
       "community": 128,
       "norm_label": "25% yoy growth \u2192 100; linear; clamped. ``frac`` is a fraction (0.12)."
     },
@@ -987,9 +987,9 @@
       "label": "Weighted mean of (score, weight), renormalised over present scores.",
       "file_type": "rationale",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L436",
+      "source_location": "L464",
       "_origin": "ast",
-      "id": "core_analysis_fundamental_views_rationale_436",
+      "id": "core_analysis_fundamental_views_rationale_464",
       "community": 128,
       "norm_label": "weighted mean of (score, weight), renormalised over present scores."
     },
@@ -997,9 +997,9 @@
       "label": "2025/26' \u2192 '2024/25' (one fiscal year earlier).",
       "file_type": "rationale",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L443",
+      "source_location": "L471",
       "_origin": "ast",
-      "id": "core_analysis_fundamental_views_rationale_443",
+      "id": "core_analysis_fundamental_views_rationale_471",
       "community": 128,
       "norm_label": "2025/26' \u2192 '2024/25' (one fiscal year earlier)."
     },
@@ -1007,9 +1007,9 @@
       "label": "Comparable value metrics for one ticker from its canonical key\u2192amount     dict.",
       "file_type": "rationale",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L455",
+      "source_location": "L483",
       "_origin": "ast",
-      "id": "core_analysis_fundamental_views_rationale_455",
+      "id": "core_analysis_fundamental_views_rationale_483",
       "community": 128,
       "norm_label": "comparable value metrics for one ticker from its canonical key\u2192amount     dict."
     },
@@ -1017,9 +1017,9 @@
       "label": "Latest EOD market capitalisation by symbol, converted to rupees.",
       "file_type": "rationale",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L513",
+      "source_location": "L541",
       "_origin": "ast",
-      "id": "core_analysis_fundamental_views_rationale_513",
+      "id": "core_analysis_fundamental_views_rationale_541",
       "community": 128,
       "norm_label": "latest eod market capitalisation by symbol, converted to rupees."
     },
@@ -1027,9 +1027,9 @@
       "label": "Period KS cap first, latest EOD cap second. Returns (cap, source).",
       "file_type": "rationale",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L536",
+      "source_location": "L564",
       "_origin": "ast",
-      "id": "core_analysis_fundamental_views_rationale_536",
+      "id": "core_analysis_fundamental_views_rationale_564",
       "community": 128,
       "norm_label": "period ks cap first, latest eod cap second. returns (cap, source)."
     },
@@ -1037,9 +1037,9 @@
       "label": "Large/Mid/Small by cumulative market-cap share, not equal-count buckets.",
       "file_type": "rationale",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L548",
+      "source_location": "L576",
       "_origin": "ast",
-      "id": "core_analysis_fundamental_views_rationale_548",
+      "id": "core_analysis_fundamental_views_rationale_576",
       "community": 128,
       "norm_label": "large/mid/small by cumulative market-cap share, not equal-count buckets."
     },
@@ -1047,9 +1047,9 @@
       "label": "Growth/Value scores for every company in a sector for one period.",
       "file_type": "rationale",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L583",
+      "source_location": "L611",
       "_origin": "ast",
-      "id": "core_analysis_fundamental_views_rationale_583",
+      "id": "core_analysis_fundamental_views_rationale_611",
       "community": 128,
       "norm_label": "growth/value scores for every company in a sector for one period."
     },
@@ -1057,9 +1057,9 @@
       "label": "Sector-wide Growth & Value scoring model (latest period for the sector).      Pi",
       "file_type": "rationale",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L638",
+      "source_location": "L666",
       "_origin": "ast",
-      "id": "core_analysis_fundamental_views_rationale_638",
+      "id": "core_analysis_fundamental_views_rationale_666",
       "community": 128,
       "norm_label": "sector-wide growth & value scoring model (latest period for the sector).      pi"
     },
@@ -1080,7 +1080,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "core_analysis_indicator_views",
-      "community": 19,
+      "community": 41,
       "norm_label": "indicator_views.py"
     },
     {
@@ -1090,7 +1090,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_arr",
-      "community": 19,
+      "community": 41,
       "norm_label": "_arr()"
     },
     {
@@ -1100,7 +1100,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_emit",
-      "community": 19,
+      "community": 41,
       "norm_label": "_emit()"
     },
     {
@@ -1110,7 +1110,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_sma",
-      "community": 19,
+      "community": 41,
       "norm_label": "_sma()"
     },
     {
@@ -1120,7 +1120,7 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_ema",
-      "community": 19,
+      "community": 41,
       "norm_label": "_ema()"
     },
     {
@@ -1130,7 +1130,7 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_wma",
-      "community": 19,
+      "community": 41,
       "norm_label": "_wma()"
     },
     {
@@ -1140,7 +1140,7 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_bbands",
-      "community": 19,
+      "community": 41,
       "norm_label": "_bbands()"
     },
     {
@@ -1150,7 +1150,7 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_psar",
-      "community": 19,
+      "community": 41,
       "norm_label": "_psar()"
     },
     {
@@ -1160,7 +1160,7 @@
       "source_location": "L91",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_supertrend",
-      "community": 19,
+      "community": 41,
       "norm_label": "_supertrend()"
     },
     {
@@ -1170,7 +1170,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_rsi",
-      "community": 19,
+      "community": 41,
       "norm_label": "_rsi()"
     },
     {
@@ -1180,7 +1180,7 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_cci",
-      "community": 19,
+      "community": 41,
       "norm_label": "_cci()"
     },
     {
@@ -1190,7 +1190,7 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_willr",
-      "community": 19,
+      "community": 41,
       "norm_label": "_willr()"
     },
     {
@@ -1200,7 +1200,7 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_roc",
-      "community": 19,
+      "community": 41,
       "norm_label": "_roc()"
     },
     {
@@ -1210,7 +1210,7 @@
       "source_location": "L102",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_mom",
-      "community": 19,
+      "community": 41,
       "norm_label": "_mom()"
     },
     {
@@ -1220,7 +1220,7 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_atr",
-      "community": 19,
+      "community": 41,
       "norm_label": "_atr()"
     },
     {
@@ -1230,7 +1230,7 @@
       "source_location": "L104",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_obv",
-      "community": 19,
+      "community": 41,
       "norm_label": "_obv()"
     },
     {
@@ -1240,7 +1240,7 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_mfi",
-      "community": 19,
+      "community": 41,
       "norm_label": "_mfi()"
     },
     {
@@ -1250,7 +1250,7 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_cmf",
-      "community": 19,
+      "community": 41,
       "norm_label": "_cmf()"
     },
     {
@@ -1260,7 +1260,7 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_macd",
-      "community": 19,
+      "community": 41,
       "norm_label": "_macd()"
     },
     {
@@ -1270,7 +1270,7 @@
       "source_location": "L131",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_adx",
-      "community": 19,
+      "community": 41,
       "norm_label": "_adx()"
     },
     {
@@ -1280,7 +1280,7 @@
       "source_location": "L140",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_stoch",
-      "community": 19,
+      "community": 41,
       "norm_label": "_stoch()"
     },
     {
@@ -1290,7 +1290,7 @@
       "source_location": "L179",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_indicator_catalog",
-      "community": 19,
+      "community": 41,
       "norm_label": "indicator_catalog()"
     },
     {
@@ -1320,7 +1320,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_rationale_1",
-      "community": 19,
+      "community": 41,
       "norm_label": "indicator_views.py \u2014 server-side technical-indicator endpoints for the technical"
     },
     {
@@ -1330,7 +1330,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_rationale_43",
-      "community": 19,
+      "community": 41,
       "norm_label": "float64 numpy array \u2014 the input dtype ta-lib requires."
     },
     {
@@ -1340,7 +1340,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_rationale_48",
-      "community": 19,
+      "community": 41,
       "norm_label": "turn a series (numpy array from ta-lib, or pandas series) aligned to     `dates`"
     },
     {
@@ -1350,7 +1350,7 @@
       "source_location": "L180",
       "_origin": "ast",
       "id": "core_analysis_indicator_views_rationale_180",
-      "community": 19,
+      "community": 41,
       "norm_label": "list available indicators for the dropdown."
     },
     {
@@ -2620,7 +2620,7 @@
       "source_location": "L284",
       "_origin": "ast",
       "id": "core_analysis_models_portfolio",
-      "community": 30,
+      "community": 25,
       "norm_label": "portfolio"
     },
     {
@@ -2630,7 +2630,7 @@
       "source_location": "L304",
       "_origin": "ast",
       "id": "core_analysis_models_portfolio_str",
-      "community": 30,
+      "community": 25,
       "norm_label": ".__str__()"
     },
     {
@@ -2780,7 +2780,7 @@
       "source_location": "L285",
       "_origin": "ast",
       "id": "core_analysis_models_rationale_285",
-      "community": 30,
+      "community": 25,
       "norm_label": "table: portfolio_portfolio     a logged-in user's private holdings portfolio \u2014"
     },
     {
@@ -3110,7 +3110,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "services_cci",
-      "community": 53,
+      "community": 39,
       "norm_label": "cci.py"
     },
     {
@@ -3120,7 +3120,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "services_cci_run_cci_long_only_simulation",
-      "community": 53,
+      "community": 39,
       "norm_label": "run_cci_long_only_simulation()"
     },
     {
@@ -3130,7 +3130,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "services_cci_rationale_15",
-      "community": 53,
+      "community": 39,
       "norm_label": "cci long-only strategy for one-way markets (nepse):      entry: cci crosses abov"
     },
     {
@@ -3920,7 +3920,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "services_broker_analytics_get_latest_trading_date",
-      "community": 23,
+      "community": 81,
       "norm_label": "get_latest_trading_date()"
     },
     {
@@ -3930,7 +3930,7 @@
       "source_location": "L102",
       "_origin": "ast",
       "id": "services_broker_analytics_day_has_rows",
-      "community": 23,
+      "community": 81,
       "norm_label": "_day_has_rows()"
     },
     {
@@ -3940,7 +3940,7 @@
       "source_location": "L118",
       "_origin": "ast",
       "id": "services_broker_analytics_is_latest",
-      "community": 23,
+      "community": 81,
       "norm_label": "_is_latest()"
     },
     {
@@ -3950,7 +3950,7 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "services_broker_analytics_aggregate_day",
-      "community": 23,
+      "community": 134,
       "norm_label": "_aggregate_day()"
     },
     {
@@ -3960,7 +3960,7 @@
       "source_location": "L177",
       "_origin": "ast",
       "id": "services_broker_analytics_cached_day_value",
-      "community": 23,
+      "community": 134,
       "norm_label": "_cached_day_value()"
     },
     {
@@ -3970,7 +3970,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "services_broker_analytics_wait_for_day_build",
-      "community": 23,
+      "community": 134,
       "norm_label": "_wait_for_day_build()"
     },
     {
@@ -3980,7 +3980,7 @@
       "source_location": "L198",
       "_origin": "ast",
       "id": "services_broker_analytics_get_day_aggregate",
-      "community": 23,
+      "community": 134,
       "norm_label": "get_day_aggregate()"
     },
     {
@@ -4180,7 +4180,7 @@
       "source_location": "L594",
       "_origin": "ast",
       "id": "services_broker_analytics_refresh_after_sync",
-      "community": 23,
+      "community": 81,
       "norm_label": "refresh_after_sync()"
     },
     {
@@ -4190,7 +4190,7 @@
       "source_location": "L633",
       "_origin": "ast",
       "id": "services_broker_analytics_meta",
-      "community": 23,
+      "community": 4,
       "norm_label": "meta()"
     },
     {
@@ -4330,7 +4330,7 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "services_broker_analytics_rationale_81",
-      "community": 23,
+      "community": 81,
       "norm_label": "most recent date that has floorsheet rows ('yyyy-mm-dd'), or none."
     },
     {
@@ -4340,7 +4340,7 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "services_broker_analytics_rationale_103",
-      "community": 23,
+      "community": 81,
       "norm_label": "cheap check whether a calendar date has any floorsheet rows in the db."
     },
     {
@@ -4350,7 +4350,7 @@
       "source_location": "L123",
       "_origin": "ast",
       "id": "services_broker_analytics_rationale_123",
-      "community": 23,
+      "community": 134,
       "norm_label": "build one session's (buy, sell, sector) aggregate with db-side group by."
     },
     {
@@ -4360,7 +4360,7 @@
       "source_location": "L199",
       "_origin": "ast",
       "id": "services_broker_analytics_rationale_199",
-      "community": 23,
+      "community": 134,
       "norm_label": "compact per-day aggregate (see module docstring). cached. none on failure."
     },
     {
@@ -4520,7 +4520,7 @@
       "source_location": "L595",
       "_origin": "ast",
       "id": "services_broker_analytics_rationale_595",
-      "community": 23,
+      "community": 81,
       "norm_label": "invalidate and warm caches for freshly-synced sessions.      the floorsheet sy"
     },
     {
@@ -4530,7 +4530,7 @@
       "source_location": "L634",
       "_origin": "ast",
       "id": "services_broker_analytics_rationale_634",
-      "community": 23,
+      "community": 4,
       "norm_label": "dropdown data + last-updated stamp for the dashboard shell."
     },
     {
@@ -8207,7 +8207,7 @@
       "label": "buildFairValue()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L322",
+      "source_location": "L354",
       "_origin": "ast",
       "id": "js_fundamentals_buildfairvalue",
       "community": 26,
@@ -8217,7 +8217,7 @@
       "label": "buildPeerRanks()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L345",
+      "source_location": "L377",
       "_origin": "ast",
       "id": "js_fundamentals_buildpeerranks",
       "community": 26,
@@ -8227,7 +8227,7 @@
       "label": "buildSummary()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L379",
+      "source_location": "L411",
       "_origin": "ast",
       "id": "js_fundamentals_buildsummary",
       "community": 26,
@@ -8237,7 +8237,7 @@
       "label": "fmtCell()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L416",
+      "source_location": "L448",
       "_origin": "ast",
       "id": "js_fundamentals_fmtcell",
       "community": 26,
@@ -8247,7 +8247,7 @@
       "label": "fmtGrowth()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L423",
+      "source_location": "L455",
       "_origin": "ast",
       "id": "js_fundamentals_fmtgrowth",
       "community": 26,
@@ -8257,7 +8257,7 @@
       "label": "prevFy()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L430",
+      "source_location": "L462",
       "_origin": "ast",
       "id": "js_fundamentals_prevfy",
       "community": 26,
@@ -8267,7 +8267,7 @@
       "label": "loadMatrix()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L440",
+      "source_location": "L472",
       "_origin": "ast",
       "id": "js_fundamentals_loadmatrix",
       "community": 26,
@@ -8277,7 +8277,7 @@
       "label": "syncVersionOptions()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L464",
+      "source_location": "L496",
       "_origin": "ast",
       "id": "js_fundamentals_syncversionoptions",
       "community": 26,
@@ -8287,7 +8287,7 @@
       "label": "renderMatrix()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L476",
+      "source_location": "L508",
       "_origin": "ast",
       "id": "js_fundamentals_rendermatrix",
       "community": 26,
@@ -8297,7 +8297,7 @@
       "label": "growthRow()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L524",
+      "source_location": "L556",
       "_origin": "ast",
       "id": "js_fundamentals_growthrow",
       "community": 26,
@@ -8307,7 +8307,7 @@
       "label": "thEl()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L542",
+      "source_location": "L574",
       "_origin": "ast",
       "id": "js_fundamentals_thel",
       "community": 26,
@@ -8317,7 +8317,7 @@
       "label": "tdEl()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L548",
+      "source_location": "L580",
       "_origin": "ast",
       "id": "js_fundamentals_tdel",
       "community": 26,
@@ -8327,7 +8327,7 @@
       "label": "loadModel()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L564",
+      "source_location": "L596",
       "_origin": "ast",
       "id": "js_fundamentals_loadmodel",
       "community": 26,
@@ -8337,7 +8337,7 @@
       "label": "renderModel()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L598",
+      "source_location": "L630",
       "_origin": "ast",
       "id": "js_fundamentals_rendermodel",
       "community": 26,
@@ -8347,7 +8347,7 @@
       "label": "renderGvChart()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L721",
+      "source_location": "L756",
       "_origin": "ast",
       "id": "js_fundamentals_rendergvchart",
       "community": 26,
@@ -8357,7 +8357,7 @@
       "label": "attachZoom()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L757",
+      "source_location": "L792",
       "_origin": "ast",
       "id": "js_fundamentals_attachzoom",
       "community": 26,
@@ -8367,7 +8367,7 @@
       "label": "renderGvRows()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L831",
+      "source_location": "L866",
       "_origin": "ast",
       "id": "js_fundamentals_rendergvrows",
       "community": 26,
@@ -8377,7 +8377,7 @@
       "label": "renderGvPager()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L895",
+      "source_location": "L930",
       "_origin": "ast",
       "id": "js_fundamentals_rendergvpager",
       "community": 26,
@@ -8387,7 +8387,7 @@
       "label": "selectCtrl()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L930",
+      "source_location": "L965",
       "_origin": "ast",
       "id": "js_fundamentals_selectctrl",
       "community": 26,
@@ -8397,7 +8397,7 @@
       "label": "buildScatter()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L944",
+      "source_location": "L979",
       "_origin": "ast",
       "id": "js_fundamentals_buildscatter",
       "community": 26,
@@ -8407,7 +8407,7 @@
       "label": "setSubtab()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L1031",
+      "source_location": "L1066",
       "_origin": "ast",
       "id": "js_fundamentals_setsubtab",
       "community": 26,
@@ -8417,7 +8417,7 @@
       "label": "showStatus()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L1054",
+      "source_location": "L1089",
       "_origin": "ast",
       "id": "js_fundamentals_showstatus",
       "community": 26,
@@ -8427,7 +8427,7 @@
       "label": "load()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L1060",
+      "source_location": "L1095",
       "_origin": "ast",
       "id": "js_fundamentals_load",
       "community": 26,
@@ -8437,7 +8437,7 @@
       "label": "loadFromInput()",
       "file_type": "code",
       "source_file": "core_analysis/static/core_analysis/js/fundamentals.js",
-      "source_location": "L1084",
+      "source_location": "L1119",
       "_origin": "ast",
       "id": "js_fundamentals_loadfrominput",
       "community": 26,
@@ -9950,7 +9950,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c",
-      "community": 51,
+      "community": 63,
       "norm_label": "c()"
     },
     {
@@ -9960,7 +9960,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_d",
-      "community": 29,
+      "community": 119,
       "norm_label": "d()"
     },
     {
@@ -9980,7 +9980,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_v",
-      "community": 29,
+      "community": 119,
       "norm_label": "v()"
     },
     {
@@ -10030,7 +10030,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_y",
-      "community": 110,
+      "community": 55,
       "norm_label": "y()"
     },
     {
@@ -10040,7 +10040,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c_constructor",
-      "community": 51,
+      "community": 63,
       "norm_label": ".constructor()"
     },
     {
@@ -10070,7 +10070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c_p",
-      "community": 25,
+      "community": 33,
       "norm_label": ".p()"
     },
     {
@@ -10080,7 +10080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c_m",
-      "community": 33,
+      "community": 47,
       "norm_label": ".m()"
     },
     {
@@ -10090,7 +10090,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c_s",
-      "community": 51,
+      "community": 63,
       "norm_label": ".s()"
     },
     {
@@ -10120,7 +10120,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_r",
-      "community": 123,
+      "community": 9,
       "norm_label": "r()"
     },
     {
@@ -10150,7 +10150,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_e",
-      "community": 2,
+      "community": 22,
       "norm_label": "e()"
     },
     {
@@ -10160,7 +10160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_i",
-      "community": 22,
+      "community": 2,
       "norm_label": "i"
     },
     {
@@ -10170,7 +10170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_i_constructor",
-      "community": 22,
+      "community": 2,
       "norm_label": ".constructor()"
     },
     {
@@ -10180,7 +10180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_i_w",
-      "community": 22,
+      "community": 2,
       "norm_label": ".w()"
     },
     {
@@ -10190,7 +10190,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_i_u",
-      "community": 22,
+      "community": 2,
       "norm_label": ".u()"
     },
     {
@@ -10200,7 +10200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_i_j",
-      "community": 22,
+      "community": 2,
       "norm_label": ".j()"
     },
     {
@@ -10210,7 +10210,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_i_h",
-      "community": 22,
+      "community": 2,
       "norm_label": ".h()"
     },
     {
@@ -10360,7 +10360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_h_mt",
-      "community": 22,
+      "community": 70,
       "norm_label": ".mt()"
     },
     {
@@ -10410,7 +10410,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_u_mt",
-      "community": 15,
+      "community": 16,
       "norm_label": ".mt()"
     },
     {
@@ -10510,7 +10510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j",
-      "community": 116,
+      "community": 36,
       "norm_label": "j"
     },
     {
@@ -10520,7 +10520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_constructor",
-      "community": 116,
+      "community": 36,
       "norm_label": ".constructor()"
     },
     {
@@ -10530,7 +10530,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_kt",
-      "community": 116,
+      "community": 36,
       "norm_label": ".kt()"
     },
     {
@@ -10540,7 +10540,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_ki",
-      "community": 116,
+      "community": 36,
       "norm_label": ".ki()"
     },
     {
@@ -10550,7 +10550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_bt",
-      "community": 116,
+      "community": 36,
       "norm_label": ".bt()"
     },
     {
@@ -10560,7 +10560,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_at",
-      "community": 116,
+      "community": 36,
       "norm_label": ".at()"
     },
     {
@@ -10570,7 +10570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_oi",
-      "community": 116,
+      "community": 36,
       "norm_label": ".oi()"
     },
     {
@@ -10580,7 +10580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_bi",
-      "community": 116,
+      "community": 36,
       "norm_label": ".bi()"
     },
     {
@@ -10590,7 +10590,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_vi",
-      "community": 116,
+      "community": 36,
       "norm_label": ".vi()"
     },
     {
@@ -10600,7 +10600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_ai",
-      "community": 116,
+      "community": 36,
       "norm_label": ".ai()"
     },
     {
@@ -10610,7 +10610,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_gt",
-      "community": 116,
+      "community": 36,
       "norm_label": ".gt()"
     },
     {
@@ -10620,7 +10620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_zi",
-      "community": 116,
+      "community": 36,
       "norm_label": ".zi()"
     },
     {
@@ -10630,7 +10630,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_j_di",
-      "community": 116,
+      "community": 36,
       "norm_label": ".di()"
     },
     {
@@ -10700,7 +10700,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nt",
-      "community": 39,
+      "community": 56,
       "norm_label": "nt"
     },
     {
@@ -10710,7 +10710,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nt_constructor",
-      "community": 39,
+      "community": 56,
       "norm_label": ".constructor()"
     },
     {
@@ -10720,7 +10720,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nt_bt",
-      "community": 39,
+      "community": 56,
       "norm_label": ".bt()"
     },
     {
@@ -10730,7 +10730,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nt_gt",
-      "community": 39,
+      "community": 56,
       "norm_label": ".gt()"
     },
     {
@@ -10740,7 +10740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nt_mt",
-      "community": 43,
+      "community": 70,
       "norm_label": ".mt()"
     },
     {
@@ -10770,7 +10770,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_xi",
-      "community": 102,
+      "community": 27,
       "norm_label": ".xi()"
     },
     {
@@ -10780,7 +10780,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_st_ki",
-      "community": 102,
+      "community": 27,
       "norm_label": ".ki()"
     },
     {
@@ -11020,7 +11020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_on",
-      "community": 43,
+      "community": 16,
       "norm_label": ".on()"
     },
     {
@@ -11040,7 +11040,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rt_yn",
-      "community": 27,
+      "community": 70,
       "norm_label": ".yn()"
     },
     {
@@ -11110,7 +11110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_lt_nn",
-      "community": 113,
+      "community": 112,
       "norm_label": ".nn()"
     },
     {
@@ -11200,7 +11200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_lt_qn",
-      "community": 10,
+      "community": 48,
       "norm_label": ".qn()"
     },
     {
@@ -11210,7 +11210,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_lt_ts",
-      "community": 66,
+      "community": 123,
       "norm_label": ".ts()"
     },
     {
@@ -11260,7 +11260,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ot",
-      "community": 123,
+      "community": 19,
       "norm_label": "ot()"
     },
     {
@@ -11270,7 +11270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_t_constructor",
-      "community": 123,
+      "community": 9,
       "norm_label": ".constructor()"
     },
     {
@@ -11300,7 +11300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_t_ls",
-      "community": 123,
+      "community": 19,
       "norm_label": ".ls()"
     },
     {
@@ -11340,7 +11340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ct",
-      "community": 131,
+      "community": 7,
       "norm_label": "ct"
     },
     {
@@ -11350,7 +11350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ct_constructor",
-      "community": 131,
+      "community": 7,
       "norm_label": ".constructor()"
     },
     {
@@ -11370,7 +11370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ct_us",
-      "community": 131,
+      "community": 7,
       "norm_label": ".us()"
     },
     {
@@ -11430,7 +11430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wt",
-      "community": 107,
+      "community": 7,
       "norm_label": "wt"
     },
     {
@@ -11440,7 +11440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wt_constructor",
-      "community": 107,
+      "community": 7,
       "norm_label": ".constructor()"
     },
     {
@@ -11450,7 +11450,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wt_j",
-      "community": 107,
+      "community": 7,
       "norm_label": ".j()"
     },
     {
@@ -11480,7 +11480,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xt",
-      "community": 39,
+      "community": 56,
       "norm_label": "xt()"
     },
     {
@@ -11500,7 +11500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_kt",
-      "community": 56,
+      "community": 107,
       "norm_label": "kt"
     },
     {
@@ -11510,7 +11510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_kt_constructor",
-      "community": 56,
+      "community": 107,
       "norm_label": ".constructor()"
     },
     {
@@ -11540,7 +11540,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ct_j",
-      "community": 131,
+      "community": 7,
       "norm_label": ".j()"
     },
     {
@@ -11650,7 +11650,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_at_ys",
-      "community": 39,
+      "community": 70,
       "norm_label": ".ys()"
     },
     {
@@ -11740,7 +11740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_et_gs",
-      "community": 39,
+      "community": 70,
       "norm_label": ".gs()"
     },
     {
@@ -11810,7 +11810,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nt_gs",
-      "community": 39,
+      "community": 70,
       "norm_label": ".gs()"
     },
     {
@@ -11880,7 +11880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_jt_ne",
-      "community": 56,
+      "community": 72,
       "norm_label": ".ne()"
     },
     {
@@ -11890,7 +11890,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_jt_gs",
-      "community": 39,
+      "community": 70,
       "norm_label": ".gs()"
     },
     {
@@ -11980,7 +11980,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_t_gs",
-      "community": 39,
+      "community": 70,
       "norm_label": ".gs()"
     },
     {
@@ -12060,7 +12060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_qt_gs",
-      "community": 39,
+      "community": 70,
       "norm_label": ".gs()"
     },
     {
@@ -12100,7 +12100,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xt_constructor",
-      "community": 39,
+      "community": 56,
       "norm_label": ".constructor()"
     },
     {
@@ -12120,7 +12120,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xt_gs",
-      "community": 39,
+      "community": 70,
       "norm_label": ".gs()"
     },
     {
@@ -12130,7 +12130,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_kt_ne",
-      "community": 56,
+      "community": 107,
       "norm_label": ".ne()"
     },
     {
@@ -12140,7 +12140,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_kt_gs",
-      "community": 39,
+      "community": 70,
       "norm_label": ".gs()"
     },
     {
@@ -12290,7 +12290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ni",
-      "community": 39,
+      "community": 7,
       "norm_label": "ni"
     },
     {
@@ -12300,7 +12300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ni_constructor",
-      "community": 39,
+      "community": 7,
       "norm_label": ".constructor()"
     },
     {
@@ -12310,7 +12310,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ni_bt",
-      "community": 39,
+      "community": 7,
       "norm_label": ".bt()"
     },
     {
@@ -12320,7 +12320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ni_gt",
-      "community": 39,
+      "community": 70,
       "norm_label": ".gt()"
     },
     {
@@ -12330,7 +12330,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_si",
-      "community": 70,
+      "community": 20,
       "norm_label": "si"
     },
     {
@@ -12340,7 +12340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_si_constructor",
-      "community": 70,
+      "community": 20,
       "norm_label": ".constructor()"
     },
     {
@@ -12360,7 +12360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ei",
-      "community": 132,
+      "community": 43,
       "norm_label": "ei"
     },
     {
@@ -12370,7 +12370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ei_constructor",
-      "community": 132,
+      "community": 43,
       "norm_label": ".constructor()"
     },
     {
@@ -12380,7 +12380,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ei_j",
-      "community": 132,
+      "community": 43,
       "norm_label": ".j()"
     },
     {
@@ -12400,7 +12400,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ei_k",
-      "community": 132,
+      "community": 43,
       "norm_label": ".k()"
     },
     {
@@ -12410,7 +12410,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hi",
-      "community": 130,
+      "community": 43,
       "norm_label": "hi()"
     },
     {
@@ -12420,7 +12420,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_li",
-      "community": 130,
+      "community": 43,
       "norm_label": "li()"
     },
     {
@@ -12450,7 +12450,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ai_jr",
-      "community": 43,
+      "community": 102,
       "norm_label": ".jr()"
     },
     {
@@ -12460,7 +12460,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ai_hr",
-      "community": 43,
+      "community": 102,
       "norm_label": ".hr()"
     },
     {
@@ -12550,7 +12550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_oi",
-      "community": 61,
+      "community": 2,
       "norm_label": "oi()"
     },
     {
@@ -12560,7 +12560,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ui",
-      "community": 61,
+      "community": 2,
       "norm_label": "ui()"
     },
     {
@@ -12570,7 +12570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ci",
-      "community": 61,
+      "community": 2,
       "norm_label": "ci()"
     },
     {
@@ -12580,7 +12580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_di",
-      "community": 136,
+      "community": 36,
       "norm_label": "di()"
     },
     {
@@ -12590,7 +12590,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fi",
-      "community": 84,
+      "community": 45,
       "norm_label": "fi()"
     },
     {
@@ -12600,7 +12600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vi",
-      "community": 2,
+      "community": 56,
       "norm_label": "vi()"
     },
     {
@@ -12610,7 +12610,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pi",
-      "community": 84,
+      "community": 45,
       "norm_label": "pi()"
     },
     {
@@ -12620,7 +12620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi",
-      "community": 2,
+      "community": 36,
       "norm_label": "mi"
     },
     {
@@ -12630,7 +12630,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_constructor",
-      "community": 2,
+      "community": 36,
       "norm_label": ".constructor()"
     },
     {
@@ -12640,7 +12640,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_j",
-      "community": 2,
+      "community": 36,
       "norm_label": ".j()"
     },
     {
@@ -12650,7 +12650,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_ar",
-      "community": 2,
+      "community": 27,
       "norm_label": ".ar()"
     },
     {
@@ -12660,7 +12660,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_br",
-      "community": 84,
+      "community": 36,
       "norm_label": ".br()"
     },
     {
@@ -12670,7 +12670,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_k",
-      "community": 2,
+      "community": 56,
       "norm_label": ".k()"
     },
     {
@@ -12680,7 +12680,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_bi",
-      "community": 2,
+      "community": 56,
       "norm_label": "bi()"
     },
     {
@@ -12690,7 +12690,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wi",
-      "community": 84,
+      "community": 36,
       "norm_label": "wi()"
     },
     {
@@ -12700,7 +12700,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gi",
-      "community": 70,
+      "community": 47,
       "norm_label": "gi()"
     },
     {
@@ -12710,7 +12710,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_bt",
-      "community": 2,
+      "community": 36,
       "norm_label": ".bt()"
     },
     {
@@ -12720,7 +12720,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_gt",
-      "community": 2,
+      "community": 70,
       "norm_label": ".gt()"
     },
     {
@@ -12730,7 +12730,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_h",
-      "community": 2,
+      "community": 36,
       "norm_label": "._h()"
     },
     {
@@ -12740,7 +12740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mi_dh",
-      "community": 2,
+      "community": 36,
       "norm_label": ".dh()"
     },
     {
@@ -12760,7 +12760,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi",
-      "community": 2,
+      "community": 72,
       "norm_label": "xi"
     },
     {
@@ -12770,7 +12770,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi_constructor",
-      "community": 2,
+      "community": 72,
       "norm_label": ".constructor()"
     },
     {
@@ -12780,7 +12780,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi_kr",
-      "community": 2,
+      "community": 70,
       "norm_label": ".kr()"
     },
     {
@@ -12790,7 +12790,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_si_ei",
-      "community": 70,
+      "community": 20,
       "norm_label": ".ei()"
     },
     {
@@ -12800,7 +12800,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_si_wh",
-      "community": 70,
+      "community": 20,
       "norm_label": ".wh()"
     },
     {
@@ -12810,7 +12810,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_si_bh",
-      "community": 70,
+      "community": 20,
       "norm_label": ".bh()"
     },
     {
@@ -12820,7 +12820,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ki",
-      "community": 22,
+      "community": 51,
       "norm_label": "ki()"
     },
     {
@@ -12860,7 +12860,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_ch",
-      "community": 112,
+      "community": 63,
       "norm_label": ".ch()"
     },
     {
@@ -12920,7 +12920,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_dh",
-      "community": 37,
+      "community": 9,
       "norm_label": ".dh()"
     },
     {
@@ -12930,7 +12930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_oh",
-      "community": 37,
+      "community": 9,
       "norm_label": ".oh()"
     },
     {
@@ -12960,7 +12960,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ci_constructor",
-      "community": 61,
+      "community": 2,
       "norm_label": ".constructor()"
     },
     {
@@ -12970,7 +12970,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ci_eh",
-      "community": 61,
+      "community": 2,
       "norm_label": ".eh()"
     },
     {
@@ -12980,7 +12980,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ci_ih",
-      "community": 61,
+      "community": 2,
       "norm_label": ".ih()"
     },
     {
@@ -12990,7 +12990,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ci_bh",
-      "community": 61,
+      "community": 2,
       "norm_label": ".bh()"
     },
     {
@@ -13000,7 +13000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ci_vh",
-      "community": 9,
+      "community": 2,
       "norm_label": ".vh()"
     },
     {
@@ -13020,7 +13020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pi_constructor",
-      "community": 84,
+      "community": 45,
       "norm_label": ".constructor()"
     },
     {
@@ -13040,7 +13040,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pi_fh",
-      "community": 84,
+      "community": 45,
       "norm_label": ".fh()"
     },
     {
@@ -13050,7 +13050,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri",
-      "community": 43,
+      "community": 102,
       "norm_label": "ri"
     },
     {
@@ -13060,7 +13060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri_constructor",
-      "community": 43,
+      "community": 102,
       "norm_label": ".constructor()"
     },
     {
@@ -13070,7 +13070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri_hh",
-      "community": 43,
+      "community": 102,
       "norm_label": ".hh()"
     },
     {
@@ -13080,7 +13080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri_w",
-      "community": 43,
+      "community": 102,
       "norm_label": ".w()"
     },
     {
@@ -13090,7 +13090,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri_uh",
-      "community": 43,
+      "community": 102,
       "norm_label": ".uh()"
     },
     {
@@ -13100,7 +13100,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri_qh",
-      "community": 43,
+      "community": 102,
       "norm_label": ".qh()"
     },
     {
@@ -13120,7 +13120,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ri_bt",
-      "community": 43,
+      "community": 102,
       "norm_label": ".bt()"
     },
     {
@@ -13140,7 +13140,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_di_constructor",
-      "community": 136,
+      "community": 36,
       "norm_label": ".constructor()"
     },
     {
@@ -13150,7 +13150,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_di_t",
-      "community": 136,
+      "community": 36,
       "norm_label": ".$t()"
     },
     {
@@ -13160,7 +13160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_bi_constructor",
-      "community": 94,
+      "community": 87,
       "norm_label": ".constructor()"
     },
     {
@@ -13430,7 +13430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_li_constructor",
-      "community": 130,
+      "community": 43,
       "norm_label": ".constructor()"
     },
     {
@@ -13440,7 +13440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_li_gt",
-      "community": 130,
+      "community": 43,
       "norm_label": ".gt()"
     },
     {
@@ -13450,7 +13450,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_li_xl",
-      "community": 130,
+      "community": 43,
       "norm_label": ".xl()"
     },
     {
@@ -13460,7 +13460,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fi_constructor",
-      "community": 84,
+      "community": 45,
       "norm_label": ".constructor()"
     },
     {
@@ -13470,7 +13470,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fi_gt",
-      "community": 84,
+      "community": 70,
       "norm_label": ".gt()"
     },
     {
@@ -13480,7 +13480,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wi_constructor",
-      "community": 84,
+      "community": 36,
       "norm_label": ".constructor()"
     },
     {
@@ -13550,7 +13550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ji_qi",
-      "community": 39,
+      "community": 61,
       "norm_label": ".qi()"
     },
     {
@@ -13570,7 +13570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ji_bl",
-      "community": 61,
+      "community": 2,
       "norm_label": ".bl()"
     },
     {
@@ -13630,7 +13630,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_yr",
-      "community": 70,
+      "community": 45,
       "norm_label": ".yr()"
     },
     {
@@ -13650,7 +13650,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_hh",
-      "community": 102,
+      "community": 112,
       "norm_label": ".hh()"
     },
     {
@@ -13690,7 +13690,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_uh",
-      "community": 2,
+      "community": 36,
       "norm_label": ".uh()"
     },
     {
@@ -13720,7 +13720,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_jh",
-      "community": 94,
+      "community": 87,
       "norm_label": ".jh()"
     },
     {
@@ -13740,7 +13740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_ra",
-      "community": 70,
+      "community": 9,
       "norm_label": ".ra()"
     },
     {
@@ -13890,7 +13890,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_on",
-      "community": 43,
+      "community": 102,
       "norm_label": ".on()"
     },
     {
@@ -13900,7 +13900,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_dt",
-      "community": 9,
+      "community": 63,
       "norm_label": ".dt()"
     },
     {
@@ -13920,7 +13920,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_mh",
-      "community": 70,
+      "community": 20,
       "norm_label": ".mh()"
     },
     {
@@ -13930,7 +13930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_yt",
-      "community": 15,
+      "community": 70,
       "norm_label": ".yt()"
     },
     {
@@ -14020,7 +14020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yi_jl",
-      "community": 102,
+      "community": 70,
       "norm_label": ".jl()"
     },
     {
@@ -14060,7 +14060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi_j",
-      "community": 39,
+      "community": 70,
       "norm_label": ".j()"
     },
     {
@@ -14070,7 +14070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_xi_k",
-      "community": 2,
+      "community": 72,
       "norm_label": ".k()"
     },
     {
@@ -14080,7 +14080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ki_constructor",
-      "community": 22,
+      "community": 51,
       "norm_label": ".constructor()"
     },
     {
@@ -14090,7 +14090,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ki_bt",
-      "community": 22,
+      "community": 51,
       "norm_label": ".bt()"
     },
     {
@@ -14100,7 +14100,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ki_gt",
-      "community": 22,
+      "community": 70,
       "norm_label": ".gt()"
     },
     {
@@ -14110,7 +14110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gi_constructor",
-      "community": 70,
+      "community": 47,
       "norm_label": ".constructor()"
     },
     {
@@ -14140,7 +14140,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nn",
-      "community": 123,
+      "community": 19,
       "norm_label": "nn()"
     },
     {
@@ -14160,7 +14160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_en",
-      "community": 7,
+      "community": 20,
       "norm_label": "en()"
     },
     {
@@ -14290,7 +14290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_un",
-      "community": 102,
+      "community": 27,
       "norm_label": "un()"
     },
     {
@@ -14320,7 +14320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ta",
-      "community": 51,
+      "community": 63,
       "norm_label": ".ta()"
     },
     {
@@ -14350,7 +14350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_do",
-      "community": 113,
+      "community": 112,
       "norm_label": ".do()"
     },
     {
@@ -14360,7 +14360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_eo",
-      "community": 20,
+      "community": 63,
       "norm_label": ".eo()"
     },
     {
@@ -14370,7 +14370,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_gh",
-      "community": 112,
+      "community": 20,
       "norm_label": ".gh()"
     },
     {
@@ -14380,7 +14380,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_oo",
-      "community": 112,
+      "community": 20,
       "norm_label": ".oo()"
     },
     {
@@ -14390,7 +14390,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_yr",
-      "community": 112,
+      "community": 70,
       "norm_label": ".yr()"
     },
     {
@@ -14400,7 +14400,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_po",
-      "community": 112,
+      "community": 20,
       "norm_label": ".po()"
     },
     {
@@ -14460,7 +14460,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_vo",
-      "community": 112,
+      "community": 20,
       "norm_label": ".vo()"
     },
     {
@@ -14520,7 +14520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_pn",
-      "community": 112,
+      "community": 20,
       "norm_label": ".pn()"
     },
     {
@@ -14530,7 +14530,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ho",
-      "community": 112,
+      "community": 20,
       "norm_label": ".ho()"
     },
     {
@@ -14550,7 +14550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_o",
-      "community": 102,
+      "community": 27,
       "norm_label": ".$o()"
     },
     {
@@ -14560,7 +14560,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_uo",
-      "community": 112,
+      "community": 20,
       "norm_label": ".uo()"
     },
     {
@@ -14570,7 +14570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_yo",
-      "community": 112,
+      "community": 20,
       "norm_label": ".yo()"
     },
     {
@@ -14600,7 +14600,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ja",
-      "community": 22,
+      "community": 47,
       "norm_label": ".ja()"
     },
     {
@@ -14610,7 +14610,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_xo",
-      "community": 25,
+      "community": 33,
       "norm_label": ".xo()"
     },
     {
@@ -14620,7 +14620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ko",
-      "community": 112,
+      "community": 63,
       "norm_label": ".ko()"
     },
     {
@@ -14630,7 +14630,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_go",
-      "community": 112,
+      "community": 20,
       "norm_label": ".go()"
     },
     {
@@ -14640,7 +14640,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_jo",
-      "community": 112,
+      "community": 20,
       "norm_label": ".jo()"
     },
     {
@@ -14670,7 +14670,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_i",
-      "community": 113,
+      "community": 112,
       "norm_label": ".i_()"
     },
     {
@@ -14760,7 +14760,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_pa",
-      "community": 112,
+      "community": 20,
       "norm_label": ".pa()"
     },
     {
@@ -14770,7 +14770,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_s",
-      "community": 45,
+      "community": 20,
       "norm_label": ".s_()"
     },
     {
@@ -14810,7 +14810,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ro",
-      "community": 20,
+      "community": 112,
       "norm_label": ".ro()"
     },
     {
@@ -14920,7 +14920,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_b",
-      "community": 125,
+      "community": 27,
       "norm_label": ".b_()"
     },
     {
@@ -14990,7 +14990,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_eo",
-      "community": 10,
+      "community": 27,
       "norm_label": ".eo()"
     },
     {
@@ -15020,7 +15020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_uo",
-      "community": 102,
+      "community": 27,
       "norm_label": ".uo()"
     },
     {
@@ -15030,7 +15030,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_yo",
-      "community": 51,
+      "community": 63,
       "norm_label": ".yo()"
     },
     {
@@ -15080,7 +15080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_o",
-      "community": 102,
+      "community": 27,
       "norm_label": ".o_()"
     },
     {
@@ -15090,7 +15090,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_v",
-      "community": 27,
+      "community": 112,
       "norm_label": ".v_()"
     },
     {
@@ -15110,7 +15110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_z",
-      "community": 27,
+      "community": 118,
       "norm_label": ".z_()"
     },
     {
@@ -15150,7 +15150,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_l",
-      "community": 129,
+      "community": 27,
       "norm_label": ".l_()"
     },
     {
@@ -15160,7 +15160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_n",
-      "community": 51,
+      "community": 63,
       "norm_label": ".n_()"
     },
     {
@@ -15170,7 +15170,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_f",
-      "community": 25,
+      "community": 27,
       "norm_label": ".f_()"
     },
     {
@@ -15200,7 +15200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_y",
-      "community": 102,
+      "community": 27,
       "norm_label": ".y_()"
     },
     {
@@ -15210,7 +15210,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pn_c",
-      "community": 102,
+      "community": 27,
       "norm_label": ".c_()"
     },
     {
@@ -15220,7 +15220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mn",
-      "community": 133,
+      "community": 47,
       "norm_label": "mn"
     },
     {
@@ -15230,7 +15230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mn_constructor",
-      "community": 133,
+      "community": 47,
       "norm_label": ".constructor()"
     },
     {
@@ -15240,7 +15240,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mn_q",
-      "community": 133,
+      "community": 54,
       "norm_label": ".q_()"
     },
     {
@@ -15260,7 +15260,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_bn_constructor",
-      "community": 47,
+      "community": 63,
       "norm_label": ".constructor()"
     },
     {
@@ -15290,7 +15290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_bn_k",
-      "community": 47,
+      "community": 52,
       "norm_label": ".k_()"
     },
     {
@@ -15320,7 +15320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wn",
-      "community": 133,
+      "community": 47,
       "norm_label": "wn()"
     },
     {
@@ -15350,7 +15350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_q",
-      "community": 133,
+      "community": 54,
       "norm_label": ".q_()"
     },
     {
@@ -15410,7 +15410,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mn_lu",
-      "community": 133,
+      "community": 47,
       "norm_label": ".lu()"
     },
     {
@@ -15420,7 +15420,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_mn_au",
-      "community": 133,
+      "community": 47,
       "norm_label": ".au()"
     },
     {
@@ -15440,7 +15440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_constructor",
-      "community": 133,
+      "community": 54,
       "norm_label": ".constructor()"
     },
     {
@@ -15470,7 +15470,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_hh",
-      "community": 66,
+      "community": 123,
       "norm_label": ".hh()"
     },
     {
@@ -15490,7 +15490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ui",
-      "community": 89,
+      "community": 52,
       "norm_label": ".ui()"
     },
     {
@@ -15530,7 +15530,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_zs",
-      "community": 70,
+      "community": 47,
       "norm_label": ".zs()"
     },
     {
@@ -15540,7 +15540,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ru",
-      "community": 133,
+      "community": 47,
       "norm_label": ".ru()"
     },
     {
@@ -15570,7 +15570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_au",
-      "community": 66,
+      "community": 70,
       "norm_label": ".au()"
     },
     {
@@ -15580,7 +15580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_hi",
-      "community": 43,
+      "community": 70,
       "norm_label": ".hi()"
     },
     {
@@ -15620,7 +15620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_lu",
-      "community": 89,
+      "community": 52,
       "norm_label": ".lu()"
     },
     {
@@ -15670,7 +15670,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_ja",
-      "community": 22,
+      "community": 47,
       "norm_label": ".ja()"
     },
     {
@@ -15680,7 +15680,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_uu",
-      "community": 66,
+      "community": 123,
       "norm_label": ".uu()"
     },
     {
@@ -15700,7 +15700,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_yu",
-      "community": 52,
+      "community": 123,
       "norm_label": ".yu()"
     },
     {
@@ -15720,7 +15720,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_go",
-      "community": 52,
+      "community": 27,
       "norm_label": ".go()"
     },
     {
@@ -15740,7 +15740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_qo",
-      "community": 27,
+      "community": 112,
       "norm_label": ".qo()"
     },
     {
@@ -15780,7 +15780,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_bt",
-      "community": 52,
+      "community": 54,
       "norm_label": ".bt()"
     },
     {
@@ -15790,7 +15790,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_tc",
-      "community": 25,
+      "community": 33,
       "norm_label": ".tc()"
     },
     {
@@ -15800,7 +15800,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_nc",
-      "community": 25,
+      "community": 33,
       "norm_label": ".nc()"
     },
     {
@@ -15870,7 +15870,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_hu",
-      "community": 22,
+      "community": 47,
       "norm_label": ".hu()"
     },
     {
@@ -15930,7 +15930,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_pu",
-      "community": 133,
+      "community": 47,
       "norm_label": ".pu()"
     },
     {
@@ -16020,7 +16020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_oc",
-      "community": 133,
+      "community": 47,
       "norm_label": ".oc()"
     },
     {
@@ -16050,7 +16050,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_sn_cu",
-      "community": 66,
+      "community": 123,
       "norm_label": ".cu()"
     },
     {
@@ -16130,7 +16130,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_yn_k",
-      "community": 110,
+      "community": 55,
       "norm_label": ".k()"
     },
     {
@@ -16230,7 +16230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_tn_rn",
-      "community": 20,
+      "community": 11,
       "norm_label": ".rn()"
     },
     {
@@ -16260,7 +16260,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_tn_on",
-      "community": 27,
+      "community": 102,
       "norm_label": ".on()"
     },
     {
@@ -16270,7 +16270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_xl",
-      "community": 113,
+      "community": 112,
       "norm_label": ".xl()"
     },
     {
@@ -16290,7 +16290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_kl",
-      "community": 102,
+      "community": 112,
       "norm_label": ".kl()"
     },
     {
@@ -16300,7 +16300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_fc",
-      "community": 89,
+      "community": 129,
       "norm_label": ".fc()"
     },
     {
@@ -16310,7 +16310,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_wc",
-      "community": 102,
+      "community": 112,
       "norm_label": ".wc()"
     },
     {
@@ -16320,7 +16320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_hc",
-      "community": 125,
+      "community": 27,
       "norm_label": ".hc()"
     },
     {
@@ -16330,7 +16330,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_c",
-      "community": 125,
+      "community": 27,
       "norm_label": ".$c()"
     },
     {
@@ -16340,7 +16340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_st",
-      "community": 39,
+      "community": 70,
       "norm_label": ".st()"
     },
     {
@@ -16360,7 +16360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_qc",
-      "community": 15,
+      "community": 112,
       "norm_label": ".qc()"
     },
     {
@@ -16390,7 +16390,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_xc",
-      "community": 10,
+      "community": 27,
       "norm_label": ".xc()"
     },
     {
@@ -16400,7 +16400,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_x",
-      "community": 10,
+      "community": 102,
       "norm_label": ".x_()"
     },
     {
@@ -16410,7 +16410,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ac",
-      "community": 113,
+      "community": 112,
       "norm_label": ".ac()"
     },
     {
@@ -16430,7 +16430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_b",
-      "community": 113,
+      "community": 112,
       "norm_label": ".b_()"
     },
     {
@@ -16440,7 +16440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_v",
-      "community": 113,
+      "community": 112,
       "norm_label": ".v_()"
     },
     {
@@ -16450,7 +16450,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_a",
-      "community": 113,
+      "community": 112,
       "norm_label": ".a_()"
     },
     {
@@ -16460,7 +16460,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_z",
-      "community": 113,
+      "community": 112,
       "norm_label": ".z_()"
     },
     {
@@ -16470,7 +16470,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_gc",
-      "community": 118,
+      "community": 112,
       "norm_label": ".gc()"
     },
     {
@@ -16480,7 +16480,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_jc",
-      "community": 43,
+      "community": 70,
       "norm_label": ".jc()"
     },
     {
@@ -16490,7 +16490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ed",
-      "community": 52,
+      "community": 27,
       "norm_label": ".ed()"
     },
     {
@@ -16500,7 +16500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_rd",
-      "community": 22,
+      "community": 70,
       "norm_label": ".rd()"
     },
     {
@@ -16510,7 +16510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_td",
-      "community": 27,
+      "community": 112,
       "norm_label": ".td()"
     },
     {
@@ -16520,7 +16520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_nd",
-      "community": 52,
+      "community": 112,
       "norm_label": ".nd()"
     },
     {
@@ -16530,7 +16530,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_sd",
-      "community": 15,
+      "community": 112,
       "norm_label": ".sd()"
     },
     {
@@ -16540,7 +16540,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_wt",
-      "community": 22,
+      "community": 129,
       "norm_label": ".wt()"
     },
     {
@@ -16610,7 +16610,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_fu",
-      "community": 52,
+      "community": 102,
       "norm_label": ".fu()"
     },
     {
@@ -16630,7 +16630,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_ud",
-      "community": 113,
+      "community": 112,
       "norm_label": ".ud()"
     },
     {
@@ -16640,7 +16640,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_fd",
-      "community": 51,
+      "community": 63,
       "norm_label": ".fd()"
     },
     {
@@ -16650,7 +16650,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_zl",
-      "community": 102,
+      "community": 27,
       "norm_label": ".zl()"
     },
     {
@@ -16680,7 +16680,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_kn",
-      "community": 54,
+      "community": 66,
       "norm_label": ".kn()"
     },
     {
@@ -16690,7 +16690,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_gn",
-      "community": 66,
+      "community": 123,
       "norm_label": ".gn()"
     },
     {
@@ -16700,7 +16700,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_jn",
-      "community": 66,
+      "community": 123,
       "norm_label": ".jn()"
     },
     {
@@ -16730,7 +16730,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_pd",
-      "community": 38,
+      "community": 112,
       "norm_label": ".pd()"
     },
     {
@@ -16740,7 +16740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_md",
-      "community": 110,
+      "community": 55,
       "norm_label": ".md()"
     },
     {
@@ -16750,7 +16750,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_q",
-      "community": 110,
+      "community": 55,
       "norm_label": ".q()"
     },
     {
@@ -16770,7 +16770,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_kc",
-      "community": 113,
+      "community": 112,
       "norm_label": ".kc()"
     },
     {
@@ -16780,7 +16780,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_nc",
-      "community": 102,
+      "community": 112,
       "norm_label": ".nc()"
     },
     {
@@ -16790,7 +16790,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_lc",
-      "community": 113,
+      "community": 112,
       "norm_label": ".lc()"
     },
     {
@@ -16800,7 +16800,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_vn_dd",
-      "community": 38,
+      "community": 112,
       "norm_label": ".dd()"
     },
     {
@@ -16860,7 +16860,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nn_constructor",
-      "community": 123,
+      "community": 19,
       "norm_label": ".constructor()"
     },
     {
@@ -16870,7 +16870,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_nn_q",
-      "community": 123,
+      "community": 19,
       "norm_label": ".q_()"
     },
     {
@@ -16880,7 +16880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_wn_constructor",
-      "community": 133,
+      "community": 47,
       "norm_label": ".constructor()"
     },
     {
@@ -16940,7 +16940,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_preprocessdata",
-      "community": 54,
+      "community": 66,
       "norm_label": ".preprocessdata()"
     },
     {
@@ -16970,7 +16970,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_gn_cachekey",
-      "community": 133,
+      "community": 54,
       "norm_label": ".cachekey()"
     },
     {
@@ -17060,7 +17060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_es",
-      "community": 113,
+      "community": 129,
       "norm_label": "es()"
     },
     {
@@ -17270,7 +17270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ds",
-      "community": 55,
+      "community": 126,
       "norm_label": "ds()"
     },
     {
@@ -17300,7 +17300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ps",
-      "community": 116,
+      "community": 36,
       "norm_label": "ps()"
     },
     {
@@ -17640,7 +17640,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ts",
-      "community": 11,
+      "community": 126,
       "norm_label": "ts()"
     },
     {
@@ -17660,7 +17660,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_constructor",
-      "community": 11,
+      "community": 126,
       "norm_label": ".constructor()"
     },
     {
@@ -17670,7 +17670,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_s",
-      "community": 25,
+      "community": 33,
       "norm_label": ".s()"
     },
     {
@@ -17690,7 +17690,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_p",
-      "community": 37,
+      "community": 9,
       "norm_label": ".p()"
     },
     {
@@ -17720,7 +17720,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_up",
-      "community": 10,
+      "community": 48,
       "norm_label": ".up()"
     },
     {
@@ -17740,7 +17740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_gi",
-      "community": 25,
+      "community": 33,
       "norm_label": ".gi()"
     },
     {
@@ -17800,7 +17800,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_bt",
-      "community": 22,
+      "community": 11,
       "norm_label": ".bt()"
     },
     {
@@ -17860,7 +17860,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_sp",
-      "community": 112,
+      "community": 11,
       "norm_label": ".sp()"
     },
     {
@@ -17880,7 +17880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_pp",
-      "community": 110,
+      "community": 55,
       "norm_label": ".pp()"
     },
     {
@@ -17960,7 +17960,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_rs_op",
-      "community": 2,
+      "community": 22,
       "norm_label": ".op()"
     },
     {
@@ -17970,7 +17970,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_constructor",
-      "community": 55,
+      "community": 126,
       "norm_label": ".constructor()"
     },
     {
@@ -17980,7 +17980,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_s",
-      "community": 25,
+      "community": 33,
       "norm_label": ".s()"
     },
     {
@@ -18000,7 +18000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_up",
-      "community": 10,
+      "community": 48,
       "norm_label": ".up()"
     },
     {
@@ -18040,7 +18040,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_zp",
-      "community": 43,
+      "community": 15,
       "norm_label": ".zp()"
     },
     {
@@ -18050,7 +18050,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_g",
-      "community": 10,
+      "community": 48,
       "norm_label": ".g_()"
     },
     {
@@ -18060,7 +18060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_m",
-      "community": 112,
+      "community": 15,
       "norm_label": ".m_()"
     },
     {
@@ -18080,7 +18080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_mv",
-      "community": 15,
+      "community": 66,
       "norm_label": ".mv()"
     },
     {
@@ -18200,7 +18200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_xv",
-      "community": 43,
+      "community": 70,
       "norm_label": ".xv()"
     },
     {
@@ -18220,7 +18220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_rv",
-      "community": 15,
+      "community": 112,
       "norm_label": ".rv()"
     },
     {
@@ -18230,7 +18230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_ov",
-      "community": 15,
+      "community": 112,
       "norm_label": ".ov()"
     },
     {
@@ -18250,7 +18250,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_om",
-      "community": 10,
+      "community": 48,
       "norm_label": ".om()"
     },
     {
@@ -18260,7 +18260,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_um",
-      "community": 126,
+      "community": 27,
       "norm_label": ".um()"
     },
     {
@@ -18320,7 +18320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_np",
-      "community": 25,
+      "community": 33,
       "norm_label": ".np()"
     },
     {
@@ -18350,7 +18350,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_pp",
-      "community": 110,
+      "community": 55,
       "norm_label": ".pp()"
     },
     {
@@ -18490,7 +18490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_nm",
-      "community": 15,
+      "community": 112,
       "norm_label": ".nm()"
     },
     {
@@ -18500,7 +18500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_gp",
-      "community": 15,
+      "community": 70,
       "norm_label": ".gp()"
     },
     {
@@ -18510,7 +18510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_as_im",
-      "community": 15,
+      "community": 112,
       "norm_label": ".im()"
     },
     {
@@ -18530,7 +18530,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zs_constructor",
-      "community": 55,
+      "community": 126,
       "norm_label": ".constructor()"
     },
     {
@@ -18570,7 +18570,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zs_up",
-      "community": 10,
+      "community": 48,
       "norm_label": ".up()"
     },
     {
@@ -18580,7 +18580,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zs_fp",
-      "community": 55,
+      "community": 129,
       "norm_label": ".fp()"
     },
     {
@@ -18640,7 +18640,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_s",
-      "community": 25,
+      "community": 33,
       "norm_label": ".s()"
     },
     {
@@ -18680,7 +18680,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_mv",
-      "community": 22,
+      "community": 70,
       "norm_label": ".mv()"
     },
     {
@@ -18700,7 +18700,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_bv",
-      "community": 22,
+      "community": 70,
       "norm_label": ".bv()"
     },
     {
@@ -18710,7 +18710,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_lv",
-      "community": 22,
+      "community": 70,
       "norm_label": ".lv()"
     },
     {
@@ -18730,7 +18730,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_uv",
-      "community": 22,
+      "community": 70,
       "norm_label": ".uv()"
     },
     {
@@ -18800,7 +18800,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_lm",
-      "community": 25,
+      "community": 33,
       "norm_label": ".lm()"
     },
     {
@@ -18810,7 +18810,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_nm",
-      "community": 10,
+      "community": 48,
       "norm_label": ".nm()"
     },
     {
@@ -18830,7 +18830,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_bt",
-      "community": 43,
+      "community": 102,
       "norm_label": ".bt()"
     },
     {
@@ -18860,7 +18860,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_fp",
-      "community": 22,
+      "community": 129,
       "norm_label": ".fp()"
     },
     {
@@ -18870,7 +18870,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_hm",
-      "community": 22,
+      "community": 129,
       "norm_label": ".hm()"
     },
     {
@@ -18880,7 +18880,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_pp",
-      "community": 110,
+      "community": 55,
       "norm_label": ".pp()"
     },
     {
@@ -18900,7 +18900,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_bp",
-      "community": 22,
+      "community": 11,
       "norm_label": ".bp()"
     },
     {
@@ -18910,7 +18910,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_fs_qm",
-      "community": 2,
+      "community": 72,
       "norm_label": ".qm()"
     },
     {
@@ -19010,7 +19010,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_w",
-      "community": 22,
+      "community": 70,
       "norm_label": ".w()"
     },
     {
@@ -19020,7 +19020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_qp",
-      "community": 67,
+      "community": 48,
       "norm_label": ".qp()"
     },
     {
@@ -19030,7 +19030,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_cb",
-      "community": 29,
+      "community": 67,
       "norm_label": ".cb()"
     },
     {
@@ -19110,7 +19110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_bb",
-      "community": 48,
+      "community": 47,
       "norm_label": ".bb()"
     },
     {
@@ -19130,7 +19130,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_sb",
-      "community": 67,
+      "community": 24,
       "norm_label": ".sb()"
     },
     {
@@ -19140,7 +19140,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_kb",
-      "community": 15,
+      "community": 67,
       "norm_label": ".kb()"
     },
     {
@@ -19150,7 +19150,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_jp",
-      "community": 15,
+      "community": 67,
       "norm_label": ".jp()"
     },
     {
@@ -19190,7 +19190,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_tb",
-      "community": 10,
+      "community": 48,
       "norm_label": ".tb()"
     },
     {
@@ -19220,7 +19220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_eb",
-      "community": 43,
+      "community": 129,
       "norm_label": ".eb()"
     },
     {
@@ -19240,7 +19240,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_ns",
-      "community": 66,
+      "community": 123,
       "norm_label": ".ns()"
     },
     {
@@ -19250,7 +19250,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_dc",
-      "community": 67,
+      "community": 112,
       "norm_label": ".dc()"
     },
     {
@@ -19270,7 +19270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_ab",
-      "community": 89,
+      "community": 129,
       "norm_label": ".ab()"
     },
     {
@@ -19280,7 +19280,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_vb",
-      "community": 33,
+      "community": 67,
       "norm_label": ".vb()"
     },
     {
@@ -19290,7 +19290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_hs_hb",
-      "community": 33,
+      "community": 67,
       "norm_label": ".hb()"
     },
     {
@@ -19330,7 +19330,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_qs",
-      "community": 119,
+      "community": 122,
       "norm_label": "qs()"
     },
     {
@@ -19380,7 +19380,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_se",
-      "community": 94,
+      "community": 67,
       "norm_label": "se()"
     },
     {
@@ -19410,7 +19410,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_he",
-      "community": 39,
+      "community": 94,
       "norm_label": "he"
     },
     {
@@ -19420,7 +19420,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_he_constructor",
-      "community": 39,
+      "community": 94,
       "norm_label": ".constructor()"
     },
     {
@@ -19430,7 +19430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_he_s",
-      "community": 39,
+      "community": 94,
       "norm_label": ".s()"
     },
     {
@@ -19620,7 +19620,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ke",
-      "community": 125,
+      "community": 38,
       "norm_label": "ke"
     },
     {
@@ -19630,7 +19630,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ke_constructor",
-      "community": 125,
+      "community": 38,
       "norm_label": ".constructor()"
     },
     {
@@ -19640,7 +19640,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ke_applyoptions",
-      "community": 125,
+      "community": 38,
       "norm_label": ".applyoptions()"
     },
     {
@@ -19650,7 +19650,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ke_options",
-      "community": 125,
+      "community": 38,
       "norm_label": ".options()"
     },
     {
@@ -19660,7 +19660,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ke_width",
-      "community": 125,
+      "community": 38,
       "norm_label": ".width()"
     },
     {
@@ -19670,7 +19670,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ke_ii",
-      "community": 125,
+      "community": 38,
       "norm_label": ".ii()"
     },
     {
@@ -19680,7 +19680,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ye",
-      "community": 119,
+      "community": 122,
       "norm_label": "ye()"
     },
     {
@@ -19740,7 +19740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_s",
-      "community": 87,
+      "community": 33,
       "norm_label": ".s()"
     },
     {
@@ -19770,7 +19770,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_coordinatetoprice",
-      "community": 70,
+      "community": 27,
       "norm_label": ".coordinatetoprice()"
     },
     {
@@ -19830,7 +19830,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_subscribedatachanged",
-      "community": 33,
+      "community": 87,
       "norm_label": ".subscribedatachanged()"
     },
     {
@@ -19840,7 +19840,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_unsubscribedatachanged",
-      "community": 87,
+      "community": 68,
       "norm_label": ".unsubscribedatachanged()"
     },
     {
@@ -19870,7 +19870,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_applyoptions",
-      "community": 87,
+      "community": 67,
       "norm_label": ".applyoptions()"
     },
     {
@@ -19890,7 +19890,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_pricescale",
-      "community": 87,
+      "community": 63,
       "norm_label": ".pricescale()"
     },
     {
@@ -19960,7 +19960,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_constructor",
-      "community": 25,
+      "community": 33,
       "norm_label": ".constructor()"
     },
     {
@@ -19970,7 +19970,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_s",
-      "community": 25,
+      "community": 33,
       "norm_label": ".s()"
     },
     {
@@ -20050,7 +20050,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_resettimescale",
-      "community": 54,
+      "community": 66,
       "norm_label": ".resettimescale()"
     },
     {
@@ -20080,7 +20080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_coordinatetological",
-      "community": 89,
+      "community": 33,
       "norm_label": ".coordinatetological()"
     },
     {
@@ -20100,7 +20100,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_coordinatetotime",
-      "community": 89,
+      "community": 52,
       "norm_label": ".coordinatetotime()"
     },
     {
@@ -20200,7 +20200,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_options",
-      "community": 39,
+      "community": 33,
       "norm_label": ".options()"
     },
     {
@@ -20220,7 +20220,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_gw",
-      "community": 33,
+      "community": 47,
       "norm_label": ".gw()"
     },
     {
@@ -20270,7 +20270,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_resize",
-      "community": 67,
+      "community": 24,
       "norm_label": ".resize()"
     },
     {
@@ -20360,7 +20360,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_fw",
-      "community": 87,
+      "community": 29,
       "norm_label": ".fw()"
     },
     {
@@ -20380,7 +20380,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_subscribeclick",
-      "community": 33,
+      "community": 68,
       "norm_label": ".subscribeclick()"
     },
     {
@@ -20400,7 +20400,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_subscribecrosshairmove",
-      "community": 33,
+      "community": 68,
       "norm_label": ".subscribecrosshairmove()"
     },
     {
@@ -20440,7 +20440,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_pricescale",
-      "community": 87,
+      "community": 68,
       "norm_label": ".pricescale()"
     },
     {
@@ -20480,7 +20480,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_takescreenshot",
-      "community": 48,
+      "community": 68,
       "norm_label": ".takescreenshot()"
     },
     {
@@ -20490,7 +20490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_autosizeactive",
-      "community": 67,
+      "community": 24,
       "norm_label": ".autosizeactive()"
     },
     {
@@ -20500,7 +20500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_chartelement",
-      "community": 15,
+      "community": 67,
       "norm_label": ".chartelement()"
     },
     {
@@ -20520,7 +20520,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_setcrosshairposition",
-      "community": 70,
+      "community": 102,
       "norm_label": ".setcrosshairposition()"
     },
     {
@@ -20550,7 +20550,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_ow",
-      "community": 52,
+      "community": 29,
       "norm_label": ".ow()"
     },
     {
@@ -20844,10 +20844,20 @@
       "norm_label": ".test_chart_bars_appends_live_index_bar()"
     },
     {
+      "label": ".test_chart_bars_keeps_synced_bar_over_live_same_day()",
+      "file_type": "code",
+      "source_file": "core_analysis/tests.py",
+      "source_location": "L214",
+      "_origin": "ast",
+      "id": "core_analysis_tests_udfchartbarstests_test_chart_bars_keeps_synced_bar_over_live_same_day",
+      "community": 124,
+      "norm_label": ".test_chart_bars_keeps_synced_bar_over_live_same_day()"
+    },
+    {
       "label": "RrgAnalyticsTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L215",
+      "source_location": "L231",
       "_origin": "ast",
       "id": "core_analysis_tests_rrganalyticstests",
       "community": 69,
@@ -20857,7 +20867,7 @@
       "label": "._price_frame()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L217",
+      "source_location": "L233",
       "_origin": "ast",
       "id": "core_analysis_tests_rrganalyticstests_price_frame",
       "community": 69,
@@ -20867,7 +20877,7 @@
       "label": ".test_rrg_formula_reports_overlap_quality()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L223",
+      "source_location": "L239",
       "_origin": "ast",
       "id": "core_analysis_tests_rrganalyticstests_test_rrg_formula_reports_overlap_quality",
       "community": 69,
@@ -20877,7 +20887,7 @@
       "label": ".test_rrg_formula_rejects_sparse_overlap()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L241",
+      "source_location": "L257",
       "_origin": "ast",
       "id": "core_analysis_tests_rrganalyticstests_test_rrg_formula_rejects_sparse_overlap",
       "community": 69,
@@ -20887,7 +20897,7 @@
       "label": ".test_indices_rrg_preserves_skip_reason_and_shared_bar_count()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L255",
+      "source_location": "L271",
       "_origin": "ast",
       "id": "core_analysis_tests_rrganalyticstests_test_indices_rrg_preserves_skip_reason_and_shared_bar_count",
       "community": 69,
@@ -20897,7 +20907,7 @@
       "label": "WorkbenchSecurityTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L279",
+      "source_location": "L295",
       "_origin": "ast",
       "id": "core_analysis_tests_workbenchsecuritytests",
       "community": 124,
@@ -20907,7 +20917,7 @@
       "label": ".test_workbench_routes_redirect_anonymous_users_to_admin_login()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L280",
+      "source_location": "L296",
       "_origin": "ast",
       "id": "core_analysis_tests_workbenchsecuritytests_test_workbench_routes_redirect_anonymous_users_to_admin_login",
       "community": 124,
@@ -20917,7 +20927,7 @@
       "label": "FakeTechnicalAnalysis",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L299",
+      "source_location": "L315",
       "_origin": "ast",
       "id": "core_analysis_tests_faketechnicalanalysis",
       "community": 120,
@@ -20927,7 +20937,7 @@
       "label": ".sma()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L301",
+      "source_location": "L317",
       "_origin": "ast",
       "id": "core_analysis_tests_faketechnicalanalysis_sma",
       "community": 120,
@@ -20937,7 +20947,7 @@
       "label": ".rsi()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L310",
+      "source_location": "L326",
       "_origin": "ast",
       "id": "core_analysis_tests_faketechnicalanalysis_rsi",
       "community": 120,
@@ -20947,7 +20957,7 @@
       "label": ".macd()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L314",
+      "source_location": "L330",
       "_origin": "ast",
       "id": "core_analysis_tests_faketechnicalanalysis_macd",
       "community": 120,
@@ -20957,7 +20967,7 @@
       "label": ".supertrend()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L329",
+      "source_location": "L345",
       "_origin": "ast",
       "id": "core_analysis_tests_faketechnicalanalysis_supertrend",
       "community": 120,
@@ -20967,7 +20977,7 @@
       "label": ".vwap()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L342",
+      "source_location": "L358",
       "_origin": "ast",
       "id": "core_analysis_tests_faketechnicalanalysis_vwap",
       "community": 120,
@@ -20977,7 +20987,7 @@
       "label": ".atr()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L346",
+      "source_location": "L362",
       "_origin": "ast",
       "id": "core_analysis_tests_faketechnicalanalysis_atr",
       "community": 120,
@@ -20987,7 +20997,7 @@
       "label": "MarketInsightsHeadlineTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L351",
+      "source_location": "L367",
       "_origin": "ast",
       "id": "core_analysis_tests_marketinsightsheadlinetests",
       "community": 124,
@@ -20997,7 +21007,7 @@
       "label": ".test_payload_prefers_contributor_headline_over_stale_subindex()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L352",
+      "source_location": "L368",
       "_origin": "ast",
       "id": "core_analysis_tests_marketinsightsheadlinetests_test_payload_prefers_contributor_headline_over_stale_subindex",
       "community": 124,
@@ -21007,7 +21017,7 @@
       "label": ".test_stale_live_feed_falls_back_to_eod_for_stock_widgets()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L412",
+      "source_location": "L428",
       "_origin": "ast",
       "id": "core_analysis_tests_marketinsightsheadlinetests_test_stale_live_feed_falls_back_to_eod_for_stock_widgets",
       "community": 124,
@@ -21017,7 +21027,7 @@
       "label": ".test_after_close_serves_eod_from_sql_and_skips_live_feeds()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L486",
+      "source_location": "L502",
       "_origin": "ast",
       "id": "core_analysis_tests_marketinsightsheadlinetests_test_after_close_serves_eod_from_sql_and_skips_live_feeds",
       "community": 124,
@@ -21027,7 +21037,7 @@
       "label": ".test_after_close_empty_contributor_cache_does_not_block_payload()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L559",
+      "source_location": "L575",
       "_origin": "ast",
       "id": "core_analysis_tests_marketinsightsheadlinetests_test_after_close_empty_contributor_cache_does_not_block_payload",
       "community": 124,
@@ -21037,7 +21047,7 @@
       "label": "SubindexComparisonTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L614",
+      "source_location": "L630",
       "_origin": "ast",
       "id": "core_analysis_tests_subindexcomparisontests",
       "community": 60,
@@ -21047,7 +21057,7 @@
       "label": ".setUpTestData()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L619",
+      "source_location": "L635",
       "_origin": "ast",
       "id": "core_analysis_tests_subindexcomparisontests_setuptestdata",
       "community": 60,
@@ -21057,7 +21067,7 @@
       "label": ".test_comparison_aligns_indices_over_window()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L645",
+      "source_location": "L661",
       "_origin": "ast",
       "id": "core_analysis_tests_subindexcomparisontests_test_comparison_aligns_indices_over_window",
       "community": 60,
@@ -21067,7 +21077,7 @@
       "label": ".test_comparison_window_limits_to_recent_sessions()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L661",
+      "source_location": "L677",
       "_origin": "ast",
       "id": "core_analysis_tests_subindexcomparisontests_test_comparison_window_limits_to_recent_sessions",
       "community": 60,
@@ -21077,7 +21087,7 @@
       "label": "NepseContributorsParserTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L673",
+      "source_location": "L689",
       "_origin": "ast",
       "id": "core_analysis_tests_nepsecontributorsparsertests",
       "community": 124,
@@ -21087,7 +21097,7 @@
       "label": ".test_sector_view_parser_extracts_top_gainers_and_losers()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L674",
+      "source_location": "L690",
       "_origin": "ast",
       "id": "core_analysis_tests_nepsecontributorsparsertests_test_sector_view_parser_extracts_top_gainers_and_losers",
       "community": 124,
@@ -21097,7 +21107,7 @@
       "label": "BrokerFlowRadarTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L697",
+      "source_location": "L713",
       "_origin": "ast",
       "id": "core_analysis_tests_brokerflowradartests",
       "community": 124,
@@ -21107,7 +21117,7 @@
       "label": ".test_broker_flow_radar_ranks_and_labels_flow()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L698",
+      "source_location": "L714",
       "_origin": "ast",
       "id": "core_analysis_tests_brokerflowradartests_test_broker_flow_radar_ranks_and_labels_flow",
       "community": 124,
@@ -21117,7 +21127,7 @@
       "label": "make_price_frame()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L725",
+      "source_location": "L741",
       "_origin": "ast",
       "id": "core_analysis_tests_make_price_frame",
       "community": 124,
@@ -21127,7 +21137,7 @@
       "label": "IMMScoringTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L740",
+      "source_location": "L756",
       "_origin": "ast",
       "id": "core_analysis_tests_immscoringtests",
       "community": 124,
@@ -21137,7 +21147,7 @@
       "label": ".test_generate_sell_signal_tolerates_missing_atr_stop()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L741",
+      "source_location": "L757",
       "_origin": "ast",
       "id": "core_analysis_tests_immscoringtests_test_generate_sell_signal_tolerates_missing_atr_stop",
       "community": 124,
@@ -21147,7 +21157,7 @@
       "label": ".test_position_builder_sells_on_atr_stop_and_resets_after_exit()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L758",
+      "source_location": "L774",
       "_origin": "ast",
       "id": "core_analysis_tests_immscoringtests_test_position_builder_sells_on_atr_stop_and_resets_after_exit",
       "community": 124,
@@ -21157,7 +21167,7 @@
       "label": ".test_run_imm_scoring_system_returns_stop_aware_sell_event()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L784",
+      "source_location": "L800",
       "_origin": "ast",
       "id": "core_analysis_tests_immscoringtests_test_run_imm_scoring_system_returns_stop_aware_sell_event",
       "community": 124,
@@ -21167,7 +21177,7 @@
       "label": "MSVStrategyTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L803",
+      "source_location": "L819",
       "_origin": "ast",
       "id": "core_analysis_tests_msvstrategytests",
       "community": 124,
@@ -21177,7 +21187,7 @@
       "label": ".test_msv_vwap_works_with_standard_business_date_column()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L805",
+      "source_location": "L821",
       "_origin": "ast",
       "id": "core_analysis_tests_msvstrategytests_test_msv_vwap_works_with_standard_business_date_column",
       "community": 124,
@@ -21187,7 +21197,7 @@
       "label": "SupportResistanceTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L816",
+      "source_location": "L832",
       "_origin": "ast",
       "id": "core_analysis_tests_supportresistancetests",
       "community": 1,
@@ -21197,7 +21207,7 @@
       "label": "._sample_support_resistance_frame()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L817",
+      "source_location": "L833",
       "_origin": "ast",
       "id": "core_analysis_tests_supportresistancetests_sample_support_resistance_frame",
       "community": 1,
@@ -21207,7 +21217,7 @@
       "label": ".test_support_resistance_pivots_match_standard_formula()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L828",
+      "source_location": "L844",
       "_origin": "ast",
       "id": "core_analysis_tests_supportresistancetests_test_support_resistance_pivots_match_standard_formula",
       "community": 1,
@@ -21217,7 +21227,7 @@
       "label": ".test_support_resistance_honors_selected_level_families()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L849",
+      "source_location": "L865",
       "_origin": "ast",
       "id": "core_analysis_tests_supportresistancetests_test_support_resistance_honors_selected_level_families",
       "community": 1,
@@ -21227,7 +21237,7 @@
       "label": ".test_nearest_headline_levels_use_confluence()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L868",
+      "source_location": "L884",
       "_origin": "ast",
       "id": "core_analysis_tests_supportresistancetests_test_nearest_headline_levels_use_confluence",
       "community": 1,
@@ -21237,7 +21247,7 @@
       "label": "AdvancedMarketStructureTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L895",
+      "source_location": "L911",
       "_origin": "ast",
       "id": "core_analysis_tests_advancedmarketstructuretests",
       "community": 73,
@@ -21247,7 +21257,7 @@
       "label": ".test_advanced_market_structure_runs_on_dummy_ohlcv()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L896",
+      "source_location": "L912",
       "_origin": "ast",
       "id": "core_analysis_tests_advancedmarketstructuretests_test_advanced_market_structure_runs_on_dummy_ohlcv",
       "community": 73,
@@ -21257,7 +21267,7 @@
       "label": ".test_advanced_market_structure_rejects_short_data()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L909",
+      "source_location": "L925",
       "_origin": "ast",
       "id": "core_analysis_tests_advancedmarketstructuretests_test_advanced_market_structure_rejects_short_data",
       "community": 73,
@@ -21267,7 +21277,7 @@
       "label": "InstitutionalAnalysisTests",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L917",
+      "source_location": "L933",
       "_origin": "ast",
       "id": "core_analysis_tests_institutionalanalysistests",
       "community": 73,
@@ -21277,7 +21287,7 @@
       "label": ".test_institutional_analysis_returns_exact_framework_table_contract()",
       "file_type": "code",
       "source_file": "core_analysis/tests.py",
-      "source_location": "L918",
+      "source_location": "L934",
       "_origin": "ast",
       "id": "core_analysis_tests_institutionalanalysistests_test_institutional_analysis_returns_exact_framework_table_contract",
       "community": 73,
@@ -21387,7 +21397,7 @@
       "label": "_chart_bars()",
       "file_type": "code",
       "source_file": "core_analysis/udf_views.py",
-      "source_location": "L234",
+      "source_location": "L240",
       "_origin": "ast",
       "id": "core_analysis_udf_views_chart_bars",
       "community": 41,
@@ -21397,7 +21407,7 @@
       "label": "udf_config()",
       "file_type": "code",
       "source_file": "core_analysis/udf_views.py",
-      "source_location": "L247",
+      "source_location": "L253",
       "_origin": "ast",
       "id": "core_analysis_udf_views_udf_config",
       "community": 41,
@@ -21407,7 +21417,7 @@
       "label": "udf_time()",
       "file_type": "code",
       "source_file": "core_analysis/udf_views.py",
-      "source_location": "L268",
+      "source_location": "L274",
       "_origin": "ast",
       "id": "core_analysis_udf_views_udf_time",
       "community": 41,
@@ -21417,7 +21427,7 @@
       "label": "udf_symbols()",
       "file_type": "code",
       "source_file": "core_analysis/udf_views.py",
-      "source_location": "L274",
+      "source_location": "L280",
       "_origin": "ast",
       "id": "core_analysis_udf_views_udf_symbols",
       "community": 41,
@@ -21427,7 +21437,7 @@
       "label": "udf_search()",
       "file_type": "code",
       "source_file": "core_analysis/udf_views.py",
-      "source_location": "L283",
+      "source_location": "L289",
       "_origin": "ast",
       "id": "core_analysis_udf_views_udf_search",
       "community": 41,
@@ -21437,7 +21447,7 @@
       "label": "udf_history()",
       "file_type": "code",
       "source_file": "core_analysis/udf_views.py",
-      "source_location": "L323",
+      "source_location": "L329",
       "_origin": "ast",
       "id": "core_analysis_udf_views_udf_history",
       "community": 41,
@@ -21497,9 +21507,9 @@
       "label": "Rows exactly as chart consumers should see them.      This wraps the stored dail",
       "file_type": "rationale",
       "source_file": "core_analysis/udf_views.py",
-      "source_location": "L235",
+      "source_location": "L241",
       "_origin": "ast",
-      "id": "core_analysis_udf_views_rationale_235",
+      "id": "core_analysis_udf_views_rationale_241",
       "community": 41,
       "norm_label": "rows exactly as chart consumers should see them.      this wraps the stored dail"
     },
@@ -21600,7 +21610,7 @@
       "source_location": "L205",
       "_origin": "ast",
       "id": "core_analysis_views_get_symbol_lists",
-      "community": 53,
+      "community": 110,
       "norm_label": "_get_symbol_lists()"
     },
     {
@@ -21640,7 +21650,7 @@
       "source_location": "L398",
       "_origin": "ast",
       "id": "core_analysis_views_build_rrg_index_choices",
-      "community": 53,
+      "community": 69,
       "norm_label": "_build_rrg_index_choices()"
     },
     {
@@ -21650,7 +21660,7 @@
       "source_location": "L421",
       "_origin": "ast",
       "id": "core_analysis_views_symbol_autocomplete_view",
-      "community": 13,
+      "community": 53,
       "norm_label": "symbol_autocomplete_view()"
     },
     {
@@ -21660,7 +21670,7 @@
       "source_location": "L576",
       "_origin": "ast",
       "id": "core_analysis_views_staff_or_public_tab",
-      "community": 53,
+      "community": 116,
       "norm_label": "_staff_or_public_tab()"
     },
     {
@@ -21720,7 +21730,7 @@
       "source_location": "L1382",
       "_origin": "ast",
       "id": "core_analysis_views_crud_operations_handler",
-      "community": 13,
+      "community": 89,
       "norm_label": "crud_operations_handler()"
     },
     {
@@ -21730,7 +21740,7 @@
       "source_location": "L1444",
       "_origin": "ast",
       "id": "core_analysis_views_crud_delete_handler",
-      "community": 13,
+      "community": 84,
       "norm_label": "crud_delete_handler()"
     },
     {
@@ -21740,7 +21750,7 @@
       "source_location": "L1453",
       "_origin": "ast",
       "id": "core_analysis_views_trigger_daily_api_sync_view",
-      "community": 13,
+      "community": 113,
       "norm_label": "trigger_daily_api_sync_view()"
     },
     {
@@ -21750,7 +21760,7 @@
       "source_location": "L1490",
       "_origin": "ast",
       "id": "core_analysis_views_trigger_floorsheet_sync_view",
-      "community": 13,
+      "community": 53,
       "norm_label": "trigger_floorsheet_sync_view()"
     },
     {
@@ -21770,7 +21780,7 @@
       "source_location": "L206",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_206",
-      "community": 53,
+      "community": 110,
       "norm_label": "fix #1 \u2014 cache symbol lists for 5 minutes so the two full-table scans     (comp"
     },
     {
@@ -21790,7 +21800,7 @@
       "source_location": "L422",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_422",
-      "community": 13,
+      "community": 53,
       "norm_label": "optimized: lightweight json endpoint for the search-as-you-type dropdown.     t"
     },
     {
@@ -21800,7 +21810,7 @@
       "source_location": "L577",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_577",
-      "community": 53,
+      "community": 116,
       "norm_label": "open the public desks to everyone; defer to the staff gate otherwise.      the"
     },
     {
@@ -21860,7 +21870,7 @@
       "source_location": "L1383",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_1383",
-      "community": 13,
+      "community": 89,
       "norm_label": "create & update operations handler via html form actions."
     },
     {
@@ -21870,7 +21880,7 @@
       "source_location": "L1445",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_1445",
-      "community": 13,
+      "community": 84,
       "norm_label": "delete operation route (post only, csrf-protected)."
     },
     {
@@ -21880,7 +21890,7 @@
       "source_location": "L1454",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_1454",
-      "community": 13,
+      "community": 113,
       "norm_label": "on-demand daily sync engine endpoint. post-only so the heavy external sync"
     },
     {
@@ -21890,7 +21900,7 @@
       "source_location": "L1491",
       "_origin": "ast",
       "id": "core_analysis_views_rationale_1491",
-      "community": 13,
+      "community": 53,
       "norm_label": "on-demand floorsheet sync endpoint. post-only so the heavy trade-level pull"
     },
     {
@@ -24893,11 +24903,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L283",
+      "source_location": "L311",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_fundamental_views_rationale_283",
-      "target": "core_analysis_fundamental_views_fundamental_matrix_api"
+      "source": "core_analysis_fundamental_views_rationale_311",
+      "target": "core_analysis_fundamental_views_fundamental_matrix_api",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -24958,11 +24968,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L413",
+      "source_location": "L441",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_fundamental_views_rationale_413",
-      "target": "core_analysis_fundamental_views_gv_norm_growth"
+      "source": "core_analysis_fundamental_views_rationale_441",
+      "target": "core_analysis_fundamental_views_gv_norm_growth",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -25012,21 +25022,21 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L436",
+      "source_location": "L464",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_fundamental_views_rationale_436",
-      "target": "core_analysis_fundamental_views_gv_weighted"
+      "source": "core_analysis_fundamental_views_rationale_464",
+      "target": "core_analysis_fundamental_views_gv_weighted",
+      "confidence_score": 1.0
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L443",
+      "source_location": "L471",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_fundamental_views_rationale_443",
-      "target": "core_analysis_fundamental_views_prev_fy"
+      "source": "core_analysis_fundamental_views_rationale_471",
+      "target": "core_analysis_fundamental_views_prev_fy",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -25054,11 +25064,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L455",
+      "source_location": "L483",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_fundamental_views_rationale_455",
-      "target": "core_analysis_fundamental_views_gv_value_inputs"
+      "source": "core_analysis_fundamental_views_rationale_483",
+      "target": "core_analysis_fundamental_views_gv_value_inputs",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -25108,11 +25118,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L513",
+      "source_location": "L541",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_fundamental_views_rationale_513",
-      "target": "core_analysis_fundamental_views_latest_market_caps"
+      "source": "core_analysis_fundamental_views_rationale_541",
+      "target": "core_analysis_fundamental_views_latest_market_caps",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -25129,11 +25139,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L536",
+      "source_location": "L564",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_fundamental_views_rationale_536",
-      "target": "core_analysis_fundamental_views_gv_market_cap"
+      "source": "core_analysis_fundamental_views_rationale_564",
+      "target": "core_analysis_fundamental_views_gv_market_cap",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -25150,11 +25160,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L548",
+      "source_location": "L576",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_fundamental_views_rationale_548",
-      "target": "core_analysis_fundamental_views_gv_cap_segments"
+      "source": "core_analysis_fundamental_views_rationale_576",
+      "target": "core_analysis_fundamental_views_gv_cap_segments",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -25193,21 +25203,21 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L583",
+      "source_location": "L611",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_fundamental_views_rationale_583",
-      "target": "core_analysis_fundamental_views_sector_model"
+      "source": "core_analysis_fundamental_views_rationale_611",
+      "target": "core_analysis_fundamental_views_sector_model",
+      "confidence_score": 1.0
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/fundamental_views.py",
-      "source_location": "L638",
+      "source_location": "L666",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_fundamental_views_rationale_638",
-      "target": "core_analysis_fundamental_views_fundamental_model_api"
+      "source": "core_analysis_fundamental_views_rationale_666",
+      "target": "core_analysis_fundamental_views_fundamental_model_api",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -78124,6 +78134,16 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/tests.py",
+      "source_location": "L214",
+      "weight": 1.0,
+      "source": "core_analysis_tests_udfchartbarstests",
+      "target": "core_analysis_tests_udfchartbarstests_test_chart_bars_keeps_synced_bar_over_live_same_day",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "core_analysis/tests.py",
       "source_location": "L93",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -78853,11 +78873,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/udf_views.py",
-      "source_location": "L235",
+      "source_location": "L241",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "core_analysis_udf_views_rationale_235",
-      "target": "core_analysis_udf_views_chart_bars"
+      "source": "core_analysis_udf_views_rationale_241",
+      "target": "core_analysis_udf_views_chart_bars",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -79693,5 +79713,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "4a855fc0a71256c869fee722f2dd0db322cb1d46"
+  "built_at_commit": "03cf898d33b82b335e0ec510ade11b86c32bfcb4"
 }
