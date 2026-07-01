@@ -9,6 +9,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
   <link rel="stylesheet" href="{% static 'core_analysis/css/portfolio.css' %}?v={{ asset_version }}">
+  <style>
+    /* Portfolio Summary + holdings desk (scoped to this page). */
+    .pf-sum-controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin-bottom:8px;padding:10px 12px 0}
+    .pf-sum-idx{display:flex;flex-direction:column;gap:4px}
+    .pf-sum-idx label{font-size:10px;text-transform:uppercase;letter-spacing:.04em;opacity:.7}
+    .pf-sum-idx input{width:116px;padding:6px 8px;border-radius:8px;
+      border:1px solid rgba(150,160,190,.35);background:transparent;color:inherit;font:inherit}
+    .pf-sum-idx input[readonly]{opacity:.7}
+    .pf-idx-change{font-weight:700;padding:6px 2px;min-width:64px}
+    .pf-sum-tiles{margin-bottom:10px;padding:0 12px}
+    .pf-sum-table th,.pf-sum-table td{white-space:nowrap;text-align:right;overflow:hidden;text-overflow:ellipsis}
+    .pf-sum-table th.l,.pf-sum-table td.l{text-align:left}
+    .pf-sum-table thead .pf-sum-grp th{border-bottom:1px solid rgba(150,160,190,.25);
+      text-align:center;font-size:9px;letter-spacing:.03em;text-transform:uppercase;opacity:.85}
+    .pf-sum-table tbody tr.pf-sum-sector td{background:rgba(120,140,180,.12);font-weight:700}
+  </style>
 </head>
 <body>
 <div class="mi-shell">
@@ -52,7 +68,11 @@
     </div>
     <form class="pf-import-form" method="post" action="{% url 'portfolio_import' %}" enctype="multipart/form-data">
       {% csrf_token %}
-      <input type="file" name="file" accept=".csv,text/csv" id="pf-file" required>
+      <span class="pf-upload">
+        <input class="pf-file-input" type="file" name="file" accept=".csv,text/csv" id="pf-initial-file" required>
+        <label class="pf-file-picker" for="pf-initial-file">Choose CSV</label>
+        <span class="pf-file-name" data-empty-label="No file selected">No file selected</span>
+      </span>
       <button type="submit" class="pf-btn pf-btn-primary">Upload CSV</button>
     </form>
   </section>
@@ -72,8 +92,24 @@
     <div class="pf-toolbar-actions">
       <form class="pf-toolbar-form" method="post" action="{% url 'portfolio_import' %}" enctype="multipart/form-data">
         {% csrf_token %}
-        <input type="file" name="file" accept=".csv,text/csv" id="pf-file" required>
-        <button type="submit" class="pf-btn pf-btn-primary">Update Portfolio</button>
+        <span class="pf-upload">
+          <input class="pf-file-input" type="file" name="file" accept=".csv,text/csv" id="pf-holdings-file" required>
+          <label class="pf-file-picker" for="pf-holdings-file">Holdings CSV</label>
+          <span class="pf-file-name" data-empty-label="No file selected">No file selected</span>
+        </span>
+        <button type="submit" class="pf-btn pf-btn-primary">Update Holdings</button>
+      </form>
+      <!-- Cost-basis import: broker "My WACC" report (CSV / Excel / PDF). Separate
+           form + own file input; matched to holdings by symbol server-side. -->
+      <form class="pf-toolbar-form" method="post" action="{% url 'portfolio_wacc_import' %}" enctype="multipart/form-data"
+            title="Upload your broker 'My WACC' report to add cost basis (WACC, Book Value, Paper P/L)">
+        {% csrf_token %}
+        <span class="pf-upload">
+          <input class="pf-file-input" type="file" name="file" accept=".csv,.xlsx,.xls,.pdf" id="pf-wacc-file" required>
+          <label class="pf-file-picker" for="pf-wacc-file">WACC report</label>
+          <span class="pf-file-name" data-empty-label="No file selected">No file selected</span>
+        </span>
+        <button type="submit" class="pf-btn pf-btn-primary">Import WACC (cost)</button>
       </form>
       <!-- Separate form so deleting never trips the import form's required file input. -->
       <form method="post" action="{% url 'portfolio_clear' %}" class="pf-delete-form">
@@ -90,29 +126,100 @@
   <div class="pf-section"><span>Overview</span></div>
   <div class="pf-kpis" id="pf-kpis"></div>
 
+  <!-- ══ Portfolio Summary ════════════════════════════════════════════ -->
+  <div class="pf-section"><span>Portfolio Summary</span></div>
+  <div class="pf-card pf-summary-card">
+    <div class="pf-sum-controls">
+      <div class="pf-sum-idx">
+        <label for="pf-idx-current">Current NEPSE</label>
+        <input type="text" id="pf-idx-current" readonly>
+      </div>
+      <div class="pf-sum-idx">
+        <label for="pf-idx-expected">Expected NEPSE</label>
+        <input type="number" id="pf-idx-expected" step="0.01" inputmode="decimal">
+      </div>
+      <div class="pf-sum-idx">
+        <label>Change</label>
+        <span class="pf-idx-change" id="pf-idx-change">0.00%</span>
+      </div>
+      <button type="button" class="pf-btn pf-btn-primary" id="pf-recalc">Recalculate</button>
+    </div>
+    <div class="pf-kpis pf-sum-tiles" id="pf-sum-tiles"></div>
+    <div class="pf-sum-filterbar" aria-label="Portfolio summary filters">
+      <label class="pf-filter-field" for="pf-sum-query">
+        <span>Search</span>
+        <input type="search" id="pf-sum-query" placeholder="Symbol">
+      </label>
+      <label class="pf-filter-field" for="pf-sum-sector-filter">
+        <span>Sector</span>
+        <select id="pf-sum-sector-filter">
+          <option value="">All sectors</option>
+        </select>
+      </label>
+      <label class="pf-filter-field" for="pf-sum-liq-filter">
+        <span>Liquidity</span>
+        <select id="pf-sum-liq-filter">
+          <option value="">All</option>
+          <option value="liquid">Liquid</option>
+          <option value="moderate">Moderate</option>
+          <option value="illiquid">Illiquid</option>
+          <option value="untradeable">Untradeable</option>
+        </select>
+      </label>
+      <label class="pf-filter-field" for="pf-sum-sort">
+        <span>Sort</span>
+        <select id="pf-sum-sort">
+          <option value="symbol">Symbol</option>
+          <option value="value">Value</option>
+          <option value="quantity">Kitta</option>
+          <option value="wacc">WACC</option>
+          <option value="price">LTP</option>
+          <option value="weight">Weight</option>
+          <option value="vol">Vol</option>
+          <option value="beta">Beta</option>
+          <option value="dtl">Liquidity</option>
+          <option value="expPrice">Exp. Price</option>
+          <option value="expValue">Exp. Value</option>
+          <option value="gain">Gain/Loss</option>
+          <option value="var1w">VaR 1W</option>
+          <option value="loss1w">Loss 1W</option>
+          <option value="var1m">VaR 1M</option>
+          <option value="loss1m">Loss 1M</option>
+        </select>
+      </label>
+      <button type="button" class="pf-btn pf-btn-ghost pf-sort-dir" id="pf-sum-dir">Desc</button>
+      <button type="button" class="pf-btn pf-btn-ghost" id="pf-sum-reset">Reset</button>
+      <span class="pf-filter-count" id="pf-sum-count"></span>
+    </div>
+    <div class="pf-table-wrap">
+      <table class="pf-table pf-sum-table" id="pf-sum-table"></table>
+    </div>
+    <div class="pf-note" id="pf-sum-note"></div>
+  </div>
+
   <!-- ══ Risk & Allocation ════════════════════════════════════════════ -->
   <div class="pf-section"><span>Risk &amp; Allocation</span></div>
 
   <!-- Row 1: Compliance · Value at Risk -->
-  <div class="pf-grid">
-    <div class="pf-card">
-      <div class="pf-card-head pf-compliance-head">
-        <span>Compliance &amp; Risk Limits</span>
-        <span class="pf-compliance-summary" id="pf-compliance-summary"></span>
-      </div>
-      <div class="pf-compliance" id="pf-compliance"></div>
-    </div>
+  <div class="pf-grid pf-risk-market-grid">
     <div class="pf-card">
       <div class="pf-card-head">Value at Risk &amp; Drawdown</div>
       <div class="pf-var" id="pf-var"></div>
+    </div>
+    <div class="pf-card">
+      <div class="pf-card-head">Stress Scenarios</div>
+      <div class="pf-stress" id="pf-stress"></div>
     </div>
   </div>
 
   <!-- Row 2: Stress · Factor decomposition · Liquidity -->
   <div class="pf-grid-3">
     <div class="pf-card">
-      <div class="pf-card-head">Stress Scenarios</div>
-      <div class="pf-stress" id="pf-stress"></div>
+      <div class="pf-card-head pf-compliance-head">
+        <span>Compliance &amp; Risk Limits</span>
+        <span class="pf-compliance-summary" id="pf-compliance-summary"></span>
+      </div>
+      <div class="pf-compliance" id="pf-compliance"></div>
     </div>
     <div class="pf-card">
       <div class="pf-card-head">Risk Decomposition — Factor Model</div>
@@ -136,14 +243,6 @@
     </div>
   </div>
 
-  <!-- ══ Holdings ═════════════════════════════════════════════════════ -->
-  <div class="pf-section"><span>Holdings</span></div>
-  <div class="pf-card">
-    <div class="pf-table-wrap">
-      <table class="pf-table" id="pf-table"></table>
-    </div>
-    <div class="pf-note" id="pf-note"></div>
-  </div>
   {% endif %}
 
 </div>

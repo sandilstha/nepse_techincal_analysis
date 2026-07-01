@@ -183,9 +183,28 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Injects the Google Analytics (GA4) tag into every HTML page so site visits
+    # are counted. No-op unless GOOGLE_ANALYTICS_ID is set (see below).
+    'core_analysis.middleware.GoogleAnalyticsMiddleware',
+    # Self-hosted visit tracking — logs each page load to the DB for the /stats/
+    # dashboard. Works offline (no internet needed). Set VISIT_TRACKING_ENABLED
+    # = False to disable. Must sit last so it sees the final response.
+    'core_analysis.middleware.VisitTrackingMiddleware',
 ]
 
 ROOT_URLCONF = 'nepse_project.urls'
+
+# ── Google Analytics (GA4) ────────────────────────────────────────────────────
+# Set to your GA4 Measurement ID (looks like "G-XXXXXXXXXX") to start counting
+# visits / page views / real-time users in the Google Analytics dashboard at
+# https://analytics.google.com. Leave blank to disable tracking entirely.
+# Put GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX in your .env file.
+GOOGLE_ANALYTICS_ID = os.environ.get('GOOGLE_ANALYTICS_ID', '').strip()
+
+# ── Self-hosted visit tracking ────────────────────────────────────────────────
+# Logs every page view into the DB (site_page_visit) for the /stats/ dashboard.
+# Works fully offline — no internet / Google needed. Set to 0 to turn it off.
+VISIT_TRACKING_ENABLED = _env_bool('VISIT_TRACKING_ENABLED', True)
 
 # The operational workbench is protected with Django's staff check and uses the
 # existing admin login rather than requiring a separate auth UI.

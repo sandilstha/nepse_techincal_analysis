@@ -3,6 +3,12 @@
    Reuses the Market Insights theme tokens (insights.css) for colours.
    ========================================================================== */
 
+.mi-shell {
+  max-width: 100%;
+  padding-left: clamp(48px, 6vw, 112px);
+  padding-right: clamp(48px, 6vw, 112px);
+}
+
 /* ── Auth (login / register) ─────────────────────────────────────────────── */
 .auth-wrap {
   min-height: 100vh;
@@ -95,26 +101,58 @@
 
 /* ── Compact toolbar (returning user: re-import / clear) ─────────────────── */
 .pf-toolbar {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 14px; flex-wrap: wrap;
+  display: grid; grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  align-items: center; gap: 16px;
   background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--radius); box-shadow: var(--shadow);
-  padding: 11px 16px; margin: 16px 0 4px;
+  padding: 13px 18px; margin: 16px 0 4px;
 }
-.pf-toolbar-left { display: flex; flex-direction: column; gap: 2px; }
-.pf-toolbar-label { font: 800 16px/1.1 'Manrope', sans-serif; color: var(--ink-1); }
-.pf-toolbar-asof { font: 500 11.5px/1 'Manrope', sans-serif; color: var(--ink-3); }
-.pf-toolbar-actions { display: flex; align-items: center; gap: 9px; flex-wrap: nowrap; }
-.pf-toolbar-form { display: flex; align-items: center; gap: 9px; margin: 0; }
+.pf-toolbar-left { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pf-toolbar-label { font: 800 17px/1.05 'Manrope', sans-serif; color: var(--ink-1); }
+.pf-toolbar-asof { font: 600 12px/1 'Manrope', sans-serif; color: var(--ink-3); }
+.pf-toolbar-actions {
+  display: grid; grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr) auto;
+  align-items: stretch; justify-content: stretch; gap: 10px; min-width: 0;
+}
+.pf-toolbar-form {
+  display: grid; grid-template-columns: minmax(150px, 1fr) auto;
+  align-items: center; gap: 9px; margin: 0; min-height: 48px; min-width: 0;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: 7px; box-sizing: border-box;
+}
+.pf-toolbar-form .pf-upload {
+  display: grid; grid-template-columns: auto minmax(78px, 1fr);
+  align-items: center; gap: 8px; min-width: 0;
+}
+.pf-toolbar-form .pf-file-picker { min-height: 32px; }
+.pf-toolbar-form .pf-file-name { min-width: 0; max-width: none; }
+.pf-toolbar-form .pf-btn {
+  min-height: 32px; padding: 0 16px; justify-content: center;
+}
 .pf-toolbar-actions .pf-btn { white-space: nowrap; }
-.pf-delete-form { margin: 0; }
+.pf-delete-form { display: flex; margin: 0; }
+.pf-delete-form .pf-btn {
+  min-height: 48px; padding: 0 20px;
+}
 .pf-toolbar-hint { font: 500 11.5px/1 'Manrope', sans-serif; color: var(--ink-3); margin-right: 2px; }
-.pf-toolbar #pf-file { max-width: 200px; padding: 6px 9px; font-size: 11.5px; }
 .pf-btn-danger { background: var(--down-soft); color: var(--down); border: 1px solid var(--down); }
 .pf-btn-danger:hover { background: var(--down); color: #fff; }
+@media (max-width: 1360px) {
+  .pf-toolbar { grid-template-columns: 1fr; align-items: stretch; }
+  .pf-toolbar-actions {
+    grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr) auto;
+    justify-content: stretch;
+  }
+}
+@media (max-width: 920px) {
+  .pf-toolbar-actions { grid-template-columns: 1fr; }
+  .pf-delete-form .pf-btn { width: 100%; box-sizing: border-box; }
+}
 @media (max-width: 620px) {
-  .pf-toolbar { flex-direction: column; align-items: stretch; }
-  .pf-toolbar-actions { flex-wrap: wrap; justify-content: space-between; }
+  .pf-toolbar { padding: 12px; }
+  .pf-toolbar-form { grid-template-columns: 1fr; }
+  .pf-toolbar-form .pf-upload { grid-template-columns: auto minmax(0, 1fr); }
+  .pf-toolbar-form .pf-btn { width: 100%; }
 }
 
 /* ── Import card ─────────────────────────────────────────────────────────── */
@@ -128,10 +166,22 @@
 .pf-import-text h2 { font: 700 16px/1.2 'Manrope', sans-serif; color: var(--ink-1); margin: 0 0 4px; }
 .pf-import-text p { font: 500 12.5px/1.45 'Manrope', sans-serif; color: var(--ink-3); margin: 0; max-width: 560px; }
 .pf-import-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-#pf-file {
-  font: 500 12.5px/1 'Manrope', sans-serif; color: var(--ink-2);
-  background: var(--surface-2); border: 1px solid var(--line);
-  border-radius: var(--radius-sm); padding: 8px 10px; max-width: 260px;
+.pf-upload { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+.pf-file-input {
+  position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;
+}
+.pf-file-picker {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 28px; padding: 0 10px; border-radius: var(--radius-sm);
+  background: var(--surface); border: 1px solid var(--line);
+  color: var(--ink-2); font: 700 11.5px/1 'Manrope', sans-serif;
+  cursor: pointer; white-space: nowrap;
+}
+.pf-file-picker:hover { color: var(--accent); border-color: var(--accent); }
+.pf-file-name {
+  display: inline-block; max-width: 132px; min-width: 92px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 600 11.5px/1 'Manrope', sans-serif; color: var(--ink-3);
 }
 .pf-btn {
   appearance: none; border-radius: var(--radius-sm); cursor: pointer;
@@ -154,9 +204,9 @@
 
 /* ── KPI strip ───────────────────────────────────────────────────────────── */
 .pf-kpis {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 0;
 }
-@media (max-width: 1100px) { .pf-kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1100px) { .pf-kpis { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); } }
 @media (max-width: 560px)  { .pf-kpis { grid-template-columns: 1fr; } }
 .pf-kpi:first-child { border-left: 3px solid var(--accent); }
 .pf-kpi {
@@ -171,15 +221,72 @@
 .pf-kpi-val.risk-moderate { color: #d8941f; }
 .pf-kpi-val.risk-high { color: var(--down); }
 
+/* Summary tiles: force a single row, shrink type to fit */
+.pf-sum-tiles { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; }
+.pf-sum-tiles .pf-kpi { padding: 10px 11px; gap: 3px; }
+.pf-sum-tiles .pf-kpi-label { font-size: 9px; letter-spacing: .04em; }
+.pf-sum-tiles .pf-kpi-val { font-size: 15px; line-height: 1.1; white-space: nowrap; }
+.pf-sum-tiles .pf-kpi-sub { font-size: 9.5px; line-height: 1.2; }
+@media (max-width: 1100px) { .pf-sum-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 560px)  { .pf-sum-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 /* ── Cards / grid ────────────────────────────────────────────────────────── */
 .pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 @media (max-width: 1000px) { .pf-grid { grid-template-columns: 1fr; } }
+.pf-risk-market-grid { align-items: stretch; }
 .pf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
 @media (max-width: 1100px) { .pf-grid-3 { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 720px)  { .pf-grid-3 { grid-template-columns: 1fr; } }
 .pf-card {
   background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 16px;
+}
+.pf-summary-card .pf-table-wrap {
+  max-height: 304px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  border-top: 1px solid var(--line);
+}
+.pf-summary-card .pf-note { background: var(--surface); }
+.pf-sum-filterbar {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px;
+  padding: 0 12px 10px; margin-top: -2px;
+}
+.pf-filter-field {
+  display: flex; flex-direction: column; gap: 4px; flex: 0 1 128px; min-width: 112px;
+}
+.pf-filter-field span {
+  font: 700 9.5px/1 'Manrope', sans-serif; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.pf-filter-field input,
+.pf-filter-field select {
+  width: 100%; min-height: 30px; box-sizing: border-box;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface-2); color: var(--ink-1);
+  padding: 6px 8px; font: 600 11px/1 'Manrope', sans-serif;
+}
+.pf-filter-field input:focus,
+.pf-filter-field select:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.pf-sort-dir { min-width: 56px; }
+.pf-sum-filterbar .pf-btn {
+  min-height: 30px; padding: 0 10px; font-size: 11px;
+}
+.pf-sum-filterbar .pf-btn-ghost:hover {
+  color: var(--accent); border-color: var(--accent);
+}
+.pf-filter-count {
+  margin-left: auto; min-height: 30px; display: inline-flex; align-items: center;
+  font: 700 10.5px/1 'Manrope', sans-serif; color: var(--ink-3); white-space: nowrap;
+}
+@media (max-width: 720px) {
+  .pf-sum-filterbar { align-items: stretch; }
+  .pf-filter-field { flex: 1 1 46%; min-width: 140px; }
+  .pf-filter-count { width: 100%; margin-left: 0; }
 }
 .pf-card-head {
   padding: 12px 16px; font: 700 13px/1 'Manrope', sans-serif; letter-spacing: .03em;
@@ -274,8 +381,12 @@
 /* ── Stress scenarios card ───────────────────────────────────────────────── */
 .pf-stress { padding: 12px 16px; }
 .pf-stress-list { display: flex; flex-direction: column; gap: 8px; }
-.pf-stress-row { display: grid; grid-template-columns: 96px 1fr 96px 56px; align-items: center; gap: 10px; }
-.pf-stress-label { font: 600 12.5px/1.2 'Manrope', sans-serif; color: var(--ink-1); }
+.pf-stress-row { display: grid; grid-template-columns: 150px 1fr 96px 58px; align-items: center; gap: 8px; }
+.pf-stress-label {
+  display: inline-flex; align-items: baseline; gap: 7px; min-width: 0;
+  font: 700 12.5px/1.2 'Manrope', sans-serif; color: var(--ink-1); white-space: nowrap;
+}
+.pf-stress-label small { font: 600 11px/1 'Manrope', sans-serif; color: var(--ink-3); }
 .pf-stress-bar { height: 9px; background: var(--surface-2); border-radius: 5px; overflow: hidden; position: relative; }
 .pf-stress-bar i { display: block; height: 100%; border-radius: 5px; }
 .pf-stress-bar i.down { background: linear-gradient(90deg, #ff6e72, #e0575b); }
@@ -313,9 +424,16 @@
 .pf-liq-kpis { grid-template-columns: repeat(2, 1fr); }
 .pf-liq-label { font: 600 10.5px/1 'Manrope', sans-serif; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); margin: 14px 0 8px; }
 .pf-liq-list { display: flex; flex-direction: column; gap: 6px; }
-.pf-liq-row { display: grid; grid-template-columns: 80px 92px 1fr 70px; align-items: center; gap: 10px; }
+.pf-liq-row {
+  display: grid; grid-template-columns: 58px 88px minmax(72px, 1fr) minmax(82px, auto);
+  align-items: center; gap: 8px;
+}
+.pf-liq-row > * { min-width: 0; }
 .pf-liq-adv { font: 500 11.5px/1 'Manrope', sans-serif; color: var(--ink-3); text-align: right; }
-.pf-liq-dtl { font: 700 12.5px/1 'Manrope', system-ui, sans-serif; color: var(--ink-1); text-align: right; }
+.pf-liq-dtl {
+  font: 700 12.5px/1 'Manrope', system-ui, sans-serif; color: var(--ink-1);
+  text-align: right; white-space: nowrap;
+}
 /* days-to-liquidate tier badge (shared by the card + the holdings table) */
 .pf-liq-tier {
   display: inline-block; text-align: center; padding: 2px 7px; border-radius: 5px;
@@ -342,9 +460,70 @@
 .pf-table tbody td.l, .pf-table tbody td:first-child { text-align: left; }
 .pf-table tbody tr:hover { background: var(--surface-2); }
 .pf-table .pf-tkr { color: var(--accent); font-weight: 700; }
-.pf-table .pf-name { color: var(--ink-2); max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 .pf-table .num-pos { color: var(--up); }
 .pf-table .num-neg { color: var(--down); }
+.pf-sum-table {
+  width: 100%; min-width: 0; table-layout: fixed;
+  font-size: 10.5px; line-height: 1.15;
+}
+.pf-sum-table col.pf-col-rank { width: 3%; }
+.pf-sum-table col.pf-col-symbol { width: 5.6%; }
+.pf-sum-table col.pf-col-kitta { width: 4.6%; }
+.pf-sum-table col.pf-col-wacc { width: 5.8%; }
+.pf-sum-table col.pf-col-ltp { width: 5.8%; }
+.pf-sum-table col.pf-col-value { width: 6.9%; }
+.pf-sum-table col.pf-col-weight { width: 6.2%; }
+.pf-sum-table col.pf-col-vol { width: 5%; }
+.pf-sum-table col.pf-col-beta { width: 4.8%; }
+.pf-sum-table col.pf-col-liq { width: 6.4%; }
+.pf-sum-table col.pf-col-exp-price { width: 6.8%; }
+.pf-sum-table col.pf-col-exp-value { width: 7%; }
+.pf-sum-table col.pf-col-gain { width: 7%; }
+.pf-sum-table col.pf-col-var { width: 5.8%; }
+.pf-sum-table col.pf-col-loss { width: 6.75%; }
+.pf-sum-table thead th,
+.pf-sum-table tbody td {
+  padding: 5px 4px;
+}
+.pf-sum-table thead th {
+  font: 700 9.5px/1.15 'Manrope', sans-serif;
+  letter-spacing: .02em;
+  height: 25px;
+}
+.pf-sum-table tbody tr { height: 24px; }
+.pf-sum-table thead .pf-sum-grp th { top: 0; z-index: 3; }
+.pf-sum-table thead tr:last-child th { top: 25px; z-index: 2; }
+.pf-sort-head {
+  appearance: none; border: 0; background: transparent; color: inherit;
+  width: 100%; padding: 0; display: inline-flex; align-items: center;
+  justify-content: flex-end; gap: 2px; cursor: pointer; min-width: 0;
+  font: inherit; letter-spacing: inherit; text-transform: inherit;
+}
+.pf-sort-head span:first-child {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pf-sum-table th.l .pf-sort-head { justify-content: flex-start; }
+.pf-sort-head:hover,
+.pf-sort-head.active { color: var(--accent); }
+.pf-sort-mark {
+  display: inline-block; min-width: 6px; text-align: center;
+  color: var(--accent); font-weight: 800;
+}
+.pf-sum-table thead .pf-sum-grp th:nth-child(4),
+.pf-sum-table thead .pf-sum-grp th:nth-child(5),
+.pf-sum-table thead .pf-sum-grp th:nth-child(6),
+.pf-sum-table thead tr:last-child th:nth-child(6),
+.pf-sum-table thead tr:last-child th:nth-child(9),
+.pf-sum-table thead tr:last-child th:nth-child(12),
+.pf-sum-table tbody td:nth-child(8),
+.pf-sum-table tbody td:nth-child(11),
+.pf-sum-table tbody td:nth-child(14) {
+  border-left: 1px solid var(--line);
+}
+.pf-sum-table .pf-wcell { min-width: 0; }
+.pf-sum-table .pf-wbar { left: 4px; right: 4px; bottom: 2px; height: 3px; }
+.pf-sum-table .pf-liq-tier { padding: 1px 4px; font-size: 9px; }
+.pf-sum-table .pf-snap { padding: 1px 3px; margin-left: 2px; font-size: 8.5px; }
 .pf-wcell { position: relative; min-width: 90px; }
 .pf-wbar { position: absolute; left: 12px; right: 12px; bottom: 4px; height: 4px; border-radius: 3px;
   background: var(--accent-soft); pointer-events: none; }

@@ -332,6 +332,74 @@ class Holding(models.Model):
         return f"{self.symbol} x{self.quantity}"
 
 
+class HoldingCost(models.Model):
+    """
+    Table: portfolio_holding_cost
+    Cost basis (WACC) for one scrip, imported from the broker "My WACC" report
+    (Sani Securities / any TMS — CSV, Excel or PDF). Kept in its OWN table rather
+    than on ``Holding`` so re-importing the Meroshare "My Shares" CSV — which
+    replaces every ``Holding`` — never wipes the cost basis. Joined to holdings
+    by ``symbol`` at valuation time to derive book value & paper P/L.
+    """
+    portfolio = models.ForeignKey(
+        Portfolio, on_delete=models.CASCADE, related_name="costs"
+    )
+    symbol = models.CharField(max_length=20, db_index=True)
+    # Weighted-average cost per share, and the report's own quantity / total cost
+    # (informational; live book value is wacc_rate × the current demat balance).
+    wacc_rate = models.DecimalField(max_digits=14, decimal_places=4, null=True, blank=True)
+    quantity = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    total_cost = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    modified = models.CharField(max_length=32, blank=True, default="")  # report's "Last Modification Date"
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "portfolio_holding_cost"
+        ordering = ["symbol"]
+        unique_together = (("portfolio", "symbol"),)
+
+    def __str__(self):
+        return f"{self.symbol} @ {self.wacc_rate}"
+
+
+class PageVisit(models.Model):
+    """
+    Table: site_page_visit
+    One row per page view, written by ``VisitTrackingMiddleware`` on every HTML
+    page load. This is the self-hosted alternative to Google Analytics — it works
+    on an offline / air-gapped LAN because nothing leaves the server. The /stats/
+    dashboard rolls these rows up into visit / unique-visitor / top-page counts.
+
+    Only real page navigations are stored (GET, text/html, HTTP 200); static
+    files, the admin, JSON API polls and AJAX requests are filtered out by the
+    middleware so the table isn't flooded by the dashboards' auto-refresh.
+    """
+    path = models.CharField(max_length=300, db_index=True)
+    method = models.CharField(max_length=8, default="GET")
+    status_code = models.PositiveSmallIntegerField(default=200)
+    # Client IP is the unique-visitor key on a LAN (each device has one). Nullable
+    # because a misconfigured proxy can hide it.
+    ip_address = models.GenericIPAddressField(null=True, blank=True, db_index=True)
+    session_key = models.CharField(max_length=40, blank=True, default="", db_index=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="page_visits",
+    )
+    user_agent = models.CharField(max_length=400, blank=True, default="")
+    referer = models.CharField(max_length=400, blank=True, default="")
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "site_page_visit"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["created_at", "path"]),
+        ]
+
+    def __str__(self):
+        return f"{self.path} @ {self.created_at:%Y-%m-%d %H:%M} ({self.ip_address or '?'})"
+
+
 class AccountApproval(models.Model):
     """Admin review state for a self-service portfolio account request."""
 

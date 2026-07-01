@@ -5,8 +5,8 @@
     "semantic_hash": "7bf81dca0376bde3a32244b82bc7cbc0"
   },
   ".claude/settings.local.json": {
-    "mtime": 1781864420.5546286,
-    "ast_hash": "abcf46c9d2dd74f5b7c8e8d09a73082a",
+    "mtime": 1782887614.1228867,
+    "ast_hash": "43479bf317cd858810f7659c832ec88f",
     "semantic_hash": ""
   },
   ".codex/hooks.json": {
@@ -100,8 +100,8 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "core_analysis/models.py": {
-    "mtime": 1782720383.261729,
-    "ast_hash": "eb93021f98e5a2a0973419b6b888181a",
+    "mtime": 1782900666.405031,
+    "ast_hash": "3d52607e7542061217dab8f2c49362b7",
     "semantic_hash": ""
   },
   "core_analysis/serializers.py": {
@@ -260,8 +260,8 @@
     "semantic_hash": "bb318371ce8811435f42f4a6ba8d64a7"
   },
   "core_analysis/tests.py": {
-    "mtime": 1782817428.773253,
-    "ast_hash": "6b111869b7584a5dd072743b754c397f",
+    "mtime": 1782887749.357648,
+    "ast_hash": "14e8c7a2bcb193d4266345944c827e03",
     "semantic_hash": ""
   },
   "core_analysis/udf_views.py": {
@@ -270,8 +270,8 @@
     "semantic_hash": ""
   },
   "core_analysis/urls.py": {
-    "mtime": 1782795214.1904554,
-    "ast_hash": "468f5ab1df1c8cf748e33f47ef82aea7",
+    "mtime": 1782900765.421438,
+    "ast_hash": "14345136949819e26790bf7734cf21e8",
     "semantic_hash": ""
   },
   "core_analysis/views.py": {
@@ -295,8 +295,8 @@
     "semantic_hash": "85d46c6e1388a6a24dc40b49b4ce6280"
   },
   "nepse_project/settings.py": {
-    "mtime": 1782720535.7374175,
-    "ast_hash": "e3d3b251bf4875a969d26b4b226355ee",
+    "mtime": 1782900783.6726968,
+    "ast_hash": "a0f6f76eb9e7e671e73f5502afead753",
     "semantic_hash": ""
   },
   "nepse_project/urls.py": {
@@ -350,18 +350,18 @@
     "semantic_hash": ""
   },
   "core_analysis/portfolio_views.py": {
-    "mtime": 1782720470.532655,
-    "ast_hash": "224691e21bf7d803e68c5c501152bc0c",
+    "mtime": 1782886858.0172715,
+    "ast_hash": "d828f0ccb7a21f8e3797165c2c082342",
     "semantic_hash": ""
   },
   "core_analysis/services/portfolio_analytics.py": {
-    "mtime": 1782474012.9674206,
-    "ast_hash": "bade37b34e8777c7db7be49c654260ee",
+    "mtime": 1782900072.8988824,
+    "ast_hash": "50a7358d5c01ca955e3eba8eaf83446f",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/portfolio.js": {
-    "mtime": 1782474063.8783855,
-    "ast_hash": "3f8c4d8ef92131ba7cd326902cf8a881",
+    "mtime": 1782900091.3073378,
+    "ast_hash": "4d805a0b5886d780391f174b03f14216",
     "semantic_hash": ""
   },
   "core_analysis/management/commands/grant_staff.py": {
@@ -392,6 +392,26 @@
   "core_analysis/static/core_analysis/js/fundamentals.js": {
     "mtime": 1782813473.2564762,
     "ast_hash": "46ae7a41232499c3e678e01d77bcc0a6",
+    "semantic_hash": ""
+  },
+  "core_analysis/migrations/0009_holdingcost.py": {
+    "mtime": 1782887284.4859967,
+    "ast_hash": "d7d5a1faa507516166ed1d9be9be62d5",
+    "semantic_hash": ""
+  },
+  "core_analysis/middleware.py": {
+    "mtime": 1782900683.9004676,
+    "ast_hash": "03fc7b6537ddf421dc6d4a8dd7e90b98",
+    "semantic_hash": ""
+  },
+  "core_analysis/analytics_views.py": {
+    "mtime": 1782900714.9135642,
+    "ast_hash": "971e77782776780b6848fa34e56087b6",
+    "semantic_hash": ""
+  },
+  "core_analysis/migrations/0010_pagevisit.py": {
+    "mtime": 1782900793.9764907,
+    "ast_hash": "2f8801914034b3f12eabcd050a8edfbf",
     "semantic_hash": ""
   }
 }

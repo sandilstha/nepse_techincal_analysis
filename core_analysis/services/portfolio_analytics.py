@@ -32,6 +32,9 @@ TRADING_DAYS_YEAR = 246           # NEPSE trades Sun–Fri (~246 sessions/yr)
 MIN_RETURNS = 20                  # need at least this many returns for vol/beta
 MIN_VAR_POINTS = 30               # need at least this many sessions for VaR
 VAR_HORIZON_DAYS = 10             # second VaR horizon (√-time scaled)
+# Per-holding VaR horizons for the Portfolio Summary desk, in NEPSE sessions.
+VAR_1W_SESSIONS = 5               # ~1 trading week
+VAR_1M_SESSIONS = 20             # ~1 trading month
 Z95, Z99 = 1.645, 2.326           # normal quantiles for parametric VaR
 # Hypothetical market shocks (% NEPSE move) propagated to the book via beta.
 STRESS_SHOCKS = (-20, -10, -5, 10)
@@ -138,16 +141,22 @@ def _liquidity(symbols):
         if not latest:
             return out, 0
         start = latest - timedelta(days=LIQ_LOOKBACK_DAYS)
+        # True market-session count over the window, taken from the whole EOD
+        # table (NOT just the held symbols' trade days) — otherwise a book of
+        # thin names would divide by too few sessions and look falsely liquid.
+        sessions = (
+            NepseDailyStockPrice.objects.filter(business_date__gte=start)
+            .values("business_date").distinct().count()
+        )
         rows = NepseDailyStockPrice.objects.filter(
             symbol__in=symbols, business_date__gte=start
         ).values_list("symbol", "business_date", "total_traded_quantity", "total_traded_value")
-        agg, dates = {}, set()
+        agg = {}
         for sym, bd, q, v in rows:
-            dates.add(bd)
             a = agg.setdefault(sym, [0.0, 0.0])
             a[0] += _f(q)
             a[1] += _f(v)
-        sessions = len(dates) or 1
+        sessions = sessions or 1
         for sym, (q, v) in agg.items():
             out[sym] = {"adv_qty": q / sessions, "adv_turnover": v / sessions}
         return out, sessions
@@ -244,6 +253,58 @@ def _beta_resid(stock_ret, index_ret):
     alpha = my - beta * mx
     resid = [ys[k] - (alpha + beta * xs[k]) for k in range(n)]
     return beta, _stdev(resid)
+
+
+def _parametric_var(vol_annual_pct, sessions):
+    """95% parametric VaR as a positive loss *fraction* over ``sessions`` sessions.
+
+    ``vol_annual_pct`` is the annualised volatility % produced by
+    ``_per_symbol_stats``; recover the daily sigma and √-time scale it. Returns
+    None when volatility is unavailable (thin history) so callers show "—".
+    """
+    if not vol_annual_pct:
+        return None
+    daily_sigma = (vol_annual_pct / 100.0) / math.sqrt(TRADING_DAYS_YEAR)
+    return Z95 * daily_sigma * math.sqrt(sessions)
+
+
+def _nepse_index_level():
+    """Latest NEPSE Index close + date — the baseline for the beta scenario."""
+    from core_analysis.models import NepseMarketIndex
+
+    row = (
+        NepseMarketIndex.objects.filter(sector_name__iexact=NEPSE_INDEX_NAME)
+        .order_by("-business_date")
+        .values_list("business_date", "close_index")
+        .first()
+    )
+    if not row:
+        return {"value": None, "date": None}
+    return {"value": round(_f(row[1]), 2), "date": row[0].isoformat()}
+
+
+def _cost_summary(rows):
+    """Book value & paper P/L over the holdings that carry a WACC cost basis.
+
+    Computed on the *costed* subset only (market value vs book value of the same
+    names) so a partial WACC import never distorts the paper P/L. ``has_cost`` is
+    False until the user imports the 'My WACC' report.
+    """
+    costed = [r for r in rows if r.get("cost_value") is not None]
+    if not costed:
+        return {"has_cost": False, "covered_count": 0, "book_value": None,
+                "costed_market_value": None, "paper_pl": None, "paper_pl_pct": None}
+    book = round(sum(r["cost_value"] for r in costed), 2)
+    mkt = round(sum(r["value"] for r in costed), 2)
+    pl = round(mkt - book, 2)
+    return {
+        "has_cost": True,
+        "covered_count": len(costed),
+        "book_value": book,
+        "costed_market_value": mkt,
+        "paper_pl": pl,
+        "paper_pl_pct": round(100.0 * pl / book, 2) if book else None,
+    }
 
 
 def _per_symbol_stats(symbols, stock_ret, index_ret):
@@ -373,6 +434,13 @@ def _risk_block(weight_frac, total_value, port_beta, stock_ret):
             "hist_95_10d_pct": round(v95 * s10 * 100, 2), "hist_95_10d_rs": rs(v95 * s10),
             "cvar_95_1d_pct": round(cvar95 * 100, 2), "cvar_95_1d_rs": rs(cvar95),
             "param_95_1d_pct": round(Z95 * sigma * 100, 2), "param_95_1d_rs": rs(Z95 * sigma),
+            # Diversified parametric VaR at the summary horizons — Z·σ_p·√h on the
+            # *portfolio* daily sigma (correlation already baked into the return
+            # series), so it is lower than the sum of per-holding VaRs.
+            "param_95_1w_pct": round(Z95 * sigma * math.sqrt(VAR_1W_SESSIONS) * 100, 2),
+            "param_95_1w_rs": rs(Z95 * sigma * math.sqrt(VAR_1W_SESSIONS)),
+            "param_95_1m_pct": round(Z95 * sigma * math.sqrt(VAR_1M_SESSIONS) * 100, 2),
+            "param_95_1m_rs": rs(Z95 * sigma * math.sqrt(VAR_1M_SESSIONS)),
         },
         "worst_day": {"date": worst[0].isoformat(), "pct": round(worst[1] * 100, 2),
                       "rs": rs(worst[1])},
@@ -504,9 +572,11 @@ def build_compliance(rows, sectors, concentration, risk, port_beta, total):
         "illiquid", "Illiquid exposure (>5 days to exit)", 100.0 * illiq_val / total, "{:.1f}%",
         detail=(", ".join(r["symbol"] for r in illiq_names[:5]) if illiq_names else "none"),
     ))
+    untr_names = [r["symbol"] for r in rows if r["dtl"] is None]
     checks.append(_check_max("untradeable", "Untradeable exposure (no volume)",
                              100.0 * untr_val / total, "{:.1f}%",
-                             detail=", ".join(r["symbol"] for r in rows if r["dtl"] is None)[:80] or "none"))
+                             detail=(", ".join(untr_names[:6]) + (" +%d more" % (len(untr_names) - 6)
+                                     if len(untr_names) > 6 else "")) if untr_names else "none"))
 
     # 1-day 95% VaR.
     if risk and risk.get("ok"):
@@ -560,6 +630,7 @@ def build_portfolio_payload(portfolio):
         return cached
 
     symbols = [h.symbol for h in holdings]
+    costs = {c.symbol: c for c in portfolio.costs.all()}  # WACC cost basis by symbol
     prices = _latest_prices(symbols)
     meta = _company_meta(symbols)
     stock_ret, index_ret = _load_returns(symbols)
@@ -593,6 +664,19 @@ def build_portfolio_payload(portfolio):
         else:
             dtl, tier = None, "untradeable"
 
+        # Per-holding parametric VaR (95%) at the 1-week / 1-month horizons, as a
+        # signed loss (negative) both in % and in ₨ on this position's value.
+        v1w = _parametric_var(st.get("vol"), VAR_1W_SESSIONS)
+        v1m = _parametric_var(st.get("vol"), VAR_1M_SESSIONS)
+
+        # Cost basis (WACC), matched by symbol from the imported "My WACC" report.
+        # Book value marks the CURRENT balance at its average cost; paper P/L is
+        # market value minus that. None until the user imports the WACC report.
+        cost = costs.get(h.symbol)
+        wacc = _f(cost.wacc_rate) if (cost and cost.wacc_rate is not None) else None
+        cost_value = round(wacc * qty, 2) if wacc is not None else None
+        pl = round(value - cost_value, 2) if cost_value is not None else None
+
         rows.append({
             "symbol": h.symbol,
             "name": name,
@@ -605,6 +689,13 @@ def build_portfolio_payload(portfolio):
             "market_cap": round(mcap, 2),
             "vol": st.get("vol"),
             "beta": st.get("beta"),
+            "wacc": round(wacc, 2) if wacc is not None else None,
+            "cost_value": cost_value,
+            "pl": pl,
+            "var_1w_pct": round(-v1w * 100, 2) if v1w is not None else None,
+            "loss_1w": round(-v1w * value, 2) if v1w is not None else None,
+            "var_1m_pct": round(-v1m * 100, 2) if v1m is not None else None,
+            "loss_1m": round(-v1m * value, 2) if v1m is not None else None,
             "adv_qty": round(adv),
             "dtl": round(dtl, 1) if dtl is not None else None,
             "liq_tier": tier,
@@ -718,6 +809,8 @@ def build_portfolio_payload(portfolio):
             "top_symbol": top["symbol"] if top else None,
         },
         "portfolio_beta": port_beta,
+        "nepse_index": _nepse_index_level(),
+        "cost": _cost_summary(rows),
         "snapshot_count": sum(1 for r in rows if r["price_source"] == "snapshot"),
         "risk": risk,
         "liquidity": liquidity,
