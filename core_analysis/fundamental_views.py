@@ -20,6 +20,7 @@ as thousands of rupees, everything else as a plain number).
 from __future__ import annotations
 
 import logging
+import statistics
 
 from django.db.models import Count, Max
 from django.http import JsonResponse
@@ -290,6 +291,17 @@ def fundamental_data_api(request):
         .first()
     )
 
+    # Morningstar-style research: sector-relative fair value + percentile ranks.
+    # Wrapped so a research failure never breaks the statement view.
+    try:
+        sector = base.order_by().values_list("sector", flat=True).first()
+        morningstar = _morningstar_research(
+            sym, sector, selected["fy"], selected["quarter"], ks_by_key
+        )
+    except Exception:  # pragma: no cover - research overlay is best-effort
+        logger.exception("Morningstar research failed for %s", sym)
+        morningstar = None
+
     return JsonResponse(
         {
             "ok": True,
@@ -299,9 +311,14 @@ def fundamental_data_api(request):
             "selected": {"fy": selected["fy"], "quarter": selected["quarter"]},
             "periods": period_list,
             "headline": headline,
+            # Canonical metric key → amount (sector-agnostic; percent metrics are
+            # fractions). The Morningstar tab reads this instead of raw, sector-
+            # specific KS item codes.
+            "ks": ks_by_key,
             "statements": statements,
             "trend": trend,
             "bfi": bfi,
+            "morningstar": morningstar,
         }
     )
 
@@ -726,3 +743,115 @@ def fundamental_model_api(request):
         "size_method": "market_cap_cumulative_55_30_15",
         "results": results,
     })
+
+
+# ── Morningstar-style research: P/E fair value + sector percentile ranks ───────
+# Feeds the Morningstar tab's "Valuation vs fair value" and "Sector percentile
+# rank" panels for the selected company/period. Sector-relative, and — like the
+# rest of this module — keyed on canonical KS metric names so it works for every
+# sector, not just commercial banks.
+
+# (key, label, client-fmt, higher-is-better) for the percentile-rank panel.
+_MS_RANK_SPECS = (
+    ("pe", "Price / Earnings", "num", False),
+    ("pb", "Price / Book", "num", False),
+    ("roe", "Return on Equity", "pct", True),
+    ("div_yield", "Dividend Yield", "pct", True),
+    ("earn_yield", "Earnings Yield", "pct", True),
+)
+
+
+def _ms_value_metrics(d):
+    """Comparable valuation metrics from a canonical key→amount dict. Percent
+    metrics stay as FRACTIONS (roe/div_yield/earn_yield) to match the client's
+    'pct' formatter, which multiplies by 100."""
+    price = _positive_float(d.get("price"))
+    bvps = _positive_float(d.get("bvps"))
+    eps = d.get("eps")
+    dps = d.get("dps")
+    pe = d.get("pe")
+    return {
+        "pe": pe if (pe is not None and pe > 0) else None,
+        "pb": (price / bvps) if (price is not None and bvps) else None,
+        "roe": d.get("roe"),
+        "div_yield": (dps / price) if (dps is not None and price) else None,
+        "earn_yield": (eps / price) if (eps is not None and price) else None,
+    }
+
+
+def _morningstar_research(sym, sector, fy, quarter, ks_by_key):
+    """Fair value (sector-median P/E × EPS) + percentile ranks vs same-sector
+    peers for one company/period. Returns None when the sector is unknown or no
+    comparable metric is available."""
+    if not sector:
+        return None
+    rows = FinancialStatement.objects.filter(
+        sector=sector, fs_type="KS", quarter=quarter, fiscal_year_ad=fy,
+    ).values("ticker", "item_code", "amount")
+
+    peer_by = {}
+    for r in rows:
+        if _is_aggregate_ticker(r["ticker"]):
+            continue
+        key = _ks_key(r["item_code"])
+        if not key:
+            continue
+        amt = float(r["amount"]) if r["amount"] is not None else None
+        peer_by.setdefault(r["ticker"], {})[key] = amt
+
+    metrics_by_ticker = {t: _ms_value_metrics(d) for t, d in peer_by.items()}
+    own = _ms_value_metrics(ks_by_key)
+
+    # Fair value estimate = sector-median P/E applied to the company's EPS.
+    sector_pes = [m["pe"] for m in metrics_by_ticker.values() if m["pe"] is not None]
+    sector_pe = round(statistics.median(sector_pes), 2) if sector_pes else None
+    price = _positive_float(ks_by_key.get("price"))
+    eps = ks_by_key.get("eps")
+    fair_value = None
+    if sector_pe is not None and eps is not None and eps > 0:
+        estimate = sector_pe * eps
+        ratio = (price / estimate) if (price and estimate > 0) else None
+        verdict = "Fairly valued"
+        if ratio is not None:
+            verdict = ("Undervalued" if ratio < 0.9
+                       else "Overvalued" if ratio > 1.1 else "Fairly valued")
+        fair_value = {
+            "price": round(price, 2) if price is not None else None,
+            "estimate": round(estimate, 2),
+            "ratio": round(ratio, 2) if ratio is not None else None,
+            "sector_pe": sector_pe,
+            "verdict": verdict,
+        }
+
+    # Percentile rank per metric: share of OTHER peers this company beats (0–100),
+    # direction-aware (lower P/E is better, higher ROE is better).
+    ranks = []
+    for key, label, fmt, higher_better in _MS_RANK_SPECS:
+        val = own.get(key)
+        if val is None:
+            continue
+        all_vals = [m.get(key) for m in metrics_by_ticker.values() if m.get(key) is not None]
+        others = [m.get(key) for t, m in metrics_by_ticker.items()
+                  if t != sym and m.get(key) is not None]
+        if not all_vals:
+            continue
+        percentile = None
+        if others:
+            beat = sum(1 for p in others if (val > p if higher_better else val < p))
+            percentile = round(100.0 * beat / len(others))
+        ranks.append({
+            "label": label,
+            "value": round(val, 4),
+            "fmt": fmt,
+            "percentile": percentile,
+            "median": round(statistics.median(all_vals), 4),
+        })
+
+    if fair_value is None and not ranks:
+        return None
+    return {
+        "sector": sector,
+        "peer_count": len(metrics_by_ticker),
+        "fair_value": fair_value,
+        "ranks": ranks,
+    }

@@ -30,6 +30,19 @@
               aria-selected="{% if active_tab == 'inventory' %}true{% else %}false{% endif %}"><span class="primary-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/></svg></span>Raw Inventory Manager</button>
     </li>
     <li class="nav-row-break" aria-hidden="true"></li>
+    {# Workbench / Data section sub-tabs — Raw Inventory Manager + Seasonal Return. #}
+    <li class="nav-item workspace-subtab-item data-tool-item">
+      <button class="nav-link workspace-subtab {% if active_tab == 'inventory' %}active{% endif %}"
+              data-section="inventory"
+              data-bs-toggle="tab" data-bs-target="#inventory-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'inventory' %}true{% else %}false{% endif %}">Raw Inventory Manager</button>
+    </li>
+    <li class="nav-item workspace-subtab-item data-tool-item">
+      <button class="nav-link workspace-subtab {% if active_tab == 'rrg_seasonal' %}active{% endif %}"
+              data-section="inventory"
+              data-bs-toggle="tab" data-bs-target="#rrg-seasonal-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'rrg_seasonal' %}true{% else %}false{% endif %}">Seasonal Return</button>
+    </li>
     <li class="nav-item workspace-subtab-item strategy-card-item">
       <button class="nav-link workspace-subtab strategy-card-button {% if active_tab == 'backtest' %}active{% endif %}"
               data-section="strategy"
@@ -104,6 +117,7 @@
     {% include "core_analysis/includes/_support_resistance_tab.html" %}
     {% include "core_analysis/includes/_rrg_tab.html" %}
     {% include "core_analysis/includes/_rrg_indices_tab.html" %}
+    {% include "core_analysis/includes/_rrg_seasonal_tab.html" %}
   </div>{# /tab-content #}
 {% endblock %}
 

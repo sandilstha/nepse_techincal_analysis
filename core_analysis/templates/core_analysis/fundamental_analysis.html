@@ -250,7 +250,12 @@
     .gv-grid { stroke: var(--line, rgba(128,128,128,.18)); stroke-width: 1; }
     .gv-tick { fill: currentColor; opacity: .55; }
     .gv-axis-label { fill: currentColor; opacity: .7; }
-    .gv-dotlabel { fill: currentColor; opacity: .8; font-size: 10px; }
+    /* Halo (stroke matches the panel background) keeps the surviving labels
+       crisp where they sit over dots / gridlines, in both themes. */
+    .gv-dotlabel { fill: currentColor; opacity: .85; font-size: 10px;
+      paint-order: stroke; stroke: var(--surface, #0b1220); stroke-width: 2.5px;
+      stroke-linejoin: round; }
+    .gv-dotlabel-sel { opacity: 1; font-weight: 700; }
 
     .gv-cap-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
     .gv-cap-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; margin-right: 4px; }

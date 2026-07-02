@@ -1,0 +1,149 @@
+{% comment %}
+RRG → Seasonal Return desk. Monthly seasonality of every NEPSE index, computed
+from the local index table by core_analysis.services.seasonal_returns. Server
+rendered from the `seasonal` context payload (no client fetch).
+{% endcomment %}
+<div class="tab-pane fade {% if active_tab == 'rrg_seasonal' %}show active{% endif %}" id="rrg-seasonal-pane" role="tabpanel">
+  <style>
+    .season-wrap { --pos:#16a34a; --neg:#dc2626; }
+    .season-head h5 { font-size: 16px; font-weight: 800; color: var(--ink-1); margin: 0 0 2px; }
+    .season-head p { font-size: 12.5px; color: var(--ink-3, #94a3b8); margin: 0 0 14px; }
+    .season-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+    @media (max-width: 780px) { .season-stats { grid-template-columns: 1fr; } }
+    .season-stat { background: var(--bg-raised, rgba(128,128,128,.06)); border: 1px solid var(--line, rgba(128,128,128,.2));
+      border-radius: 10px; padding: 12px 14px; }
+    .season-stat .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3, #94a3b8); }
+    .season-stat .v { font-size: 18px; font-weight: 700; color: var(--ink-1); font-variant-numeric: tabular-nums; margin-top: 3px; }
+    .season-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 980px) { .season-grid2 { grid-template-columns: 1fr; } }
+    .season-card { background: var(--bg-surface, rgba(128,128,128,.04)); border: 1px solid var(--line, rgba(128,128,128,.2));
+      border-radius: 12px; padding: 14px 16px; }
+    .season-card h6 { font-size: 13px; font-weight: 700; color: var(--ink-1); margin: 0 0 10px; }
+    table.season-tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    table.season-tbl th, table.season-tbl td { padding: 7px 9px; border-bottom: 1px solid var(--line, rgba(128,128,128,.16)); text-align: right; white-space: nowrap; }
+    table.season-tbl th { color: var(--ink-3, #94a3b8); font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: .04em; }
+    table.season-tbl td.l, table.season-tbl th.l { text-align: left; }
+    table.season-tbl td.name { color: var(--ink-1); font-weight: 600; }
+    .season-matrix-scroll { overflow-x: auto; border: 1px solid var(--line, rgba(128,128,128,.2)); border-radius: 12px; }
+    table.season-matrix { border-collapse: collapse; font-size: 12px; min-width: 100%; }
+    table.season-matrix th, table.season-matrix td { padding: 7px 10px; border-bottom: 1px solid var(--line, rgba(128,128,128,.12));
+      text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    table.season-matrix thead th { position: sticky; top: 0; background: var(--bg-raised, #0b1d3f); color: var(--ink-3, #94a3b8);
+      font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .03em; }
+    table.season-matrix td.month, table.season-matrix th.month { position: sticky; left: 0; background: var(--bg-raised, #0b1d3f);
+      text-align: left; color: var(--ink-1); font-weight: 700; z-index: 1; }
+    .season-note { font-size: 11.5px; color: var(--ink-3, #94a3b8); margin-top: 12px; line-height: 1.5; }
+    .season-empty { padding: 30px; text-align: center; color: var(--ink-3, #94a3b8); }
+    .season-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .season-card-head h6 { margin: 0; }
+    .season-mtoggle { display: inline-flex; border: 1px solid var(--line, rgba(128,128,128,.3)); border-radius: 8px; overflow: hidden; }
+    .season-mbtn { background: transparent; border: 0; padding: 5px 12px; font-size: 11.5px; font-weight: 600;
+      color: var(--ink-3, #94a3b8); cursor: pointer; }
+    .season-mbtn.active { background: var(--accent, #4c8dff); color: #fff; }
+  </style>
+
+  <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4 season-wrap">
+    {% if not seasonal or not seasonal.ok %}
+      <div class="season-empty">{{ seasonal.reason|default:"Seasonal data is not available yet." }}</div>
+    {% else %}
+    <div class="season-head">
+      <h5>Seasonal Return</h5>
+      <p>Average month-over-month performance for the NEPSE Index and sub-indices, from your local index history. Green = historically positive month, red = negative.</p>
+    </div>
+
+    <div class="season-stats">
+      <div class="season-stat"><div class="k">Date Coverage</div><div class="v">{{ seasonal.coverage }}</div></div>
+      <div class="season-stat"><div class="k">Indices Included</div><div class="v">{{ seasonal.indices_count }}</div></div>
+      <div class="season-stat"><div class="k">Rows Processed</div><div class="v">{{ seasonal.rows_processed_str }}</div></div>
+    </div>
+
+    <div class="season-grid2">
+      <div class="season-card">
+        <h6>Latest Monthly Return</h6>
+        <table class="season-tbl">
+          <thead><tr><th class="l">Index</th><th>Month</th><th>Return %</th></tr></thead>
+          <tbody>
+            {% for r in seasonal.latest_rows %}
+              <tr>
+                <td class="l name">{{ r.label }}</td>
+                <td style="color: var(--ink-3, #94a3b8);">{{ r.period }}</td>
+                <td style="color: {{ r.color }}; font-weight: 700;">{{ r.value_str }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="season-card">
+        <h6>Best / Worst Month by Index (Average)</h6>
+        <table class="season-tbl">
+          <thead><tr><th class="l">Index</th><th>Best Month</th><th>Worst Month</th><th>Latest %</th></tr></thead>
+          <tbody>
+            {% for r in seasonal.bestworst_rows %}
+              <tr>
+                <td class="l name">{{ r.label }}</td>
+                <td><span style="color: var(--ink-3, #94a3b8);">{{ r.best_month }}</span> <span style="color: var(--pos);">({{ r.best_str }})</span></td>
+                <td><span style="color: var(--ink-3, #94a3b8);">{{ r.worst_month }}</span> <span style="color: var(--neg);">({{ r.worst_str }})</span></td>
+                <td style="color: {{ r.latest_color }}; font-weight: 700;">{{ r.latest_str }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="season-card">
+      <div class="season-card-head">
+        <h6>Average Return by Month and Index</h6>
+        <div class="season-mtoggle" role="group" aria-label="Month labels">
+          <button type="button" class="season-mbtn active" data-lang="en">English</button>
+          <button type="button" class="season-mbtn" data-lang="np">नेपाली</button>
+        </div>
+      </div>
+      <div class="season-matrix-scroll">
+        <table class="season-matrix">
+          <thead>
+            <tr>
+              <th class="month l">Month</th>
+              {% for c in seasonal.columns %}<th>{{ c.label }}</th>{% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in seasonal.matrix_rows %}
+              <tr>
+                <td class="month"><span class="mname" data-en="{{ row.month }}" data-np="{{ row.month_np }}">{{ row.month }}</span></td>
+                {% for cell in row.cells %}
+                  <td style="color: {{ cell.color }}; background: {{ cell.bg }};">{{ cell.text }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="season-note">
+        Monthly return = month-over-month change of each index's month-end close; the matrix is the average per calendar month across all years on record.
+        The current (in-progress) month is shown in “Latest Monthly Return” but excluded from the seasonal averages so a partial month doesn't skew them.
+        Rows follow the Nepali fiscal year — Shrawan (mid-July) through Ashadh (mid-July next year). Nepali labels map each Gregorian month to the Bikram Sambat month that begins within it (approximate).
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var pane = document.getElementById('rrg-seasonal-pane');
+        if (!pane) return;
+        var btns = pane.querySelectorAll('.season-mbtn');
+        Array.prototype.forEach.call(btns, function (b) {
+          b.addEventListener('click', function () {
+            var lang = b.getAttribute('data-lang');
+            Array.prototype.forEach.call(btns, function (x) { x.classList.toggle('active', x === b); });
+            Array.prototype.forEach.call(pane.querySelectorAll('.mname'), function (s) {
+              var next = lang === 'np' ? s.getAttribute('data-np') : s.getAttribute('data-en');
+              if (next) s.textContent = next;
+            });
+          });
+        });
+      })();
+    </script>
+    {% endif %}
+  </div>
+</div>

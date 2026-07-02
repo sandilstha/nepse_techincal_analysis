@@ -117,7 +117,7 @@ def _company_meta(symbols):
         for sym, name, sector in CompanyProfile.objects.filter(
             symbol__in=symbols
         ).values_list("symbol", "security_name", "sector_name"):
-            meta[sym] = (name or sym, sector or "Other")
+            meta[sym] = (name or sym, sector or "Uncategorized")
     except Exception:  # pragma: no cover - reference table optional
         meta = {}
     return meta
@@ -652,7 +652,7 @@ def build_portfolio_payload(portfolio):
         qty = _f(h.quantity)
         value = qty * price
         total += value
-        name, sector = meta.get(h.symbol, (h.symbol, "Other"))
+        name, sector = meta.get(h.symbol, (h.symbol, "Uncategorized"))
         st = stats.get(h.symbol, {})
 
         # Days to liquidate at PARTICIPATION_RATE of ADV; tier the result.

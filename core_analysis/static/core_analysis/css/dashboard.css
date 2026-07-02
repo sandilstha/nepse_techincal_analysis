@@ -424,9 +424,33 @@
     .nav-row-break {
       display: none;
     }
-    /* Data/inventory view has no sub-tabs, so suppress the empty tab bar. */
-    #workspaceTabs.nav-section-inventory {
+    /* Workbench / Data section carries its own sub-tabs (Raw Inventory Manager +
+       Seasonal Return), styled like the RRG sub-tabs and shown only in that
+       section. */
+    .data-tool-item {
+      order: 3;
       display: none;
+      flex: 0 1 auto;
+    }
+    .nav-section-inventory .data-tool-item {
+      display: flex;
+    }
+    .data-tool-item .nav-link {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm) !important;
+      margin-bottom: 0;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: none;
+      padding: 9px 20px;
+      color: var(--ink-2);
+    }
+    .data-tool-item .nav-link.active {
+      font-weight: 700;
     }
     .advanced-tool-item .nav-link,
     .rrg-tool-item .nav-link {
@@ -1146,12 +1170,14 @@
       .primary-menu-item,
       .strategy-card-item,
       .advanced-tool-item,
-      .rrg-tool-item {
+      .rrg-tool-item,
+      .data-tool-item {
         flex: 1 1 100%;
       }
       .primary-menu-tab,
       .advanced-tool-item .nav-link,
       .rrg-tool-item .nav-link,
+      .data-tool-item .nav-link,
       .nav-tabs .strategy-card-button {
         width: 100%;
       }
@@ -1491,13 +1517,15 @@
     .primary-menu-item,
     .strategy-card-item,
     .advanced-tool-item,
-    .rrg-tool-item {
+    .rrg-tool-item,
+    .data-tool-item {
       flex: 1 1 clamp(180px, 13vw, 320px);
       min-width: 0;
     }
 
     .advanced-tool-item,
-    .rrg-tool-item {
+    .rrg-tool-item,
+    .data-tool-item {
       flex-basis: clamp(170px, 12vw, 280px);
     }
 
@@ -1505,6 +1533,7 @@
     .nav-tabs .nav-link,
     .advanced-tool-item .nav-link,
     .rrg-tool-item .nav-link,
+    .data-tool-item .nav-link,
     .nav-tabs .strategy-card-button {
       width: 100%;
       height: 100%;
@@ -1512,7 +1541,8 @@
     }
 
     .advanced-tool-item .nav-link,
-    .rrg-tool-item .nav-link {
+    .rrg-tool-item .nav-link,
+    .data-tool-item .nav-link {
       min-height: 44px;
     }
 
