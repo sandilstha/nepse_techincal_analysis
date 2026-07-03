@@ -17,9 +17,11 @@ import re
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
+from django.db import IntegrityError, transaction
+from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from core_analysis.forms import AdminApprovalRegistrationForm
@@ -293,13 +295,129 @@ def approval_pending_view(request):
 # ─────────────────────────────────────────────────────────────────────────────
 # Portfolio page + data
 # ─────────────────────────────────────────────────────────────────────────────
-def _get_or_create_portfolio(user):
+def _coerce_id(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _normalize_portfolio_name(value):
+    return " ".join(str(value or "").split())[:120]
+
+
+def _selected_portfolio_id(request):
+    return (
+        _coerce_id(request.POST.get("portfolio_id"))
+        or _coerce_id(request.POST.get("portfolio"))
+        or _coerce_id(request.GET.get("portfolio"))
+        or _coerce_id(request.session.get("active_portfolio_id"))
+    )
+
+
+def _portfolio_url(portfolio=None):
+    base = reverse("portfolio")
+    return f"{base}?portfolio={portfolio.id}" if portfolio else base
+
+
+def _remember_portfolio(request, portfolio):
+    request.session["active_portfolio_id"] = portfolio.id
+
+
+def _ensure_portfolio_defaults(user):
+    """Guarantee that each account has one active default portfolio."""
     from core_analysis.models import Portfolio
 
-    portfolio, _ = Portfolio.objects.get_or_create(
-        user=user, name=DEFAULT_PORTFOLIO_NAME
+    with transaction.atomic():
+        portfolios = list(
+            Portfolio.objects.select_for_update().filter(user=user).order_by("id")
+        )
+        if not portfolios:
+            return Portfolio.objects.create(
+                user=user,
+                name=DEFAULT_PORTFOLIO_NAME,
+                portfolio_type=Portfolio.PERSONAL,
+                is_default=True,
+            )
+
+        active = [p for p in portfolios if not p.is_archived]
+        if not active:
+            selected = sorted(portfolios, key=lambda p: p.updated_at, reverse=True)[0]
+            Portfolio.objects.filter(pk=selected.pk).update(is_archived=False, is_default=True)
+            Portfolio.objects.filter(user=user).exclude(pk=selected.pk).update(is_default=False)
+            selected.refresh_from_db()
+            return selected
+
+        defaults = [p for p in active if p.is_default]
+        keep = sorted(defaults or active, key=lambda p: p.updated_at, reverse=True)[0]
+        Portfolio.objects.filter(user=user, is_default=True).exclude(pk=keep.pk).update(is_default=False)
+        if not keep.is_default:
+            Portfolio.objects.filter(pk=keep.pk).update(is_default=True)
+            keep.is_default = True
+        keep.refresh_from_db()
+        return keep
+
+
+def _owned_portfolio(user, portfolio_id, *, include_archived=False):
+    from core_analysis.models import Portfolio
+
+    pid = _coerce_id(portfolio_id)
+    if not pid:
+        return None
+    qs = Portfolio.objects.filter(user=user)
+    if not include_archived:
+        qs = qs.filter(is_archived=False)
+    return qs.filter(pk=pid).first()
+
+
+def _get_selected_portfolio(request, *, include_archived=False):
+    from core_analysis.models import Portfolio
+
+    default = _ensure_portfolio_defaults(request.user)
+    portfolio = _owned_portfolio(
+        request.user, _selected_portfolio_id(request), include_archived=include_archived
     )
+    if portfolio and (include_archived or not portfolio.is_archived):
+        if not portfolio.is_archived:
+            _remember_portfolio(request, portfolio)
+        return portfolio
+
+    qs = Portfolio.objects.filter(user=request.user)
+    if not include_archived:
+        qs = qs.filter(is_archived=False)
+    portfolio = qs.filter(is_default=True).first() or qs.order_by("-updated_at").first() or default
+    if not portfolio.is_archived:
+        _remember_portfolio(request, portfolio)
     return portfolio
+
+
+def _unique_portfolio_name(user, base_name):
+    from core_analysis.models import Portfolio
+
+    base = _normalize_portfolio_name(base_name) or DEFAULT_PORTFOLIO_NAME
+    existing = set(Portfolio.objects.filter(user=user).values_list("name", flat=True))
+    if base not in existing:
+        return base
+    for n in range(2, 1000):
+        suffix = f" {n}"
+        candidate = f"{base[:120 - len(suffix)]}{suffix}"
+        if candidate not in existing:
+            return candidate
+    return f"{base[:112]} {Portfolio.objects.filter(user=user).count() + 1}"
+
+
+def _portfolio_rows(user):
+    from core_analysis.models import Portfolio
+
+    rows = (
+        Portfolio.objects.filter(user=user)
+        .annotate(holdings_count=Count("holdings", distinct=True), costs_count=Count("costs", distinct=True))
+        .order_by("is_archived", "-is_default", "name")
+    )
+    active, archived = [], []
+    for row in rows:
+        (archived if row.is_archived else active).append(row)
+    return active, archived
 
 
 def _is_approver(user):
@@ -315,7 +433,10 @@ def _is_approver(user):
 @login_required(login_url="login")
 def portfolio_view(request):
     """Render the Risk & Portfolio dashboard shell for the logged-in user."""
-    portfolio = _get_or_create_portfolio(request.user)
+    from core_analysis.models import Portfolio
+
+    portfolio = _get_selected_portfolio(request)
+    active_portfolios, archived_portfolios = _portfolio_rows(request.user)
     is_approver = _is_approver(request.user)
     pending_count = 0
     if is_approver:
@@ -327,6 +448,12 @@ def portfolio_view(request):
         "core_analysis/portfolio.html",
         {
             "asset_version": _asset_version(),
+            "active_portfolio": portfolio,
+            "active_portfolios": active_portfolios,
+            "archived_portfolios": archived_portfolios,
+            "active_holdings_count": portfolio.holdings.count(),
+            "active_costs_count": portfolio.costs.count(),
+            "portfolio_type_choices": Portfolio.TYPE_CHOICES,
             "has_holdings": portfolio.holdings.exists(),
             "is_approver": is_approver,
             "pending_approvals": pending_count,
@@ -354,12 +481,179 @@ def portfolio_data_api(request):
     """JSON valuation + risk roll-up for the user's portfolio."""
     from core_analysis.services import portfolio_analytics as pa
 
-    portfolio = _get_or_create_portfolio(request.user)
+    portfolio = _get_selected_portfolio(request)
     try:
-        return JsonResponse(pa.build_portfolio_payload(portfolio))
+        payload = pa.build_portfolio_payload(portfolio)
+        payload.update({
+            "portfolio_id": portfolio.id,
+            "portfolio_name": portfolio.name,
+            "portfolio_type": portfolio.portfolio_type,
+            "portfolio_type_label": portfolio.get_portfolio_type_display(),
+            "portfolio_is_default": portfolio.is_default,
+        })
+        return JsonResponse(payload)
     except Exception:  # pragma: no cover - defensive, never 500 the dashboard
-        logger.exception("portfolio payload failed for user %s", request.user.id)
+        logger.exception(
+            "portfolio payload failed for user %s portfolio %s",
+            request.user.id,
+            portfolio.id,
+        )
         return JsonResponse({"ok": False, "error": "Unable to compute portfolio."}, status=500)
+
+
+@login_required(login_url="login")
+@require_POST
+def portfolio_manage(request):
+    """Create, rename, duplicate, archive, restore, delete and set defaults."""
+    from core_analysis.models import Holding, HoldingCost, Portfolio
+
+    action = (request.POST.get("action") or "").strip().lower()
+    redirect_portfolio = None
+
+    try:
+        with transaction.atomic():
+            _ensure_portfolio_defaults(request.user)
+
+            if action == "create":
+                name = _normalize_portfolio_name(request.POST.get("name"))
+                ptype = request.POST.get("portfolio_type") or Portfolio.CUSTOM
+                valid_types = {key for key, _label in Portfolio.TYPE_CHOICES}
+                if ptype not in valid_types:
+                    ptype = Portfolio.CUSTOM
+                if not name:
+                    # No name field on the form — derive a unique one from the type
+                    # (e.g. "Personal", then "Personal 2"). Rename afterwards to taste.
+                    type_label = dict(Portfolio.TYPE_CHOICES).get(ptype, DEFAULT_PORTFOLIO_NAME)
+                    name = _unique_portfolio_name(request.user, type_label)
+                elif Portfolio.objects.filter(user=request.user, name=name).exists():
+                    messages.error(request, "A portfolio with that name already exists.")
+                    return redirect(_portfolio_url(_get_selected_portfolio(request)))
+                make_default = not Portfolio.objects.filter(user=request.user, is_archived=False).exists()
+                redirect_portfolio = Portfolio.objects.create(
+                    user=request.user,
+                    name=name,
+                    portfolio_type=ptype,
+                    is_default=make_default,
+                )
+                messages.success(request, f"Created portfolio '{redirect_portfolio.name}'.")
+
+            elif action == "rename":
+                portfolio = _owned_portfolio(
+                    request.user, request.POST.get("portfolio_id"), include_archived=True
+                )
+                name = _normalize_portfolio_name(request.POST.get("name"))
+                if portfolio is None or not name:
+                    messages.error(request, "Choose a portfolio and enter a valid name.")
+                    return redirect(_portfolio_url(_get_selected_portfolio(request)))
+                if Portfolio.objects.filter(user=request.user, name=name).exclude(pk=portfolio.pk).exists():
+                    messages.error(request, "A portfolio with that name already exists.")
+                    return redirect(_portfolio_url(portfolio if not portfolio.is_archived else None))
+                portfolio.name = name
+                portfolio.save(update_fields=["name", "updated_at"])
+                redirect_portfolio = portfolio if not portfolio.is_archived else _get_selected_portfolio(request)
+                messages.success(request, f"Renamed portfolio to '{portfolio.name}'.")
+
+            elif action == "duplicate":
+                source = _owned_portfolio(
+                    request.user, request.POST.get("portfolio_id"), include_archived=True
+                )
+                if source is None:
+                    messages.error(request, "Portfolio not found.")
+                    return redirect(_portfolio_url(_get_selected_portfolio(request)))
+                name = _unique_portfolio_name(request.user, f"{source.name} Copy")
+                redirect_portfolio = Portfolio.objects.create(
+                    user=request.user,
+                    name=name,
+                    portfolio_type=source.portfolio_type,
+                    is_default=False,
+                    is_archived=False,
+                )
+                Holding.objects.bulk_create([
+                    Holding(
+                        portfolio=redirect_portfolio,
+                        symbol=h.symbol,
+                        quantity=h.quantity,
+                        last_close=h.last_close,
+                        ltp=h.ltp,
+                    )
+                    for h in source.holdings.all()
+                ])
+                HoldingCost.objects.bulk_create([
+                    HoldingCost(
+                        portfolio=redirect_portfolio,
+                        symbol=c.symbol,
+                        wacc_rate=c.wacc_rate,
+                        quantity=c.quantity,
+                        total_cost=c.total_cost,
+                        modified=c.modified,
+                    )
+                    for c in source.costs.all()
+                ])
+                messages.success(request, f"Duplicated '{source.name}' as '{redirect_portfolio.name}'.")
+
+            elif action == "set_default":
+                portfolio = _owned_portfolio(request.user, request.POST.get("portfolio_id"))
+                if portfolio is None:
+                    messages.error(request, "Archived portfolios cannot be set as default.")
+                    return redirect(_portfolio_url(_get_selected_portfolio(request)))
+                Portfolio.objects.filter(user=request.user).update(is_default=False)
+                portfolio.is_default = True
+                portfolio.save(update_fields=["is_default", "updated_at"])
+                redirect_portfolio = portfolio
+                messages.success(request, f"'{portfolio.name}' is now your default portfolio.")
+
+            elif action == "archive":
+                portfolio = _owned_portfolio(request.user, request.POST.get("portfolio_id"))
+                if portfolio is None:
+                    messages.error(request, "Portfolio not found.")
+                    return redirect(_portfolio_url(_get_selected_portfolio(request)))
+                active_count = Portfolio.objects.filter(user=request.user, is_archived=False).count()
+                if active_count <= 1:
+                    messages.error(request, "Create another active portfolio before archiving this one.")
+                    return redirect(_portfolio_url(portfolio))
+                portfolio.is_archived = True
+                portfolio.is_default = False
+                portfolio.save(update_fields=["is_archived", "is_default", "updated_at"])
+                redirect_portfolio = _ensure_portfolio_defaults(request.user)
+                messages.success(request, f"Archived '{portfolio.name}'.")
+
+            elif action == "restore":
+                portfolio = _owned_portfolio(
+                    request.user, request.POST.get("portfolio_id"), include_archived=True
+                )
+                if portfolio is None:
+                    messages.error(request, "Portfolio not found.")
+                    return redirect(_portfolio_url(_get_selected_portfolio(request)))
+                portfolio.is_archived = False
+                portfolio.save(update_fields=["is_archived", "updated_at"])
+                redirect_portfolio = portfolio
+                _ensure_portfolio_defaults(request.user)
+                messages.success(request, f"Restored '{portfolio.name}'.")
+
+            elif action == "delete":
+                portfolio = _owned_portfolio(
+                    request.user, request.POST.get("portfolio_id"), include_archived=True
+                )
+                if portfolio is None:
+                    messages.error(request, "Portfolio not found.")
+                    return redirect(_portfolio_url(_get_selected_portfolio(request)))
+                name = portfolio.name
+                portfolio.delete()
+                redirect_portfolio = _ensure_portfolio_defaults(request.user)
+                messages.success(request, f"Deleted portfolio '{name}'.")
+
+            else:
+                messages.error(request, "Unknown portfolio action.")
+                return redirect(_portfolio_url(_get_selected_portfolio(request)))
+
+    except IntegrityError:
+        logger.exception("portfolio management action failed for user %s", request.user.id)
+        messages.error(request, "That portfolio change conflicts with an existing portfolio.")
+        return redirect(_portfolio_url(_get_selected_portfolio(request)))
+
+    if redirect_portfolio and not redirect_portfolio.is_archived:
+        _remember_portfolio(request, redirect_portfolio)
+    return redirect(_portfolio_url(redirect_portfolio if redirect_portfolio and not redirect_portfolio.is_archived else None))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -490,7 +784,7 @@ def portfolio_import(request):
         messages.error(request, "No holdings found in that file. Check the format and try again.")
         return redirect("portfolio")
 
-    portfolio = _get_or_create_portfolio(request.user)
+    portfolio = _get_selected_portfolio(request)
     with transaction.atomic():
         portfolio.holdings.all().delete()
         Holding.objects.bulk_create([
@@ -505,11 +799,11 @@ def portfolio_import(request):
         ])
         portfolio.save()  # bump updated_at so cached payloads invalidate
 
-    note = f"Imported {len(rows)} holdings."
+    note = f"Imported {len(rows)} holdings into {portfolio.name}."
     if skipped:
         note += f" ({skipped} non-position lines skipped.)"
     messages.success(request, note)
-    return redirect("portfolio")
+    return redirect(_portfolio_url(portfolio))
 
 
 @login_required(login_url="login")
@@ -545,7 +839,7 @@ def portfolio_wacc_import(request):
         messages.error(request, "No WACC rows found in that file. Check the format and try again.")
         return redirect("portfolio")
 
-    portfolio = _get_or_create_portfolio(request.user)
+    portfolio = _get_selected_portfolio(request)
     held = set(portfolio.holdings.values_list("symbol", flat=True))
     with transaction.atomic():
         portfolio.costs.all().delete()
@@ -563,22 +857,22 @@ def portfolio_wacc_import(request):
         portfolio.save()  # bump updated_at so cached payloads invalidate
 
     matched = sum(1 for r in rows if r["symbol"] in held)
-    note = f"Imported cost basis for {len(rows)} scrips — {matched} matched your holdings."
+    note = f"Imported cost basis for {len(rows)} scrips into {portfolio.name} — {matched} matched your holdings."
     missing = len(held) - matched
     if missing > 0:
         note += f" ({missing} holding(s) still without cost.)"
     if skipped:
         note += f" ({skipped} non-data lines skipped.)"
     messages.success(request, note)
-    return redirect("portfolio")
+    return redirect(_portfolio_url(portfolio))
 
 
 @login_required(login_url="login")
 @require_POST
 def portfolio_clear(request):
     """Wipe the user's holdings (keeps the empty portfolio)."""
-    portfolio = _get_or_create_portfolio(request.user)
+    portfolio = _get_selected_portfolio(request)
     portfolio.holdings.all().delete()
     portfolio.save()
-    messages.success(request, "Portfolio cleared.")
-    return redirect("portfolio")
+    messages.success(request, f"Holdings cleared for {portfolio.name}.")
+    return redirect(_portfolio_url(portfolio))

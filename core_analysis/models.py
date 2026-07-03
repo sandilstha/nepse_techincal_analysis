@@ -292,17 +292,50 @@ class Portfolio(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="portfolios"
     )
+    PERSONAL = "personal"
+    SPOUSE = "spouse"
+    PARENTS = "parents"
+    CHILDREN = "children"
+    JOINT = "joint"
+    CLIENT = "client"
+    CUSTOM = "custom"
+    TYPE_CHOICES = (
+        (PERSONAL, "Personal"),
+        (SPOUSE, "Spouse"),
+        (PARENTS, "Parents"),
+        (CHILDREN, "Children"),
+        (JOINT, "Joint"),
+        (CLIENT, "Client"),
+        (CUSTOM, "Custom"),
+    )
     name = models.CharField(max_length=120, default="My Portfolio")
+    portfolio_type = models.CharField(
+        max_length=20, choices=TYPE_CHOICES, default=PERSONAL, db_index=True
+    )
+    is_default = models.BooleanField(default=False, db_index=True)
+    is_archived = models.BooleanField(default=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "portfolio_portfolio"
-        ordering = ["-updated_at"]
+        ordering = ["is_archived", "-is_default", "-updated_at"]
         unique_together = (("user", "name"),)
+        indexes = [
+            models.Index(fields=["user", "is_archived", "is_default"]),
+        ]
 
     def __str__(self):
         return f"{self.name} (user {self.user_id})"
+
+    def save(self, *args, **kwargs):
+        if self.is_archived:
+            self.is_default = False
+        super().save(*args, **kwargs)
+        if self.is_default:
+            Portfolio.objects.filter(user_id=self.user_id, is_default=True).exclude(pk=self.pk).update(
+                is_default=False
+            )
 
 
 class Holding(models.Model):

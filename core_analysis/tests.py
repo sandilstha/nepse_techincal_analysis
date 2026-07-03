@@ -11,7 +11,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.test import Client, RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
 
-from core_analysis.models import AccountApproval
+from core_analysis.models import AccountApproval, Holding, HoldingCost, Portfolio
 
 from core_analysis.services import IMM, msv_strategy
 from core_analysis.services.advanced_market_structure import (
@@ -124,6 +124,110 @@ class AdminApprovalTests(TestCase):
         self.assertEqual(approval.reviewed_by, reviewer)
         self.assertEqual(approval.review_note, "Rejected")
         self.assertIsNotNone(approval.reviewed_at)
+
+
+class MultiPortfolioManagementTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="investor", email="investor@example.com", password="StrongPass123!"
+        )
+        self.client.force_login(self.user)
+
+    def test_portfolio_page_creates_default_portfolio(self):
+        response = self.client.get(reverse("portfolio"))
+
+        portfolio = Portfolio.objects.get(user=self.user)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(portfolio.name, "My Portfolio")
+        self.assertEqual(portfolio.portfolio_type, Portfolio.PERSONAL)
+        self.assertTrue(portfolio.is_default)
+        self.assertFalse(portfolio.is_archived)
+
+    def test_manage_create_rename_set_default_archive_and_delete(self):
+        self.client.get(reverse("portfolio"))  # seeds the default legacy portfolio
+
+        response = self.client.post(
+            reverse("portfolio_manage"),
+            {"action": "create", "name": "Spouse", "portfolio_type": Portfolio.SPOUSE},
+        )
+        spouse = Portfolio.objects.get(user=self.user, name="Spouse")
+        self.assertRedirects(
+            response,
+            f"{reverse('portfolio')}?portfolio={spouse.id}",
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(spouse.is_default)
+        self.assertEqual(spouse.portfolio_type, Portfolio.SPOUSE)
+
+        self.client.post(
+            reverse("portfolio_manage"),
+            {"action": "rename", "portfolio_id": spouse.id, "name": "Family"},
+        )
+        spouse.refresh_from_db()
+        self.assertEqual(spouse.name, "Family")
+
+        self.client.post(
+            reverse("portfolio_manage"),
+            {"action": "set_default", "portfolio_id": spouse.id},
+        )
+        spouse.refresh_from_db()
+        self.assertTrue(spouse.is_default)
+        self.assertEqual(
+            Portfolio.objects.filter(user=self.user, is_default=True).count(),
+            1,
+        )
+
+        self.client.post(
+            reverse("portfolio_manage"),
+            {"action": "archive", "portfolio_id": spouse.id},
+        )
+        spouse.refresh_from_db()
+        self.assertTrue(spouse.is_archived)
+        self.assertFalse(spouse.is_default)
+        self.assertTrue(Portfolio.objects.get(user=self.user, name="My Portfolio").is_default)
+
+        self.client.post(
+            reverse("portfolio_manage"),
+            {"action": "delete", "portfolio_id": spouse.id},
+        )
+        self.assertFalse(Portfolio.objects.filter(pk=spouse.pk).exists())
+
+    def test_duplicate_copies_holdings_and_wacc_rows_independently(self):
+        source = Portfolio.objects.create(
+            user=self.user, name="Personal", portfolio_type=Portfolio.PERSONAL, is_default=True
+        )
+        Holding.objects.create(portfolio=source, symbol="NABIL", quantity=10, last_close=500, ltp=502)
+        HoldingCost.objects.create(
+            portfolio=source, symbol="NABIL", wacc_rate=400, quantity=10, total_cost=4000
+        )
+
+        self.client.post(
+            reverse("portfolio_manage"),
+            {"action": "duplicate", "portfolio_id": source.id},
+        )
+
+        duplicate = Portfolio.objects.get(user=self.user, name="Personal Copy")
+        self.assertFalse(duplicate.is_default)
+        self.assertEqual(duplicate.holdings.count(), 1)
+        self.assertEqual(duplicate.costs.count(), 1)
+        self.assertNotEqual(duplicate.holdings.first().portfolio_id, source.id)
+
+    def test_portfolio_data_api_uses_requested_portfolio(self):
+        p1 = Portfolio.objects.create(user=self.user, name="Personal", is_default=True)
+        p2 = Portfolio.objects.create(user=self.user, name="Client", portfolio_type=Portfolio.CLIENT)
+
+        with patch(
+            "core_analysis.services.portfolio_analytics.build_portfolio_payload",
+            side_effect=lambda portfolio: {"ok": True, "portfolio": portfolio.name},
+        ):
+            response = self.client.get(reverse("portfolio_data_api"), {"portfolio": p2.id})
+
+        payload = json.loads(response.content)
+        self.assertEqual(payload["portfolio_id"], p2.id)
+        self.assertEqual(payload["portfolio_name"], "Client")
+        self.assertEqual(payload["portfolio_type"], Portfolio.CLIENT)
+        p1.refresh_from_db()
+        self.assertTrue(p1.is_default)
 
 
 @unittest.skipIf(indicator_views is None, "Django settings unavailable")

@@ -8,6 +8,8 @@
   "use strict";
   bindFileInputs();
   bindHelpLinks();
+  bindPortfolioSelector();
+  bindPortfolioRename();    // inline rename on tabs + archived rows — runs even with no holdings
   initApprovals();          // admin notification bell — runs even with no holdings
   if (!window.PF_HAS_HOLDINGS) return;
 
@@ -57,6 +59,58 @@
       input.addEventListener("change", syncName);
       syncName();
     });
+  }
+
+  function bindPortfolioSelector() {
+    var selector = document.querySelector("[data-pf-selector]");
+    if (!selector || selector._pfBound) return;
+    selector._pfBound = true;
+    selector.addEventListener("change", function () {
+      if (selector.form) selector.form.submit();
+    });
+  }
+
+  // ── Inline portfolio rename ───────────────────────────────────────────
+  // The pencil on each active tab and the "Rename" button on each archived
+  // row carry [data-pf-rename] with the portfolio id + current name. We prompt
+  // for a new name and POST the existing "rename" action to /portfolio/manage/
+  // (same endpoint the manager panel's Rename form uses) — the server does the
+  // final normalise / dup-name check and flashes the result.
+  function bindPortfolioRename() {
+    var manageUrl = window.PF_MANAGE_URL;
+    if (!manageUrl) return;
+    document.addEventListener("click", function (e) {
+      var btn = e.target.closest ? e.target.closest("[data-pf-rename]") : null;
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var id = btn.getAttribute("data-id");
+      var current = btn.getAttribute("data-name") || "";
+      if (!id) return;
+      var next = window.prompt("Rename portfolio", current);
+      if (next == null) return;                       // cancelled
+      next = next.replace(/\s+/g, " ").trim();
+      if (!next || next === current.trim()) return;   // empty or unchanged
+      submitManage(manageUrl, { action: "rename", portfolio_id: id, name: next });
+    });
+  }
+
+  // Build and submit a throwaway POST form to the portfolio-manage endpoint.
+  function submitManage(url, fields) {
+    var form = document.createElement("form");
+    form.method = "post";
+    form.action = url;
+    form.style.display = "none";
+    fields.csrfmiddlewaretoken = window.PF_CSRF || "";
+    Object.keys(fields).forEach(function (name) {
+      var input = document.createElement("input");
+      input.type = "hidden";
+      input.name = name;
+      input.value = fields[name];
+      form.appendChild(input);
+    });
+    document.body.appendChild(form);
+    form.submit();
   }
 
   // ── Admin notification bell — pending account requests ────────────────
@@ -171,7 +225,7 @@
     setInterval(load, 60000);   // refresh once a minute
   }
 
-  fetch("/portfolio/api/data/", { headers: { Accept: "application/json" } })
+  fetch(window.PF_DATA_URL || "/portfolio/api/data/", { headers: { Accept: "application/json" } })
     .then(function (r) { return r.json(); })
     .then(render)
     .catch(function () {
@@ -185,6 +239,7 @@
       if (k) k.innerHTML = "<div class='pf-error'>" + esc((d && d.error) || "No data") + "</div>";
       return;
     }
+    syncActivePortfolio(d);
     renderKpis(d);
     renderSummaryDesk(d);
     renderCompliance(d.compliance);
@@ -194,6 +249,14 @@
     renderSectors(d.sectors || []);
     renderConc(d);
     if (el("pf-asof")) el("pf-asof").textContent = d.as_of ? "Priced at " + d.as_of + " close" : "";
+  }
+
+  function syncActivePortfolio(d) {
+    var name = d.portfolio_name || d.portfolio || "";
+    ["pf-active-name-top", "pf-active-name-main", "pf-toolbar-name"].forEach(function (id) {
+      var node = el(id);
+      if (node && name) node.textContent = name;
+    });
   }
 
   function tile(label, val, sub, cls, help) {
