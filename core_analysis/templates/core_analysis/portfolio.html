@@ -93,7 +93,7 @@
     <form class="pf-import-form" method="post" action="{% url 'portfolio_import' %}" enctype="multipart/form-data">
       {% csrf_token %}
       <span class="pf-upload">
-        <input class="pf-file-input" type="file" name="file" accept=".csv,.xlsx,.xls,.pdf" id="pf-initial-file" required>
+        <input class="pf-file-input" type="file" name="file" accept=".csv,.xlsx,.xlsm,.xls,.pdf" id="pf-initial-file" required>
         <label class="pf-file-picker" for="pf-initial-file">Choose file</label>
         <span class="pf-file-name" data-empty-label="No file selected">No file selected</span>
       </span>
@@ -118,7 +118,7 @@
             title="Upload your Meroshare 'My Shares' export (CSV, Excel or PDF) — replaces current holdings">
         {% csrf_token %}
         <span class="pf-upload">
-          <input class="pf-file-input" type="file" name="file" accept=".csv,.xlsx,.xls,.pdf" id="pf-holdings-file" required>
+          <input class="pf-file-input" type="file" name="file" accept=".csv,.xlsx,.xlsm,.xls,.pdf" id="pf-holdings-file" required>
           <label class="pf-file-picker" for="pf-holdings-file">Holdings file</label>
           <span class="pf-file-name" data-empty-label="No file selected">No file selected</span>
         </span>
@@ -130,7 +130,7 @@
             title="Upload your broker 'My WACC' report to add cost basis (WACC, Book Value, Paper P/L)">
         {% csrf_token %}
         <span class="pf-upload">
-          <input class="pf-file-input" type="file" name="file" accept=".csv,.xlsx,.xls,.pdf" id="pf-wacc-file" required>
+          <input class="pf-file-input" type="file" name="file" accept=".csv,.xlsx,.xlsm,.xls,.pdf" id="pf-wacc-file" required>
           <label class="pf-file-picker" for="pf-wacc-file">WACC report</label>
           <span class="pf-file-name" data-empty-label="No file selected">No file selected</span>
         </span>
