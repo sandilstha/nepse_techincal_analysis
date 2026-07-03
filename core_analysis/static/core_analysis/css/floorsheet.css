@@ -609,3 +609,18 @@
 }
 
 .dsx-loading { padding: 30px; text-align: center; color: var(--ink-3); font-family: 'Manrope', sans-serif; }
+
+/* ── Whole-page methodology (?) help — deep-links into /floorsheet/sop/ ── */
+.dsx-help {
+  align-self: center;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; margin-right: 4px; border-radius: 50%;
+  font: 800 12px/1 'Manrope', sans-serif; text-decoration: none;
+  color: var(--ink-3); border: 1px solid var(--line);
+  background: var(--surface-2); flex: 0 0 auto;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.dsx-help:hover {
+  color: var(--accent); border-color: var(--accent);
+  background: var(--accent-soft); text-decoration: none;
+}

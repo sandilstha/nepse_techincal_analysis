@@ -1,0 +1,558 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Desk — Methodology SOP</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/portfolio.css' %}?v={{ asset_version }}">
+  <style>
+    /* SOP document (scoped to this page). */
+    .sop-wrap{display:grid;grid-template-columns:250px minmax(0,1fr);gap:24px;align-items:start;padding:8px 4px 60px}
+    @media (max-width: 900px){.sop-wrap{grid-template-columns:1fr}.sop-toc{position:static}}
+    .sop-toc{position:sticky;top:16px;border:1px solid rgba(150,160,190,.22);border-radius:14px;
+      padding:14px 16px;font-size:13px;max-height:calc(100vh - 32px);overflow-y:auto}
+    .sop-toc h6{font-size:10px;text-transform:uppercase;letter-spacing:.08em;opacity:.65;margin:12px 0 4px}
+    .sop-toc h6:first-child{margin-top:0}
+    .sop-toc a{display:block;padding:3px 0;color:inherit;text-decoration:none;opacity:.85}
+    .sop-toc a:hover{opacity:1;text-decoration:underline}
+    .sop-doc{min-width:0}
+    .sop-doc h2{font-size:22px;font-weight:800;margin:0 0 4px}
+    .sop-doc .sop-lede{opacity:.75;font-size:14px;max-width:70ch}
+    .sop-sec{border:1px solid rgba(150,160,190,.22);border-radius:14px;padding:18px 20px;margin-top:18px;
+      scroll-margin-top:16px}
+    .sop-sec h3{font-size:17px;font-weight:800;margin:0 0 2px;display:flex;align-items:center;gap:8px}
+    .sop-sec h4{font-size:13.5px;font-weight:700;margin:16px 0 4px;scroll-margin-top:16px}
+    .sop-sec p, .sop-sec li{font-size:13.5px;line-height:1.55}
+    .sop-sec p{margin:6px 0}
+    .sop-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.08em;opacity:.6;margin:0 0 8px}
+    .sop-formula{display:block;background:rgba(120,140,180,.12);border:1px solid rgba(150,160,190,.2);
+      border-radius:10px;padding:10px 14px;margin:8px 0;font-size:13px;overflow-x:auto;white-space:pre}
+    .sop-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:10px 0}
+    .sop-fact{background:rgba(120,140,180,.09);border-radius:10px;padding:8px 12px}
+    .sop-fact b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.6;font-weight:700}
+    .sop-fact span{font-size:13px;font-weight:600}
+    .sop-table{width:100%;font-size:12.5px;border-collapse:collapse;margin:8px 0}
+    .sop-table th,.sop-table td{padding:6px 10px;border-bottom:1px solid rgba(150,160,190,.18);text-align:left;vertical-align:top}
+    .sop-table th{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;opacity:.7}
+    .sop-note{font-size:12.5px;opacity:.75;border-left:3px solid rgba(150,160,190,.5);padding:4px 12px;margin:10px 0}
+    .sop-anchor-link{font-size:12px;opacity:.4;text-decoration:none;color:inherit}
+    .sop-sec:target, .sop-sec h4:target{outline:2px solid rgba(110,160,255,.55);outline-offset:4px;border-radius:14px}
+    .sop-back{font-size:13px}
+  </style>
+</head>
+<body>
+<div class="mi-shell">
+
+  <header class="mi-topbar">
+    <div class="mi-brand">
+      <span class="mi-logo">RP</span>
+      <div>
+        <h1 class="mi-title">Portfolio Desk — Methodology SOP</h1>
+        <p class="mi-subtitle">Standard Operating Procedure: every metric, formula, assumption &amp; data source</p>
+      </div>
+    </div>
+    <div class="mi-controls">
+      <a href="{% url 'portfolio' %}" class="mi-icon-btn sop-back" title="Back to portfolio">← Portfolio</a>
+      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch theme">Light</button>
+    </div>
+  </header>
+
+  <div class="sop-wrap">
+
+    <!-- ── Table of contents ─────────────────────────────────────────── -->
+    <nav class="sop-toc">
+      <h6>Foundations</h6>
+      <a href="#scope">1. Purpose &amp; scope</a>
+      <a href="#data-sources">2. Data sources &amp; update frequency</a>
+      <a href="#imports">3. Importing holdings &amp; cost basis</a>
+      <h6>Core methodologies</h6>
+      <a href="#beta">4. Beta — weekly-return methodology</a>
+      <a href="#var">5. Value at Risk — methodology</a>
+      <h6>Overview strip</h6>
+      <a href="#overview">6. Overview KPIs</a>
+      <h6>Portfolio Summary</h6>
+      <a href="#portfolio-summary">7. Portfolio Summary desk</a>
+      <a href="#scenario">7.1 NEPSE scenario &amp; Recalculate</a>
+      <a href="#summary-tiles">7.2 Summary tiles</a>
+      <a href="#portfolio-status">7.3 Portfolio Status columns</a>
+      <a href="#risk-liquidity">7.4 Risk &amp; Liquidity columns</a>
+      <a href="#sensitivity">7.5 Sensitivity (Beta Forecast)</a>
+      <a href="#max-loss">7.6 Max Loss Potential (VaR)</a>
+      <h6>Risk &amp; Allocation cards</h6>
+      <a href="#var-drawdown">8. Value at Risk &amp; Drawdown</a>
+      <a href="#stress">9. Stress Scenarios</a>
+      <a href="#compliance">10. Compliance &amp; Risk Limits</a>
+      <a href="#factor-model">11. Risk Decomposition — Factor Model</a>
+      <a href="#liquidity">12. Liquidity Risk — Days to Liquidate</a>
+      <a href="#sectors">13. Sector Exposure</a>
+      <a href="#concentration">14. Concentration &amp; Diversification</a>
+      <h6>Appendix</h6>
+      <a href="#limitations">15. Interpretation guide &amp; limitations</a>
+    </nav>
+
+    <!-- ── Document ──────────────────────────────────────────────────── -->
+    <main class="sop-doc">
+      <h2>Standard Operating Procedure</h2>
+      <p class="sop-lede">This document is the single source of truth for how every number on the
+        Risk &amp; Portfolio desk is computed: the formula, the inputs, the data source, the update
+        frequency, the assumptions behind it, and how to read it. Every (?) icon on the dashboard
+        links to the matching section here.</p>
+
+      <!-- 1 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="scope">
+        <p class="sop-kicker">Section 1</p>
+        <h3>Purpose &amp; scope</h3>
+        <p>The desk answers four questions about your private NEPSE holdings:
+          <b>What is it worth?</b> (valuation), <b>Where is it exposed?</b> (sector, concentration),
+          <b>How much can it lose?</b> (volatility, VaR, drawdown, stress) and
+          <b>How fast can I get out?</b> (liquidity).</p>
+        <p>Because the Meroshare “My Shares” export carries only balances and prices,
+          the desk is <b>position-risk first</b>. Cost-based measures (Book Value, Paper P/L)
+          appear only after you import your broker's “My WACC” report. Nothing here is investment
+          advice; all figures are estimates on end-of-day data.</p>
+      </section>
+
+      <!-- 2 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="data-sources">
+        <p class="sop-kicker">Section 2</p>
+        <h3>Data sources &amp; update frequency</h3>
+        <table class="sop-table">
+          <thead><tr><th>Input</th><th>Source</th><th>Frequency</th><th>Used by</th></tr></thead>
+          <tbody>
+            <tr><td>Holdings (symbol, kitta)</td><td>Your Meroshare “My Shares” upload (CSV / Excel / PDF)</td>
+              <td>Whenever you re-upload</td><td>Everything</td></tr>
+            <tr><td>Cost basis (WACC)</td><td>Your broker “My WACC” upload (CSV / Excel / PDF)</td>
+              <td>Whenever you re-upload</td><td>Book Value, Paper P/L</td></tr>
+            <tr><td>Prices (close, market cap, volume)</td><td>NEPSE end-of-day table synced into this platform</td>
+              <td>Daily after market close</td><td>Valuation, vol, VaR, liquidity</td></tr>
+            <tr><td>Benchmark</td><td>“NEPSE Index” series from the synced index table</td>
+              <td>Daily after market close</td><td>Beta, factor model, stress</td></tr>
+            <tr><td>Company meta (name, sector)</td><td>Company profile reference table</td>
+              <td>On listing changes</td><td>Sector exposure, grouping</td></tr>
+          </tbody>
+        </table>
+        <div class="sop-facts">
+          <div class="sop-fact"><b>Pricing rule</b><span>Most-recent close per scrip (≤ 20 days back)</span></div>
+          <div class="sop-fact"><b>Risk lookback</b><span>370 calendar days ≈ 1 trading year</span></div>
+          <div class="sop-fact"><b>Trading year</b><span>246 sessions (Sun–Fri)</span></div>
+          <div class="sop-fact"><b>Payload cache</b><span>3 minutes</span></div>
+        </div>
+        <p class="sop-note">Illiquid names don't print every session, so each holding is marked at
+          <i>its own</i> latest close rather than forcing a single valuation date. A holding absent
+          from the EOD feed entirely falls back to the price in your uploaded snapshot and is tagged
+          <b>snap</b> in the table.</p>
+      </section>
+
+      <!-- 3 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="imports">
+        <p class="sop-kicker">Section 3</p>
+        <h3>Importing holdings &amp; cost basis</h3>
+        <h4 id="imports-holdings">3.1 Update Holdings — “My Shares” file (CSV, Excel or PDF)</h4>
+        <p>Export “My Shares” from Meroshare and upload it as-is. The parser locates the
+          <i>Scrip</i>, <i>Current Balance</i>, <i>Last Closing Price</i> and <i>LTP</i> columns by
+          header name (order-independent), skips header/total/blank lines and zero balances, and
+          de-duplicates symbols. PDF uploads are read table-by-table across every page; Excel
+          workbooks use the active sheet. Each upload <b>replaces</b> your previous holdings.
+          Cost basis (WACC) survives a holdings re-upload — it is stored separately.</p>
+        <h4 id="imports-wacc">3.2 Import WACC — broker “My WACC” report (CSV, Excel or PDF)</h4>
+        <p>Adds your weighted-average cost per scrip. Rows are matched to holdings by symbol;
+          unmatched scrips are kept (they re-match on the next holdings upload). This unlocks
+          Book Value, Paper P/L and the Expected Paper P/L scenario tile.</p>
+        <div class="sop-facts">
+          <div class="sop-fact"><b>Size limits</b><span>CSV 2 MB · PDF/Excel 8 MB</span></div>
+          <div class="sop-fact"><b>Privacy</b><span>Login-gated; visible only to you</span></div>
+          <div class="sop-fact"><b>Replace semantics</b><span>Each upload replaces the prior one</span></div>
+        </div>
+      </section>
+
+      <!-- 4 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="beta">
+        <p class="sop-kicker">Section 4 · Core methodology</p>
+        <h3>Beta — weekly-return methodology</h3>
+        <p><b>Purpose.</b> Beta measures how much a holding (or the whole book) moves when the
+          NEPSE Index moves 1%. β = 1 tracks the market; β &gt; 1 amplifies it; β &lt; 1 dampens it.</p>
+        <p><b>Betas on this desk are estimated on WEEKLY returns, not daily.</b> This is deliberate
+          and matches the structure of the Nepali capital market: many NEPSE scrips trade thinly and
+          non-synchronously, so a stock's daily close often lags the index move by a session or more.
+          Daily-return betas are therefore biased toward zero (the regression sees "index moved,
+          stock didn't"). Sampling the <b>last traded close of each Sun–Fri week</b> lets laggards
+          catch up inside the sampling interval, giving a materially less biased estimate.</p>
+        <h4>Calculation</h4>
+        <span class="sop-formula">weekly return  rᵢ,w = (Pᵢ,w − Pᵢ,w₋₁) / Pᵢ,w₋₁     P = last close of ISO week w
+stock beta     βᵢ  = Cov(rᵢ, r_m) / Var(r_m)          OLS over shared weeks, ~52-week window
+portfolio beta β_p = Σ wᵢ · βᵢ                          weights re-based over the names that have a beta</span>
+        <div class="sop-facts">
+          <div class="sop-fact"><b>Return frequency</b><span>Weekly (ISO week, Sun–Fri)</span></div>
+          <div class="sop-fact"><b>Benchmark</b><span>NEPSE Index (close)</span></div>
+          <div class="sop-fact"><b>Window</b><span>370 days ≈ 52 weeks</span></div>
+          <div class="sop-fact"><b>Minimum sample</b><span>26 shared weekly returns</span></div>
+        </div>
+        <h4>Assumptions &amp; caveats</h4>
+        <ul>
+          <li>A week with no trade contributes no observation; the next observed week's return spans
+            the gap (matching how thin names actually reprice).</li>
+          <li>Names with under ~6 months of history show “—” and are excluded from the portfolio
+            beta (remaining weights are re-based so the estimate isn't diluted).</li>
+          <li>Circuit breakers truncate extreme weeks, so betas of limit-prone names are still
+            conservative estimates.</li>
+        </ul>
+        <p><b>Interpretation.</b> β_p = 1.20 means a −10% NEPSE week is <i>expected</i> to cost the
+          book ≈ −12%, before stock-specific news. Beta explains the market-driven part only — see
+          the <a href="#factor-model">factor model</a> for how much of your risk that actually is.</p>
+      </section>
+
+      <!-- 5 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="var">
+        <p class="sop-kicker">Section 5 · Core methodology</p>
+        <h3>Value at Risk — methodology</h3>
+        <p><b>Purpose.</b> VaR answers: “Over the next N sessions, with X% confidence, what is the
+          most I should expect to lose?” A 1-day 95% VaR of Rs 50,000 means: on 95 sessions out of
+          100, the loss should not exceed Rs 50,000 — and on ~5 sessions out of 100 it <b>will</b>.</p>
+
+        <h4 id="var-historical">5.1 Historical simulation (primary)</h4>
+        <p>The governing VaR on this desk is <b>historical simulation on the portfolio's own
+          return series</b>, rebuilt with <i>today's weights</i>:</p>
+        <span class="sop-formula">portfolio return  r_p,t = Σ wᵢ · rᵢ,t        (wᵢ = today's weight; missing print ⇒ rᵢ,t = 0)
+VaR₉₅(1d) = − 5th percentile of {r_p,t}      VaR₉₉(1d) = − 1st percentile
+VaR₉₅(10d) = VaR₉₅(1d) · √10                  (√-time scaling)
+CVaR₉₅ (expected shortfall) = − mean of returns at or below the 5th percentile</span>
+        <div class="sop-facts">
+          <div class="sop-fact"><b>Method</b><span>Historical simulation</span></div>
+          <div class="sop-fact"><b>Confidence</b><span>95% and 99%</span></div>
+          <div class="sop-fact"><b>Lookback</b><span>370 days (~246 sessions), min 30</span></div>
+          <div class="sop-fact"><b>Horizons</b><span>1 day · 10 days (√-time)</span></div>
+        </div>
+        <p><b>Why historical, not normal?</b> NEPSE returns are fat-tailed and circuit-band
+          truncated; a normal-distribution VaR understates tail risk. The parametric figure
+          (1.645 · σ_p for 95%) is shown <i>only as a comparison line</i>.</p>
+
+        <h4 id="var-parametric">5.2 Parametric VaR (per-holding &amp; summary horizons)</h4>
+        <p>Per-holding VaR columns and the 1-week / 1-month loss tiles use the parametric
+          (variance-based) form, because a single name's historical percentile is too noisy:</p>
+        <span class="sop-formula">daily σ  = annualised vol / √246
+VaR₉₅(h sessions) = 1.645 · σ_daily · √h          h = 5 (1W) or 20 (1M)
+₨ loss = VaR × position value (per holding)  ·  VaR × book value (portfolio, on σ_p)</span>
+        <p>The <b>portfolio</b> 1W/1M loss tiles use the portfolio's own daily σ_p (correlation
+          between names is already inside the portfolio return series), so they are <b>diversified</b>
+          figures — lower than the sum of the per-holding columns. On thin history they fall back to
+          the undiversified column sum and say so.</p>
+        <h4>Assumptions (all VaR variants)</h4>
+        <ul>
+          <li>Current weights held constant over the horizon (no rebalancing).</li>
+          <li>√-time scaling assumes returns are serially uncorrelated across sessions.</li>
+          <li>A non-trading day counts as a 0% return for the holding (no-move assumption) —
+            reasonable for marking, but it can <i>understate</i> the risk of very thin names.</li>
+          <li>History repeats: the last ~246 sessions are treated as representative of the next one.</li>
+        </ul>
+      </section>
+
+      <!-- 6 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="overview">
+        <p class="sop-kicker">Section 6</p>
+        <h3>Overview KPIs</h3>
+        <table class="sop-table">
+          <thead><tr><th>Tile</th><th>Formula</th><th>How to read it</th></tr></thead>
+          <tbody>
+            <tr id="kpi-value"><td><b>Portfolio Value</b></td>
+              <td>Σ quantity × latest close (per-scrip most-recent close; snapshot price if absent from EOD feed)</td>
+              <td>Marked-to-market worth of the book at the latest available closes.</td></tr>
+            <tr id="kpi-paper-pl"><td><b>Paper P/L</b></td>
+              <td>Market value − book value, on the costed subset only (book = WACC × current kitta)</td>
+              <td>Unrealised gain/loss vs your average cost. Needs the WACC import; a partial import never distorts it — uncosted names are simply excluded.</td></tr>
+            <tr id="kpi-diversification"><td><b>Diversification</b></td>
+              <td>Effective holdings = 10,000 / HHI (see <a href="#concentration">§14</a>)</td>
+              <td>How many <i>equally-weighted</i> positions your book behaves like. 20 names at 5% each → 20; 20 names with one at 60% → ~2.7.</td></tr>
+            <tr id="kpi-var-1d"><td><b>1-Day VaR</b></td>
+              <td>Historical-simulation 95% 1-day VaR (<a href="#var">§5.1</a>)</td>
+              <td>The loss your worst 1-in-20 session should not exceed. Expect ~1 breach per trading month.</td></tr>
+            <tr id="kpi-largest"><td><b>Largest Position</b></td>
+              <td>max(weightᵢ), weightᵢ = valueᵢ / total value</td>
+              <td>Single-name concentration; the policy limit warns at 12% and flags a breach at 15%.</td></tr>
+            <tr id="kpi-concentration"><td><b>Concentration (HHI)</b></td>
+              <td>Σ (weightᵢ%)² × … scaled 0–10,000 (<a href="#concentration">§14</a>)</td>
+              <td>&lt; 1,500 low · 1,500–2,500 moderate · &gt; 2,500 high.</td></tr>
+            <tr id="kpi-beta"><td><b>Portfolio Beta</b></td>
+              <td>Σ wᵢβᵢ on weekly-return betas (<a href="#beta">§4</a>)</td>
+              <td>Expected book move per 1% NEPSE move. Policy band: 0.6–1.4 (soft), 0.4–1.6 (hard).</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 7 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="portfolio-summary">
+        <p class="sop-kicker">Section 7</p>
+        <h3>Portfolio Summary desk</h3>
+        <p>A sector-grouped, per-holding desk combining four column groups —
+          <a href="#portfolio-status">Portfolio Status</a>, <a href="#risk-liquidity">Risk &amp;
+          Liquidity</a>, <a href="#sensitivity">Sensitivity (Beta Forecast)</a> and
+          <a href="#max-loss">Max Loss Potential (VaR)</a> — under a what-if NEPSE scenario you
+          control. Sector subtotal rows sum value, weight, expected value, scenario gain and VaR
+          losses for the group.</p>
+
+        <h4 id="scenario">7.1 NEPSE scenario &amp; Recalculate</h4>
+        <p>Enter an <b>Expected NEPSE</b> level; the desk computes
+          <span class="sop-formula">Δ% = (Expected − Current) / Current × 100</span>
+          and re-prices every holding through its beta — entirely in your browser, instantly, with
+          no server refetch. <b>Current NEPSE</b> is the latest synced index close. Reset the
+          expected level to the current level to see the unshocked book.</p>
+
+        <h4 id="summary-tiles">7.2 Summary tiles</h4>
+        <table class="sop-table">
+          <thead><tr><th>Tile</th><th>Formula</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><b>Book Value</b></td><td>Σ WACC × kitta (costed names)</td><td>Needs the WACC import.</td></tr>
+            <tr><td><b>Market Value</b></td><td>Σ kitta × latest close</td><td>Same figure as the Overview Portfolio Value.</td></tr>
+            <tr><td><b>Paper P/L</b></td><td>Market − book (costed subset)</td><td>See <a href="#kpi-paper-pl">§6</a>.</td></tr>
+            <tr><td><b>Expected Value</b></td><td>Σ expected value per holding at Δ% (<a href="#sensitivity">§7.5</a>)</td><td>The book if NEPSE moves to your expected level.</td></tr>
+            <tr><td><b>Exp. Paper P/L</b></td><td>Expected value of costed names − book value</td><td>Scenario P/L measured against cost.</td></tr>
+            <tr><td><b>Scenario P/L</b></td><td>Expected value − current market value</td><td>Scenario P/L measured against today.</td></tr>
+            <tr><td><b>Loss @ 1W / 1M · 95%</b></td><td>Diversified parametric VaR: 1.645 · σ_p · √h (<a href="#var-parametric">§5.2</a>)</td><td>Falls back to the undiversified column sum on thin history (tile says which).</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="portfolio-status">7.3 Portfolio Status columns</h4>
+        <table class="sop-table">
+          <thead><tr><th>Column</th><th>Definition</th></tr></thead>
+          <tbody>
+            <tr><td><b>Kitta</b></td><td>Current balance from your Meroshare upload.</td></tr>
+            <tr><td><b>WACC</b></td><td>Weighted-average cost per share from your broker's “My WACC” report; “—” until imported/matched.</td></tr>
+            <tr><td><b>LTP</b></td><td>Latest close from the NEPSE EOD feed (per-scrip most recent; <b>snap</b> = priced from your uploaded snapshot).</td></tr>
+            <tr><td><b>Value</b></td><td>Kitta × LTP.</td></tr>
+            <tr><td><b>Weight</b></td><td>Value ÷ total portfolio value × 100.</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="risk-liquidity">7.4 Risk &amp; Liquidity columns</h4>
+        <table class="sop-table">
+          <thead><tr><th>Column</th><th>Methodology</th></tr></thead>
+          <tbody>
+            <tr><td><b>Vol</b></td><td>Annualised volatility = stdev(daily close-to-close returns, ~1yr window, min 20 obs) × √246 × 100. Daily frequency is used here (unlike beta) because volatility doesn't suffer the thin-trading cross-correlation bias and daily gives 5× the sample.</td></tr>
+            <tr><td><b>Beta</b></td><td>Weekly-return OLS beta vs the NEPSE Index — full methodology in <a href="#beta">§4</a>. Green ≤ 1 (defensive), red &gt; 1 (aggressive).</td></tr>
+            <tr><td><b>Liq.</b></td><td>Days-to-liquidate = kitta ÷ (20% × average daily volume) — full methodology in <a href="#liquidity">§12</a>. Tiers: ≤1d liquid · ≤5d moderate · &gt;5d illiquid · no volume = untradeable.</td></tr>
+          </tbody>
+        </table>
+        <p class="sop-note">“—” in Vol/Beta means the scrip has too little trading history
+          (under 20 daily returns for vol, under 26 shared weeks for beta) — common for fresh
+          listings. The name still counts in valuation; it is excluded from the risk averages.</p>
+
+        <h4 id="sensitivity">7.5 Sensitivity (Beta Forecast) columns</h4>
+        <span class="sop-formula">Expected price  = LTP × (1 + β × Δ%/100)
+Expected value  = kitta × expected price
+Gain/Loss (G/L) = expected value − current value</span>
+        <p><b>Interpretation.</b> This is the <i>market-driven</i> move only: it assumes the holding
+          responds to the index exactly per its historical weekly beta, with no stock-specific news.
+          Holdings without a beta are held flat (expected price = LTP, G/L = 0), which makes the
+          scenario conservative for those names.</p>
+        <p><b>Assumptions.</b> Linear beta response (no convexity), no circuit-band clipping at the
+          holding level, and the move happens over a horizon short enough that beta is stable.</p>
+
+        <h4 id="max-loss">7.6 Max Loss Potential (VaR) columns</h4>
+        <span class="sop-formula">VaR 1W % = 1.645 × (vol/√246) × √5  × 100      Loss 1W = VaR 1W % × value
+VaR 1M % = 1.645 × (vol/√246) × √20 × 100      Loss 1M = VaR 1M % × value</span>
+        <p>Per-holding parametric 95% VaR (<a href="#var-parametric">§5.2</a>) — the standalone loss
+          each position should not exceed over one trading week / month at 95% confidence.
+          These columns ignore diversification <i>by design</i> (they answer “how bad can this one
+          name be?”); the portfolio-level tiles apply the diversified figure.</p>
+      </section>
+
+      <!-- 8 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="var-drawdown">
+        <p class="sop-kicker">Section 8</p>
+        <h3>Value at Risk &amp; Drawdown card</h3>
+        <p>All figures come from the historical simulation of <a href="#var-historical">§5.1</a>
+          over the last ~246 sessions with today's weights:</p>
+        <table class="sop-table">
+          <thead><tr><th>Row</th><th>Definition</th><th>Interpretation</th></tr></thead>
+          <tbody>
+            <tr><td><b>1-day VaR · 95%</b></td><td>−(5th percentile of daily portfolio returns) × book value</td>
+              <td>Loss ceiling for 19 sessions out of 20.</td></tr>
+            <tr><td><b>1-day VaR · 99%</b></td><td>−(1st percentile) × book value</td>
+              <td>Loss ceiling for 99 sessions out of 100; the gap vs 95% shows tail thickness.</td></tr>
+            <tr><td><b>10-day VaR · 95%</b></td><td>1-day 95% VaR × √10</td>
+              <td>Two-trading-week horizon under √-time scaling.</td></tr>
+            <tr><td><b>Expected shortfall (CVaR 95%)</b></td><td>−mean(returns ≤ 5th percentile) × book value</td>
+              <td>The <i>average</i> loss on the bad 5% of days — always ≥ VaR; the better single tail number.</td></tr>
+            <tr><td><b>Ann. volatility</b></td><td>stdev(daily portfolio returns) × √246</td>
+              <td>Typical yearly swing of the book, ±1σ.</td></tr>
+            <tr><td><b>Worst session</b></td><td>min(daily portfolio return) in the window, with its date</td>
+              <td>Your book's realised worst single day.</td></tr>
+            <tr><td><b>Max drawdown</b></td><td>Worst peak-to-trough of the compounded equity curve of {r_p,t}</td>
+              <td>The deepest hole the current book would have been in over the past year.</td></tr>
+            <tr><td><b>Worst 5-session</b></td><td>min over all 5-session compounded windows</td>
+              <td>Worst realised trading week.</td></tr>
+          </tbody>
+        </table>
+        <p class="sop-note">The parametric 95% figure in the footnote is a normal-distribution
+          comparison only; the historical figure governs (NEPSE returns are fat-tailed and
+          circuit-bounded).</p>
+      </section>
+
+      <!-- 9 ─────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="stress">
+        <p class="sop-kicker">Section 9</p>
+        <h3>Stress Scenarios</h3>
+        <span class="sop-formula">book impact % = β_p × market shock %          shocks: NEPSE −20 · −10 · −5 · +10
+book impact ₨ = impact % × portfolio value    index points = shock % × current NEPSE level</span>
+        <p><b>Methodology.</b> Deterministic beta propagation: each hypothetical NEPSE move is
+          pushed through the portfolio's weekly-return beta (<a href="#beta">§4</a>). If beta is
+          unavailable, 1.0 is assumed. Unlike VaR (which asks how likely a loss is), stress asks
+          “<i>if</i> this happens, what does it cost?” — no probability attached.</p>
+        <p><b>Assumptions.</b> Linear response, instant shock, no rebalancing, no liquidity impact —
+          in a real −20% market, exit costs (<a href="#liquidity">§12</a>) come on top.
+          The −20% scenario approximates a severe NEPSE bear leg; compare it with your worst
+          realised session and max drawdown for context.</p>
+      </section>
+
+      <!-- 10 ────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="compliance">
+        <p class="sop-kicker">Section 10</p>
+        <h3>Compliance &amp; Risk Limits</h3>
+        <p>Every refresh evaluates the book against a default institutional-style investment policy.
+          <b>WATCH</b> = approaching the limit; <b>BREACH</b> = outside it. Checks sort worst-first.</p>
+        <table class="sop-table">
+          <thead><tr><th>Check</th><th>Measured as</th><th>Watch</th><th>Breach</th></tr></thead>
+          <tbody>
+            <tr><td>Single-stock concentration</td><td>Largest single-name weight</td><td>≥ 12%</td><td>≥ 15%</td></tr>
+            <tr><td>Top-5 concentration</td><td>Sum of 5 largest weights</td><td>≥ 45%</td><td>≥ 55%</td></tr>
+            <tr><td>Sector concentration</td><td>Largest sector weight</td><td>≥ 30%</td><td>≥ 40%</td></tr>
+            <tr><td>Illiquid exposure</td><td>Weight in names needing &gt; 5 days to exit (incl. untradeable)</td><td>≥ 15%</td><td>≥ 25%</td></tr>
+            <tr><td>Untradeable exposure</td><td>Weight in names with no traded volume in the window</td><td>≥ 3%</td><td>≥ 8%</td></tr>
+            <tr><td>1-day VaR (95%)</td><td>Historical 1-day 95% VaR as % of book</td><td>≥ 3%</td><td>≥ 5%</td></tr>
+            <tr><td>Diversification</td><td>Effective holdings (10,000 / HHI) — a <i>minimum</i></td><td>&lt; 10</td><td>&lt; 6</td></tr>
+            <tr><td>Market beta band</td><td>Portfolio beta (weekly, §4)</td><td>outside 0.6–1.4</td><td>outside 0.4–1.6</td></tr>
+          </tbody>
+        </table>
+        <p class="sop-note">Limits are sensible defaults tuned for a concentrated NEPSE retail book,
+          not regulatory rules. They are monitoring aids: a breach means “look at this,” not
+          “forced sale.”</p>
+      </section>
+
+      <!-- 11 ────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="factor-model">
+        <p class="sop-kicker">Section 11</p>
+        <h3>Risk Decomposition — Factor Model</h3>
+        <p><b>Purpose.</b> Splits total portfolio risk into <b>market (systematic)</b> risk — moves
+          with NEPSE, cannot be diversified away — and <b>stock-specific (idiosyncratic)</b> risk —
+          diversifiable by adding uncorrelated names. Then attributes it by sector and by name.</p>
+        <span class="sop-formula">single-factor model (weekly):   rᵢ = αᵢ + βᵢ·r_m + εᵢ
+portfolio variance:             σ²_p = β_p²·σ²_m + Σ wᵢ²·resid ᵢ²
+holding risk contribution:      RCᵢ = wᵢ·βᵢ·β_p·σ²_m + wᵢ²·residᵢ²      (Σ RCᵢ = σ²_p exactly)
+annualisation:                  vol = √(variance × 52) × 100             (weekly → yearly)</span>
+        <p><b>Inputs.</b> Weekly betas and weekly residual volatilities from the §4 regressions,
+          plus the weekly variance of the NEPSE Index itself — the whole model runs on one
+          consistent (weekly) frequency. Residuals are assumed uncorrelated across names.</p>
+        <p><b>Interpretation.</b> A high market share (say 80%) means the book is essentially a
+          leveraged/deleveraged NEPSE tracker — diversifying <i>within</i> NEPSE won't reduce much.
+          A high stock-specific share with a few dominant contributors means single-name risk you
+          <i>can</i> reduce. “Covers X% of book value” shows how much of the portfolio had enough
+          history to model; the remainder sits outside the decomposition rather than distorting it.</p>
+      </section>
+
+      <!-- 12 ────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="liquidity">
+        <p class="sop-kicker">Section 12</p>
+        <h3>Liquidity Risk — Days to Liquidate</h3>
+        <span class="sop-formula">ADV = total traded quantity over the last ~30 market sessions ÷ number of market sessions
+DTL (days to liquidate) = kitta ÷ (20% × ADV)
+sellable in D days: position fraction = min(1, D / DTL) — summed value-weighted across the book</span>
+        <div class="sop-facts">
+          <div class="sop-fact"><b>Volume window</b><span>45 calendar days ≈ 30 sessions</span></div>
+          <div class="sop-fact"><b>Participation rate</b><span>20% of ADV per session</span></div>
+          <div class="sop-fact"><b>Tiers</b><span>≤1d liquid · ≤5d moderate · &gt;5d illiquid</span></div>
+          <div class="sop-fact"><b>Untradeable</b><span>No volume in the window</span></div>
+        </div>
+        <p><b>Why ADV divides by market sessions, not trade days:</b> a scrip that printed on 3 of
+          30 sessions is genuinely thin; averaging over only its 3 trade days would make it look
+          falsely liquid. The 20% participation assumption is the share of daily volume a seller can
+          realistically absorb without moving the price against themselves.</p>
+        <p><b>Card metrics.</b> <i>Sellable in 1/5 days</i> = value-weighted share of the book
+          exitable in that window at 20% participation. <i>Avg days to exit</i> = value-weighted
+          mean DTL over tradeable names. <i>Illiquid positions</i> counts names over 5 days
+          (untradeables shown separately). <b>Interpretation:</b> in a falling market you rarely get
+          even 20% participation — treat DTL as a best-case exit clock.</p>
+      </section>
+
+      <!-- 13 ────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="sectors">
+        <p class="sop-kicker">Section 13</p>
+        <h3>Sector Exposure</h3>
+        <span class="sop-formula">sector weight = Σ value of holdings in sector ÷ total portfolio value × 100</span>
+        <p>Sectors come from the NEPSE company-profile reference table; names without a profile
+          fall into “Uncategorized.” Bars are scaled to the largest sector.
+          <b>Interpretation:</b> NEPSE is banking-heavy, so most local books concentrate in
+          Commercial Banks and Development Banks — the policy check flags any single sector at
+          30% (watch) / 40% (breach). Remember that sector labels understate linkage: NEPSE
+          financials are highly correlated with each other, so true sector diversification is
+          weaker than the bar chart suggests (see the factor model, <a href="#factor-model">§11</a>).</p>
+      </section>
+
+      <!-- 14 ────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="concentration">
+        <p class="sop-kicker">Section 14</p>
+        <h3>Concentration &amp; Diversification</h3>
+        <span class="sop-formula">HHI = Σ (wᵢ)² × 10,000        wᵢ = weight as a fraction (Herfindahl–Hirschman Index)
+effective holdings = 10,000 / HHI</span>
+        <div class="sop-facts">
+          <div class="sop-fact"><b>Low</b><span>HHI &lt; 1,500</span></div>
+          <div class="sop-fact"><b>Moderate</b><span>1,500 – 2,500</span></div>
+          <div class="sop-fact"><b>High</b><span>&gt; 2,500</span></div>
+        </div>
+        <p><b>Interpretation.</b> HHI weights big positions quadratically, so one 60% name dominates
+          the score no matter how many small names sit around it. <i>Effective holdings</i> converts
+          that into an intuitive count: “my 23 positions behave like N equal-weight positions.”
+          A perfectly equal 10-stock book scores HHI 1,000 / effective 10. The Top-5 bars show
+          exactly where the concentration lives. Bands match the broker-analytics desk so the two
+          screens read consistently.</p>
+      </section>
+
+      <!-- 15 ────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="limitations">
+        <p class="sop-kicker">Section 15 · Appendix</p>
+        <h3>Interpretation guide &amp; limitations</h3>
+        <ul>
+          <li><b>Everything is end-of-day.</b> Intraday moves, and anything after the last sync,
+            are invisible to the desk.</li>
+          <li><b>Stale prices flatter risk.</b> A name that hasn't traded for days shows zero
+            return — volatility, VaR and beta for very thin names are best-effort floors, not
+            ceilings. The liquidity card tells you which names to distrust.</li>
+          <li><b>Circuit bands truncate tails.</b> Realised NEPSE history cannot show a −20% day for
+            a single stock; multi-day losing streaks are how tails express themselves here — watch
+            the 10-day VaR and worst-5-session figures, not just 1-day VaR.</li>
+          <li><b>No cost basis ⇒ no P/L.</b> Position risk is fully available without the WACC
+            import; P/L metrics appear once you import it and only cover matched scrips.</li>
+          <li><b>Estimates degrade gracefully.</b> Any metric without enough history shows “—”
+            rather than a fabricated number, and averages re-base over what remains.</li>
+          <li><b>Not investment advice.</b> The desk is a monitoring tool on your own data.</li>
+        </ul>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem('mi-theme'); } catch (e) {}
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    var btn = document.getElementById('mi-theme-btn');
+    function sync() {
+      if (!btn) return;
+      var light = document.documentElement.getAttribute('data-theme') === 'light';
+      btn.textContent = light ? 'Dark' : 'Light';
+    }
+    sync();
+    if (btn) btn.addEventListener('click', function () {
+      var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('mi-theme', next); } catch (e) {}
+      sync();
+    });
+  })();
+</script>
+</body>
+</html>

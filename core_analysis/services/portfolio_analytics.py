@@ -13,6 +13,11 @@ NEPSE realities deliberately shaped the design:
   * Volatility / beta are best-effort and degrade to None on thin history; they
     are close-to-close estimates and inherit NEPSE's stale-price / circuit-band
     quirks, so they're presented as estimates, not guarantees.
+  * Beta (and the factor model built on it) is estimated on WEEKLY returns, not
+    daily: NEPSE names trade thinly and non-synchronously, so daily-return betas
+    are biased toward zero (stale closes miss the index move). Sampling the last
+    close of each Sun–Fri week absorbs the lag. Volatility & VaR stay daily —
+    they don't suffer the cross-correlation bias and daily gives 5× the sample.
   * Portfolio beta is the weight-weighted sum of holding betas (valid); a true
     covariance-based portfolio VaR/vol is a later phase and is NOT faked here.
 """
@@ -29,7 +34,9 @@ logger = logging.getLogger(__name__)
 NEPSE_INDEX_NAME = "NEPSE Index"  # matched case-insensitively (data has mixed casing)
 RISK_LOOKBACK_DAYS = 370          # ~1 trading year of sessions for vol/beta/VaR
 TRADING_DAYS_YEAR = 246           # NEPSE trades Sun–Fri (~246 sessions/yr)
-MIN_RETURNS = 20                  # need at least this many returns for vol/beta
+WEEKS_YEAR = 52                   # annualisation factor for weekly-return stats
+MIN_RETURNS = 20                  # need at least this many daily returns for vol
+MIN_WEEKLY_RETURNS = 26           # ~6 months of weekly observations for beta
 MIN_VAR_POINTS = 30               # need at least this many sessions for VaR
 VAR_HORIZON_DAYS = 10             # second VaR horizon (√-time scaled)
 # Per-holding VaR horizons for the Portfolio Summary desk, in NEPSE sessions.
@@ -179,6 +186,30 @@ def _returns(series):
     return out
 
 
+def _weekly_returns(series):
+    """Weekly simple returns from a date-sorted [(date, close), …].
+
+    Closes collapse to the LAST trading close of each ISO week (NEPSE's Sun–Fri
+    week ends Friday), then returns are computed week-over-week, keyed by
+    ``(iso_year, iso_week)``. Weekly sampling is what makes NEPSE betas usable:
+    a scrip that prints late (or not at all) on a given day still catches up
+    within the week, so the stale-close bias of daily betas mostly cancels.
+    A week with no trade simply has no key — the next observed week's return
+    spans the gap, matching how thin names actually reprice.
+    """
+    weekly = {}
+    for bd, close in series:   # date-ascending → last write wins = week's close
+        weekly[bd.isocalendar()[:2]] = close
+    out = {}
+    prev = None
+    for wk in sorted(weekly):
+        close = weekly[wk]
+        if prev is not None and prev[1]:
+            out[wk] = (close - prev[1]) / prev[1]
+        prev = (wk, close)
+    return out
+
+
 def _stdev(values):
     n = len(values)
     if n < 2:
@@ -189,21 +220,24 @@ def _stdev(values):
 
 
 def _load_returns(symbols):
-    """(stock_ret, index_ret) daily simple returns over the risk window.
+    """Daily + weekly simple returns over the risk window.
 
-    ``stock_ret`` is ``{symbol: {date: ret}}``; ``index_ret`` is ``{date: ret}``
-    for the NEPSE benchmark (deduped by date, mixed-case name). Best-effort —
-    returns empties on any failure so risk is just omitted, never fatal.
+    Returns ``(stock_ret, index_ret, stock_wret, index_wret)`` where the first
+    pair is daily (``{symbol: {date: ret}}`` / ``{date: ret}``) and feeds
+    volatility + historical-simulation VaR, and the second pair is weekly
+    (keyed by ``(iso_year, iso_week)``) and feeds beta + the factor model.
+    Best-effort — returns empties on any failure so risk is just omitted,
+    never fatal.
     """
     from core_analysis.models import NepseDailyStockPrice, NepseMarketIndex
 
-    stock_ret, index_ret = {}, {}
+    stock_ret, index_ret, stock_wret, index_wret = {}, {}, {}, {}
     if not symbols:
-        return stock_ret, index_ret
+        return stock_ret, index_ret, stock_wret, index_wret
     try:
         latest = _latest_session()
         if not latest:
-            return stock_ret, index_ret
+            return stock_ret, index_ret, stock_wret, index_wret
         start = latest - timedelta(days=RISK_LOOKBACK_DAYS)
 
         idx_rows = NepseMarketIndex.objects.filter(
@@ -212,7 +246,9 @@ def _load_returns(symbols):
         idx_map = {}
         for bd, c in idx_rows:
             idx_map[bd] = _f(c)
-        index_ret = _returns(sorted(idx_map.items()))
+        idx_series = sorted(idx_map.items())
+        index_ret = _returns(idx_series)
+        index_wret = _weekly_returns(idx_series)
 
         series = {}
         rows = (
@@ -226,20 +262,23 @@ def _load_returns(symbols):
             series.setdefault(sym, []).append((bd, _f(close)))
         for sym, ser in series.items():
             stock_ret[sym] = _returns(ser)
+            stock_wret[sym] = _weekly_returns(ser)
     except Exception:  # pragma: no cover - risk overlay is best-effort
         logger.exception("portfolio return load failed")
-    return stock_ret, index_ret
+    return stock_ret, index_ret, stock_wret, index_wret
 
 
-def _beta_resid(stock_ret, index_ret):
-    """OLS (beta, residual daily std) of a stock vs the index over shared dates.
+def _beta_resid(stock_ret, index_ret, min_n=MIN_WEEKLY_RETURNS):
+    """OLS (beta, residual std) of a stock vs the index over shared periods.
 
-    The residual std is the stock-specific (idiosyncratic) daily volatility left
-    after the market move is regressed out — the raw material for the factor risk
-    decomposition. Returns ``(None, None)`` on thin overlap.
+    Called with WEEKLY return maps (keys are ``(iso_year, iso_week)``), so beta
+    is a weekly-return beta and the residual std is the stock-specific
+    (idiosyncratic) WEEKLY volatility left after the market move is regressed
+    out — the raw material for the factor risk decomposition. Returns
+    ``(None, None)`` on thin overlap.
     """
     common = [d for d in stock_ret if d in index_ret]
-    if len(common) < MIN_RETURNS:
+    if len(common) < min_n:
         return None, None
     xs = [index_ret[d] for d in common]
     ys = [stock_ret[d] for d in common]
@@ -307,17 +346,23 @@ def _cost_summary(rows):
     }
 
 
-def _per_symbol_stats(symbols, stock_ret, index_ret):
-    """{symbol: {'vol': annualised %|None, 'beta': float|None, 'resid': daily std|None}}."""
+def _per_symbol_stats(symbols, stock_ret, index_ret, stock_wret, index_wret):
+    """{symbol: {'vol': annualised %|None, 'beta': float|None, 'resid': weekly std|None}}.
+
+    Volatility comes from DAILY returns (5× the sample, no cross-correlation
+    bias); beta + residual come from WEEKLY returns (thin-trading-robust, per
+    the module docstring). ``resid`` is the weekly idiosyncratic std, consumed
+    by ``_factor_decomposition`` which annualises with ``WEEKS_YEAR``.
+    """
     stats = {s: {"vol": None, "beta": None, "resid": None} for s in symbols}
-    for sym, ret in stock_ret.items():
-        vals = list(ret.values())
+    for sym in symbols:
+        vals = list(stock_ret.get(sym, {}).values())
         sd = _stdev(vals) if len(vals) >= MIN_RETURNS else None
-        beta, resid = _beta_resid(ret, index_ret)
+        beta, resid = _beta_resid(stock_wret.get(sym, {}), index_wret)
         stats[sym] = {
             "vol": round(sd * math.sqrt(TRADING_DAYS_YEAR) * 100.0, 1) if sd else None,
             "beta": round(beta, 2) if beta is not None else None,
-            "resid": resid,                       # daily residual std (unrounded)
+            "resid": resid,                       # weekly residual std (unrounded)
         }
     return stats
 
@@ -455,10 +500,14 @@ def _risk_block(weight_frac, total_value, port_beta, stock_ret):
 # ─────────────────────────────────────────────────────────────────────────────
 # Factor risk decomposition (single-factor: NEPSE market + stock-specific)
 # ─────────────────────────────────────────────────────────────────────────────
-def _factor_decomposition(rows, stats, index_ret):
+def _factor_decomposition(rows, stats, index_wret):
     """Split portfolio risk into systematic (market) vs idiosyncratic, and
     attribute it by sector and by name — the institutional "where does my risk
     come from" view.
+
+    Runs entirely on WEEKLY quantities (beta, residual std and market sigma all
+    come from weekly returns) and annualises with ``WEEKS_YEAR``, so the model
+    is internally consistent with the weekly-beta estimation.
 
     Variance model (single NEPSE factor, residuals assumed uncorrelated):
         σ²_p = β_p,eff²·σ²_m + Σ wᵢ²·residᵢ²
@@ -467,8 +516,8 @@ def _factor_decomposition(rows, stats, index_ret):
     sector/name splits are exhaustive. Names lacking return history sit outside
     the covered weight rather than distorting the result.
     """
-    idx_vals = list(index_ret.values())
-    sigma_m = _stdev(idx_vals) if len(idx_vals) >= MIN_RETURNS else None
+    idx_vals = list(index_wret.values())
+    sigma_m = _stdev(idx_vals) if len(idx_vals) >= MIN_WEEKLY_RETURNS else None
     if not sigma_m:
         return {"ok": False, "reason": "No market history for the factor model."}
     sm2 = sigma_m * sigma_m
@@ -496,7 +545,7 @@ def _factor_decomposition(rows, stats, index_ret):
         names.append((r["symbol"], rc))
 
     def ann(v):
-        return round(math.sqrt(max(v, 0.0) * TRADING_DAYS_YEAR) * 100.0, 1)
+        return round(math.sqrt(max(v, 0.0) * WEEKS_YEAR) * 100.0, 1)
 
     sec_rows = sorted(
         ({"sector": s, "pct": round(100.0 * rc / total_var, 1)} for s, rc in sectors.items()),
@@ -633,8 +682,8 @@ def build_portfolio_payload(portfolio):
     costs = {c.symbol: c for c in portfolio.costs.all()}  # WACC cost basis by symbol
     prices = _latest_prices(symbols)
     meta = _company_meta(symbols)
-    stock_ret, index_ret = _load_returns(symbols)
-    stats = _per_symbol_stats(symbols, stock_ret, index_ret)
+    stock_ret, index_ret, stock_wret, index_wret = _load_returns(symbols)
+    stats = _per_symbol_stats(symbols, stock_ret, index_ret, stock_wret, index_wret)
     liq, liq_sessions = _liquidity(symbols)
 
     rows, total = [], 0.0
@@ -778,7 +827,7 @@ def build_portfolio_payload(portfolio):
         risk = {"ok": False, "reason": "Risk engine error."}
 
     try:
-        factors = _factor_decomposition(rows, stats, index_ret)
+        factors = _factor_decomposition(rows, stats, index_wret)
     except Exception:  # pragma: no cover
         logger.exception("portfolio factor decomposition failed")
         factors = {"ok": False, "reason": "Factor engine error."}

@@ -33,6 +33,20 @@ def floorsheet_view(request):
     )
 
 
+def floorsheet_sop_view(request):
+    """Methodology SOP for the Floorsheet (Dalal Street X) broker desk.
+
+    One anchored section per tab / metric; the whole-page (?) icon in the tab bar
+    deep-links here. Static content — every formula, data source and assumption is
+    documented in the template itself, so it never touches the analytics engine.
+    """
+    return render(
+        request,
+        "core_analysis/floorsheet_sop.html",
+        {"asset_version": _asset_version()},
+    )
+
+
 def _window(request):
     """Extract the shared date-range selection (range + optional custom dates).
 

@@ -140,6 +140,16 @@ def fundamental_analysis_view(request, symbol=None):
     return render(request, "core_analysis/fundamental_analysis.html", context)
 
 
+@require_GET
+def fundamental_sop_view(request):
+    """Short methodology SOP for the Fundamental Analysis Morningstar tab."""
+    return render(
+        request,
+        "core_analysis/fundamental_sop.html",
+        {"asset_version": _asset_version()},
+    )
+
+
 def _statement_rows(qs):
     """Order a queryset of line items for tabular display.
 
