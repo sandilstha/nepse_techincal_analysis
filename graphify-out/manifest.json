@@ -25,8 +25,8 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "core_analysis/admin.py": {
-    "mtime": 1782720505.3886416,
-    "ast_hash": "52979cb3135c6d16bc272c0ee6605e29",
+    "mtime": 1782901234.9462464,
+    "ast_hash": "b3023dc3dffea4627bae81ae6ed6067b",
     "semantic_hash": ""
   },
   "core_analysis/api_urls.py": {
@@ -45,8 +45,8 @@
     "semantic_hash": "c065a2c80b13b071b04373c5bf750482"
   },
   "core_analysis/broker_views.py": {
-    "mtime": 1782448796.426781,
-    "ast_hash": "3d7fc4807b69e2ef1cfc6ee18de44dda",
+    "mtime": 1783053595.829543,
+    "ast_hash": "1b24845b33ba422dd63fbc7a56d3e8eb",
     "semantic_hash": ""
   },
   "core_analysis/indicator_views.py": {
@@ -165,8 +165,8 @@
     "semantic_hash": "a696b07ac5b1787314b9da914e0e0cfb"
   },
   "core_analysis/services/market_insights.py": {
-    "mtime": 1782387547.7209656,
-    "ast_hash": "307dc2b76aab58bc69f39b6a54911d99",
+    "mtime": 1782988122.5040567,
+    "ast_hash": "69692c7705f8ecad7543f950bfa04bdd",
     "semantic_hash": ""
   },
   "core_analysis/services/moving_average.py": {
@@ -215,8 +215,8 @@
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/dashboard.js": {
-    "mtime": 1782386699.4037461,
-    "ast_hash": "b9af662796acc6dee122ee330e1a83ab",
+    "mtime": 1782969079.2442067,
+    "ast_hash": "45e7ad0574b2014cbd6504caf8e9ba84",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/floorsheet-brokers.js": {
@@ -270,13 +270,13 @@
     "semantic_hash": ""
   },
   "core_analysis/urls.py": {
-    "mtime": 1782900765.421438,
-    "ast_hash": "14345136949819e26790bf7734cf21e8",
+    "mtime": 1783053900.3787851,
+    "ast_hash": "05152325a00247d9179be3d847a83bbe",
     "semantic_hash": ""
   },
   "core_analysis/views.py": {
-    "mtime": 1782791140.9949415,
-    "ast_hash": "75ecb0dbb5f0491f423687ae541ad306",
+    "mtime": 1782987056.7941926,
+    "ast_hash": "dd571ef0eb202009cc29fcb9dfe5a14d",
     "semantic_hash": ""
   },
   "manage.py": {
@@ -350,18 +350,18 @@
     "semantic_hash": ""
   },
   "core_analysis/portfolio_views.py": {
-    "mtime": 1782886858.0172715,
-    "ast_hash": "d828f0ccb7a21f8e3797165c2c082342",
+    "mtime": 1783051147.0158646,
+    "ast_hash": "187111609f2817a37b58d63c78e3c037",
     "semantic_hash": ""
   },
   "core_analysis/services/portfolio_analytics.py": {
-    "mtime": 1782900072.8988824,
-    "ast_hash": "50a7358d5c01ca955e3eba8eaf83446f",
+    "mtime": 1783049639.4055872,
+    "ast_hash": "7c67d8036fefbc43977a13dadf0c83bd",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/portfolio.js": {
-    "mtime": 1782900091.3073378,
-    "ast_hash": "4d805a0b5886d780391f174b03f14216",
+    "mtime": 1783053004.2090192,
+    "ast_hash": "1817ad331659ae773001be7fcc40628f",
     "semantic_hash": ""
   },
   "core_analysis/management/commands/grant_staff.py": {
@@ -385,13 +385,13 @@
     "semantic_hash": ""
   },
   "core_analysis/fundamental_views.py": {
-    "mtime": 1782813452.9201643,
-    "ast_hash": "d5b1bbfca516662b0dd7bc4226270fc7",
+    "mtime": 1783053893.2607677,
+    "ast_hash": "dbdce6839700c939afa0bcf60ac81595",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/fundamentals.js": {
-    "mtime": 1782813473.2564762,
-    "ast_hash": "46ae7a41232499c3e678e01d77bcc0a6",
+    "mtime": 1782903225.4082232,
+    "ast_hash": "77605601dbd9f4a3b70919b75eec29dd",
     "semantic_hash": ""
   },
   "core_analysis/migrations/0009_holdingcost.py": {
@@ -412,6 +412,11 @@
   "core_analysis/migrations/0010_pagevisit.py": {
     "mtime": 1782900793.9764907,
     "ast_hash": "2f8801914034b3f12eabcd050a8edfbf",
+    "semantic_hash": ""
+  },
+  "core_analysis/services/seasonal_returns.py": {
+    "mtime": 1783055015.5696242,
+    "ast_hash": "9be7b28c5a6a8c7aaef5ad3a207a48ff",
     "semantic_hash": ""
   }
 }

@@ -4,7 +4,10 @@ from .portfolio_views import (
     approval_pending_view,
     register_view,
     portfolio_view,
+    portfolio_sop_view,
     portfolio_data_api,
+    portfolio_approvals_api,
+    portfolio_approval_action,
     portfolio_import,
     portfolio_wacc_import,
     portfolio_clear,
@@ -28,6 +31,7 @@ from .insights_views import (
 )
 from .broker_views import (
     floorsheet_view,
+    floorsheet_sop_view,
     broker_meta_api,
     broker_favorites_api,
     broker_persistence_api,
@@ -49,6 +53,7 @@ from .analytics_views import site_stats_view
 from .indicator_views import indicator_catalog, indicator_data
 from .fundamental_views import (
     fundamental_analysis_view,
+    fundamental_sop_view,
     fundamental_data_api,
     fundamental_matrix_api,
     fundamental_model_api,
@@ -73,6 +78,7 @@ urlpatterns = [
     path('fundamentals/api/', fundamental_data_api, name='fundamental_data_api'),
     path('fundamentals/matrix/', fundamental_matrix_api, name='fundamental_matrix_api'),
     path('fundamentals/model/', fundamental_model_api, name='fundamental_model_api'),
+    path('fundamentals/sop/', fundamental_sop_view, name='fundamental_sop'),
     path('fundamentals/<str:symbol>/', fundamental_analysis_view, name='fundamental_analysis_symbol'),
 
     # Auth (user-facing; the workbench keeps its separate admin/staff login).
@@ -83,13 +89,17 @@ urlpatterns = [
 
     # Risk & Portfolio Desk — private, per-user holdings + risk analytics.
     path('portfolio/', portfolio_view, name='portfolio'),
+    path('portfolio/sop/', portfolio_sop_view, name='portfolio_sop'),
     path('portfolio/api/data/', portfolio_data_api, name='portfolio_data_api'),
+    path('portfolio/api/approvals/', portfolio_approvals_api, name='portfolio_approvals_api'),
+    path('portfolio/api/approvals/action/', portfolio_approval_action, name='portfolio_approval_action'),
     path('portfolio/import/', portfolio_import, name='portfolio_import'),
     path('portfolio/wacc/', portfolio_wacc_import, name='portfolio_wacc_import'),
     path('portfolio/clear/', portfolio_clear, name='portfolio_clear'),
 
     # Floor sheet — Dalal Street X broker analytics (built on the floorsheet feed).
     path('floorsheet/', floorsheet_view, name='floorsheet'),
+    path('floorsheet/sop/', floorsheet_sop_view, name='floorsheet_sop'),
     path('floorsheet/api/meta/', broker_meta_api, name='broker_meta_api'),
     path('floorsheet/api/favorites/', broker_favorites_api, name='broker_favorites_api'),
     path('floorsheet/api/persistence/', broker_persistence_api, name='broker_persistence_api'),

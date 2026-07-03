@@ -1,10 +1,12 @@
 """
 portfolio_views.py — private, per-user holdings portfolio + risk dashboard.
 
-A logged-in user uploads a Meroshare "My Shares" CSV; we parse it into their
-private ``Portfolio`` and render valuation / concentration / sector-exposure /
-beta analytics (see ``services.portfolio_analytics``). Everything here is gated
-behind login so one user can never see another's positions.
+A logged-in user uploads a Meroshare "My Shares" export (CSV, Excel or PDF); we
+parse it into their private ``Portfolio`` and render valuation / concentration /
+sector-exposure / beta analytics (see ``services.portfolio_analytics``).
+Everything here is gated behind login so one user can never see another's
+positions. ``portfolio_sop_view`` serves the metric SOP that every (?) help
+icon on the dashboard links into.
 """
 from __future__ import annotations
 
@@ -27,7 +29,8 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_PORTFOLIO_NAME = "My Portfolio"
 MAX_UPLOAD_BYTES = 2 * 1024 * 1024      # a holdings CSV is tiny; cap to be safe
-MAX_WACC_UPLOAD_BYTES = 8 * 1024 * 1024  # WACC report can be a multi-page PDF
+MAX_DOC_UPLOAD_BYTES = 8 * 1024 * 1024  # holdings/WACC reports can be multi-page PDFs
+_DOC_EXTENSIONS = (".pdf", ".xlsx", ".xlsm", ".xls")
 _SYMBOL_RE = re.compile(r"^[A-Z0-9]+$")
 
 
@@ -38,7 +41,7 @@ def _asset_version():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CSV parsing (Meroshare "My Shares" export)
+# Holdings parsing (Meroshare "My Shares" export — CSV, Excel or PDF)
 # ─────────────────────────────────────────────────────────────────────────────
 def _num(value):
     """Parse a number from a CSV cell ('1,065.00', '"100"', '') -> float|None."""
@@ -77,34 +80,36 @@ def _map_columns(header):
     return col
 
 
-def parse_holdings_csv(text):
-    """Parse the Meroshare holdings CSV into rows + a skipped-line count.
+def _normalize_holdings_table(table):
+    """Map a raw table (list of cell-lists) to holdings rows + a skipped count.
 
-    Tolerates the leading header row, the trailing ``Total :`` summary row, blank
-    lines, quoted cells and missing decimals. Returns
-    ``(rows, skipped)`` where each row is
-    ``{symbol, quantity, last_close, ltp}`` and ``skipped`` counts non-position
-    lines that were ignored (header/total/blank/invalid).
+    Works for CSV rows, Excel rows and pdfplumber-extracted PDF tables alike.
+    Cells are whitespace-collapsed first (PDF headers carry embedded newlines).
+    Tolerates the leading header row, the trailing ``Total :`` summary row,
+    blank lines, quoted cells and missing decimals. Returns ``(rows, skipped)``
+    where each row is ``{symbol, quantity, last_close, ltp}`` and ``skipped``
+    counts non-position lines that were ignored (header/total/blank/invalid).
     """
     rows, skipped, col, seen = [], 0, None, set()
-    reader = csv.reader(io.StringIO(text))
-    for raw in reader:
-        if not raw or all(not (c or "").strip() for c in raw):
+    for raw in table:
+        norm = [" ".join(str(c or "").split()) for c in raw]
+        if not norm or all(not c for c in norm):
             continue
         if col is None:
-            if any("scrip" in (c or "").strip().lower() for c in raw):
-                col = _map_columns(raw)
+            if any("scrip" in c.lower() for c in norm):
+                col = _map_columns(norm)
                 continue
             skipped += 1
             continue
-        if "symbol" not in col or col["symbol"] >= len(raw):
+        if "symbol" not in col or col["symbol"] >= len(norm):
             skipped += 1
             continue
-        sym = (raw[col["symbol"]] or "").strip().upper()
+        sym = norm[col["symbol"]].strip().upper()
         if not sym or sym.startswith("TOTAL") or not _SYMBOL_RE.match(sym) or sym in seen:
             skipped += 1
             continue
-        qty = _num(raw[col["qty"]]) if "qty" in col and col["qty"] < len(raw) else None
+        cell = lambda k: norm[col[k]] if k in col and col[k] < len(norm) else None
+        qty = _num(cell("qty"))
         if not qty:  # drop zero / blank balances
             skipped += 1
             continue
@@ -112,10 +117,34 @@ def parse_holdings_csv(text):
         rows.append({
             "symbol": sym,
             "quantity": qty,
-            "last_close": _num(raw[col["close"]]) if "close" in col and col["close"] < len(raw) else None,
-            "ltp": _num(raw[col["ltp"]]) if "ltp" in col and col["ltp"] < len(raw) else None,
+            "last_close": _num(cell("close")),
+            "ltp": _num(cell("ltp")),
         })
     return rows, skipped
+
+
+def parse_holdings_csv(text):
+    """Back-compat CSV entry point — see ``_normalize_holdings_table``."""
+    return _normalize_holdings_table(csv.reader(io.StringIO(text)))
+
+
+def parse_holdings_report(upload):
+    """Parse an uploaded 'My Shares' holdings file (CSV / Excel / PDF) -> rows.
+
+    Dispatches on the filename extension exactly like ``parse_wacc_report``;
+    every branch yields a raw table that ``_normalize_holdings_table`` maps to
+    ``{symbol, quantity, last_close, ltp}`` rows.
+    """
+    name = (upload.name or "").lower()
+    data = upload.read()
+    if name.endswith(".pdf"):
+        table = _table_from_pdf(data)
+    elif name.endswith((".xlsx", ".xlsm", ".xls")):
+        table = _table_from_excel(data)
+    else:
+        text = data.decode("utf-8-sig", errors="replace")
+        table = list(csv.reader(io.StringIO(text)))
+    return _normalize_holdings_table(table)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -185,7 +214,8 @@ def _normalize_wacc_table(table):
     return rows, skipped
 
 
-def _wacc_table_from_pdf(data):
+def _table_from_pdf(data):
+    """All table rows from every page of a PDF, in document order."""
     import pdfplumber
 
     out = []
@@ -196,7 +226,7 @@ def _wacc_table_from_pdf(data):
     return out
 
 
-def _wacc_table_from_excel(data):
+def _table_from_excel(data):
     from openpyxl import load_workbook
 
     wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
@@ -214,9 +244,9 @@ def parse_wacc_report(upload):
     name = (upload.name or "").lower()
     data = upload.read()
     if name.endswith(".pdf"):
-        table = _wacc_table_from_pdf(data)
+        table = _table_from_pdf(data)
     elif name.endswith((".xlsx", ".xlsm", ".xls")):
-        table = _wacc_table_from_excel(data)
+        table = _table_from_excel(data)
     else:
         text = data.decode("utf-8-sig", errors="replace")
         table = list(csv.reader(io.StringIO(text)))
@@ -272,17 +302,50 @@ def _get_or_create_portfolio(user):
     return portfolio
 
 
+def _is_approver(user):
+    """Who may review account requests from the portfolio notification bell.
+
+    Staff (the admin site's own gate) — this is the "main admin" account that
+    approves signups. Kept as one predicate so the view, the API and the action
+    endpoint can never drift apart.
+    """
+    return bool(user.is_authenticated and user.is_staff)
+
+
 @login_required(login_url="login")
 def portfolio_view(request):
     """Render the Risk & Portfolio dashboard shell for the logged-in user."""
     portfolio = _get_or_create_portfolio(request.user)
+    is_approver = _is_approver(request.user)
+    pending_count = 0
+    if is_approver:
+        from core_analysis.models import AccountApproval as _AA
+
+        pending_count = _AA.objects.filter(status=_AA.PENDING).count()
     return render(
         request,
         "core_analysis/portfolio.html",
         {
             "asset_version": _asset_version(),
             "has_holdings": portfolio.holdings.exists(),
+            "is_approver": is_approver,
+            "pending_approvals": pending_count,
         },
+    )
+
+
+@login_required(login_url="login")
+def portfolio_sop_view(request):
+    """Methodology SOP for the Risk & Portfolio desk.
+
+    One anchored section per metric/card; every (?) help icon on the dashboard
+    deep-links to its section here. Static content — all formulas, assumptions
+    and data sources are documented in the template itself.
+    """
+    return render(
+        request,
+        "core_analysis/portfolio_sop.html",
+        {"asset_version": _asset_version()},
     )
 
 
@@ -299,26 +362,128 @@ def portfolio_data_api(request):
         return JsonResponse({"ok": False, "error": "Unable to compute portfolio."}, status=500)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Account-approval notifications (admin only, surfaced on the portfolio page)
+# ─────────────────────────────────────────────────────────────────────────────
+def _approval_json(a):
+    """One pending request → the JSON the notification bell renders."""
+    return {
+        "id": a.id,
+        "username": a.user.username,
+        "email": a.contact_email or (a.user.email or ""),
+        "requested_at": a.created_at.isoformat() if a.created_at else None,
+    }
+
+
+@login_required(login_url="login")
+def portfolio_approvals_api(request):
+    """Pending account requests for the notification bell (staff only).
+
+    Returns ``{ok, is_approver, pending_count, requests:[…]}``. Non-staff get a
+    quiet ``is_approver: False`` (not a 403) so the bell simply never shows for
+    ordinary users without the frontend having to special-case anything.
+    """
+    from core_analysis.models import AccountApproval
+
+    if not _is_approver(request.user):
+        return JsonResponse({"ok": True, "is_approver": False, "pending_count": 0, "requests": []})
+
+    pending = list(
+        AccountApproval.objects.filter(status=AccountApproval.PENDING)
+        .select_related("user")
+        .order_by("-created_at")
+    )
+    return JsonResponse({
+        "ok": True,
+        "is_approver": True,
+        "pending_count": len(pending),
+        "requests": [_approval_json(a) for a in pending],
+    })
+
+
+@login_required(login_url="login")
+@require_POST
+def portfolio_approval_action(request):
+    """Approve or reject one pending account request from the bell (staff only).
+
+    Body: ``id`` + ``action`` in {approve, reject}. Activates/deactivates the
+    user via the model's own ``approve``/``reject`` (same path as the admin
+    action), stamps this admin as reviewer, and returns the fresh pending list
+    so the panel and badge update in one round-trip.
+    """
+    from core_analysis.models import AccountApproval
+
+    if not _is_approver(request.user):
+        return JsonResponse({"ok": False, "error": "Not authorised."}, status=403)
+
+    action = (request.POST.get("action") or "").strip().lower()
+    if action not in ("approve", "reject"):
+        return JsonResponse({"ok": False, "error": "Unknown action."}, status=400)
+    try:
+        approval_id = int(request.POST.get("id") or 0)
+    except (TypeError, ValueError):
+        approval_id = 0
+
+    approval = (
+        AccountApproval.objects.select_related("user").filter(id=approval_id).first()
+        if approval_id else None
+    )
+    if approval is None:
+        return JsonResponse({"ok": False, "error": "Request not found."}, status=404)
+
+    already = approval.status != AccountApproval.PENDING
+    if not already:
+        try:
+            if action == "approve":
+                approval.approve(reviewer=request.user)
+            else:
+                approval.reject(reviewer=request.user)
+        except Exception:  # pragma: no cover - never 500 the bell
+            logger.exception("approval action failed (id=%s) by user %s", approval_id, request.user.id)
+            return JsonResponse({"ok": False, "error": "Could not update that request."}, status=500)
+
+    remaining = list(
+        AccountApproval.objects.filter(status=AccountApproval.PENDING)
+        .select_related("user")
+        .order_by("-created_at")
+    )
+    verb = "approved" if action == "approve" else "rejected"
+    return JsonResponse({
+        "ok": True,
+        "email": approval.contact_email or (approval.user.email or ""),
+        "username": approval.user.username,
+        "result": approval.status,
+        "message": (f"Already {approval.get_status_display().lower()}."
+                    if already else f"{approval.user.username} {verb}."),
+        "pending_count": len(remaining),
+        "requests": [_approval_json(a) for a in remaining],
+    })
+
+
 @login_required(login_url="login")
 @require_POST
 def portfolio_import(request):
-    """Replace the user's holdings with the contents of an uploaded CSV."""
+    """Replace the user's holdings with an uploaded 'My Shares' file (CSV / Excel / PDF)."""
     from core_analysis.models import Holding
 
     upload = request.FILES.get("file")
     if not upload:
-        messages.error(request, "Please choose a CSV file to upload.")
+        messages.error(request, "Please choose a holdings file (CSV, Excel or PDF) to upload.")
         return redirect("portfolio")
-    if upload.size and upload.size > MAX_UPLOAD_BYTES:
-        messages.error(request, "That file is too large to be a holdings CSV.")
+    is_doc = (upload.name or "").lower().endswith(_DOC_EXTENSIONS)
+    limit = MAX_DOC_UPLOAD_BYTES if is_doc else MAX_UPLOAD_BYTES
+    if upload.size and upload.size > limit:
+        messages.error(request, "That file is too large to be a holdings report.")
         return redirect("portfolio")
 
     try:
-        text = upload.read().decode("utf-8-sig", errors="replace")
-        rows, skipped = parse_holdings_csv(text)
+        rows, skipped = parse_holdings_report(upload)
     except Exception:
-        logger.exception("CSV parse failed for user %s", request.user.id)
-        messages.error(request, "Could not read that file — is it a Meroshare 'My Shares' CSV?")
+        logger.exception("holdings parse failed for user %s", request.user.id)
+        messages.error(
+            request,
+            "Could not read that file — upload the Meroshare 'My Shares' export (CSV, Excel or PDF).",
+        )
         return redirect("portfolio")
 
     if not rows:
@@ -362,7 +527,7 @@ def portfolio_wacc_import(request):
     if not upload:
         messages.error(request, "Please choose your 'My WACC' report to upload.")
         return redirect("portfolio")
-    if upload.size and upload.size > MAX_WACC_UPLOAD_BYTES:
+    if upload.size and upload.size > MAX_DOC_UPLOAD_BYTES:
         messages.error(request, "That file is too large to be a WACC report.")
         return redirect("portfolio")
 

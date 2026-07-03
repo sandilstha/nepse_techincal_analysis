@@ -7,6 +7,8 @@
 (function () {
   "use strict";
   bindFileInputs();
+  bindHelpLinks();
+  initApprovals();          // admin notification bell — runs even with no holdings
   if (!window.PF_HAS_HOLDINGS) return;
 
   function el(id) { return document.getElementById(id); }
@@ -29,6 +31,17 @@
     });
   }
 
+  // The SOP is reached from the section-heading (?) icons in the template and the
+  // "methodology" link in the summary note; both open in a new tab so the user
+  // never loses their scenario input / filter state on the desk.
+  var SOP_URL = window.PF_SOP_URL || "/portfolio/sop/";
+  function bindHelpLinks() {           // template-rendered icons get the same behaviour
+    Array.prototype.forEach.call(document.querySelectorAll("a.pf-help"), function (a) {
+      a.target = "_blank";
+      a.rel = "noopener";
+    });
+  }
+
   function bindFileInputs() {
     Array.prototype.forEach.call(document.querySelectorAll(".pf-file-input"), function (input) {
       var wrap = input.closest(".pf-upload");
@@ -44,6 +57,118 @@
       input.addEventListener("change", syncName);
       syncName();
     });
+  }
+
+  // ── Admin notification bell — pending account requests ────────────────
+  // Staff only. Polls the approvals API, renders a dropdown, and approves /
+  // rejects inline (same server path as the admin action). Silently no-ops for
+  // non-staff, so ordinary users never see it.
+  function initApprovals() {
+    var wrap = el("pf-bell-wrap");
+    if (!wrap || !window.PF_IS_APPROVER) return;
+    var bell = el("pf-bell"), panel = el("pf-notif"), badge = el("pf-bell-badge");
+    var list = el("pf-notif-list"), count = el("pf-notif-count");
+    var open = false, busy = false;
+
+    function setBadge(n) {
+      if (!badge) return;
+      badge.textContent = n > 99 ? "99+" : String(n);
+      badge.classList.toggle("hidden", !n);
+      if (bell) bell.classList.toggle("has-pending", !!n);
+    }
+
+    function fmtWhen(iso) {
+      if (!iso) return "";
+      var t = Date.parse(iso);
+      if (isNaN(t)) return "";
+      var mins = Math.round((Date.now() - t) / 60000);
+      if (mins < 1) return "just now";
+      if (mins < 60) return mins + "m ago";
+      var hrs = Math.round(mins / 60);
+      if (hrs < 24) return hrs + "h ago";
+      return Math.round(hrs / 24) + "d ago";
+    }
+
+    function renderList(reqs) {
+      if (count) count.textContent = reqs.length ? reqs.length + " pending" : "";
+      if (!reqs.length) {
+        list.innerHTML = "<div class='pf-notif-empty'>No pending requests 🎉</div>";
+        return;
+      }
+      list.innerHTML = reqs.map(function (r) {
+        return "<div class='pf-notif-item' data-id='" + r.id + "'>" +
+          "<div class='pf-notif-who'>" +
+            "<span class='pf-notif-user'>" + esc(r.username) + "</span>" +
+            "<span class='pf-notif-email' title='" + esc(r.email) + "'>" + esc(r.email) + "</span>" +
+            "<span class='pf-notif-when'>" + esc(fmtWhen(r.requested_at)) + "</span>" +
+          "</div>" +
+          "<div class='pf-notif-actions'>" +
+            "<button type='button' class='pf-btn pf-btn-approve' data-action='approve' data-id='" + r.id + "'>Approve</button>" +
+            "<button type='button' class='pf-btn pf-btn-reject' data-action='reject' data-id='" + r.id + "'>Reject</button>" +
+          "</div></div>";
+      }).join("");
+    }
+
+    function load() {
+      fetch(window.PF_APPROVALS_URL, { headers: { Accept: "application/json" }, credentials: "same-origin" })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.ok || !d.is_approver) return;
+          setBadge(d.pending_count || 0);
+          renderList(d.requests || []);
+        })
+        .catch(function () {});
+    }
+
+    function act(id, action, btn) {
+      if (busy) return;
+      if (action === "reject" && !window.confirm("Reject this account request? The user stays inactive.")) return;
+      busy = true;
+      var item = btn.closest(".pf-notif-item");
+      if (item) item.classList.add("pf-notif-busy");
+      var body = "id=" + encodeURIComponent(id) + "&action=" + encodeURIComponent(action);
+      fetch(window.PF_APPROVAL_ACTION_URL, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": window.PF_CSRF || "",
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json"
+        },
+        credentials: "same-origin",
+        body: body
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          busy = false;
+          if (item) item.classList.remove("pf-notif-busy");
+          if (!d || !d.ok) return;
+          setBadge(d.pending_count || 0);
+          renderList(d.requests || []);
+        })
+        .catch(function () {
+          busy = false;
+          if (item) item.classList.remove("pf-notif-busy");
+        });
+    }
+
+    function toggle(next) {
+      open = (next == null) ? !open : next;
+      panel.hidden = !open;
+      bell.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) load();
+    }
+
+    bell.addEventListener("click", function (e) { e.stopPropagation(); toggle(); });
+    panel.addEventListener("click", function (e) {
+      var btn = e.target.closest ? e.target.closest("[data-action]") : null;
+      e.stopPropagation();
+      if (btn) act(btn.getAttribute("data-id"), btn.getAttribute("data-action"), btn);
+    });
+    document.addEventListener("click", function () { if (open) toggle(false); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && open) toggle(false); });
+
+    load();                     // initial badge + list
+    setInterval(load, 60000);   // refresh once a minute
   }
 
   fetch("/portfolio/api/data/", { headers: { Accept: "application/json" } })
@@ -71,8 +196,8 @@
     if (el("pf-asof")) el("pf-asof").textContent = d.as_of ? "Priced at " + d.as_of + " close" : "";
   }
 
-  function tile(label, val, sub, cls) {
-    return "<div class='pf-kpi'><span class='pf-kpi-label'>" + esc(label) + "</span>" +
+  function tile(label, val, sub, cls, help) {
+    return "<div class='pf-kpi'><span class='pf-kpi-label'>" + esc(label) + (help || "") + "</span>" +
       "<span class='pf-kpi-val " + (cls || "") + "'>" + val + "</span>" +
       "<span class='pf-kpi-sub'>" + esc(sub || "") + "</span></div>";
   }
@@ -364,6 +489,7 @@
     var note = el("pf-sum-note");
     if (note) {
       var base = "Expected price = LTP × (1 + β × NEPSE change%); Gain/Loss is the scenario move vs current value. " +
+        "β is estimated on weekly returns vs the NEPSE Index (thin-trading robust — <a href='" + SOP_URL + "#beta' target='_blank' rel='noopener'>methodology</a>). " +
         "Per-holding VaR is parametric (95%, √-time) on each holding's annualised volatility — 1W ≈ 5 sessions, 1M ≈ 20. " +
         "The Loss tiles show the DIVERSIFIED portfolio VaR (Z·σₚ·√h on the portfolio's own return series, so correlation lowers it below the sum of the columns); " +
         "on thin history they fall back to the undiversified column sum. " +

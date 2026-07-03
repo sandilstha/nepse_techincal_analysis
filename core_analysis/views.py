@@ -29,6 +29,7 @@ from core_analysis.services.strategy_tester import run_t3ma_macd_ribbon_simulati
 from core_analysis.services.stage_analysis import calculate_stage_analysis
 from core_analysis.services.RGG_Chart import run_rrg_simulation
 from core_analysis.services.RGG_indices import NEPSE_INDEX_LABELS, ordered_nepse_indices, run_rrg_indices_simulation
+from core_analysis.services.seasonal_returns import build_seasonal_payload
 from core_analysis.services.advanced_market_structure import run_advanced_market_structure_analysis
 from core_analysis.services.support_resistance import (
     DEFAULT_LEVEL_FAMILIES,
@@ -572,6 +573,11 @@ PUBLIC_WORKBENCH_TABS = {
     "rrg_indices",         # RRG Analytics — Indices vs NEPSE
 }
 
+# Seasonal Return lives inside the (staff-only) Workbench/Data area next to the Raw
+# Inventory Manager, so its payload is built for either of those tabs — the two
+# share a sub-tab bar and switching between them is client-side.
+_WORKBENCH_DATA_TABS = {"inventory", "rrg_seasonal"}
+
 
 def _staff_or_public_tab(view):
     """Open the public desks to everyone; defer to the staff gate otherwise.
@@ -650,6 +656,7 @@ def build_dashboard_context(request):
     rrg_indices_trails = []
     rrg_indices_skipped = []
     rrg_indices_benchmark_points = []
+    seasonal = None
     imm_data_upload_date = None
 
     # Per-tab symbols
@@ -701,7 +708,9 @@ def build_dashboard_context(request):
     imm_to   = g.get("imm_to_date",   g.get("to_date",   "")).strip()
     stage_from = g.get("stage_from_date", g.get("from_date", "")).strip()
     stage_to   = g.get("stage_to_date",   g.get("to_date",   "")).strip()
-    support_resistance_from = g.get("support_resistance_from_date", g.get("from_date", "")).strip()
+    support_resistance_from = g.get("support_resistance_from_date", g.get("from_date", "")).strip
+    
+    ()
     support_resistance_to = g.get("support_resistance_to_date", g.get("to_date", "")).strip()
     rrg_from = g.get("rrg_from_date", g.get("from_date", "")).strip()
     rrg_to   = g.get("rrg_to_date",   g.get("to_date",   "")).strip()
@@ -1135,6 +1144,12 @@ def build_dashboard_context(request):
             )
             rrg_indices_benchmark_points = _build_benchmark_sparkline(bench_df)
 
+    # Seasonal Return — monthly seasonality of the NEPSE indices, computed from the
+    # local index table (cached). Built for the Workbench/Data tabs so the Seasonal
+    # pane always has data when switched to from the Raw Inventory Manager.
+    if active_tab in _WORKBENCH_DATA_TABS:
+        seasonal = build_seasonal_payload()
+
     return {
         "records": queryset,
 
@@ -1241,6 +1256,9 @@ def build_dashboard_context(request):
         "rrg_indices_to_date": rrg_indices_to,
         "rrg_indices_lookback": g.get("rrg_indices_lookback", "14"),
         "rrg_indices_tail_length": g.get("rrg_indices_tail_length", "30"),
+
+        # RRG Seasonal Return
+        "seasonal": seasonal,
 
         # EMA parameters
         "ema_take_profit_pct": g.get("ema_take_profit_pct", "15"),

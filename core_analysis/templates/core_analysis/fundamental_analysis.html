@@ -107,6 +107,20 @@
     }
     .fa-subtab:hover { opacity: .85; }
     .fa-subtab.active { opacity: 1; color: var(--accent, #4a90e2); border-bottom-color: var(--accent, #4a90e2); }
+    .fa-help {
+      align-self: center;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; margin: 0 8px 8px 2px; border-radius: 50%;
+      font: 800 11px/1 'Manrope', sans-serif; text-decoration: none;
+      color: inherit; border: 1px solid var(--line, rgba(128,128,128,.3));
+      background: var(--surface, rgba(128,128,128,.08)); opacity: .72;
+      flex: 0 0 auto;
+      transition: color .15s, border-color .15s, background .15s, opacity .15s;
+    }
+    .fa-help:hover {
+      color: var(--accent, #4a90e2); border-color: var(--accent, #4a90e2);
+      background: rgba(74,144,226,.12); opacity: 1; text-decoration: none;
+    }
 
     /* ── Morningstar-style research ────────────────────────────────────── */
     .ms-summary {
@@ -250,7 +264,12 @@
     .gv-grid { stroke: var(--line, rgba(128,128,128,.18)); stroke-width: 1; }
     .gv-tick { fill: currentColor; opacity: .55; }
     .gv-axis-label { fill: currentColor; opacity: .7; }
-    .gv-dotlabel { fill: currentColor; opacity: .8; font-size: 10px; }
+    /* Halo (stroke matches the panel background) keeps the surviving labels
+       crisp where they sit over dots / gridlines, in both themes. */
+    .gv-dotlabel { fill: currentColor; opacity: .85; font-size: 10px;
+      paint-order: stroke; stroke: var(--surface, #0b1220); stroke-width: 2.5px;
+      stroke-linejoin: round; }
+    .gv-dotlabel-sel { opacity: 1; font-weight: 700; }
 
     .gv-cap-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
     .gv-cap-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; margin-right: 4px; }
@@ -296,6 +315,8 @@
       <div class="fa-subtabs" id="fa-subtabs" role="tablist">
         <button type="button" class="fa-subtab active" data-subtab="statement" role="tab" aria-selected="true">Financial Statement</button>
         <button type="button" class="fa-subtab" data-subtab="morningstar" role="tab" aria-selected="false">Morningstar</button>
+        <a class="fa-help" href="{% url 'fundamental_sop' %}#morningstar" target="_blank" rel="noopener"
+           title="Morningstar tab methodology SOP" aria-label="Morningstar tab methodology SOP">?</a>
       </div>
       <button type="button" id="mi-theme-btn" class="fa-btn ghost" title="Switch theme" aria-label="Switch theme">Light</button>
     </div>

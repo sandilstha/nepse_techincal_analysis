@@ -194,13 +194,6 @@
     return "F";
   }
 
-  function ksLookup(data) {
-    var ks = (data.statements || []).find(function (s) { return s.type === "KS"; });
-    var map = {};
-    if (ks) ks.rows.forEach(function (r) { map[r.code] = r.amount; });
-    return map;
-  }
-
   // Compound annual growth rate across a trend series' points (first→last).
   function cagr(points) {
     if (!points || points.length < 2) return null;
@@ -244,17 +237,20 @@
     var host = els.morningstar;
     host.innerHTML = "";
 
-    var ks = ksLookup(data);
-    var price = ks["cb_ks_512_market_value_per_share"];
-    var eps = ks["cb_ks_509_eps_annualized"];
-    var pe = ks["cb_ks_510_reported_pe_annualized"];
-    var bvps = ks["cb_ks_511_book_value_per_share"];
-    var dps = ks["cb_ks_513_dividend_per_share_rs"];
-    var roe = ks["cb_ks_508_return_on_equity_ttm"];
-    var roa = ks["cb_ks_507_return_on_asset_ttm"];
-    var grossMargin = ks["cb_ks_504_margin_mrq_percent"];
-    var revenue = ks["cb_ks_501_total_revenue_rs_000"];
-    var netIncome = ks["cb_ks_505_net_income_rs_000"];
+    // Sector-agnostic: read canonical metric keys the backend resolves by name
+    // (see _ks_key), NOT raw item codes — those are numbered differently per
+    // sector, so hard-coding "cb_" bank codes only worked for commercial banks.
+    var ks = data.ks || {};
+    var price = ks.price;
+    var eps = ks.eps;
+    var pe = ks.pe;
+    var bvps = ks.bvps;
+    var dps = ks.dps;
+    var roe = ks.roe;
+    var roa = ks.roa;
+    var grossMargin = ks.gross_margin;
+    var revenue = ks.revenue;
+    var netIncome = ks.net_income;
 
     var pb = (price != null && bvps) ? price / bvps : null;
     var divYield = (dps != null && price) ? dps / price : null;
@@ -1043,12 +1039,16 @@
     yl.setAttribute("transform", "rotate(-90 14 " + ((y0 + y1) / 2) + ")");
     yl.textContent = "Value →"; svg.appendChild(yl);
 
-    results.forEach(function (r) {
+    // Draw every dot first (labels paint on top of them). Each dot keeps its
+    // full hover tooltip, so a name is identifiable even when its label is
+    // dropped below.
+    var pts = results.map(function (r) {
       var isSel = r.ticker === selSymbol;
       var cx = sx(r.growth), cy = sy(r.value);
+      var rdot = isSel ? 7 : 4.5;
       var dot = document.createElementNS(NS, "circle");
       dot.setAttribute("cx", cx); dot.setAttribute("cy", cy);
-      dot.setAttribute("r", isSel ? 7 : 4.5);
+      dot.setAttribute("r", rdot);
       dot.setAttribute("class", "gv-dot-" + (r.score || 1) + (isSel ? " gv-dot-sel" : ""));
       var title = document.createElementNS(NS, "title");
       title.textContent = r.ticker + " — " + (r.segment || "Unclassified") +
@@ -1056,7 +1056,55 @@
         ", Growth " + r.growth + ", Value " + r.value + " (score " + r.score + ")";
       dot.appendChild(title);
       svg.appendChild(dot);
-      txt(cx + 6, cy - 5, r.ticker, "gv-dotlabel", "start");
+      return { r: r, cx: cx, cy: cy, isSel: isSel, rdot: rdot };
+    });
+
+    // Priority-ordered, collision-avoiding labels. Labelling every one of ~100
+    // dots turned dense clusters into an unreadable wall of overlapping text.
+    // Instead: label the searched company first, then the highest-scoring /
+    // biggest names, and SKIP any label that would overlap one already placed or
+    // fall outside the plot. Skipped names remain on their dot's hover tooltip.
+    var CW = 5.6, LH = 11;                 // ~char width & line height at 10px
+    var placed = [];
+    function hits(box) {
+      for (var i = 0; i < placed.length; i++) {
+        var b = placed[i];
+        if (box.x < b.x + b.w && box.x + box.w > b.x &&
+            box.y < b.y + b.h && box.y + box.h > b.y) return true;
+      }
+      return false;
+    }
+    function within(box) {
+      return box.x >= x0 - 2 && box.x + box.w <= x1 + 2 &&
+             box.y >= y1 - 2 && box.y + box.h <= y0 + 2;
+    }
+    var order = pts.slice().sort(function (a, b) {
+      if (a.isSel !== b.isSel) return a.isSel ? -1 : 1;          // selection first
+      if ((b.r.score || 0) !== (a.r.score || 0)) return (b.r.score || 0) - (a.r.score || 0);
+      return (b.r.market_cap || 0) - (a.r.market_cap || 0);     // then biggest
+    });
+    order.forEach(function (p) {
+      var label = p.r.ticker || "";
+      if (!label) return;
+      var w = label.length * CW, h = LH, g = p.rdot + 3;
+      // Try four anchor positions around the dot: right, left, above, below.
+      var cands = [
+        { x: p.cx + g,        y: p.cy - h / 2 },
+        { x: p.cx - g - w,    y: p.cy - h / 2 },
+        { x: p.cx - w / 2,    y: p.cy - g - h },
+        { x: p.cx - w / 2,    y: p.cy + g },
+      ];
+      var box = null;
+      for (var i = 0; i < cands.length; i++) {
+        var c = { x: cands[i].x, y: cands[i].y, w: w, h: h };
+        if (within(c) && !hits(c)) { box = c; break; }
+      }
+      // Always label the searched company, even if crowded.
+      if (!box && p.isSel) box = { x: p.cx + g, y: p.cy - h / 2, w: w, h: h };
+      if (!box) return;
+      placed.push(box);
+      txt(box.x, box.y + h - 2.5, label,
+          "gv-dotlabel" + (p.isSel ? " gv-dotlabel-sel" : ""), "start");
     });
     return svg;
   }

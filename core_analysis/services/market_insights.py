@@ -103,14 +103,12 @@ SECTOR_LABELS = {
 }
 
 # Full index set for the sub-index comparison chart, in display order: the NEPSE
-# headline first, then the aggregate (sensitive / float) indices, then every
-# sector sub-index. Names are NepseMarketIndex.sector_name values (matched
-# case-insensitively by the DB, like the other index lookups in this module).
+# headline first, then every sector sub-index. The non-sector broad-market gauges
+# (Sensitive / Float / Sensitive Float) are intentionally omitted. Names are
+# NepseMarketIndex.sector_name values (matched case-insensitively by the DB, like
+# the other index lookups in this module).
 COMPARISON_INDICES = (
     ("NEPSE INDEX", "NEPSE"),
-    ("SENSITIVE INDEX", "Sensitive"),
-    ("FLOAT INDEX", "Float"),
-    ("SENSITIVE FLOAT INDEX", "Sensitive Float"),
     ("BANKING SUBINDEX", "Banking"),
     ("DEVELOPMENT BANK INDEX", "Dev. Bank"),
     ("FINANCE INDEX", "Finance"),
@@ -127,7 +125,7 @@ COMPARISON_INDICES = (
 )
 
 # Default / maximum window (trading sessions) for the comparison chart. The cap
-# keeps the multi-series payload light — 17 indices × this many daily closes.
+# keeps the multi-series payload light — 14 indices × this many daily closes.
 COMPARISON_SESSIONS = 250
 COMPARISON_MAX_SESSIONS = 800
 COMPARISON_CACHE_KEY = "market_insights_subindex_compare"
@@ -221,7 +219,11 @@ def _enrich_live(rows, sector_map):
         enriched.append({
             "symbol": symbol,
             "name": _live_get(r, "securityName", "security_name"),
-            "sector": sector_map.get(symbol) or "Other",
+            # Fallback when a scrip's sector hasn't synced yet (usually a new
+            # listing). "Uncategorized" — NOT "Other" — so it doesn't collide
+            # with NEPSE's real "Others" sector; it self-corrects once the
+            # sector backfills.
+            "sector": sector_map.get(symbol) or "Uncategorized",
             "ltp": _round(close),
             "prev": _round(prev),
             "open": _round(_f(_live_get(r, "openPrice", "open_price"))),
@@ -252,7 +254,7 @@ def _enrich(rows, sector_map):
         enriched.append({
             "symbol": r["symbol"],
             "name": r["security_name"],
-            "sector": sector_map.get(r["symbol"]) or "Other",
+            "sector": sector_map.get(r["symbol"]) or "Uncategorized",
             "ltp": _round(close),
             "prev": _round(prev),
             "open": _round(_f(r["open_price"])),
@@ -718,7 +720,7 @@ def _heatmap(enriched, limit=HEATMAP_POOL):
     return [
         {
             "symbol": s["symbol"],
-            "sector": s["sector"] or "Other",
+            "sector": s["sector"] or "Uncategorized",
             "pct": s["pct"],
             "ltp": s["ltp"],
             "turnover": s["turnover"],

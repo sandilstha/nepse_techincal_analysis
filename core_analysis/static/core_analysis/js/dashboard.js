@@ -1504,6 +1504,11 @@
     let rrgIndicesLockedDomain = null;
     let rrgIndicesLastDomain = null;
     let rrgIndicesAnimationTimer = null;
+    // Current animation frame (1-based); null when not animating. Drives the head
+    // forward from the initial date (frame 1) to the last date (frame = maxTail),
+    // so each index visibly travels across the plot instead of the head staying
+    // pinned at the latest date while only the tail grows behind it.
+    let rrgIndicesAnimationFrame = null;
 
     const getRrgIndicesMaxTail = () => {
       const trails = readRrgIndicesJson('rrg-indices-trails-data');
@@ -1561,6 +1566,7 @@
           clearInterval(rrgIndicesAnimationTimer);
           rrgIndicesAnimationTimer = null;
         }
+        rrgIndicesAnimationFrame = null;
         animateBtn.innerHTML = '&#9658; Animate';
         animateBtn.classList.remove('active');
       };
@@ -1607,16 +1613,16 @@
           return;
         }
         const maxTail = getRrgIndicesMaxTail();
-        let nextTail = 1;
+        let frame = 1;
         animateBtn.textContent = 'Animating';
         animateBtn.classList.add('active');
-        syncRrgIndicesTailControls(nextTail);
+        rrgIndicesAnimationFrame = frame;   // head starts at the initial date
         drawRrgIndicesChart();
         rrgIndicesAnimationTimer = setInterval(() => {
-          nextTail += 1;
-          syncRrgIndicesTailControls(nextTail);
+          frame += 1;                       // …and advances toward the last date
+          rrgIndicesAnimationFrame = frame;
           drawRrgIndicesChart();
-          if (nextTail >= maxTail) stopAnimation();
+          if (frame >= maxTail) stopAnimation();
         }, 180);
       });
     };
@@ -1651,10 +1657,35 @@
         acc.get(row.symbol).push(row);
         return acc;
       }, new Map());
-      const trails = Array.from(allTrailsBySymbol.values()).flatMap((rows) => {
+      // When animating, accumulate each index's trail up to the current frame and
+      // put its head at that frame — so the head moves from the initial date to
+      // the last date. Otherwise show the last `tailLength` bars with the head at
+      // the latest date. headBySymbol carries the head position of each index for
+      // the labelled dots.
+      const isAnimating = Number.isInteger(rrgIndicesAnimationFrame);
+      const headBySymbol = new Map();
+      const trails = Array.from(allTrailsBySymbol.entries()).flatMap(([symbol, rows]) => {
         rows.sort((a, b) => Number(a.step) - Number(b.step));
-        return rows.slice(-tailLength).map((row, index) => ({ ...row, step: index + 1 }));
+        const windowRows = isAnimating
+          ? rows.slice(0, Math.max(1, Math.min(rrgIndicesAnimationFrame, rows.length)))
+          : rows.slice(-tailLength);
+        if (windowRows.length) headBySymbol.set(symbol, windowRows[windowRows.length - 1]);
+        return windowRows.map((row, index) => ({ ...row, step: index + 1 }));
       });
+      // Head dots/labels: the fixed latest date when static; the advancing frame
+      // when animating (so the labelled dot travels with the trail head).
+      const headPoints = points.map((p) => {
+        const h = headBySymbol.get(p.symbol);
+        return (isAnimating && h)
+          ? { ...p, RS_Ratio: h.RS_Ratio, RS_Momentum: h.RS_Momentum,
+              Quadrant: h.Quadrant, business_date: h.business_date }
+          : p;
+      });
+      // Current animation date (indices share one trading calendar) for the header.
+      const animDate = isAnimating
+        ? Array.from(headBySymbol.values())
+            .reduce((d, h) => (h && h.business_date > d ? h.business_date : d), '')
+        : '';
       const benchmark = readJson('rrg-indices-benchmark-data')
         .filter((row) => Number.isFinite(Number(row.close)));
 
@@ -1666,7 +1697,11 @@
       const plotBottom = height - 58;
       const plotWidth = plotRight - plotLeft;
       const plotHeight = plotBottom - plotTop;
-      const coords = points.concat(trails);
+      // Fit to the FULL extent during animation so the axes stay fixed and the
+      // dots visibly move within a stable frame (instead of rescaling each tick).
+      const coords = isAnimating
+        ? points.concat(Array.from(allTrailsBySymbol.values()).flat())
+        : headPoints.concat(trails);
       let min;
       let max;
       if (rrgIndicesLockedDomain) {
@@ -1739,7 +1774,7 @@
         const latest = benchmark[benchmark.length - 1];
         sparkNodes = `
           <text x="${plotLeft}" y="19" fill="#111827" font-size="19" font-weight="700">${escapeSvg('NEPSE RRG Indices')}</text>
-          <text x="${plotLeft + 198}" y="19" fill="#334155" font-size="13">${escapeSvg(latest.business_date || '')}</text>
+          <text x="${plotLeft + 198}" y="19" fill="#334155" font-size="13">${escapeSvg((isAnimating && animDate) ? animDate : (latest.business_date || ''))}</text>
           <rect x="${sparkLeft}" y="${sparkTop}" width="${sparkRight - sparkLeft}" height="${sparkBottom - sparkTop}" fill="#f3f4f6"></rect>
           <path d="${areaPath}" fill="#e5e7eb"></path>
           <path d="${linePath}" fill="none" stroke="#c7c7c7" stroke-width="3" stroke-linejoin="round"></path>
@@ -1758,7 +1793,7 @@
       const trailNodes = Array.from(trailsBySymbol.entries()).map(([symbol, rows]) => {
         rows.sort((a, b) => Number(a.step) - Number(b.step));
         if (rows.length < 2) return '';
-        const point = points.find((row) => row.symbol === symbol) || rows[rows.length - 1];
+        const point = headBySymbol.get(symbol) || points.find((row) => row.symbol === symbol) || rows[rows.length - 1];
         const path = rows
           .map((row, index) => `${index === 0 ? 'M' : 'L'} ${scaleX(Number(row.RS_Ratio)).toFixed(2)} ${scaleY(Number(row.RS_Momentum)).toFixed(2)}`)
           .join(' ');
@@ -1770,7 +1805,7 @@
         return `<path d="${path}" fill="none" stroke="${colorFor(point.Quadrant)}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.42"${arrowAttr}></path>${trailDots}`;
       }).join('');
 
-      const pointNodes = points.map((point) => {
+      const pointNodes = headPoints.map((point) => {
         const x = scaleX(Number(point.RS_Ratio));
         const y = scaleY(Number(point.RS_Momentum));
         const rightSide = Number(point.RS_Ratio) >= 100;

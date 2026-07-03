@@ -38,7 +38,30 @@
       </div>
     </div>
     <div class="mi-controls">
+      {% if is_approver %}
+      <!-- Account-request notifications (admin only): pending signups + inline approve/reject. -->
+      <div class="pf-bell-wrap" id="pf-bell-wrap">
+        <button type="button" class="mi-icon-btn pf-bell" id="pf-bell"
+                title="Account requests" aria-haspopup="true" aria-expanded="false" aria-controls="pf-notif">
+          <span class="pf-bell-ico" aria-hidden="true">🔔</span>
+          <span class="pf-bell-badge{% if not pending_approvals %} hidden{% endif %}" id="pf-bell-badge">{{ pending_approvals }}</span>
+        </button>
+        <div class="pf-notif" id="pf-notif" role="menu" aria-label="Pending account requests" hidden>
+          <div class="pf-notif-head">
+            <span>Account requests</span>
+            <span class="pf-notif-count" id="pf-notif-count"></span>
+          </div>
+          <div class="pf-notif-list" id="pf-notif-list">
+            <div class="pf-notif-empty">Loading…</div>
+          </div>
+          <div class="pf-notif-foot">
+            <a href="{% url 'admin:core_analysis_accountapproval_changelist' %}" target="_blank" rel="noopener">Manage in admin →</a>
+          </div>
+        </div>
+      </div>
+      {% endif %}
       <span class="pf-user">{{ request.user.username }}</span>
+      <a href="{% url 'portfolio_sop' %}" class="mi-icon-btn" title="How every metric is calculated — methodology SOP">Methodology</a>
       <a href="{% url 'market_insights' %}" class="mi-icon-btn" title="Home">Home</a>
       <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch theme">Light</button>
       <form method="post" action="{% url 'logout' %}" class="pf-logout">
@@ -63,23 +86,24 @@
   <section class="pf-import-card">
     <div class="pf-import-text">
       <h2>Import holdings</h2>
-      <p>Upload your Meroshare <b>“My Shares”</b> CSV (Scrip · Current Balance · Last Closing Price · LTP).
+      <p>Upload your Meroshare <b>“My Shares”</b> export — CSV, Excel or PDF
+         (Scrip · Current Balance · Last Closing Price · LTP).
          Holdings are re-priced live against the latest NEPSE close.</p>
     </div>
     <form class="pf-import-form" method="post" action="{% url 'portfolio_import' %}" enctype="multipart/form-data">
       {% csrf_token %}
       <span class="pf-upload">
-        <input class="pf-file-input" type="file" name="file" accept=".csv,text/csv" id="pf-initial-file" required>
-        <label class="pf-file-picker" for="pf-initial-file">Choose CSV</label>
+        <input class="pf-file-input" type="file" name="file" accept=".csv,.xlsx,.xlsm,.xls,.pdf" id="pf-initial-file" required>
+        <label class="pf-file-picker" for="pf-initial-file">Choose file</label>
         <span class="pf-file-name" data-empty-label="No file selected">No file selected</span>
       </span>
-      <button type="submit" class="pf-btn pf-btn-primary">Upload CSV</button>
+      <button type="submit" class="pf-btn pf-btn-primary">Upload holdings</button>
     </form>
   </section>
   <div class="pf-empty" id="pf-empty">
     <div class="pf-empty-icon">📂</div>
     <h3>No holdings yet</h3>
-    <p>Upload your Meroshare CSV above to see your portfolio value, sector exposure, concentration and risk.</p>
+    <p>Upload your Meroshare “My Shares” file (CSV, Excel or PDF) above to see your portfolio value, sector exposure, concentration and risk.</p>
   </div>
   {% else %}
 
@@ -90,11 +114,12 @@
       <span class="pf-toolbar-asof" id="pf-asof"></span>
     </div>
     <div class="pf-toolbar-actions">
-      <form class="pf-toolbar-form" method="post" action="{% url 'portfolio_import' %}" enctype="multipart/form-data">
+      <form class="pf-toolbar-form" method="post" action="{% url 'portfolio_import' %}" enctype="multipart/form-data"
+            title="Upload your Meroshare 'My Shares' export (CSV, Excel or PDF) — replaces current holdings">
         {% csrf_token %}
         <span class="pf-upload">
-          <input class="pf-file-input" type="file" name="file" accept=".csv,text/csv" id="pf-holdings-file" required>
-          <label class="pf-file-picker" for="pf-holdings-file">Holdings CSV</label>
+          <input class="pf-file-input" type="file" name="file" accept=".csv,.xlsx,.xlsm,.xls,.pdf" id="pf-holdings-file" required>
+          <label class="pf-file-picker" for="pf-holdings-file">Holdings file</label>
           <span class="pf-file-name" data-empty-label="No file selected">No file selected</span>
         </span>
         <button type="submit" class="pf-btn pf-btn-primary">Update Holdings</button>
@@ -105,7 +130,7 @@
             title="Upload your broker 'My WACC' report to add cost basis (WACC, Book Value, Paper P/L)">
         {% csrf_token %}
         <span class="pf-upload">
-          <input class="pf-file-input" type="file" name="file" accept=".csv,.xlsx,.xls,.pdf" id="pf-wacc-file" required>
+          <input class="pf-file-input" type="file" name="file" accept=".csv,.xlsx,.xlsm,.xls,.pdf" id="pf-wacc-file" required>
           <label class="pf-file-picker" for="pf-wacc-file">WACC report</label>
           <span class="pf-file-name" data-empty-label="No file selected">No file selected</span>
         </span>
@@ -123,11 +148,13 @@
   </section>
 
   <!-- ══ Overview ═════════════════════════════════════════════════════ -->
-  <div class="pf-section"><span>Overview</span></div>
+  <div class="pf-section"><span>Overview
+    <a class="pf-help" href="{% url 'portfolio_sop' %}#overview" title="Overview KPIs — how each tile is calculated">?</a></span></div>
   <div class="pf-kpis" id="pf-kpis"></div>
 
   <!-- ══ Portfolio Summary ════════════════════════════════════════════ -->
-  <div class="pf-section"><span>Portfolio Summary</span></div>
+  <div class="pf-section"><span>Portfolio Summary
+    <a class="pf-help" href="{% url 'portfolio_sop' %}#portfolio-summary" title="Portfolio Summary desk — full methodology">?</a></span></div>
   <div class="pf-card pf-summary-card">
     <div class="pf-sum-controls">
       <div class="pf-sum-idx">
@@ -198,7 +225,8 @@
   </div>
 
   <!-- ══ Risk & Allocation ════════════════════════════════════════════ -->
-  <div class="pf-section"><span>Risk &amp; Allocation</span></div>
+  <div class="pf-section"><span>Risk &amp; Allocation
+    <a class="pf-help" href="{% url 'portfolio_sop' %}#var" title="Risk methodology — VaR, stress, factor model, liquidity">?</a></span></div>
 
   <!-- Row 1: Compliance · Value at Risk -->
   <div class="pf-grid pf-risk-market-grid">
@@ -207,7 +235,8 @@
       <div class="pf-var" id="pf-var"></div>
     </div>
     <div class="pf-card">
-      <div class="pf-card-head">Stress Scenarios</div>
+      <div class="pf-card-head">Stress Scenarios
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#stress" title="Stress scenarios — beta-propagated market shocks">?</a></div>
       <div class="pf-stress" id="pf-stress"></div>
     </div>
   </div>
@@ -216,17 +245,20 @@
   <div class="pf-grid-3">
     <div class="pf-card">
       <div class="pf-card-head pf-compliance-head">
-        <span>Compliance &amp; Risk Limits</span>
+        <span>Compliance &amp; Risk Limits
+          <a class="pf-help" href="{% url 'portfolio_sop' %}#compliance" title="Policy limits — every check, watch &amp; breach threshold">?</a></span>
         <span class="pf-compliance-summary" id="pf-compliance-summary"></span>
       </div>
       <div class="pf-compliance" id="pf-compliance"></div>
     </div>
     <div class="pf-card">
-      <div class="pf-card-head">Risk Decomposition — Factor Model</div>
+      <div class="pf-card-head">Risk Decomposition — Factor Model
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#factor-model" title="Factor model — market vs stock-specific risk split">?</a></div>
       <div class="pf-factors" id="pf-factors"></div>
     </div>
     <div class="pf-card">
-      <div class="pf-card-head">Liquidity Risk — Days to Liquidate</div>
+      <div class="pf-card-head">Liquidity Risk — Days to Liquidate
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#liquidity" title="Liquidity — ADV, participation rate, days-to-liquidate">?</a></div>
       <div class="pf-liq" id="pf-liq"></div>
     </div>
   </div>
@@ -267,7 +299,14 @@
     });
   })();
 </script>
-<script>window.PF_HAS_HOLDINGS = {% if has_holdings %}true{% else %}false{% endif %};</script>
+<script>
+  window.PF_HAS_HOLDINGS = {% if has_holdings %}true{% else %}false{% endif %};
+  window.PF_SOP_URL = "{% url 'portfolio_sop' %}";
+  window.PF_IS_APPROVER = {% if is_approver %}true{% else %}false{% endif %};
+  window.PF_CSRF = "{{ csrf_token }}";
+  window.PF_APPROVALS_URL = "{% url 'portfolio_approvals_api' %}";
+  window.PF_APPROVAL_ACTION_URL = "{% url 'portfolio_approval_action' %}";
+</script>
 <script src="{% static 'core_analysis/js/portfolio.js' %}?v={{ asset_version }}"></script>
 </body>
 </html>
