@@ -81,6 +81,304 @@
 }
 .pf-logout { display: inline; margin: 0; }
 
+/* Multi-portfolio selector and manager. */
+.pf-portfolio-board {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  margin: 14px 0;
+}
+.pf-portfolio-focus {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 4px 6px;
+}
+.pf-eyebrow {
+  font: 800 10px/1 'Manrope', sans-serif;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.pf-portfolio-focus h2 {
+  margin: 0;
+  color: var(--ink-1);
+  font: 800 26px/1.05 'Manrope', sans-serif;
+  overflow-wrap: anywhere;
+}
+.pf-portfolio-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pf-portfolio-meta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  font: 700 10.5px/1 'Manrope', sans-serif;
+}
+.pf-portfolio-switch {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.pf-selector-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+  margin: 0;
+}
+.pf-selector-form label {
+  margin: 0;
+  color: var(--ink-3);
+  font: 800 10px/1 'Manrope', sans-serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pf-selector-form select,
+.pf-manager-form input,
+.pf-manager-form select {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  padding: 7px 10px;
+  font: 700 12px/1 'Manrope', sans-serif;
+}
+.pf-selector-form select {
+  width: min(320px, 100%);
+}
+.pf-selector-form select:focus,
+.pf-manager-form input:focus,
+.pf-manager-form select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.pf-portfolio-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-gutter: stable;
+}
+.pf-portfolio-tab {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 132px;
+  max-width: 220px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.pf-portfolio-tab span {
+  color: var(--ink-1);
+  font: 800 13px/1.1 'Manrope', sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pf-portfolio-tab small {
+  color: var(--ink-3);
+  font: 700 10px/1 'Manrope', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.pf-portfolio-tab:hover,
+.pf-portfolio-tab.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  text-decoration: none;
+}
+.pf-tab-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+}
+.pf-tab-wrap .pf-portfolio-tab {
+  flex: 1 1 auto;
+  padding-right: 30px;          /* reserve room for the rename pencil */
+}
+.pf-tab-rename {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .12s ease, color .12s ease, border-color .12s ease;
+}
+.pf-tab-wrap:hover .pf-tab-rename,
+.pf-tab-wrap.active .pf-tab-rename,
+.pf-tab-rename:focus-visible {
+  opacity: 1;
+}
+.pf-tab-rename:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--surface-1);
+}
+.pf-portfolio-manager {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--line);
+  padding-top: 11px;
+}
+.pf-portfolio-manager summary {
+  width: max-content;
+  cursor: pointer;
+  color: var(--accent);
+  font: 800 12px/1 'Manrope', sans-serif;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.pf-manager-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  margin-top: 12px;
+}
+.pf-manager-form {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(120px, .7fr) auto;
+  gap: 8px;
+  align-items: end;
+  margin: 0;
+}
+.pf-manager-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.pf-manager-form label span {
+  color: var(--ink-3);
+  font: 800 9.5px/1 'Manrope', sans-serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.pf-manager-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  margin: 0;
+}
+.pf-manager-actions .pf-btn,
+.pf-archived-row .pf-btn {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 11.5px;
+}
+.pf-portfolio-board .pf-btn-ghost:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.pf-archived-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 14px;
+}
+.pf-archived-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(120px, auto) auto auto auto auto;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.pf-archived-name {
+  min-width: 0;
+  color: var(--ink-1);
+  font: 800 12.5px/1.2 'Manrope', sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pf-archived-meta {
+  color: var(--ink-3);
+  font: 700 10.5px/1 'Manrope', sans-serif;
+  white-space: nowrap;
+}
+@media (max-width: 1180px) {
+  .pf-portfolio-board,
+  .pf-manager-grid {
+    grid-template-columns: 1fr;
+  }
+  .pf-selector-form {
+    justify-content: flex-start;
+  }
+  .pf-manager-actions {
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 760px) {
+  .pf-portfolio-board {
+    padding: 12px;
+  }
+  .pf-portfolio-focus h2 {
+    font-size: 22px;
+  }
+  .pf-selector-form,
+  .pf-manager-form {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+  .pf-selector-form label {
+    white-space: normal;
+  }
+  .pf-selector-form select,
+  .pf-manager-form .pf-btn,
+  .pf-manager-actions .pf-btn {
+    width: 100%;
+  }
+  .pf-portfolio-tab {
+    min-width: 148px;
+  }
+  .pf-archived-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+}
+
 /* ── Flash messages ──────────────────────────────────────────────────────── */
 .pf-flash { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
 .pf-flash-item {

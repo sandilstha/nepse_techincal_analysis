@@ -96,8 +96,18 @@ class PortfolioAdmin(admin.ModelAdmin):
     The changelist lists one row per uploaded portfolio with its owner and how
     many holdings / cost rows it carries; drill in to see the actual positions.
     """
-    list_display = ("name", "user", "holdings_count", "costs_count", "created_at", "updated_at")
-    list_filter = ("created_at", "updated_at")
+    list_display = (
+        "name",
+        "user",
+        "portfolio_type",
+        "is_default",
+        "is_archived",
+        "holdings_count",
+        "costs_count",
+        "created_at",
+        "updated_at",
+    )
+    list_filter = ("portfolio_type", "is_default", "is_archived", "created_at", "updated_at")
     search_fields = ("user__username", "user__email", "name", "holdings__symbol")
     readonly_fields = ("created_at", "updated_at")
     date_hierarchy = "updated_at"
