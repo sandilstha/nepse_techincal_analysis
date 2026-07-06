@@ -48,6 +48,10 @@ rendered from the `seasonal` context payload (no client fetch).
     table.season-matrix .savg { border-left: 2px solid var(--line, rgba(128,128,128,.4)); font-weight: 700; }
     .season-note { font-size: 11.5px; color: var(--ink-3, #94a3b8); margin-top: 12px; line-height: 1.5; }
     .season-empty { padding: 30px; text-align: center; color: var(--ink-3, #94a3b8); }
+    .season-help { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px;
+      margin-left: 5px; border-radius: 50%; border: 1px solid var(--line, rgba(128,128,128,.45)); color: var(--ink-3, #94a3b8);
+      font-size: 9.5px; font-weight: 700; line-height: 1; cursor: help; vertical-align: middle; }
+    .season-help:hover { color: var(--ink-1, #e7eefc); border-color: var(--accent, #4c8dff); }
     .season-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
     .season-card-head h6 { margin: 0; }
     .season-mtoggle { display: inline-flex; border: 1px solid var(--line, rgba(128,128,128,.3)); border-radius: 8px; overflow: hidden; }
@@ -64,6 +68,33 @@ rendered from the `seasonal` context payload (no client fetch).
     .season-row2 .season-card { margin-bottom: 0; }
     .season-row2 table.season-tbl { font-size: 11.5px; }
     .season-row2 table.season-tbl th, .season-row2 table.season-tbl td { padding: 6px 7px; }
+    /* Accumulation / distribution strategy card + market outlook */
+    .season-strat { border: 1px solid var(--line, rgba(128,128,128,.2)); border-radius: 12px; padding: 14px 16px;
+      margin-bottom: 16px; background: var(--bg-surface, rgba(128,128,128,.04)); }
+    .strat-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .strat-head h6 { font-size: 14px; font-weight: 800; color: var(--ink-1); margin: 0 0 2px; }
+    .strat-sub { font-size: 11px; color: var(--ink-3, #94a3b8); }
+    .phase-chip { font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 999px; text-transform: uppercase;
+      letter-spacing: .03em; white-space: nowrap; }
+    .phase-distribution { background: rgba(220,38,38,.14); color: #dc2626; }
+    .phase-accumulation { background: rgba(22,163,74,.14); color: #16a34a; }
+    .phase-hold { background: rgba(76,141,255,.16); color: #4c8dff; }
+    .phase-wait, .phase-neutral { background: rgba(148,163,184,.16); color: #94a3b8; }
+    .strat-outlook { border-left: 3px solid var(--accent, #4c8dff); padding: 9px 13px; margin-bottom: 12px;
+      background: var(--bg-raised, rgba(128,128,128,.06)); border-radius: 0 8px 8px 0; }
+    .strat-outlook-k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3, #94a3b8);
+      margin-bottom: 4px; font-weight: 700; }
+    .strat-outlook p { margin: 0; font-size: 12.5px; color: var(--ink-1); line-height: 1.55; }
+    table.strat-tbl td, table.strat-tbl th { vertical-align: top; }
+    .strat-full { color: var(--ink-3, #94a3b8); font-weight: 400; font-size: 11px; }
+    .conf-chip { font-size: 10.5px; font-weight: 700; border: 1px solid; border-radius: 6px; padding: 2px 7px; white-space: nowrap; }
+    .strat-summary { white-space: normal !important; color: var(--ink-2, #a9b8d4); min-width: 240px; }
+    .strat-toggle { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
+      border-radius: 50%; border: 1px solid var(--line, rgba(128,128,128,.45)); background: transparent;
+      color: var(--ink-3, #94a3b8); font-size: 12px; font-weight: 800; line-height: 1; cursor: pointer; }
+    .strat-toggle:hover { color: var(--ink-1, #e7eefc); border-color: var(--accent, #4c8dff); }
+    .strat-toggle[aria-expanded="true"] { background: var(--accent, #4c8dff); color: #fff; border-color: var(--accent, #4c8dff); }
+    .strat-body[hidden] { display: none; }
   </style>
 
   <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4 season-wrap">
@@ -72,11 +103,76 @@ rendered from the `seasonal` context payload (no client fetch).
     {% else %}
     <div class="season-head">
       <h5>Seasonal Return</h5>
-      <p>Average month-over-month performance for the NEPSE Index and sub-indices, from your local index history. Green = historically positive month, red = negative.</p>
     </div>
 
+    {% with st=seasonal.strategy %}
+    {% if st and st.ok %}
+    <div class="season-strat">
+      <div class="strat-head">
+        <div>
+          <h6>Seasonal Strategy — Accumulation / Distribution</h6>
+          <span class="strat-sub">Optimal seasonal entry / exit per index, ranked by expected return · as of {{ st.generated_for }}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="phase-chip phase-{{ st.phase|lower }}">{{ st.phase }}</span>
+          <button type="button" class="strat-toggle" id="stratToggle" aria-expanded="false" aria-controls="stratBody" title="Show seasonal strategy details">?</button>
+        </div>
+      </div>
+
+      <div class="strat-body" id="stratBody" hidden>
+      <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+        <button type="button" class="season-dlbtn" id="stratCsvBtn" title="Download the strategy table as CSV">⤓ CSV</button>
+      </div>
+
+      <div class="strat-outlook">
+        <div class="strat-outlook-k">Seasonal Market Outlook{% if st.horizon %} · {{ st.horizon }}{% endif %}</div>
+        <p>{{ st.outlook }}</p>
+      </div>
+
+      <div class="season-matrix-scroll">
+        <table class="season-tbl strat-tbl">
+          <thead><tr>
+            <th class="l">Subindex</th>
+            <th title="Buy window (month you accumulate into)">Accumulate</th>
+            <th title="Sell / take-profit window">Exit</th>
+            <th title="Recommended holding period">Holding Period</th>
+            <th title="Realistic, bookable return: outlier-trimmed mean of the window's realised compounded month-over-month return (in-sample)">Expected Return %</th>
+            <th title="Hindsight ceiling: average best-case intra-month swing captured over the window (assumes perfect timing — not repeatable)">Opp %</th>
+            <th title="Ranking metric: the per-month average of Expected Return % and Opp %, compounded over the window. Windows are selected and ranked by this blend">Blend %</th>
+            <th title="Monthly-equivalent (geometric) return — compares windows of different lengths on capital-efficiency">/Mo %</th>
+            <th title="Share of years the window's REAL return finished positive">Hit Rate</th>
+            <th title="Years of history behind the window">Yrs</th>
+            <th title="Hit-rate × sample size; downgraded if the pattern failed in one half of the history">Confidence</th>
+            <th class="l">Recommendation Summary</th>
+          </tr></thead>
+          <tbody>
+            {% for r in st.rows %}
+              <tr>
+                <td class="l name" data-full="{{ r.label }}" title="{{ r.label }}">{{ r.code }}</td>
+                <td>{{ r.accumulate }}</td>
+                <td>{{ r.exit }}</td>
+                <td>{{ r.hold }}</td>
+                <td style="color: {{ r.expected_color }}; font-weight: 700;">{{ r.expected_str }}</td>
+                <td style="color: {{ r.opp_color }};">{{ r.opp_str }}</td>
+                <td style="color: {{ r.blend_color }}; font-weight: 700;">{{ r.blend_str }}</td>
+                <td style="color: {{ r.permo_color }};">{{ r.permo_str }}</td>
+                <td>{{ r.hit_str }}</td>
+                <td>{{ r.years }}</td>
+                <td><span class="conf-chip" style="color: {{ r.conf_color }}; border-color: {{ r.conf_color }};">{{ r.confidence }}</span></td>
+                <td class="l strat-summary">{{ r.summary }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="season-note"><b>Entry / exit are selected by the Blend</b> — the per-month average of the realistic return and Opp %. <b>Expected Return %</b> = realistic, bookable price return: outlier-trimmed mean of the window's realised, year-by-year compounded month-over-month move (buy at the accumulate month's close, sell at the exit month's close; dividends excluded). <b>Opp %</b> = a <b>hindsight ceiling</b> — the average best-case intra-month swing over the window, assuming perfect timing of each month's high/low; not repeatable. <b>Blend %</b> = the average of the two, compounded; the table is ranked by it. <b>/Mo %</b> = Expected Return per month held. <b>Confidence</b> blends the real-return hit-rate with sample size and is downgraded when the pattern did not hold in both halves of the history. Windows need 5+ years of history and recompute automatically as new data lands. <b>Note:</b> the window is chosen in-sample from the full history — realised forward returns tend to be more modest than the historical fit.</div>
+      </div>{# /strat-body #}
+    </div>
+    {% endif %}
+    {% endwith %}
+
     <div class="season-stats">
-      <div class="season-stat"><div class="k">Date Coverage</div><div class="v">{{ seasonal.coverage }}</div></div>
+      <div class="season-stat"><div class="k">Date Coverage<span class="season-help" title="Average month-over-month performance for the NEPSE Index and sub-indices, from your local index history. Green = historically positive month, red = negative.">?</span></div><div class="v">{{ seasonal.coverage }}</div></div>
       <div class="season-stat"><div class="k">Indices Included</div><div class="v">{{ seasonal.indices_count }}</div></div>
       <div class="season-stat"><div class="k">Rows Processed</div><div class="v">{{ seasonal.rows_processed_str }}</div></div>
     </div>
@@ -96,7 +192,7 @@ rendered from the `seasonal` context payload (no client fetch).
             <th class="l">Index</th><th>Month</th>
             <th title="Most recent completed month's actual return">Return %</th>
             <th title="Seasonal average return for this month">Avg %</th>
-            <th title="Seasonal opportunity for this month">Opp %</th>
+            <th title="Seasonal best-case (hindsight) intra-month swing for this month">Opp %</th>
             <th title="Return % − Avg Return % (this month vs its seasonal norm)">Diff</th>
           </tr></thead>
           <tbody>
@@ -105,7 +201,7 @@ rendered from the `seasonal` context payload (no client fetch).
                 <td class="l name">{{ r.label }}</td>
                 <td style="color: var(--ink-3, #94a3b8);"><span class="mname" data-en="{{ r.period_en }}" data-np="{{ r.period_np }}">{{ r.period_en }}</span></td>
                 <td style="color: {{ r.value_color }}; font-weight: 700;">{{ r.value_str }}</td>
-                <td style="color: {{ r.avg_color }};">{{ r.avg_str }}</td>
+                <td style="color: {{ r.avg_color }};" title="Seasonal average over {{ r.avg_n }} year{{ r.avg_n|pluralize }} of this month">{{ r.avg_str }}</td>
                 <td style="color: {{ r.opp_color }};">{{ r.opp_str }}</td>
                 <td style="color: {{ r.diff_color }}; font-weight: 700;">{{ r.diff_str }}</td>
               </tr>
@@ -125,8 +221,8 @@ rendered from the `seasonal` context payload (no client fetch).
             {% for r in seasonal.bestworst_rows %}
               <tr>
                 <td class="l name">{{ r.label }}</td>
-                <td><span style="color: var(--ink-3, #94a3b8);">{{ r.best_month }}</span> <span style="color: var(--pos);">({{ r.best_str }})</span></td>
-                <td><span style="color: var(--ink-3, #94a3b8);">{{ r.worst_month }}</span> <span style="color: var(--neg);">({{ r.worst_str }})</span></td>
+                <td title="Averaged over {{ r.best_n }} year{{ r.best_n|pluralize }}"><span style="color: var(--ink-3, #94a3b8);">{{ r.best_month }}</span> <span style="color: var(--pos);">({{ r.best_str }})</span></td>
+                <td title="Averaged over {{ r.worst_n }} year{{ r.worst_n|pluralize }}"><span style="color: var(--ink-3, #94a3b8);">{{ r.worst_month }}</span> <span style="color: var(--neg);">({{ r.worst_str }})</span></td>
                 <td style="color: {{ r.latest_color }}; font-weight: 700;">{{ r.latest_str }}</td>
               </tr>
             {% endfor %}
@@ -195,9 +291,9 @@ rendered from the `seasonal` context payload (no client fetch).
         </table>
       </div>
       <div class="season-note">
-        <b>Avg Return %</b> = average month-over-month change of each index's month-end close, per calendar month across all years.
-        <b>Opportunity %</b> = the directional intra-month swing: from the earliest trading day's High down to the month's Low when the high came first, else from that day's Low up to the month's High — capturing the tradable move, not just open→close.
-        Latest Monthly Return uses the most recent completed month when available; the current partial month is excluded from seasonal averages so it does not skew them.
+        <b>Avg Return %</b> = average month-over-month change of each index's month-end close, per calendar month across all years. With 6+ years of a month the single best and worst year are dropped before averaging so one extreme year doesn't define the season. Hover a cell to see how many years back it. Best / Worst ranks only months with 5+ years of history.
+        <b>Opportunity %</b> = a <b>hindsight, best-case</b> intra-month swing (not a repeatable return): from the earliest trading day's High down to the month's Low when the high came first, else from that day's Low up to the month's High. It assumes perfect timing of the turn and marks the maximum move the month offered, not one you could have booked in advance.
+        Latest Monthly Return uses the most recent completed month when available; the current partial month is excluded from seasonal averages so it does not skew them. Multi-month gaps in an index's history are skipped rather than counted as a single month's return.
         Rows follow the Nepali fiscal year — Shrawan (mid-July) through Ashadh (mid-July next year); Nepali labels map each Gregorian month to the Bikram Sambat month that begins within it (approximate).
       </div>
     </div>
@@ -206,6 +302,19 @@ rendered from the `seasonal` context payload (no client fetch).
       (function () {
         var pane = document.getElementById('rrg-seasonal-pane');
         if (!pane) return;
+
+        // Seasonal Strategy card is collapsed by default; the ? toggle on the
+        // header expands/collapses the outlook + table + notes.
+        var stratToggle = pane.querySelector('#stratToggle');
+        var stratBody = pane.querySelector('#stratBody');
+        if (stratToggle && stratBody) {
+          stratToggle.addEventListener('click', function () {
+            var open = stratBody.hasAttribute('hidden');
+            if (open) { stratBody.removeAttribute('hidden'); } else { stratBody.setAttribute('hidden', ''); }
+            stratToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            stratToggle.setAttribute('title', open ? 'Hide seasonal strategy details' : 'Show seasonal strategy details');
+          });
+        }
 
         // Month-label language toggle (English / नेपाली) — swaps the .mname labels.
         // Two language toggles (Latest table + matrix) stay in sync — active is
@@ -239,6 +348,42 @@ rendered from the `seasonal` context payload (no client fetch).
             });
           });
         });
+
+        // Strategy CSV export — the accumulation/distribution table as shown
+        // (one row per index, ranked), numbers kept numeric for Excel.
+        var stratBtn = pane.querySelector('#stratCsvBtn');
+        if (stratBtn) {
+          stratBtn.addEventListener('click', function () {
+            var tbl = pane.querySelector('.strat-tbl');
+            if (!tbl) return;
+            var esc = function (s) {
+              s = String(s == null ? '' : s).trim();
+              return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+            };
+            var pct = function (t) {
+              t = (t || '').trim();
+              return (t === '' || t === '—') ? '' : t.replace('%', '').replace('+', '');
+            };
+            var lines = ['Subindex,Index,Accumulate,Exit,Holding Period,Expected Return %,Opp %,Blend %,Per-Month %,Hit Rate %,Years,Confidence,Summary'];
+            Array.prototype.forEach.call(tbl.querySelectorAll('tbody tr'), function (tr) {
+              var td = tr.querySelectorAll('td');
+              if (td.length < 12) return;
+              var label = td[0].getAttribute('data-full') || '';
+              var code = td[0].textContent.trim();
+              lines.push([esc(code), esc(label), esc(td[1].textContent), esc(td[2].textContent),
+                          esc(td[3].textContent), pct(td[4].textContent), pct(td[5].textContent),
+                          pct(td[6].textContent), pct(td[7].textContent), pct(td[8].textContent),
+                          esc(td[9].textContent), esc(td[10].textContent),
+                          esc(td[11].textContent)].join(','));
+            });
+            var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = 'nepse_seasonal_strategy.csv';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          });
+        }
 
         // CSV export — both metrics, one row per index-month (long/tidy format so
         // you can sort/filter out the extreme increases & declines in Excel).

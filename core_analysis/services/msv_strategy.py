@@ -140,6 +140,17 @@ def run_msv_long_only_simulation(
     for col in ["open_price_adj", "high_price_adj", "low_price_adj", "close_price_adj", "volume"]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
+    # Range-based math (ATR stop, Supertrend, VWAP typical price) degenerates on
+    # series where most bars have high == low — true of ~63% of NEPSE *index*
+    # bars and of ultra-illiquid scrips. Warn instead of silently mis-signalling.
+    flat_share = float((df["high_price_adj"] == df["low_price_adj"]).mean())
+    if flat_share > 0.30:
+        warnings.append(
+            f"{flat_share:.0%} of bars have High == Low (typical of NEPSE index series or "
+            "very thin scrips). ATR stops and Supertrend are unreliable here — run this "
+            "desk on individual stocks, not indices."
+        )
+
     min_bars = max(
         settings["macd_slow"] + settings["macd_signal"],
         settings["atr_length"],
@@ -194,7 +205,10 @@ def run_msv_long_only_simulation(
     df["Supertrend"] = supertrend_df[st_col]
     df["VWAP"] = vwap
     df["ATR"] = atr
-    df["RVOL_avg"] = df["volume"].rolling(window=settings["rvol_period"]).mean().shift(1)
+    # Zero average volume (a thin NEPSE scrip halted for the whole lookback)
+    # must yield NaN, not inf — inf > threshold would fabricate a volume
+    # confirmation out of a dead tape.
+    df["RVOL_avg"] = df["volume"].rolling(window=settings["rvol_period"]).mean().shift(1).replace(0, np.nan)
     df["RVOL"] = df["volume"] / df["RVOL_avg"]
 
     nan_rows = df[["MACD_line", "MACD_signal", "MACD_histogram", "Supertrend", "VWAP", "ATR", "RVOL"]].isna().all(axis=1).sum()
@@ -289,12 +303,45 @@ def run_msv_long_only_simulation(
             }
         )
 
+    # ── Backtest summary stats ────────────────────────────────────────────
+    # Equal-weight, sequential, full-position trades from the per-trade P&L list
+    # (the still-open position is included, marked exit_reason=end_of_data).
+    pnls = [t["pnl_pct"] for t in trades]
+    wins = [p for p in pnls if p > 0]
+    losses = [p for p in pnls if p <= 0]
+    stats = {
+        "trades_count": len(pnls),
+        "win_rate": round(100.0 * len(wins) / len(pnls), 1) if pnls else None,
+        "avg_win_pct": round(sum(wins) / len(wins), 2) if wins else None,
+        "avg_loss_pct": round(sum(losses) / len(losses), 2) if losses else None,
+        "best_trade_pct": round(max(pnls), 2) if pnls else None,
+        "worst_trade_pct": round(min(pnls), 2) if pnls else None,
+        # Profit factor on equal-weight percent P&L (gross win % / gross loss %).
+        # "∞" (display string) when there are wins and no losses — a numeric inf
+        # renders as the literal text "inf" in the template.
+        "profit_factor": (
+            round(sum(wins) / abs(sum(losses)), 2) if wins and losses and sum(losses) != 0
+            else ("∞" if wins and not losses else None)
+        ),
+    }
+    if pnls:
+        # Baseline 1.0 prepended so a drawdown that starts on the very first
+        # trade is measured against the starting equity, not against itself.
+        equity = np.cumprod([1.0] + [1.0 + p / 100.0 for p in pnls])
+        peak = np.maximum.accumulate(equity)
+        stats["total_return_pct"] = round((equity[-1] - 1.0) * 100.0, 2)
+        stats["max_drawdown_pct"] = round(float((equity / peak - 1.0).min()) * 100.0, 2)
+    else:
+        stats["total_return_pct"] = None
+        stats["max_drawdown_pct"] = None
+
     metrics = {
         "total_rows": int(len(df)),
         "entries": int(entries),
         "exits": int(exits),
         "open_position": bool(in_position),
         "warnings": warnings,
+        **stats,
         "latest_signal": str(df["signal"].iloc[-1]),
         "latest_position_status": str(df["position_status"].iloc[-1]),
         "latest_rvol": round(float(df["RVOL"].iloc[-1]), 3) if not pd.isna(df["RVOL"].iloc[-1]) else None,

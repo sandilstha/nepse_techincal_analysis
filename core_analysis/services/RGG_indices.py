@@ -83,6 +83,13 @@ def run_rrg_indices_simulation(
     trails = []
     skipped = []
 
+    # Benchmark's own most recent session: a sector index whose feed lags plots
+    # at an OLDER date on the same chart — flag those points as stale so the
+    # desk doesn't read yesterday's rotation as today's.
+    bench_latest = _format_date(
+        pd.to_datetime(benchmark_df["business_date"], errors="coerce").max()
+    )
+
     for order, symbol in enumerate(ordered_symbols, start=1):
         index_df = index_frames.get(symbol, pd.DataFrame())
         metrics, rrg_df = run_rrg_simulation(index_df, benchmark_df, lookback=lookback)
@@ -96,11 +103,15 @@ def run_rrg_indices_simulation(
         latest = rrg_df.iloc[-1]
         previous = rrg_df.iloc[-2] if len(rrg_df) > 1 else latest
         label = NEPSE_INDEX_LABELS.get(symbol, symbol.replace(" INDEX", ""))
+        point_date = _format_date(latest["business_date"])
         point = {
+            "stale": bool(bench_latest and point_date and point_date < bench_latest),
+            "bars_in_quadrant": int(metrics.get("bars_in_quadrant", 1)),
+            "rotated_from": metrics.get("rotated_from"),
             "order": order,
             "symbol": symbol,
             "label": label,
-            "business_date": _format_date(latest["business_date"]),
+            "business_date": point_date,
             "close": round(float(latest["stock_close"]), 2),
             "benchmark_close": round(float(latest["bench_close"]), 2),
             "RS": round(float(latest["RS"]), 4),
@@ -137,6 +148,7 @@ def run_rrg_indices_simulation(
         "indices_scanned": len(ordered_symbols),
         "indices_plotted": len(points),
         "skipped_count": len(skipped),
+        "stale_count": sum(1 for point in points if point.get("stale")),
         "lookback": lookback,
         "latest_date": max(point["business_date"] for point in points),
         "quadrant_counts": {

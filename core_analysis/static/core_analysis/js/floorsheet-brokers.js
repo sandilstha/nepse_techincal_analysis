@@ -383,7 +383,7 @@
   // ─────────────────────────────────────────────────────────────────────
   // TAB: Broker Favorites
   // ─────────────────────────────────────────────────────────────────────
-  var favState = { brokers: [], dr: null, persistSide: "all", persistData: null, persistSort: null };
+  var favState = { brokers: [], dr: null, persistSide: "all", persistLb: "1m", persistData: null, persistSort: null };
 
   TABS.favorites = {
     init: function () {
@@ -396,6 +396,8 @@
         fillSectors(psec);
         psec.addEventListener("change", function () { TABS.favorites.loadPersistence(); });
       }
+      // Lookback (1W / 1M / 3M) — server-backed, refetches the persistence card.
+      segGroup("fav-persist-lb", function (v) { favState.persistLb = v; TABS.favorites.loadPersistence(); });
       // Side filter (All / Accumulating / Distributing) — client-side, no refetch.
       segGroup("fav-persist-side", function (v) { favState.persistSide = v; drawPersistence(); });
       // Click column titles to sort the persistence rows.
@@ -441,7 +443,7 @@
       box.innerHTML = '<div class="dsx-loading">Loading…</div>';
       var psec = el("fav-persist-sector");
       getJSON("persistence/", {
-        brokers: favState.brokers.join(","), lookback: "1m",
+        brokers: favState.brokers.join(","), lookback: favState.persistLb || "1m",
         sector: psec ? psec.value : "All"
       }, "fav-persist")
         .then(renderPersistence)

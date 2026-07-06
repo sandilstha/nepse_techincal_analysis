@@ -49,14 +49,19 @@ def run_rrg_simulation(
 
     # 1. Calculate Relative Strength (RS)
     df["RS"] = (df["stock_close"] / df["bench_close"]) * 100.0
-    
-    # 2. RS-Ratio: normalized RS using a moving average
-    rs_sma = df["RS"].rolling(window=lookback).mean()
-    df["RS_Ratio"] = (df["RS"] / rs_sma.replace(0, np.nan)) * 100.0
-    
-    # 3. RS-Momentum: rate of change of RS-Ratio
-    ratio_sma = df["RS_Ratio"].rolling(window=lookback).mean()
-    df["RS_Momentum"] = (df["RS_Ratio"] / ratio_sma.replace(0, np.nan)) * 100.0
+
+    # 2. RS-Ratio: z-score of RS against its own rolling window, centred at 100
+    #    (the standard public JdK approximation). The previous RS/SMA×100 form
+    #    made the distance from 100 scale with each symbol's OWN volatility, so
+    #    on a multi-symbol chart the volatile series always plotted farther out
+    #    than the placid ones even with equal relative trend — z-scoring puts
+    #    every symbol on the same footing, which is the point of an RRG.
+    #    A locally flat RS window (std == 0) means "exactly on trend" → 100.
+    df["RS_Ratio"] = 100.0 + _z(df["RS"], lookback)
+
+    # 3. RS-Momentum: the same normalization applied to RS-Ratio itself —
+    #    above its own recent mean = relative strength still accelerating.
+    df["RS_Momentum"] = 100.0 + _z(df["RS_Ratio"], lookback)
 
     # Determine quadrant
     conditions = [
@@ -74,8 +79,23 @@ def run_rrg_simulation(
 
     latest = out_df.iloc[-1]
     previous = out_df.iloc[-2] if len(out_df) > 1 else latest
-    
+
+    # Rotation context: how long the symbol has been in its current quadrant
+    # and where it rotated in from — "just entered Leading" is the actionable
+    # RRG event, and the quadrant label alone doesn't carry it.
+    quadrants = out_df["Quadrant"].tolist()
+    bars_in_quadrant = 1
+    for q in reversed(quadrants[:-1]):
+        if q != quadrants[-1]:
+            break
+        bars_in_quadrant += 1
+    rotated_from = (
+        quadrants[-bars_in_quadrant - 1] if bars_in_quadrant < len(quadrants) else None
+    )
+
     metrics = {
+        "bars_in_quadrant": int(bars_in_quadrant),
+        "rotated_from": rotated_from,
         "latest_rs_ratio": round(float(latest["RS_Ratio"]), 2),
         "latest_rs_momentum": round(float(latest["RS_Momentum"]), 2),
         "latest_quadrant": latest["Quadrant"],
@@ -89,6 +109,20 @@ def run_rrg_simulation(
     }
 
     return metrics, out_df
+
+
+def _z(series: pd.Series, lookback: int) -> pd.Series:
+    """Rolling z-score of ``series`` over ``lookback`` bars.
+
+    std == 0 (a locally flat window) is treated as zero deviation rather than
+    NaN so a symbol tracking its trend exactly stays plotted at the centre
+    instead of silently dropping out of the chart.
+    """
+    mean = series.rolling(window=lookback).mean()
+    std = series.rolling(window=lookback).std(ddof=0)
+    z = (series - mean) / std.replace(0, np.nan)
+    # Flat window (std 0) → deviation 0; keep warmup NaNs (mean still NaN).
+    return z.where(std != 0, 0.0).where(mean.notna())
 
 
 def _prepare_price_frame(source_df: pd.DataFrame, close_column_name: str) -> pd.DataFrame:

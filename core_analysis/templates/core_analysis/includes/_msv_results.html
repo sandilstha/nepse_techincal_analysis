@@ -81,6 +81,47 @@
             </div>
           </div>
 
+          {% if msv_backtest_metrics.trades_count %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-2">
+              <div class="filter-card">
+                <div class="small text-muted" title="Share of trades that closed positive (open trade included, marked end-of-data)">Win Rate</div>
+                <div class="fw-semibold {% if msv_backtest_metrics.win_rate >= 50 %}text-success{% else %}text-danger{% endif %}">{{ msv_backtest_metrics.win_rate }}% <span class="text-muted small">({{ msv_backtest_metrics.trades_count }} trades)</span></div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="filter-card">
+                <div class="small text-muted" title="Gross win % ÷ gross loss %, equal-weight per trade">Profit Factor</div>
+                <div class="fw-semibold text-light">{{ msv_backtest_metrics.profit_factor|default:"N/A" }}</div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="filter-card">
+                <div class="small text-muted">Avg Win / Avg Loss</div>
+                <div class="fw-semibold text-light">{{ msv_backtest_metrics.avg_win_pct|default:"—" }}% / {{ msv_backtest_metrics.avg_loss_pct|default:"—" }}%</div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="filter-card">
+                <div class="small text-muted" title="Compounded, sequential full-position trades">Total Return</div>
+                <div class="fw-semibold {% if msv_backtest_metrics.total_return_pct >= 0 %}text-success{% else %}text-danger{% endif %}">{{ msv_backtest_metrics.total_return_pct }}%</div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="filter-card">
+                <div class="small text-muted" title="Worst peak-to-trough drop of the trade-sequence equity curve">Max Drawdown</div>
+                <div class="fw-semibold text-danger">{{ msv_backtest_metrics.max_drawdown_pct }}%</div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="filter-card">
+                <div class="small text-muted">Best / Worst Trade</div>
+                <div class="fw-semibold text-light">{{ msv_backtest_metrics.best_trade_pct }}% / {{ msv_backtest_metrics.worst_trade_pct }}%</div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
           <div class="panel-outer mb-4">
             <div class="p-3 bg-raised border-bottom">
               <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Momentum Scan Trade Log: {{ msv_selected_symbol }}</h6>

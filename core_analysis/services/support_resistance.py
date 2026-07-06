@@ -729,8 +729,13 @@ def _build_confluence_levels(
         if not current:
             current = [cand]
             continue
-        center = sum(c["price"] for c in current) / len(current)
-        if abs(cand["price"] - center) <= tolerance:
+        # Complete-linkage: bound the cluster's total SPAN (first→candidate,
+        # candidates are price-sorted) by the tolerance. Comparing to the
+        # running MEAN lets near-equally-spaced levels daisy-chain into a zone
+        # wider than the tolerance — wide enough to straddle the latest price,
+        # at which point the ladder drops it from BOTH sides and a genuine
+        # nearby level silently disappears.
+        if cand["price"] - current[0]["price"] <= tolerance:
             current.append(cand)
         else:
             clusters.append(current)
@@ -801,13 +806,16 @@ def _build_confluence_ladder(zones, latest_price, max_each: int = 5):
     # latest price (low < price < high) is the zone price is trading *inside*, so
     # it is neither resistance nor support. Resistance must sit wholly above the
     # price (low >= price); support wholly below (high <= price).
+    # Rank by the same NEAR EDGE used to qualify: ordering by centre can put a
+    # wide zone whose edge is closest to price behind a narrow farther one, so
+    # R1/S1 would not be the truly nearest level.
     res_zones = sorted(
         [z for z in zones if z["low"] >= latest_price and qualified(z)],
-        key=lambda z: z["center"],
+        key=lambda z: z["low"],
     )
     sup_zones = sorted(
         [z for z in zones if z["high"] <= latest_price and qualified(z)],
-        key=lambda z: z["center"],
+        key=lambda z: z["high"],
         reverse=True,
     )
     resistances = [_ladder_row(z, latest_price, f"R{i}") for i, z in enumerate(res_zones[:max_each], start=1)]
