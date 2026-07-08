@@ -263,9 +263,17 @@ def _confidence(hit_rate, years, stable=None):
     return level
 
 
+def _month_phase(frac):
+    """'early' / 'mid' / 'late' from a 0..1 position within the month's sessions."""
+    if frac is None:
+        return None
+    return "early" if frac <= 0.35 else ("mid" if frac <= 0.65 else "late")
+
+
 def _empty_row(code, label, years, reason, opp_v=None):
     return {
         "code": code, "label": label, "accumulate": "—", "exit": "—",
+        "acc_timing": None, "exit_timing": None,
         "hold": "—", "hold_months": 0, "expected": None,
         "expected_str": "—", "expected_color": _MUTED,
         "opp_str": _fmt(opp_v), "opp_color": _color(opp_v),
@@ -278,7 +286,7 @@ def _empty_row(code, label, years, reason, opp_v=None):
     }
 
 
-def _strategy_row(idx, m_series, o_series):
+def _strategy_row(idx, m_series, o_series, timing=None):
     """Display-ready recommendation for one index.
 
     Entry/exit are chosen on a BLENDED per-month signal — the average of the real,
@@ -323,17 +331,28 @@ def _strategy_row(idx, m_series, o_series):
     exit_m = (s + L - 2) % 12 + 1                  # last captured month → sell at close
     after_m = _next_month(exit_m)                  # first month you skip
     conf = _confidence(hit, len(real), stable)
+    # Week-of-month guidance: where the ENTRY month's low and the EXIT month's
+    # high have historically printed (early / mid / late) — refines "Mar/Apr"
+    # into "buy around mid-Mar" / "sell around early-Jul". A tendency, not a rule.
+    t = timing or {}
+    acc_phase = _month_phase((t.get("low") or {}).get(entry_m))
+    exit_phase = _month_phase((t.get("high") or {}).get(exit_m))
+    acc_timing = f"{acc_phase} {_abbr(entry_m)}" if acc_phase else None
+    exit_timing = f"{exit_phase} {_abbr(exit_m)}" if exit_phase else None
     # Monthly-equivalent (geometric) return so different hold lengths compare on
     # capital-efficiency, not just absolute window size.
     permo = ((1.0 + expected / 100.0) ** (1.0 / L) - 1.0) * 100.0
     summary = (f"Accumulate {_abbr(entry_m)}/{_abbr(s)}, exit "
                f"{_abbr(exit_m)}/{_abbr(after_m)}. ~{L}-mo hold.")
+    if acc_timing and exit_timing:
+        summary += f" Low ≈ {acc_timing}, high ≈ {exit_timing}."
     if stable is False:
         summary += " Pattern weaker in one half of history."
     return {
         "code": code, "label": label,
         "accumulate": f"{_abbr(entry_m)}/{_abbr(s)}",
         "exit": f"{_abbr(exit_m)}/{_abbr(after_m)}",
+        "acc_timing": acc_timing, "exit_timing": exit_timing,
         "hold": f"{_abbr(entry_m)}→{_abbr(exit_m)} · ~{L} mo",
         "hold_months": L,
         "expected": expected,
@@ -357,9 +376,9 @@ def _future_period(month, ref):
     return pd.Period(year=yr, month=month, freq="M")
 
 
-def _build_strategy(order, monthly_ret, opp_ret, current_period):
+def _build_strategy(order, monthly_ret, opp_ret, month_timing, current_period):
     """Rank every index by its optimal blended window and write a market outlook."""
-    rows = [_strategy_row(idx, monthly_ret[idx], opp_ret.get(idx))
+    rows = [_strategy_row(idx, monthly_ret[idx], opp_ret.get(idx), month_timing.get(idx))
             for idx in order if idx in monthly_ret]
     # Rank by the blended score (avg of realistic return + Opp %); non-tradable
     # rows (no positive real edge / thin history) sink to the bottom.
@@ -417,12 +436,16 @@ def _build_strategy(order, monthly_ret, opp_ret, current_period):
         h_start = min(a for a, _ in spans)
         h_end = max(b for _, b in spans)
         horizon = f"{_abbr(h_start.month)} {h_start.year} – {_abbr(h_end.month)} {h_end.year}"
+        # Quote the BLEND — the metric the table is ranked by. Quoting the
+        # realistic Expected Return here made a lower-ranked sector show a
+        # higher number than the "top" ones, which read as a mis-ordering.
         lead = ", ".join(
-            f"{r['code']} ({r['expected_str']}; accumulate {r['accumulate']}, exit {r['exit']})"
+            f"{r['code']} ({r['blend_str']} blended; accumulate {r['accumulate']}"
+            f"{f' ({r_at})' if (r_at := r.get('acc_timing')) else ''}, exit {r['exit']})"
             for r in top[:3])
         sentences.append(f"Top sectors for {horizon} are {lead}.")
         if len(top) > 3:
-            extra = ", ".join(f"{r['code']} ({r['expected_str']})" for r in top[3:5])
+            extra = ", ".join(f"{r['code']} ({r['blend_str']})" for r in top[3:5])
             sentences.append(f"Other attractive sectors include {extra}.")
 
     return {
@@ -476,6 +499,7 @@ def _compute():
     sample_counts = {}   # idx → {calendar_month: number of yearly observations}
     monthly_ret = {}     # idx → Period('M')-indexed month% returns (strategy engine)
     opp_ret = {}         # idx → {Period('M'): intra-month opportunity %} (blend engine)
+    month_timing = {}    # idx → {'low'/'high': {calendar_month: avg position 0..1}}
     for idx, g in df.groupby("index"):
         g = g.sort_values("date")
         by_period = g.groupby(g["date"].dt.to_period("M"))
@@ -514,6 +538,7 @@ def _compute():
         # just open→close. Averaged per calendar month, partial month excluded.
         opp_buckets = {}
         opp_series = {}   # per-period opportunity for the blended strategy signal
+        low_pos_buckets, high_pos_buckets = {}, {}   # where in the month the low/high prints
         for period, gm in by_period:
             if period == current_period:
                 continue
@@ -524,6 +549,17 @@ def _compute():
             first = gm.iloc[0]
             hh_date = gm.loc[gm["high"].idxmax(), "date"]   # first occurrence
             ll_date = gm.loc[gm["low"].idxmin(), "date"]
+            # Intra-month timing: the low/high's position among the month's
+            # sessions (0→first day, 1→last day). Averaged per calendar month it
+            # tells the desk WHEN in the month accumulation lows / exit highs
+            # have historically printed (early / mid / late).
+            n_days = len(gm)
+            if n_days >= 3:
+                dlist = gm["date"].tolist()
+                low_pos_buckets.setdefault(period.month, []).append(
+                    (dlist.index(ll_date) + 1) / n_days)
+                high_pos_buckets.setdefault(period.month, []).append(
+                    (dlist.index(hh_date) + 1) / n_days)
             if hh_date <= ll_date:                          # high peaked first → decline
                 ref, target = first["high"], m_low
             else:                                           # low bottomed first → rise
@@ -537,6 +573,11 @@ def _compute():
             avg_opp_by_month[idx] = {m: round(sum(v) / len(v), 2) for m, v in opp_buckets.items()}
         if opp_series:
             opp_ret[idx] = opp_series
+        if low_pos_buckets:
+            month_timing[idx] = {
+                "low": {m: sum(v) / len(v) for m, v in low_pos_buckets.items()},
+                "high": {m: sum(v) / len(v) for m, v in high_pos_buckets.items()},
+            }
 
         # "Latest Monthly Return" = the most recent COMPLETE month, i.e. exclude
         # the in-progress month so the figure is a full-month move, not a 1-day
@@ -657,9 +698,9 @@ def _compute():
     total_row = {"label": "Average", "cells": total_cells, "grand": grand}
 
     # Accumulation / distribution recommendations + market outlook, ranked by the
-    # optimal seasonal window's expected return. Fully derived from the same
+    # optimal seasonal window's blended score. Fully derived from the same
     # monthly returns above, so it refreshes automatically with new history.
-    strategy = _build_strategy(order, monthly_ret, opp_ret, current_period)
+    strategy = _build_strategy(order, monthly_ret, opp_ret, month_timing, current_period)
 
     return {
         "ok": True,
@@ -685,9 +726,9 @@ def build_seasonal_payload():
         .values_list("business_date", flat=True)
         .first()
     )
-    # v3: bump the version whenever the payload SHAPE changes so a deploy never
+    # v5: bump the version whenever the payload SHAPE changes so a deploy never
     # serves a stale-schema payload from a still-warm cache entry.
-    ck = f"seasonal_returns_v4_{latest}"
+    ck = f"seasonal_returns_v5_{latest}"
     cached = cache.get(ck)
     if cached is not None:
         return cached

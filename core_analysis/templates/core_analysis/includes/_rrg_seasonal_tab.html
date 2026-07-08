@@ -58,9 +58,6 @@ rendered from the `seasonal` context payload (no client fetch).
     .season-mbtn { background: transparent; border: 0; padding: 5px 12px; font-size: 11.5px; font-weight: 600;
       color: var(--ink-3, #94a3b8); cursor: pointer; }
     .season-mbtn.active { background: var(--accent, #4c8dff); color: #fff; }
-    .season-dlbtn { background: var(--surface2, #1a2740); border: 1px solid var(--line, rgba(128,128,128,.3));
-      border-radius: 8px; padding: 5px 12px; font-size: 11.5px; font-weight: 600; color: var(--ink-2, #a9b8d4); cursor: pointer; }
-    .season-dlbtn:hover { color: var(--ink-1, #e7eefc); border-color: var(--accent, #4c8dff); }
     /* Latest Monthly Return (6 cols) + Best/Worst side-by-side; Latest gets the
        wider column. Each table scrolls horizontally if it can't fit. */
     .season-row2 { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; align-items: start; margin-bottom: 16px; }
@@ -111,7 +108,7 @@ rendered from the `seasonal` context payload (no client fetch).
       <div class="strat-head">
         <div>
           <h6>Seasonal Strategy — Accumulation / Distribution</h6>
-          <span class="strat-sub">Optimal seasonal entry / exit per index, ranked by expected return · as of {{ st.generated_for }}</span>
+          <span class="strat-sub">Optimal seasonal entry / exit per index, ranked by Blend · as of {{ st.generated_for }}</span>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="phase-chip phase-{{ st.phase|lower }}">{{ st.phase }}</span>
@@ -120,10 +117,6 @@ rendered from the `seasonal` context payload (no client fetch).
       </div>
 
       <div class="strat-body" id="stratBody" hidden>
-      <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-        <button type="button" class="season-dlbtn" id="stratCsvBtn" title="Download the strategy table as CSV">⤓ CSV</button>
-      </div>
-
       <div class="strat-outlook">
         <div class="strat-outlook-k">Seasonal Market Outlook{% if st.horizon %} · {{ st.horizon }}{% endif %}</div>
         <p>{{ st.outlook }}</p>
@@ -165,7 +158,7 @@ rendered from the `seasonal` context payload (no client fetch).
           </tbody>
         </table>
       </div>
-      <div class="season-note"><b>Entry / exit are selected by the Blend</b> — the per-month average of the realistic return and Opp %. <b>Expected Return %</b> = realistic, bookable price return: outlier-trimmed mean of the window's realised, year-by-year compounded month-over-month move (buy at the accumulate month's close, sell at the exit month's close; dividends excluded). <b>Opp %</b> = a <b>hindsight ceiling</b> — the average best-case intra-month swing over the window, assuming perfect timing of each month's high/low; not repeatable. <b>Blend %</b> = the average of the two, compounded; the table is ranked by it. <b>/Mo %</b> = Expected Return per month held. <b>Confidence</b> blends the real-return hit-rate with sample size and is downgraded when the pattern did not hold in both halves of the history. Windows need 5+ years of history and recompute automatically as new data lands. <b>Note:</b> the window is chosen in-sample from the full history — realised forward returns tend to be more modest than the historical fit.</div>
+      <div class="season-note"><b>Entry / exit are selected by the Blend</b> — the per-month average of the realistic return and Opp %. <b>Expected Return %</b> = realistic, bookable price return: outlier-trimmed mean of the window's realised, year-by-year compounded month-over-month move (buy at the accumulate month's close, sell at the exit month's close; dividends excluded). <b>Opp %</b> = a <b>hindsight ceiling</b> — the average best-case intra-month swing over the window, assuming perfect timing of each month's high/low; not repeatable. <b>Blend %</b> = the average of the two, compounded; the table is ranked by it. <b>/Mo %</b> = Expected Return per month held. <b>Confidence</b> blends the real-return hit-rate with sample size and is downgraded when the pattern did not hold in both halves of the history. Windows need 5+ years of history and recompute automatically as new data lands. <b>Timing hints</b> in Recommendation Summary show where the entry month's low and the exit month's high have historically printed (early = first third of the month's sessions, mid = middle, late = final third) — a tendency to refine order placement, not a rule. <b>Note:</b> the window is chosen in-sample from the full history — realised forward returns tend to be more modest than the historical fit.</div>
       </div>{# /strat-body #}
     </div>
     {% endif %}
@@ -244,7 +237,6 @@ rendered from the `seasonal` context payload (no client fetch).
             <button type="button" class="season-mbtn active" data-lang="en">English</button>
             <button type="button" class="season-mbtn" data-lang="np">नेपाली</button>
           </div>
-          <button type="button" class="season-dlbtn" id="seasonCsvBtn" title="Download both metrics as CSV">⤓ CSV</button>
         </div>
       </div>
       <div class="season-matrix-scroll">
@@ -349,83 +341,6 @@ rendered from the `seasonal` context payload (no client fetch).
           });
         });
 
-        // Strategy CSV export — the accumulation/distribution table as shown
-        // (one row per index, ranked), numbers kept numeric for Excel.
-        var stratBtn = pane.querySelector('#stratCsvBtn');
-        if (stratBtn) {
-          stratBtn.addEventListener('click', function () {
-            var tbl = pane.querySelector('.strat-tbl');
-            if (!tbl) return;
-            var esc = function (s) {
-              s = String(s == null ? '' : s).trim();
-              return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-            };
-            var pct = function (t) {
-              t = (t || '').trim();
-              return (t === '' || t === '—') ? '' : t.replace('%', '').replace('+', '');
-            };
-            var lines = ['Subindex,Index,Accumulate,Exit,Holding Period,Expected Return %,Opp %,Blend %,Per-Month %,Hit Rate %,Years,Confidence,Summary'];
-            Array.prototype.forEach.call(tbl.querySelectorAll('tbody tr'), function (tr) {
-              var td = tr.querySelectorAll('td');
-              if (td.length < 12) return;
-              var label = td[0].getAttribute('data-full') || '';
-              var code = td[0].textContent.trim();
-              lines.push([esc(code), esc(label), esc(td[1].textContent), esc(td[2].textContent),
-                          esc(td[3].textContent), pct(td[4].textContent), pct(td[5].textContent),
-                          pct(td[6].textContent), pct(td[7].textContent), pct(td[8].textContent),
-                          esc(td[9].textContent), esc(td[10].textContent),
-                          esc(td[11].textContent)].join(','));
-            });
-            var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url; a.download = 'nepse_seasonal_strategy.csv';
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          });
-        }
-
-        // CSV export — both metrics, one row per index-month (long/tidy format so
-        // you can sort/filter out the extreme increases & declines in Excel).
-        // Values are numeric (percent, sign kept); a UTF-8 BOM makes Excel render
-        // the Nepali month names correctly.
-        var csvBtn = pane.querySelector('#seasonCsvBtn');
-        if (csvBtn) {
-          csvBtn.addEventListener('click', function () {
-            var table = pane.querySelector('.season-matrix');
-            if (!table) return;
-            var heads = table.querySelectorAll('thead th'), cols = [];
-            for (var i = 1; i < heads.length; i++) {
-              if (!heads[i].classList.contains('savg')) cols.push(heads[i].textContent.trim());
-            }
-            var num = function (t) {
-              t = (t || '').trim();
-              return (t === '' || t === '—') ? '' : t.replace('%', '').replace('+', '');
-            };
-            var q = function (s) {
-              s = String(s == null ? '' : s);
-              return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-            };
-            var lines = ['Index,Month (EN),Month (NP),Avg Return %,Opportunity %'];
-            Array.prototype.forEach.call(table.querySelectorAll('tbody tr'), function (tr) {
-              var mn = tr.querySelector('.mname');
-              var en = mn ? mn.getAttribute('data-en') : '';
-              var np = mn ? mn.getAttribute('data-np') : '';
-              var di = 0;
-              Array.prototype.forEach.call(tr.querySelectorAll('.scell'), function (td) {
-                if (td.classList.contains('savg')) return;   // skip the right-hand "Avg" column
-                lines.push([q(cols[di++]), q(en), q(np),
-                            num(td.getAttribute('data-ret')), num(td.getAttribute('data-opp'))].join(','));
-              });
-            });
-            var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url; a.download = 'nepse_seasonality.csv';
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          });
-        }
       })();
     </script>
     {% endif %}
