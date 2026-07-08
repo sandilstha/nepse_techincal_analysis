@@ -290,10 +290,22 @@ def _local_trading_dates(latest_date, span):
     return dates
 
 
+def _range_generation():
+    """Monotonic token folded into every range-cache key.
+
+    ``refresh_after_sync`` bumps it when fresh rows land, which invalidates the
+    rolling AND custom roll-ups in one step — custom keys embed arbitrary
+    start/end dates, so they can't be enumerated for deletion the way the named
+    ranges could.
+    """
+    gen = cache.get("fs_range_gen")
+    return gen if gen is not None else 0
+
+
 def get_range_aggregate(range_key):
     """Sum of every day aggregate in the range. Cached. None if nothing built."""
     range_key = range_key if range_key in NAMED_RANGES else "today"
-    key = f"fs_range_{range_key}_{get_latest_trading_date()}"
+    key = f"fs_range_{range_key}_{get_latest_trading_date()}_{_range_generation()}"
     cached = cache.get(key)
     if cached is not None:
         return cached or None
@@ -416,7 +428,7 @@ def get_custom_range_aggregate(start, end):
     if span > CUSTOM_RANGE_MAX_DAYS:
         start = end - timedelta(days=CUSTOM_RANGE_MAX_DAYS - 1)
 
-    key = f"fs_custom_{start}_{end}_{get_latest_trading_date()}"
+    key = f"fs_custom_{start}_{end}_{get_latest_trading_date()}_{_range_generation()}"
     cached = cache.get(key)
     if cached is not None:
         return cached or None
@@ -615,12 +627,15 @@ def refresh_after_sync(dates):
             cache.delete(f"fs_agg_{ds}")
             cache.delete(f"fs_agg_stale_{ds}")
             cache.delete(f"fs_count_{ds}")
-        latest = get_latest_trading_date()
-        # Drop rolling-range roll-ups (they key off the latest date) so they
-        # rebuild from the freshly warmed day aggregates on next request.
-        if latest:
-            for rk in NAMED_RANGES:
-                cache.delete(f"fs_range_{rk}_{latest}")
+        get_latest_trading_date()  # re-prime fs_latest_date before the rebuilds
+        # Bump the range-key generation instead of deleting per-range keys: the
+        # rolling AND custom roll-ups all fold this token into their cache keys,
+        # so one bump invalidates every window at once (custom windows embed
+        # arbitrary start/end dates and can't be enumerated for deletion).
+        try:
+            cache.incr("fs_range_gen")
+        except ValueError:
+            cache.add("fs_range_gen", 1, None)
         for ds in date_strs:
             get_day_aggregate(ds)  # rebuild + recache (also refreshes meta for latest)
     except Exception:  # pragma: no cover - cache maintenance must never break sync
@@ -715,6 +730,9 @@ def broker_favorites(brokers, range_key="today", view="shares", start=None, end=
 
 def stock_wise(symbol, range_key="today", view="shares", start=None, end=None):
     """Top buy / sell / holding brokers for one stock (Stock Wise Details tab)."""
+    # Normalise: aggregates key on the exact upper-case NEPSE symbols, so a
+    # lower-case / padded query must not silently return empty tables.
+    symbol = (symbol or "").strip().upper()
     agg = _window_aggregate(range_key, start, end)
     if not agg or not symbol:
         return {"ok": False, "buy": [], "sell": [], "holdings": []}
@@ -1084,6 +1102,7 @@ def _window_close_changes(symbols, dates):
     """
     if not symbols or not dates:
         return {}
+    series = {}
     try:
         from core_analysis.models import NepseDailyStockPrice
 
@@ -1095,11 +1114,13 @@ def _window_close_changes(symbols, dates):
             )
             .values_list("symbol", "business_date", "close_price")
         )
+        # Iterate INSIDE the try — querysets are lazy, so the DB only executes
+        # here; an error during iteration must also degrade to {} (divergence
+        # simply drops out) instead of failing the whole signals payload.
+        for sym, bd, cp in qs:
+            series.setdefault(sym, []).append((bd, float(cp)))
     except Exception:  # pragma: no cover - DB optional for this overlay
         return {}
-    series = {}
-    for sym, bd, cp in qs:
-        series.setdefault(sym, []).append((bd, float(cp)))
     out = {}
     for sym, arr in series.items():
         if len(arr) < 2:

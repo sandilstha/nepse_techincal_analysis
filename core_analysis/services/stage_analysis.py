@@ -182,4 +182,21 @@ def calculate_stage_analysis(
     df.loc[conditions_stage3, 'stage'] = 'Stage 3'
     df.loc[conditions_stage2, 'stage'] = 'Stage 2'
 
+    # Weinstein context numbers the label alone doesn't carry:
+    #  * bars_in_stage    — consecutive bars in the current stage (fresh Stage 2
+    #    breakout vs late-stage advance read very differently),
+    #  * stage_transition — "Stage 1 → Stage 2" on the bar the stage flipped
+    #    (empty otherwise), so the desk can flag actionable 1→2 / 3→4 turns,
+    #  * pct_from_ema30   — % distance of close from the 30-week MA (extension /
+    #    proximity to the Weinstein baseline).
+    stage_change = df['stage'].ne(df['stage'].shift(1))
+    df['bars_in_stage'] = df.groupby(stage_change.cumsum()).cumcount() + 1
+    prev_stage = df['stage'].shift(1)
+    df['stage_transition'] = np.where(
+        stage_change & prev_stage.notna(),
+        prev_stage.fillna('') + ' → ' + df['stage'],
+        '',
+    )
+    df['pct_from_ema30'] = (df['close'] / df['ema_30w'].replace(0, np.nan) - 1.0) * 100.0
+
     return df

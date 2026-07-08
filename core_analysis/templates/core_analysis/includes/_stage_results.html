@@ -19,6 +19,17 @@
                 <div class="small text-warning mt-1" style="font-size:11px;">⚠ New listing — based on {{ stage_backtest_metrics.history_weeks }} weeks (need {{ stage_backtest_metrics.weeks_needed }} for full read)</div>
                 {% endif %}
                 <div class="small text-muted mt-1">Latest row: {{ stage_backtest_metrics.latest_data_date }} | {{ stage_backtest_metrics.latest_price_source }}</div>
+                <div class="small text-muted mt-1" title="Consecutive sessions in the current stage — a fresh breakout reads differently from a late-stage advance">
+                  In stage: <b>{{ stage_backtest_metrics.bars_in_stage|default:0 }} bar{{ stage_backtest_metrics.bars_in_stage|pluralize }}</b>
+                  {% if stage_backtest_metrics.pct_from_ema30 is not None %}
+                    · <span title="% distance of close from the 30-week EMA (Weinstein baseline)">{{ stage_backtest_metrics.pct_from_ema30|floatformat:2 }}% from 30w EMA</span>
+                  {% endif %}
+                </div>
+                {% if stage_backtest_metrics.last_transition %}
+                <div class="small mt-1 {% if 'Stage 2' in stage_backtest_metrics.last_transition.label %}text-success{% elif 'Stage 4' in stage_backtest_metrics.last_transition.label %}text-danger{% else %}text-warning{% endif %}" style="font-size:11px;">
+                  ⇄ {{ stage_backtest_metrics.last_transition.label }} on {{ stage_backtest_metrics.last_transition.date }}
+                </div>
+                {% endif %}
               </div>
             </div>
             <div class="col-lg-3 col-md-6">

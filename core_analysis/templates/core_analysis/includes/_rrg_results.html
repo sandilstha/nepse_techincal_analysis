@@ -15,6 +15,9 @@
                   {% elif rrg_backtest_metrics.latest_quadrant == 'Lagging' %}text-danger
                   {% elif rrg_backtest_metrics.latest_quadrant == 'Improving' %}text-primary
                   {% else %}text-muted{% endif %}">{{ rrg_backtest_metrics.latest_quadrant }}</h4>
+                <div class="small text-muted mt-1" title="Consecutive sessions in this quadrant">
+                  {{ rrg_backtest_metrics.bars_in_quadrant|default:1 }} bar{{ rrg_backtest_metrics.bars_in_quadrant|pluralize }} in quadrant{% if rrg_backtest_metrics.rotated_from %} · from {{ rrg_backtest_metrics.rotated_from }}{% endif %}
+                </div>
               </div>
             </div>
             <div class="col-md-3">

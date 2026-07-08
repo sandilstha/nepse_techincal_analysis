@@ -83,6 +83,7 @@
                     <th>Index</th>
                     <th>Date</th>
                     <th>Quadrant</th>
+                    <th class="th-num" title="Consecutive sessions in the current quadrant; hover shows where it rotated in from">In Quad</th>
                     <th class="th-num">Close</th>
                     <th class="th-num">RS-Ratio</th>
                     <th class="th-num">RS-Momentum</th>
@@ -97,8 +98,9 @@
                   <tr>
                     <td class="td-num">{{ point.order }}</td>
                     <td><span class="td-ticker">{{ point.label }}</span><span class="text-muted ms-2 small">{{ point.symbol }}</span></td>
-                    <td class="td-date">{{ point.business_date }}</td>
-                    <td><span class="rrg-index-badge {{ point.Quadrant|lower }}">{{ point.Quadrant }}</span></td>
+                    <td class="td-date">{{ point.business_date }}{% if point.stale %} <span class="text-warning" title="Feed lags the benchmark's latest session — this point is older than the rest of the chart">⚠</span>{% endif %}</td>
+                    <td><span class="rrg-index-badge {{ point.Quadrant|lower }}"{% if point.rotated_from %} title="Rotated in from {{ point.rotated_from }} {{ point.bars_in_quadrant }} bar{{ point.bars_in_quadrant|pluralize }} ago"{% endif %}>{{ point.Quadrant }}</span></td>
+                    <td class="td-num{% if point.bars_in_quadrant <= 3 %} text-warning{% endif %}" title="{% if point.rotated_from %}From {{ point.rotated_from }}{% else %}In this quadrant for the whole window{% endif %}">{{ point.bars_in_quadrant }}</td>
                     <td class="td-num">{{ point.close|floatformat:2 }}</td>
                     <td class="td-num">{{ point.RS_Ratio|floatformat:2 }}</td>
                     <td class="td-num">{{ point.RS_Momentum|floatformat:2 }}</td>
@@ -109,7 +111,7 @@
                   </tr>
                   {% empty %}
                   <tr>
-                    <td colspan="11" class="text-center text-muted py-4">No RRG index data generated in this date range.</td>
+                    <td colspan="12" class="text-center text-muted py-4">No RRG index data generated in this date range.</td>
                   </tr>
                   {% endfor %}
                 </tbody>

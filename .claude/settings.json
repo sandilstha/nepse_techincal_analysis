@@ -1,4 +1,14 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(PYTHONIOENCODING=utf-8 python -c ' *)",
+      "Bash(python manage.py test core_analysis.tests.MSVStrategyTests core_analysis.tests.IMMScoringTests core_analysis.tests.SupportResistanceTests --keepdb)",
+      "Bash(python manage.py test core_analysis.tests.RrgAnalyticsTests --keepdb)",
+      "Bash(python manage.py test core_analysis.tests.RrgAnalyticsTests.test_rrg_formula_reports_overlap_quality --keepdb)",
+      "Bash(python manage.py test core_analysis.tests.RrgAnalyticsTests core_analysis.tests.MSVStrategyTests core_analysis.tests.IMMScoringTests core_analysis.tests.SupportResistanceTests --keepdb)",
+      "Bash(python manage.py test core_analysis.tests.MultiPortfolioManagementTests core_analysis.tests.AdminApprovalTests --keepdb)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -15,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "HIT=$(python3 -c \"import json,sys;d=json.load(sys.stdin);t=d.get('tool_input',d);s=(str(t.get('file_path') or '')+' '+str(t.get('pattern') or '')+' '+str(t.get('path') or '')).lower().replace(chr(92),'/');exts=('.py','.js','.ts','.tsx','.jsx','.go','.rs','.java','.rb','.c','.h','.cpp','.hpp','.cc','.cs','.kt','.swift','.php','.scala','.lua','.sh','.md','.rst','.txt','.mdx');sys.stdout.write('1' if 'graphify-out/' not in s and any(e in s for e in exts) else '')\" 2>/dev/null || true); if [ \"$HIT\" = 1 ] && [ -f graphify-out/graph.json ]; then echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"MANDATORY: graphify-out/graph.json exists. You MUST run graphify before reading source files. Use: `graphify query \\\"<question>\\\"` (scoped subgraph), `graphify explain \\\"<concept>\\\"`, or `graphify path \\\"<A>\\\" \\\"<B>\\\"`. Only read raw files after graphify has oriented you, or to modify/debug specific lines. This rule applies to subagents too \u2014 include it in every subagent prompt involving code exploration.\"}}'; fi || true"
+            "command": "HIT=$(python3 -c \"import json,sys;d=json.load(sys.stdin);t=d.get('tool_input',d);s=(str(t.get('file_path') or '')+' '+str(t.get('pattern') or '')+' '+str(t.get('path') or '')).lower().replace(chr(92),'/');exts=('.py','.js','.ts','.tsx','.jsx','.go','.rs','.java','.rb','.c','.h','.cpp','.hpp','.cc','.cs','.kt','.swift','.php','.scala','.lua','.sh','.md','.rst','.txt','.mdx');sys.stdout.write('1' if 'graphify-out/' not in s and any(e in s for e in exts) else '')\" 2>/dev/null || true); if [ \"$HIT\" = 1 ] && [ -f graphify-out/graph.json ]; then echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"MANDATORY: graphify-out/graph.json exists. You MUST run graphify before reading source files. Use: `graphify query \\\"<question>\\\"` (scoped subgraph), `graphify explain \\\"<concept>\\\"`, or `graphify path \\\"<A>\\\" \\\"<B>\\\"`. Only read raw files after graphify has oriented you, or to modify/debug specific lines. This rule applies to subagents too — include it in every subagent prompt involving code exploration.\"}}'; fi || true"
           }
         ]
       }

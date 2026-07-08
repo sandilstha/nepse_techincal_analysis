@@ -108,6 +108,17 @@ def _fmt_for(unit: str) -> str:
     return "num"
 
 
+def _sort_code_key(sc):
+    """Order sorting_codes numerically when they are numeric.
+
+    The source mixes 3- and 5-digit codes ('100' … '10105'), so a plain string
+    sort puts '10000' before '999'. Non-numeric codes sort after numeric ones,
+    alphabetically.
+    """
+    sc = sc or ""
+    return (0, int(sc), "") if sc.isdigit() else (1, 0, sc)
+
+
 def _fundamental_tickers():
     """Active companies that have fundamentals, with names — for the search box.
 
@@ -157,7 +168,9 @@ def _statement_rows(qs):
     (all-uppercase in the source), so the client can emphasise it.
     """
     rows = []
-    for r in qs.order_by("sorting_code", "item_code"):
+    # Sorted in Python via _sort_code_key: the DB's string collation would put
+    # 5-digit sorting codes ('10000') before 3-digit ones ('999').
+    for r in sorted(qs, key=lambda r: (_sort_code_key(r.sorting_code), r.item_code or "")):
         name = r.item_name or ""
         rows.append(
             {
@@ -177,7 +190,7 @@ def fundamental_data_api(request):
     """JSON feed for one company's fundamentals.
 
     Query params:
-      symbol  — ticker (required-ish; falls back to first available)
+      symbol  — ticker (required; a missing/unknown ticker returns 404)
       fy      — fiscal year label, e.g. "2024/25" (defaults to latest)
       quarter — 1–4 (defaults to the latest available within fy)
     """
@@ -190,7 +203,8 @@ def fundamental_data_api(request):
             status=404,
         )
 
-    # Available periods, newest first. (Quarter 0 in the source means annual.)
+    # Available periods, newest first. (Quarters run 1–4; annual figures ride
+    # the Q4 rows — there is no separate quarter-0 annual row in the source.)
     periods = list(
         base.order_by()
         .values("fiscal_year_ad", "quarter")
@@ -409,7 +423,7 @@ def fundamental_matrix_api(request):
             float(r["amount"]) if r["amount"] is not None else None
         )
 
-    rows = sorted(items.values(), key=lambda x: (x["_sort"], x["code"]))
+    rows = sorted(items.values(), key=lambda x: (_sort_code_key(x["_sort"]), x["code"]))
     for r in rows:
         r.pop("_sort", None)
 
@@ -565,34 +579,50 @@ def _positive_float(value):
 
 
 def _latest_market_caps(symbols):
-    """Latest EOD market capitalisation by symbol, converted to rupees."""
+    """Latest EOD market capitalisation by symbol, converted to rupees.
+
+    Resolved per symbol (each scrip's own most recent session), not from one
+    global latest date — a stock suspended on the sector's most recent day
+    would otherwise silently lose its fallback cap and drop to Unclassified.
+    """
     symbols = [s for s in symbols if s]
     if not symbols:
         return {}
-    latest = (
+    latest_by_symbol = dict(
         NepseDailyStockPrice.objects.filter(symbol__in=symbols)
-        .aggregate(latest=Max("business_date"))
-        .get("latest")
+        .values_list("symbol")
+        .annotate(latest=Max("business_date"))
     )
-    if not latest:
+    if not latest_by_symbol:
         return {}
     rows = (
-        NepseDailyStockPrice.objects.filter(symbol__in=symbols, business_date=latest)
-        .values("symbol", "market_capitalization")
+        NepseDailyStockPrice.objects.filter(
+            symbol__in=list(latest_by_symbol),
+            business_date__in=set(latest_by_symbol.values()),
+        )
+        .values("symbol", "business_date", "market_capitalization")
     )
     return {
         r["symbol"]: float(r["market_capitalization"]) * MILLION
         for r in rows
         if r["market_capitalization"] is not None
+        and r["business_date"] == latest_by_symbol.get(r["symbol"])
     }
 
 
 def _gv_market_cap(d, latest_cap=None):
-    """Period KS cap first, latest EOD cap second. Returns (cap, source)."""
+    """Period KS cap first, latest EOD cap second. Returns (cap_rs, source).
+
+    Both sources are normalised to RUPEES: KS ``shares`` is stored in '000, so
+    price × shares × 1000 = Rs, matching the EOD column (Rs millions × MILLION).
+    Without the ×1000 the two sources differ by three orders of magnitude, which
+    pinned every EOD-fallback ticker into the Large segment and displayed
+    period-KS caps 1000× too small.
+    """
     price = _positive_float(d.get("price"))
     shares = _positive_float(d.get("shares"))
     if price is not None and shares is not None:
-        return price * shares, "period_ks"
+        return price * shares * 1000.0, "period_ks"
     cap = _positive_float(latest_cap)
     if cap is not None:
         return cap, "latest_eod"
@@ -613,11 +643,15 @@ def _gv_cap_segments(market_caps):
 
     cumulative = 0.0
     for ticker, cap in ranked:
+        # Classify on the cumulative share BEFORE adding this ticker: judged on
+        # the share including itself, a dominant name that alone exceeds the 55%
+        # band would fall through to Mid/Small — the sector's biggest company
+        # must always be Large (concentrated NEPSE sectors hit this for real).
+        share_before = cumulative / total
         cumulative += cap
-        share = cumulative / total  # cumulative share *including* this ticker
-        if share <= GV_LARGE_CAP_SHARE:
+        if share_before < GV_LARGE_CAP_SHARE:
             segments[ticker] = "Large"
-        elif share <= GV_MID_CAP_SHARE:
+        elif share_before < GV_MID_CAP_SHARE:
             segments[ticker] = "Mid"
         else:
             segments[ticker] = "Small"

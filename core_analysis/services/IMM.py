@@ -609,6 +609,19 @@ def run_imm_scoring_system(
     for c in ["open_price_adj", "high_price_adj", "low_price_adj", "close_price_adj", "volume"]:
         df[c] = pd.to_numeric(df[c], errors="coerce")
 
+    # ── Guard: flat-bar share (index series / ultra-illiquid scrips) ──────
+    # ~63% of NEPSE *index* bars have high == low, which degenerates every
+    # range-based input here (ATR%, Supertrend, ATR trailing stop) and thus the
+    # volatility and stop legs of the composite. Warn loudly instead of scoring
+    # garbage — IMM is a per-stock model.
+    flat_share = float((df["high_price_adj"] == df["low_price_adj"]).mean())
+    if flat_share > 0.30:
+        warnings.append(
+            f"{flat_share:.0%} of bars have High == Low (typical of NEPSE index series or "
+            "very thin scrips). ATR-based volatility scores, Supertrend and trailing stops "
+            "are unreliable here — run IMM on individual stocks, not indices."
+        )
+
     # ── Moving averages ──────────────────────────────────────────────────
     df["SMA_20"] = ta.sma(df["close_price_adj"], length=20)
     df["SMA_50"] = ta.sma(df["close_price_adj"], length=50)

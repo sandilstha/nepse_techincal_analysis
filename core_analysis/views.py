@@ -555,23 +555,14 @@ def symbol_autocomplete_view(request):
 
 # ── Main dashboard ────────────────────────────────────────────────────────────
 
-# Workbench tabs open to anonymous visitors: every read-only analysis desk
-# (the strategy simulators, scoring consoles, support/resistance, and both RRG
-# modes). Only the Raw Inventory Manager (data CRUD) and the default landing
-# stay behind the staff login, as do all data edit / sync endpoints. This is
-# exactly the set of computable desks — see TAB_RESULTS_PARTIALS.
-PUBLIC_WORKBENCH_TABS = {
-    "backtest",            # T3MA Ribbon Simulation Desk
-    "ema_backtest",        # EMA 50/200 Crossover Desk
-    "cci_backtest",        # CCI +100 Long-Only Desk
-    "rsi_backtest",        # RSI/SMA Long-Only Desk
-    "msv_backtest",        # Momentum Scan Desk
-    "imm_backtest",        # IMM Technical Scoring Console
-    "stage_backtest",      # Stage Analysis Desk (Technical Analysis)
-    "support_resistance",  # Support & Resistance
-    "rrg_backtest",        # RRG Analytics — Stocks vs NEPSE
-    "rrg_indices",         # RRG Analytics — Indices vs NEPSE
-}
+# Workbench tabs open to anonymous visitors. The ENTIRE Workbench is now
+# admin/staff-only — no tab is public — so this set is intentionally empty and
+# every request (full page + AJAX calc) falls through to staff_member_required.
+# To re-open a read-only desk later, add its active_tab key back here (the
+# computable desks are: backtest, ema_backtest, cci_backtest, rsi_backtest,
+# msv_backtest, imm_backtest, stage_backtest, support_resistance, rrg_backtest,
+# rrg_indices — see TAB_RESULTS_PARTIALS).
+PUBLIC_WORKBENCH_TABS = set()
 
 # Seasonal Return lives inside the (staff-only) Workbench/Data area next to the Raw
 # Inventory Manager, so its payload is built for either of those tabs — the two
@@ -708,9 +699,7 @@ def build_dashboard_context(request):
     imm_to   = g.get("imm_to_date",   g.get("to_date",   "")).strip()
     stage_from = g.get("stage_from_date", g.get("from_date", "")).strip()
     stage_to   = g.get("stage_to_date",   g.get("to_date",   "")).strip()
-    support_resistance_from = g.get("support_resistance_from_date", g.get("from_date", "")).strip
-    
-    ()
+    support_resistance_from = g.get("support_resistance_from_date", g.get("from_date", "")).strip()
     support_resistance_to = g.get("support_resistance_to_date", g.get("to_date", "")).strip()
     rrg_from = g.get("rrg_from_date", g.get("from_date", "")).strip()
     rrg_to   = g.get("rrg_to_date",   g.get("to_date",   "")).strip()
@@ -1024,6 +1013,20 @@ def build_dashboard_context(request):
                                 "adx": float(latest_row.get("adx", 0)) if pd.notna(latest_row.get("adx")) else 0,
                                 "adx_confirm": bool(latest_row.get("adx_confirm", False)),
                                 "stage2_score": int(latest_row.get("stage2_score", 0)) if pd.notna(latest_row.get("stage2_score")) else 0,
+                                # Weinstein context: how long the current stage has
+                                # run, % stretch from the 30-week MA, and the most
+                                # recent stage flip in the window (e.g. "Stage 1 →
+                                # Stage 2") with the date it happened.
+                                "bars_in_stage": int(latest_row.get("bars_in_stage", 0)) if pd.notna(latest_row.get("bars_in_stage")) else 0,
+                                "pct_from_ema30": float(latest_row.get("pct_from_ema30", 0)) if pd.notna(latest_row.get("pct_from_ema30")) else None,
+                                "last_transition": next(
+                                    (
+                                        {"label": r["stage_transition"], "date": r["business_date"]}
+                                        for r in reversed(stage_df.tail(150).to_dict(orient="records"))
+                                        if r.get("stage_transition")
+                                    ),
+                                    None,
+                                ),
                             }
                     except Exception as e:
                         stage_backtest_metrics = {"error": f"Error running Stage Analysis: {str(e)}"}
