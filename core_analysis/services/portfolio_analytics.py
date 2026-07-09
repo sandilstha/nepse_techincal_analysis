@@ -18,8 +18,9 @@ NEPSE realities deliberately shaped the design:
     are biased toward zero (stale closes miss the index move). Sampling the last
     close of each Sun–Fri week absorbs the lag. Volatility & VaR stay daily —
     they don't suffer the cross-correlation bias and daily gives 5× the sample.
-  * Portfolio beta is the weight-weighted sum of holding betas (valid); a true
-    covariance-based portfolio VaR/vol is a later phase and is NOT faked here.
+  * Portfolio beta is the weight-weighted sum of holding betas. Portfolio VaR
+    is calculated from the current-weight portfolio return series, preserving
+    observed cross-name diversification.
 """
 from __future__ import annotations
 
@@ -38,22 +39,23 @@ WEEKS_YEAR = 52                   # annualisation factor for weekly-return stats
 MIN_RETURNS = 20                  # need at least this many daily returns for vol
 MIN_WEEKLY_RETURNS = 26           # ~6 months of weekly observations for beta
 MIN_VAR_POINTS = 30               # need at least this many sessions for VaR
-VAR_HORIZON_DAYS = 10             # second VaR horizon (√-time scaled)
+VAR_HORIZON_DAYS = 10             # second VaR horizon (empirical + parametric)
 # Per-holding VaR horizons for the Portfolio Summary desk, in NEPSE sessions.
 VAR_1W_SESSIONS = 5               # ~1 trading week
 VAR_1M_SESSIONS = 20             # ~1 trading month
 Z95, Z99 = 1.645, 2.326           # normal quantiles for parametric VaR
-# Hypothetical market shocks (% NEPSE move) propagated to the book via beta.
-STRESS_SHOCKS = (-20, -10, -5, 10)
 # HHI bands (0–10000), aligned with the broker-analytics concentration read.
 HHI_MODERATE = 1500
 HHI_HIGH = 2500
-# Liquidity: average daily volume window + the share of ADV a desk can realistically
-# trade per session without moving the price (days-to-liquidate denominator).
-LIQ_LOOKBACK_DAYS = 45            # ~30 sessions of ADV
+# Liquidity: one calendar year of observations and configurable participation.
+# The UI exposes the three policy scenarios below; 20% remains the default.
+LIQ_LOOKBACK_DAYS = 365           # trailing calendar year / ~246 sessions
+PARTICIPATION_RATES = (0.10, 0.20, 0.25)
 PARTICIPATION_RATE = 0.20
+LIQUIDATION_TARGETS = (25.0, 50.0, 75.0, 100.0)
 DTL_LIQUID, DTL_MODERATE = 1.0, 5.0   # days-to-liquidate tier thresholds
 CACHE_TTL = 180
+PAYLOAD_VERSION = 2
 
 # Default investment-policy limits monitored on every portfolio. "warn" raises a
 # watch, "breach" a violation. Sensible institutional defaults tuned for a
@@ -75,6 +77,19 @@ def _f(value, default=0.0):
         return float(value)
     except (TypeError, ValueError):
         return default
+
+
+def normalize_participation_rate(value):
+    """Return an allowed ADV participation fraction (10%, 20%, or 25%)."""
+    rate = _f(value, PARTICIPATION_RATE)
+    if rate > 1:
+        rate /= 100.0
+    return min(PARTICIPATION_RATES, key=lambda allowed: abs(allowed - rate))
+
+
+def normalize_liquidation_target(value):
+    """Clamp a user liquidation target to a meaningful portfolio percentage."""
+    return min(100.0, max(0.1, _f(value, 100.0)))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -308,18 +323,28 @@ def _parametric_var(vol_annual_pct, sessions):
 
 
 def _nepse_index_level():
-    """Latest NEPSE Index close + date — the baseline for the beta scenario."""
+    """Latest and all-history peak NEPSE closes for beta stress scenarios."""
     from core_analysis.models import NepseMarketIndex
 
+    qs = NepseMarketIndex.objects.filter(sector_name__iexact=NEPSE_INDEX_NAME)
     row = (
-        NepseMarketIndex.objects.filter(sector_name__iexact=NEPSE_INDEX_NAME)
-        .order_by("-business_date")
+        qs.order_by("-business_date")
         .values_list("business_date", "close_index")
         .first()
     )
     if not row:
-        return {"value": None, "date": None}
-    return {"value": round(_f(row[1]), 2), "date": row[0].isoformat()}
+        return {"value": None, "date": None, "highest": None, "highest_date": None}
+    highest = (
+        qs.order_by("-close_index", "business_date")
+        .values_list("business_date", "close_index")
+        .first()
+    )
+    return {
+        "value": round(_f(row[1]), 2),
+        "date": row[0].isoformat(),
+        "highest": round(_f(highest[1]), 2) if highest else None,
+        "highest_date": highest[0].isoformat() if highest else None,
+    }
 
 
 def _cost_summary(rows):
@@ -383,14 +408,14 @@ def _percentile(sorted_vals, q):
     return sorted_vals[lo] + (sorted_vals[hi] - sorted_vals[lo]) * (pos - lo)
 
 
-def _portfolio_returns(weight_frac, stock_ret):
+def _portfolio_returns(weight_frac, stock_ret, session_dates=None):
     """Current-weights historical return series: rₜ = Σ wᵢ·rᵢ,ₜ.
 
     A held name with no trade on date t contributes 0 (NEPSE illiquidity =
-    no-move assumption), so the book is valued on every session any holding
-    traded. Returns ``{date: portfolio_return}``.
+    no-move assumption). When benchmark session dates are supplied, the book is
+    valued on every NEPSE market session. Returns ``{date: portfolio_return}``.
     """
-    dates = set()
+    dates = set(session_dates or [])
     for sym in weight_frac:
         dates.update(stock_ret.get(sym, {}).keys())
     out = {}
@@ -426,35 +451,113 @@ def _worst_window(ordered_returns, k):
     return worst
 
 
-def _risk_block(weight_frac, total_value, port_beta, stock_ret):
-    """Historical-simulation VaR/CVaR + beta-propagated stress scenarios.
+def _compounded_windows(ordered_returns, sessions):
+    """Return overlapping compounded historical returns for a horizon."""
+    if sessions <= 1:
+        return list(ordered_returns)
+    out = []
+    for start in range(len(ordered_returns) - sessions + 1):
+        wealth = 1.0
+        for value in ordered_returns[start:start + sessions]:
+            wealth *= 1.0 + value
+        out.append(wealth - 1.0)
+    return out
+
+
+def _tail_metrics(returns, confidence):
+    """Return positive historical VaR and Expected Shortfall fractions."""
+    values = sorted(returns)
+    threshold = _percentile(values, 1.0 - confidence)
+    if threshold is None:
+        return 0.0, 0.0
+    var = max(0.0, -threshold)
+    tail = [value for value in returns if value <= threshold]
+    expected_shortfall = max(var, -(sum(tail) / len(tail))) if tail else var
+    return var, max(0.0, expected_shortfall)
+
+
+def _beta_stress_scenarios(port_beta, total_value, index_info):
+    """Build standard market shocks and explicit NEPSE target scenarios."""
+    if port_beta is None:
+        return []
+    current = _f((index_info or {}).get("value"))
+    scenarios = []
+
+    def add(label, shock, kind, target=None, reference=None):
+        impact = port_beta * shock
+        impact_rs = total_value * impact / 100.0
+        projected = total_value + impact_rs
+        scenarios.append({
+            "label": label,
+            "kind": kind,
+            "shock": round(shock, 2),
+            "target_index": round(target, 2) if target is not None else (
+                round(current * (1.0 + shock / 100.0), 2) if current else None
+            ),
+            "impact_pct": round(impact, 2),
+            "gain_loss_pct": round(impact, 2),
+            "impact_rs": round(impact_rs, 2),
+            "portfolio_value": round(projected, 2),
+            # My Portfolio has no fund-unit/cash/liability ledger, so marked
+            # portfolio value is also the module's NAV.
+            "nav": round(projected, 2),
+            "reference": reference,
+        })
+
+    for shock in (-20, -10, -5, 5, 10, 20):
+        add(f"NEPSE {shock:+d}%", float(shock), "shock")
+    if current:
+        highest = _f((index_info or {}).get("highest"))
+        highest_date = (index_info or {}).get("highest_date")
+        near_3200 = highest and abs(highest - 3200.0) / 3200.0 <= 0.01
+        if near_3200:
+            reference = f"ATH close {highest:,.2f}"
+            if highest_date:
+                reference += f" on {highest_date}"
+            add(
+                "NEPSE 3,200 / ATH",
+                (3200.0 / current - 1.0) * 100.0,
+                "target_near_high",
+                3200.0,
+                reference,
+            )
+        else:
+            add("NEPSE at 3,200", (3200.0 / current - 1.0) * 100.0, "target", 3200.0)
+        if highest and not near_3200:
+            add(
+                "NEPSE at all-time high",
+                (highest / current - 1.0) * 100.0,
+                "historical_high",
+                highest,
+                f"ATH close date {highest_date}" if highest_date else None,
+            )
+    return scenarios
+
+
+def _risk_block(weight_frac, total_value, port_beta, stock_ret, index_info=None,
+                session_dates=None):
+    """Historical/parametric VaR, Expected Shortfall, and beta stress scenarios.
 
     Historical simulation is primary (NEPSE returns are fat-tailed and circuit
-    bands truncate them, so a normal-distribution VaR is unreliable); the
-    parametric figure is included only as a flagged comparison. All ₨ figures are
-    losses on the marked-to-market book (positive = expected loss).
+    bands truncate them, so normal VaR is unreliable). Ten-session historical
+    risk uses overlapping compounded windows; parametric risk uses square-root
+    scaling. All currency risk figures are positive losses.
     """
     if total_value <= 0:
         return {"ok": False, "reason": "Portfolio has no marked value."}
-    port = _portfolio_returns(weight_frac, stock_ret)
+    port = _portfolio_returns(weight_frac, stock_ret, session_dates)
     if len(port) < MIN_VAR_POINTS:
         return {"ok": False,
                 "reason": f"Not enough price history for VaR (need {MIN_VAR_POINTS}+ sessions)."}
 
     items = sorted(port.items())                 # by date, ascending
     rets = [r for _d, r in items]
-    svals = sorted(rets)
+    rets10 = _compounded_windows(rets, VAR_HORIZON_DAYS)
     sigma = _stdev(rets) or 0.0
-    s10 = math.sqrt(VAR_HORIZON_DAYS)
-
-    def loss_at(q):                              # historical VaR (positive loss)
-        p = _percentile(svals, q)
-        return -p if p is not None else 0.0
-
-    v95, v99 = loss_at(0.05), loss_at(0.01)
-    thr = _percentile(svals, 0.05)
-    tail = [r for r in rets if thr is not None and r <= thr]
-    cvar95 = -(sum(tail) / len(tail)) if tail else v95
+    v95, cvar95 = _tail_metrics(rets, 0.95)
+    v99, cvar99 = _tail_metrics(rets, 0.99)
+    v95_10, cvar95_10 = _tail_metrics(rets10, 0.95)
+    v99_10, cvar99_10 = _tail_metrics(rets10, 0.99)
     worst = min(items, key=lambda kv: kv[1])
     mdd = _max_drawdown(rets)
     w5 = _worst_window(rets, 5)
@@ -462,12 +565,11 @@ def _risk_block(weight_frac, total_value, port_beta, stock_ret):
     def rs(p):
         return round(p * total_value, 2)
 
-    beta = port_beta if port_beta is not None else 1.0
-    scenarios = [
-        {"label": f"NEPSE {shock:+d}%", "shock": shock,
-         "impact_pct": round(beta * shock, 2), "impact_rs": rs(beta * shock / 100.0)}
-        for shock in STRESS_SHOCKS
-    ]
+    p95_1 = Z95 * sigma
+    p99_1 = Z99 * sigma
+    p95_10 = p95_1 * math.sqrt(VAR_HORIZON_DAYS)
+    p99_10 = p99_1 * math.sqrt(VAR_HORIZON_DAYS)
+    scenarios = _beta_stress_scenarios(port_beta, total_value, index_info or {})
 
     return {
         "ok": True,
@@ -476,9 +578,16 @@ def _risk_block(weight_frac, total_value, port_beta, stock_ret):
         "var": {
             "hist_95_1d_pct": round(v95 * 100, 2), "hist_95_1d_rs": rs(v95),
             "hist_99_1d_pct": round(v99 * 100, 2), "hist_99_1d_rs": rs(v99),
-            "hist_95_10d_pct": round(v95 * s10 * 100, 2), "hist_95_10d_rs": rs(v95 * s10),
+            "hist_95_10d_pct": round(v95_10 * 100, 2), "hist_95_10d_rs": rs(v95_10),
+            "hist_99_10d_pct": round(v99_10 * 100, 2), "hist_99_10d_rs": rs(v99_10),
             "cvar_95_1d_pct": round(cvar95 * 100, 2), "cvar_95_1d_rs": rs(cvar95),
-            "param_95_1d_pct": round(Z95 * sigma * 100, 2), "param_95_1d_rs": rs(Z95 * sigma),
+            "cvar_99_1d_pct": round(cvar99 * 100, 2), "cvar_99_1d_rs": rs(cvar99),
+            "cvar_95_10d_pct": round(cvar95_10 * 100, 2), "cvar_95_10d_rs": rs(cvar95_10),
+            "cvar_99_10d_pct": round(cvar99_10 * 100, 2), "cvar_99_10d_rs": rs(cvar99_10),
+            "param_95_1d_pct": round(p95_1 * 100, 2), "param_95_1d_rs": rs(p95_1),
+            "param_99_1d_pct": round(p99_1 * 100, 2), "param_99_1d_rs": rs(p99_1),
+            "param_95_10d_pct": round(p95_10 * 100, 2), "param_95_10d_rs": rs(p95_10),
+            "param_99_10d_pct": round(p99_10 * 100, 2), "param_99_10d_rs": rs(p99_10),
             # Diversified parametric VaR at the summary horizons — Z·σ_p·√h on the
             # *portfolio* daily sigma (correlation already baked into the return
             # series), so it is lower than the sum of per-holding VaRs.
@@ -492,7 +601,8 @@ def _risk_block(weight_frac, total_value, port_beta, stock_ret):
         "max_drawdown_pct": round(mdd * 100, 2), "max_drawdown_rs": rs(mdd),
         "worst_5d_pct": round(w5 * 100, 2) if w5 is not None else None,
         "worst_5d_rs": rs(w5) if w5 is not None else None,
-        "beta_used": round(beta, 2),
+        "beta_used": round(port_beta, 2) if port_beta is not None else None,
+        "stress_reason": None if port_beta is not None else "Portfolio beta unavailable.",
         "scenarios": scenarios,
     }
 
@@ -566,6 +676,7 @@ def _factor_decomposition(rows, stats, index_wret):
         "covered_weight_pct": round(sum(w for _r, _b, _e, w in covered) * 100.0, 1),
         "sectors": sec_rows[:8],
         "top_contributors": name_rows[:6],
+        "name_contributors": name_rows,
     }
 
 
@@ -667,13 +778,92 @@ def build_compliance(rows, sectors, concentration, risk, port_beta, total):
 # ─────────────────────────────────────────────────────────────────────────────
 # Main payload
 # ─────────────────────────────────────────────────────────────────────────────
-def build_portfolio_payload(portfolio):
+def _days_to_liquidate_value(rows, total_value, target_pct, participation_rate):
+    """Continuous days needed to sell a target share of portfolio market value."""
+    marked_total = sum(_f(row.get("value")) for row in rows)
+    if total_value <= 0 or marked_total <= 0:
+        return None
+    target_value = marked_total * normalize_liquidation_target(target_pct) / 100.0
+    capacities = []
+    maximum_tradeable = 0.0
+    for row in rows:
+        capacity = _f(row.get("adv_qty")) * _f(row.get("price")) * participation_rate
+        if capacity > 0 and row["value"] > 0:
+            capacities.append((row["value"], capacity))
+            maximum_tradeable += row["value"]
+    if maximum_tradeable + 0.005 < target_value:
+        return None
+    low = 0.0
+    high = max(value / capacity for value, capacity in capacities)
+    for _ in range(60):
+        mid = (low + high) / 2.0
+        sold = sum(min(value, capacity * mid) for value, capacity in capacities)
+        if sold >= target_value:
+            high = mid
+        else:
+            low = mid
+    return high
+
+
+def _liquidity_risk(days):
+    if days is None:
+        return "untradeable"
+    if days <= DTL_LIQUID:
+        return "liquid"
+    if days <= DTL_MODERATE:
+        return "moderate"
+    return "illiquid"
+
+
+def _liquidation_scenarios(rows, total_value, custom_target):
+    """Return milestone DTL rows for every supported participation limit."""
+    targets = list(LIQUIDATION_TARGETS)
+    custom = normalize_liquidation_target(custom_target)
+    if all(abs(custom - target) > 1e-9 for target in targets):
+        targets.append(custom)
+    output = {}
+    for rate in PARTICIPATION_RATES:
+        rate_rows = []
+        for target in targets:
+            days = _days_to_liquidate_value(rows, total_value, target, rate)
+            rate_rows.append({
+                "target_pct": round(target, 1),
+                "days": round(days, 2) if days is not None else None,
+                "risk": _liquidity_risk(days),
+                "custom": abs(target - custom) < 1e-9 and target not in LIQUIDATION_TARGETS,
+            })
+        output[str(round(rate * 100))] = rate_rows
+    return output
+
+
+def _return_attribution(rows, stock_ret, session_dates=None):
+    """Static current-weight arithmetic return attribution over one year."""
+    contributions = {}
+    observations = set(session_dates or [])
+    for row in rows:
+        symbol_returns = stock_ret.get(row["symbol"], {})
+        observations.update(symbol_returns)
+        contributions[row["symbol"]] = (
+            (row["weight"] / 100.0) * sum(symbol_returns.values()) * 100.0
+            if symbol_returns else None
+        )
+    total = sum(value for value in contributions.values() if value is not None)
+    return contributions, round(total, 2), len(observations)
+
+
+def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
+                            liquidation_target=100.0):
     """Full valuation + risk roll-up for one portfolio (cached briefly)."""
+    participation_rate = normalize_participation_rate(participation_rate)
+    liquidation_target = normalize_liquidation_target(liquidation_target)
     holdings = list(portfolio.holdings.all())
     latest = _latest_session()
     # Full-resolution timestamp (microseconds) so two imports within the same
     # second don't collide on a 1-second-truncated key and serve stale data.
-    ck = f"pf_payload_{portfolio.id}_{portfolio.updated_at.timestamp()}_{latest}"
+    ck = (
+        f"pf_payload_v{PAYLOAD_VERSION}_{portfolio.id}_{portfolio.updated_at.timestamp()}_{latest}_"
+        f"{participation_rate:.2f}_{liquidation_target:.1f}"
+    )
     cached = cache.get(ck)
     if cached is not None:
         return cached
@@ -704,10 +894,10 @@ def build_portfolio_payload(portfolio):
         name, sector = meta.get(h.symbol, (h.symbol, "Uncategorized"))
         st = stats.get(h.symbol, {})
 
-        # Days to liquidate at PARTICIPATION_RATE of ADV; tier the result.
+        # Per-position DTL at the selected participation limit.
         adv = (liq.get(h.symbol) or {}).get("adv_qty", 0.0)
         if adv > 0 and qty > 0:
-            dtl = qty / (PARTICIPATION_RATE * adv)
+            dtl = qty / (participation_rate * adv)
             tier = ("liquid" if dtl <= DTL_LIQUID
                     else "moderate" if dtl <= DTL_MODERATE else "illiquid")
         else:
@@ -745,8 +935,8 @@ def build_portfolio_payload(portfolio):
             "loss_1w": round(-v1w * value, 2) if v1w is not None else None,
             "var_1m_pct": round(-v1m * 100, 2) if v1m is not None else None,
             "loss_1m": round(-v1m * value, 2) if v1m is not None else None,
-            "adv_qty": round(adv),
-            "dtl": round(dtl, 1) if dtl is not None else None,
+            "adv_qty": round(adv, 2),
+            "dtl": round(dtl, 2) if dtl is not None else None,
             "liq_tier": tier,
         })
 
@@ -767,6 +957,7 @@ def build_portfolio_payload(portfolio):
         round(sum(r["weight"] * r["beta"] for r in rows if r["beta"] is not None) / bw, 2)
         if bw else None
     )
+    beta_coverage_pct = round(bw, 1)
 
     # Sector exposure.
     sec = {}
@@ -804,8 +995,14 @@ def build_portfolio_payload(portfolio):
     )[:6]
     liquidity = {
         "ok": bool(rows),
-        "participation_pct": round(PARTICIPATION_RATE * 100),
+        "participation_pct": round(participation_rate * 100),
+        "participation_options": [round(rate * 100) for rate in PARTICIPATION_RATES],
+        "custom_target_pct": round(liquidation_target, 1),
         "lookback_sessions": liq_sessions,
+        "lookback_calendar_days": LIQ_LOOKBACK_DAYS,
+        "liquidation_scenarios": _liquidation_scenarios(
+            rows, total, liquidation_target
+        ),
         "liquidatable_1d_pct": _liq_pct(1),
         "liquidatable_5d_pct": _liq_pct(5),
         "wavg_days": wavg_days,
@@ -818,10 +1015,14 @@ def build_portfolio_payload(portfolio):
         ],
     }
 
+    index_info = _nepse_index_level()
+
     # Value at Risk + stress testing (historical simulation on current weights).
     try:
         weight_frac = {r["symbol"]: r["weight"] / 100.0 for r in rows}
-        risk = _risk_block(weight_frac, total, port_beta, stock_ret)
+        risk = _risk_block(
+            weight_frac, total, port_beta, stock_ret, index_info, index_ret.keys()
+        )
     except Exception:  # pragma: no cover - never let the risk overlay break valuation
         logger.exception("portfolio VaR/stress failed")
         risk = {"ok": False, "reason": "Risk engine error."}
@@ -831,6 +1032,38 @@ def build_portfolio_payload(portfolio):
     except Exception:  # pragma: no cover
         logger.exception("portfolio factor decomposition failed")
         factors = {"ok": False, "reason": "Factor engine error."}
+
+    return_contrib, attributed_return, return_observations = _return_attribution(
+        rows, stock_ret, index_ret.keys()
+    )
+    risk_contrib = {
+        item["symbol"]: item["pct"]
+        for item in factors.get("name_contributors", [])
+    } if factors.get("ok") else {}
+    top_holdings = []
+    cumulative = 0.0
+    for row in rows[:10]:
+        cumulative += row["weight"]
+        status = (
+            "high" if row["weight"] >= LIMITS["single_name"]["breach"]
+            else "moderate" if row["weight"] >= LIMITS["single_name"]["warn"]
+            else "low"
+        )
+        top_holdings.append({
+            "symbol": row["symbol"],
+            "name": row["name"],
+            "weight": row["weight"],
+            "return_contribution_pct": (
+                round(return_contrib[row["symbol"]], 2)
+                if return_contrib.get(row["symbol"]) is not None else None
+            ),
+            "risk_contribution_pct": (
+                round(risk_contrib[row["symbol"]], 2)
+                if row["symbol"] in risk_contrib else None
+            ),
+            "cumulative_weight": round(cumulative, 2),
+            "concentration_risk": status,
+        })
 
     try:
         compliance = build_compliance(rows, sectors, {
@@ -856,9 +1089,14 @@ def build_portfolio_payload(portfolio):
             "effective_holdings": round(eff_n, 1),
             "top_weight": top["weight"] if top else 0.0,
             "top_symbol": top["symbol"] if top else None,
+            "top10_weight": round(sum(row["weight"] for row in rows[:10]), 2),
+            "top_holdings": top_holdings,
+            "attributed_return_pct": attributed_return,
+            "return_observations": return_observations,
         },
         "portfolio_beta": port_beta,
-        "nepse_index": _nepse_index_level(),
+        "beta_coverage_pct": beta_coverage_pct,
+        "nepse_index": index_info,
         "cost": _cost_summary(rows),
         "snapshot_count": sum(1 for r in rows if r["price_source"] == "snapshot"),
         "risk": risk,
