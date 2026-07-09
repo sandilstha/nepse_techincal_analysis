@@ -260,8 +260,8 @@
     "semantic_hash": "bb318371ce8811435f42f4a6ba8d64a7"
   },
   "core_analysis/tests.py": {
-    "mtime": 1783577532.5859487,
-    "ast_hash": "aaa73480a4338d5272d8247eeccf67c9",
+    "mtime": 1783588789.9477262,
+    "ast_hash": "f3e8c83b11e55f56271aad634c6d2b35",
     "semantic_hash": ""
   },
   "core_analysis/udf_views.py": {
@@ -385,13 +385,13 @@
     "semantic_hash": ""
   },
   "core_analysis/fundamental_views.py": {
-    "mtime": 1783328522.7037086,
-    "ast_hash": "b66e6e3f04cb0cdc38bec4818e8c3bea",
+    "mtime": 1783588738.2083695,
+    "ast_hash": "20df9cdd18fe61a3e064055b04c081c5",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/fundamentals.js": {
-    "mtime": 1782903225.4082232,
-    "ast_hash": "77605601dbd9f4a3b70919b75eec29dd",
+    "mtime": 1783588739.8246462,
+    "ast_hash": "eda1e0049c638fcca7942ae8717fe309",
     "semantic_hash": ""
   },
   "core_analysis/migrations/0009_holdingcost.py": {

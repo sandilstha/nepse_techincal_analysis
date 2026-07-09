@@ -11,6 +11,9 @@
   var cfg = window.FA_CONFIG || {};
   var els = {
     symbol: document.getElementById("fa-symbol"),
+    companyPicker: document.getElementById("fa-company-picker"),
+    companyMenu: document.getElementById("fa-company-menu"),
+    companyEmpty: document.getElementById("fa-company-empty"),
     go: document.getElementById("fa-go"),
     status: document.getElementById("fa-status"),
     content: document.getElementById("fa-content"),
@@ -1164,15 +1167,135 @@
 
   // --- events ---------------------------------------------------------------
 
+  var companyOptions = els.companyMenu
+    ? Array.prototype.slice.call(els.companyMenu.querySelectorAll(".fa-company-option"))
+    : [];
+  var companyGroups = els.companyMenu
+    ? Array.prototype.slice.call(els.companyMenu.querySelectorAll(".fa-company-group"))
+    : [];
+  var visibleCompanyOptions = [];
+  var activeCompanyIndex = -1;
+
+  companyOptions.forEach(function (option, index) {
+    option.id = "fa-company-option-" + index;
+    option.dataset.search = (
+      option.dataset.symbol + " " +
+      option.textContent + " " +
+      (option.closest(".fa-company-group").dataset.sector || "")
+    ).toLocaleLowerCase();
+  });
+
+  function filterCompanies() {
+    var query = els.symbol.value.trim().toLocaleLowerCase();
+    visibleCompanyOptions = [];
+    companyGroups.forEach(function (group) {
+      var visibleInGroup = 0;
+      Array.prototype.forEach.call(group.querySelectorAll(".fa-company-option"), function (option) {
+        var matches = !query || option.dataset.search.indexOf(query) !== -1;
+        option.hidden = !matches;
+        option.classList.remove("is-active");
+        option.setAttribute("aria-selected", "false");
+        if (matches) {
+          visibleCompanyOptions.push(option);
+          visibleInGroup++;
+        }
+      });
+      group.hidden = visibleInGroup === 0;
+    });
+    activeCompanyIndex = -1;
+    els.symbol.removeAttribute("aria-activedescendant");
+    if (els.companyEmpty) els.companyEmpty.hidden = visibleCompanyOptions.length !== 0;
+  }
+
+  function openCompanyMenu() {
+    if (!els.companyMenu) return;
+    filterCompanies();
+    els.companyMenu.hidden = false;
+    els.symbol.setAttribute("aria-expanded", "true");
+  }
+
+  function closeCompanyMenu() {
+    if (!els.companyMenu) return;
+    els.companyMenu.hidden = true;
+    els.symbol.setAttribute("aria-expanded", "false");
+    els.symbol.removeAttribute("aria-activedescendant");
+    companyOptions.forEach(function (option) {
+      option.classList.remove("is-active");
+      option.setAttribute("aria-selected", "false");
+    });
+    activeCompanyIndex = -1;
+  }
+
+  function setActiveCompany(index) {
+    if (!visibleCompanyOptions.length) return;
+    activeCompanyIndex = (index + visibleCompanyOptions.length) % visibleCompanyOptions.length;
+    visibleCompanyOptions.forEach(function (option, optionIndex) {
+      var active = optionIndex === activeCompanyIndex;
+      option.classList.toggle("is-active", active);
+      option.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    var option = visibleCompanyOptions[activeCompanyIndex];
+    els.symbol.setAttribute("aria-activedescendant", option.id);
+    option.scrollIntoView({ block: "nearest" });
+  }
+
+  function selectCompany(option) {
+    els.symbol.value = option.dataset.symbol;
+    closeCompanyMenu();
+    load(option.dataset.symbol);
+  }
+
+  function resolvedInputSymbol() {
+    var input = els.symbol.value.trim();
+    var normalized = input.toLocaleLowerCase();
+    var exact = companyOptions.find(function (option) {
+      var symbol = option.dataset.symbol.toLocaleLowerCase();
+      var name = option.querySelector(".fa-company-name").textContent.trim().toLocaleLowerCase();
+      return normalized === symbol || normalized === name;
+    });
+    return exact ? exact.dataset.symbol : input.toUpperCase();
+  }
+
   function loadFromInput() {
-    load(els.symbol.value);
+    var symbol = resolvedInputSymbol();
+    els.symbol.value = symbol;
+    closeCompanyMenu();
+    load(symbol);
   }
 
   els.go.addEventListener("click", loadFromInput);
+  els.symbol.addEventListener("focus", openCompanyMenu);
+  els.symbol.addEventListener("input", openCompanyMenu);
   els.symbol.addEventListener("keydown", function (e) {
-    if (e.key === "Enter") loadFromInput();
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (els.companyMenu.hidden) openCompanyMenu();
+      setActiveCompany(activeCompanyIndex + (e.key === "ArrowDown" ? 1 : -1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (!els.companyMenu.hidden && activeCompanyIndex >= 0) {
+        selectCompany(visibleCompanyOptions[activeCompanyIndex]);
+      } else if (!els.companyMenu.hidden && visibleCompanyOptions.length === 1) {
+        selectCompany(visibleCompanyOptions[0]);
+      } else {
+        loadFromInput();
+      }
+    } else if (e.key === "Escape") {
+      closeCompanyMenu();
+    }
   });
-  els.symbol.addEventListener("change", loadFromInput);
+  if (els.companyMenu) {
+    els.companyMenu.addEventListener("mousedown", function (e) {
+      var option = e.target.closest(".fa-company-option");
+      if (option) {
+        e.preventDefault();
+        selectCompany(option);
+      }
+    });
+    document.addEventListener("mousedown", function (e) {
+      if (!els.companyPicker.contains(e.target)) closeCompanyMenu();
+    });
+  }
 
   // --- boot -----------------------------------------------------------------
 

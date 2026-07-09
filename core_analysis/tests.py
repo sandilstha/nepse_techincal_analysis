@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured
+from django.template.loader import render_to_string
 from django.test import Client, RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
 
@@ -44,6 +45,49 @@ except ImproperlyConfigured:  # Allows `python core_analysis/tests.py` outside D
 
 @unittest.skipIf(fundamental_views is None, "Django settings unavailable")
 class FundamentalGrowthValueModelTests(unittest.TestCase):
+    @patch("core_analysis.fundamental_views.CompanyProfile.objects")
+    @patch("core_analysis.fundamental_views.FinancialStatement.objects")
+    def test_fundamental_tickers_are_grouped_by_sector_with_unclassified_last(
+        self, statements, profiles
+    ):
+        statements.order_by.return_value.values_list.return_value.distinct.return_value = {
+            "AAA", "BBB", "CCC"
+        }
+        profiles.filter.return_value.values_list.return_value = [
+            ("CCC", "Company C", None),
+            ("BBB", "Company B", "Hydropower"),
+            ("AAA", "Company A", "Commercial Banks"),
+        ]
+
+        companies = fundamental_views._fundamental_tickers()
+
+        self.assertEqual(
+            [(company["symbol"], company["sector"]) for company in companies],
+            [
+                ("AAA", "Commercial Banks"),
+                ("BBB", "Hydropower"),
+                ("CCC", "Unclassified"),
+            ],
+        )
+
+    def test_financial_statement_picker_renders_sector_groups(self):
+        html = render_to_string(
+            "core_analysis/fundamental_analysis.html",
+            {
+                "symbol": "",
+                "symbols": [
+                    {"symbol": "AAA", "name": "Company A", "sector": "Commercial Banks"},
+                    {"symbol": "BBB", "name": "Company B", "sector": "Hydropower"},
+                ],
+                "asset_version": "test",
+            },
+        )
+
+        self.assertIn('aria-label="Companies grouped by sector"', html)
+        self.assertIn('data-sector="Commercial Banks"', html)
+        self.assertIn('data-sector="Hydropower"', html)
+        self.assertNotIn('id="fa-symlist"', html)
+
     def test_cap_segments_use_cumulative_market_cap_share(self):
         segments = fundamental_views._gv_cap_segments(
             {"AAA": 70.0, "BBB": 20.0, "CCC": 10.0, "DDD": None}

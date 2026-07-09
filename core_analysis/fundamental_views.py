@@ -131,8 +131,23 @@ def _fundamental_tickers():
     )
     active = CompanyProfile.objects.filter(
         status__iexact="Active", symbol__in=fund_tickers
-    ).values_list("symbol", "security_name")
-    return [{"symbol": s, "name": n or ""} for s, n in sorted(active)]
+    ).values_list("symbol", "security_name", "sector_name")
+    companies = [
+        {
+            "symbol": symbol,
+            "name": name or "",
+            "sector": (sector or "").strip() or "Unclassified",
+        }
+        for symbol, name, sector in active
+    ]
+    return sorted(
+        companies,
+        key=lambda company: (
+            company["sector"] == "Unclassified",
+            company["sector"].casefold(),
+            company["symbol"].casefold(),
+        ),
+    )
 
 
 @require_GET
