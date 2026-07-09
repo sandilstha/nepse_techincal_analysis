@@ -1,7 +1,7 @@
 import json
 import unittest
 from contextlib import ExitStack
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from unittest.mock import patch
 
 import numpy as np
@@ -13,7 +13,7 @@ from django.urls import reverse
 
 from core_analysis.models import AccountApproval, Holding, HoldingCost, Portfolio
 
-from core_analysis.services import IMM, msv_strategy
+from core_analysis.services import IMM, msv_strategy, portfolio_analytics
 from core_analysis.services.advanced_market_structure import (
     generate_dummy_ohlcv,
     run_advanced_market_structure_analysis,
@@ -218,7 +218,7 @@ class MultiPortfolioManagementTests(TestCase):
 
         with patch(
             "core_analysis.services.portfolio_analytics.build_portfolio_payload",
-            side_effect=lambda portfolio: {"ok": True, "portfolio": portfolio.name},
+            side_effect=lambda portfolio, **kwargs: {"ok": True, "portfolio": portfolio.name},
         ):
             response = self.client.get(reverse("portfolio_data_api"), {"portfolio": p2.id})
 
@@ -228,6 +228,136 @@ class MultiPortfolioManagementTests(TestCase):
         self.assertEqual(payload["portfolio_type"], Portfolio.CLIENT)
         p1.refresh_from_db()
         self.assertTrue(p1.is_default)
+
+    def test_portfolio_data_api_passes_liquidity_stress_assumptions(self):
+        portfolio = Portfolio.objects.create(user=self.user, name="Personal", is_default=True)
+
+        with patch(
+            "core_analysis.services.portfolio_analytics.build_portfolio_payload",
+            return_value={"ok": True, "portfolio": portfolio.name},
+        ) as build:
+            response = self.client.get(
+                reverse("portfolio_data_api"),
+                {"participation": "25", "liquidation_pct": "62.5"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        build.assert_called_once_with(
+            portfolio,
+            participation_rate="25",
+            liquidation_target="62.5",
+        )
+
+
+class PortfolioStressAnalyticsTests(SimpleTestCase):
+    def test_liquidation_milestones_use_parallel_position_capacity(self):
+        rows = [
+            {"value": 1000.0, "adv_qty": 100.0, "price": 10.0},
+            {"value": 1000.0, "adv_qty": 50.0, "price": 10.0},
+        ]
+
+        self.assertAlmostEqual(
+            portfolio_analytics._days_to_liquidate_value(rows, 2000.0, 25, 0.10),
+            10 / 3,
+            places=4,
+        )
+        self.assertAlmostEqual(
+            portfolio_analytics._days_to_liquidate_value(rows, 2000.0, 50, 0.10),
+            20 / 3,
+            places=4,
+        )
+        self.assertAlmostEqual(
+            portfolio_analytics._days_to_liquidate_value(rows, 2000.0, 75, 0.10),
+            10.0,
+            places=4,
+        )
+        self.assertAlmostEqual(
+            portfolio_analytics._days_to_liquidate_value(rows, 2000.0, 100, 0.10),
+            20.0,
+            places=4,
+        )
+
+    def test_liquidation_target_reports_unreachable_untradeable_value(self):
+        rows = [
+            {"value": 500.0, "adv_qty": 100.0, "price": 10.0},
+            {"value": 500.0, "adv_qty": 0.0, "price": 10.0},
+        ]
+
+        self.assertIsNone(
+            portfolio_analytics._days_to_liquidate_value(rows, 1000.0, 75, 0.20)
+        )
+
+    def test_var_matrix_contains_all_horizons_confidences_and_methods(self):
+        start = date(2026, 1, 1)
+        returns = [
+            -0.08, -0.05, -0.03, -0.02, -0.01,
+            0.0, 0.01, 0.02, 0.03, 0.04,
+        ] * 4
+        stock_returns = {
+            "AAA": {
+                start + timedelta(days=offset): value
+                for offset, value in enumerate(returns)
+            }
+        }
+
+        risk = portfolio_analytics._risk_block(
+            {"AAA": 1.0},
+            100000.0,
+            1.2,
+            stock_returns,
+            {"value": 2800.0, "highest": 3200.0},
+        )
+        var = risk["var"]
+
+        for method in ("hist", "param"):
+            for confidence in ("95", "99"):
+                for horizon in ("1d", "10d"):
+                    self.assertIn(f"{method}_{confidence}_{horizon}_pct", var)
+                    self.assertIn(f"{method}_{confidence}_{horizon}_rs", var)
+        for confidence in ("95", "99"):
+            for horizon in ("1d", "10d"):
+                self.assertIn(f"cvar_{confidence}_{horizon}_pct", var)
+        self.assertGreaterEqual(var["cvar_95_1d_pct"], var["hist_95_1d_pct"])
+        self.assertGreater(var["param_99_10d_pct"], var["param_95_10d_pct"])
+
+    def test_beta_stress_scenarios_include_required_targets_and_nav(self):
+        scenarios = portfolio_analytics._beta_stress_scenarios(
+            1.1,
+            100000.0,
+            {"value": 2800.0, "highest": 3250.0},
+        )
+        labels = {row["label"] for row in scenarios}
+
+        self.assertTrue({
+            "NEPSE -20%", "NEPSE -10%", "NEPSE -5%",
+            "NEPSE +5%", "NEPSE +10%", "NEPSE +20%",
+            "NEPSE at 3,200", "NEPSE at all-time high",
+        }.issubset(labels))
+        for row in scenarios:
+            self.assertAlmostEqual(
+                row["portfolio_value"],
+                100000.0 + row["impact_rs"],
+                places=2,
+            )
+            self.assertEqual(row["nav"], row["portfolio_value"])
+
+    def test_beta_stress_merges_3200_with_nearby_all_time_high(self):
+        scenarios = portfolio_analytics._beta_stress_scenarios(
+            0.8,
+            100000.0,
+            {
+                "value": 2622.0,
+                "highest": 3198.0,
+                "highest_date": "2021-08-18",
+            },
+        )
+        target_rows = [row for row in scenarios if row["kind"] != "shock"]
+
+        self.assertEqual(len(target_rows), 1)
+        self.assertEqual(target_rows[0]["label"], "NEPSE 3,200 / ATH")
+        self.assertEqual(target_rows[0]["target_index"], 3200.0)
+        self.assertIn("3,198.00", target_rows[0]["reference"])
+        self.assertIn("2021-08-18", target_rows[0]["reference"])
 
 
 @unittest.skipIf(indicator_views is None, "Django settings unavailable")

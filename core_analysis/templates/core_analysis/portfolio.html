@@ -364,8 +364,21 @@
       <div class="pf-factors" id="pf-factors"></div>
     </div>
     <div class="pf-card">
-      <div class="pf-card-head">Liquidity Risk — Days to Liquidate
-        <a class="pf-help" href="{% url 'portfolio_sop' %}#liquidity" title="Liquidity — ADV, participation rate, days-to-liquidate">?</a></div>
+      <div class="pf-card-head">Liquidity Stress Test
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#liquidity" title="One-year ADV, participation limits and days-to-liquidate">?</a></div>
+      <div class="pf-liq-controls" aria-label="Liquidity stress assumptions">
+        <label>ADV participation
+          <select id="pf-liq-participation">
+            <option value="10">10%</option>
+            <option value="20" selected>20%</option>
+            <option value="25">25%</option>
+          </select>
+        </label>
+        <label>Custom liquidation
+          <span><input id="pf-liq-target" type="number" min="0.1" max="100" step="0.1" value="100" inputmode="decimal">%</span>
+        </label>
+        <button type="button" class="pf-btn pf-btn-ghost" id="pf-liq-calculate">Run</button>
+      </div>
       <div class="pf-liq" id="pf-liq"></div>
     </div>
   </div>
@@ -377,7 +390,8 @@
       <div class="pf-sectors" id="pf-sectors"></div>
     </div>
     <div class="pf-card">
-      <div class="pf-card-head">Concentration &amp; Diversification</div>
+      <div class="pf-card-head">Top 10 Holdings &amp; Concentration
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#concentration" title="Top holdings, cumulative concentration and return/risk attribution">?</a></div>
       <div class="pf-conc" id="pf-conc"></div>
     </div>
   </div>

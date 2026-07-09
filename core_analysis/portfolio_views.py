@@ -483,7 +483,11 @@ def portfolio_data_api(request):
 
     portfolio = _get_selected_portfolio(request)
     try:
-        payload = pa.build_portfolio_payload(portfolio)
+        payload = pa.build_portfolio_payload(
+            portfolio,
+            participation_rate=request.GET.get("participation", pa.PARTICIPATION_RATE),
+            liquidation_target=request.GET.get("liquidation_pct", 100.0),
+        )
         payload.update({
             "portfolio_id": portfolio.id,
             "portfolio_name": portfolio.name,

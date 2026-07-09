@@ -191,6 +191,9 @@ portfolio beta β_p = Σ wᵢ · βᵢ                          weights re-based
           <div class="sop-fact"><b>Window</b><span>370 days ≈ 52 weeks</span></div>
           <div class="sop-fact"><b>Minimum sample</b><span>26 shared weekly returns</span></div>
         </div>
+        <p><b>Coverage control.</b> Every holding row shows its individual beta. The portfolio KPI
+          also reports the percentage of market value covered by valid betas. Covered weights are
+          re-based to 100% for β_p; uncovered names are not silently assigned β = 1.</p>
         <h4>Assumptions &amp; caveats</h4>
         <ul>
           <li>A week with no trade contributes no observation; the next observed week's return spans
@@ -217,20 +220,28 @@ portfolio beta β_p = Σ wᵢ · βᵢ                          weights re-based
         <p>The governing VaR on this desk is <b>historical simulation on the portfolio's own
           return series</b>, rebuilt with <i>today's weights</i>:</p>
         <span class="sop-formula">portfolio return  r_p,t = Σ wᵢ · rᵢ,t        (wᵢ = today's weight; missing print ⇒ rᵢ,t = 0)
-VaR₉₅(1d) = − 5th percentile of {r_p,t}      VaR₉₉(1d) = − 1st percentile
-VaR₉₅(10d) = VaR₉₅(1d) · √10                  (√-time scaling)
-CVaR₉₅ (expected shortfall) = − mean of returns at or below the 5th percentile</span>
+10-session return R_p,t = Π(1 + r_p,t−j) − 1, j = 0…9       (overlapping realised windows)
+VaR₉₅(h) = max(0, − 5th percentile of {R_p,t,h})     VaR₉₉(h) = max(0, − 1st percentile)
+CVaR / Expected Shortfall = average loss in the tail beyond the matching VaR threshold
+h = 1 or 10 sessions; both VaR and CVaR are calculated at 95% and 99%</span>
         <div class="sop-facts">
           <div class="sop-fact"><b>Method</b><span>Historical simulation</span></div>
           <div class="sop-fact"><b>Confidence</b><span>95% and 99%</span></div>
           <div class="sop-fact"><b>Lookback</b><span>370 days (~246 sessions), min 30</span></div>
-          <div class="sop-fact"><b>Horizons</b><span>1 day · 10 days (√-time)</span></div>
+          <div class="sop-fact"><b>Horizons</b><span>1 day · 10 days (empirical overlapping windows)</span></div>
         </div>
         <p><b>Why historical, not normal?</b> NEPSE returns are fat-tailed and circuit-band
           truncated; a normal-distribution VaR understates tail risk. The parametric figure
-          (1.645 · σ_p for 95%) is shown <i>only as a comparison line</i>.</p>
+          (1.645 · σ_p for 95%; 2.326 · σ_p for 99%) is shown as a comparison.</p>
 
         <h4 id="var-parametric">5.2 Parametric VaR (per-holding &amp; summary horizons)</h4>
+        <p>The VaR card reports a complete <b>variance-covariance (parametric)</b> comparison
+          matrix for the portfolio: 1-day and 10-day horizons at both 95% and 99% confidence.
+          σ_p is measured from the current-weight portfolio return series, which is algebraically
+          equivalent to applying current weights to the observed covariance matrix and preserves
+          cross-holding diversification.</p>
+        <span class="sop-formula">Parametric VaR₉₅(h) = 1.645 · σ_p,daily · √h
+Parametric VaR₉₉(h) = 2.326 · σ_p,daily · √h          h = 1 or 10 sessions</span>
         <p>Per-holding VaR columns and the 1-week / 1-month loss tiles use the parametric
           (variance-based) form, because a single name's historical percentile is too noisy:</p>
         <span class="sop-formula">daily σ  = annualised vol / √246
@@ -243,7 +254,8 @@ VaR₉₅(h sessions) = 1.645 · σ_daily · √h          h = 5 (1W) or 20 (1M)
         <h4>Assumptions (all VaR variants)</h4>
         <ul>
           <li>Current weights held constant over the horizon (no rebalancing).</li>
-          <li>√-time scaling assumes returns are serially uncorrelated across sessions.</li>
+          <li>√-time scaling applies only to parametric VaR and assumes returns are serially
+            uncorrelated. Historical 10-day VaR/CVaR uses realised compounded windows.</li>
           <li>A non-trading day counts as a 0% return for the holding (no-move assumption) —
             reasonable for marking, but it can <i>understate</i> the risk of very thin names.</li>
           <li>History repeats: the last ~246 sessions are treated as representative of the next one.</li>
@@ -332,7 +344,7 @@ VaR₉₅(h sessions) = 1.645 · σ_daily · √h          h = 5 (1W) or 20 (1M)
           <tbody>
             <tr><td><b>Vol</b></td><td>Annualised volatility = stdev(daily close-to-close returns, ~1yr window, min 20 obs) × √246 × 100. Daily frequency is used here (unlike beta) because volatility doesn't suffer the thin-trading cross-correlation bias and daily gives 5× the sample.</td></tr>
             <tr><td><b>Beta</b></td><td>Weekly-return OLS beta vs the NEPSE Index — full methodology in <a href="#beta">§4</a>. Green ≤ 1 (defensive), red &gt; 1 (aggressive).</td></tr>
-            <tr><td><b>Liq.</b></td><td>Days-to-liquidate = kitta ÷ (20% × average daily volume) — full methodology in <a href="#liquidity">§12</a>. Tiers: ≤1d liquid · ≤5d moderate · &gt;5d illiquid · no volume = untradeable.</td></tr>
+            <tr><td><b>Liq.</b></td><td>Days-to-liquidate = kitta ÷ (selected participation × one-year average daily volume) — full methodology in <a href="#liquidity">§12</a>. Participation can be 10%, 20% or 25%. Tiers: ≤1d liquid · ≤5d moderate · &gt;5d illiquid · no volume = untradeable.</td></tr>
           </tbody>
         </table>
         <p class="sop-note">“—” in Vol/Beta means the scrip has too little trading history
@@ -372,10 +384,12 @@ VaR 1M % = 1.645 × (vol/√246) × √20 × 100      Loss 1M = VaR 1M % × valu
               <td>Loss ceiling for 19 sessions out of 20.</td></tr>
             <tr><td><b>1-day VaR · 99%</b></td><td>−(1st percentile) × book value</td>
               <td>Loss ceiling for 99 sessions out of 100; the gap vs 95% shows tail thickness.</td></tr>
-            <tr><td><b>10-day VaR · 95%</b></td><td>1-day 95% VaR × √10</td>
-              <td>Two-trading-week horizon under √-time scaling.</td></tr>
-            <tr><td><b>Expected shortfall (CVaR 95%)</b></td><td>−mean(returns ≤ 5th percentile) × book value</td>
-              <td>The <i>average</i> loss on the bad 5% of days — always ≥ VaR; the better single tail number.</td></tr>
+            <tr><td><b>10-day VaR · 95% / 99%</b></td><td>5th / 1st percentile of overlapping
+              compounded 10-session portfolio returns</td>
+              <td>Empirical two-trading-week loss thresholds; no √-time assumption.</td></tr>
+            <tr><td><b>Expected shortfall · 1D / 10D · 95% / 99%</b></td>
+              <td>−mean(returns at or below the matching historical VaR percentile) × book value</td>
+              <td>The average loss after VaR is breached — always ≥ its matching VaR.</td></tr>
             <tr><td><b>Ann. volatility</b></td><td>stdev(daily portfolio returns) × √246</td>
               <td>Typical yearly swing of the book, ±1σ.</td></tr>
             <tr><td><b>Worst session</b></td><td>min(daily portfolio return) in the window, with its date</td>
@@ -386,21 +400,32 @@ VaR 1M % = 1.645 × (vol/√246) × √20 × 100      Loss 1M = VaR 1M % × valu
               <td>Worst realised trading week.</td></tr>
           </tbody>
         </table>
-        <p class="sop-note">The parametric 95% figure in the footnote is a normal-distribution
-          comparison only; the historical figure governs (NEPSE returns are fat-tailed and
-          circuit-bounded).</p>
+        <p class="sop-note">The table includes parametric 95% and 99% comparisons at both horizons.
+          Historical figures remain primary because NEPSE returns are fat-tailed and circuit-bounded.</p>
       </section>
 
       <!-- 9 ─────────────────────────────────────────────────────────── -->
       <section class="sop-sec" id="stress">
         <p class="sop-kicker">Section 9</p>
         <h3>Stress Scenarios</h3>
-        <span class="sop-formula">book impact % = β_p × market shock %          shocks: NEPSE −20 · −10 · −5 · +10
-book impact ₨ = impact % × portfolio value    index points = shock % × current NEPSE level</span>
+        <span class="sop-formula">book impact % = β_p × market shock %
+book impact ₨ = impact % × current portfolio value
+stressed portfolio value = current value + book impact ₨
+stressed NAV = stressed portfolio value        (no separate units, cash or liability ledger exists)
+scenarios: NEPSE ±5% · ±10% · ±20% · target 3,200 · all-history highest close</span>
         <p><b>Methodology.</b> Deterministic beta propagation: each hypothetical NEPSE move is
           pushed through the portfolio's weekly-return beta (<a href="#beta">§4</a>). If beta is
-          unavailable, 1.0 is assumed. Unlike VaR (which asks how likely a loss is), stress asks
+          unavailable, scenarios are withheld rather than assuming a market beta. Unlike VaR
+          (which asks how likely a loss is), stress asks
           “<i>if</i> this happens, what does it cost?” — no probability attached.</p>
+        <p><b>Outputs.</b> The chart compares gain/loss magnitude. The table shows target NEPSE
+          level, market move, a single stressed portfolio value/NAV, rupee impact and percentage
+          gain/loss. Value and NAV are intentionally one column because this module has no separate
+          cash, liability or fund-unit ledger.</p>
+        <p>The all-time-high target comes from the highest NEPSE Index close in local history.
+          When that close is within 1% of 3,200, the two targets are merged into one
+          <b>NEPSE 3,200 / ATH</b> scenario and the exact historical close/date is shown as its
+          reference. This prevents two economically identical scenarios from overstating coverage.</p>
         <p><b>Assumptions.</b> Linear response, instant shock, no rebalancing, no liquidity impact —
           in a real −20% market, exit costs (<a href="#liquidity">§12</a>) come on top.
           The −20% scenario approximates a severe NEPSE bear leg; compare it with your worst
@@ -456,24 +481,31 @@ annualisation:                  vol = √(variance × 52) × 100             (we
       <section class="sop-sec" id="liquidity">
         <p class="sop-kicker">Section 12</p>
         <h3>Liquidity Risk — Days to Liquidate</h3>
-        <span class="sop-formula">ADV = total traded quantity over the last ~30 market sessions ÷ number of market sessions
-DTL (days to liquidate) = kitta ÷ (20% × ADV)
-sellable in D days: position fraction = min(1, D / DTL) — summed value-weighted across the book</span>
+        <span class="sop-formula">1-year ADV = total traded quantity over the trailing 365-calendar-day window ÷ market sessions in that window
+position DTL = kitta ÷ (selected participation rate × ADV)
+value sold by day D = Σ min(position value, D × participation × ADVᵢ × priceᵢ)
+portfolio DTL at target X% = first D where value sold by day D ≥ X% × portfolio value</span>
         <div class="sop-facts">
-          <div class="sop-fact"><b>Volume window</b><span>45 calendar days ≈ 30 sessions</span></div>
-          <div class="sop-fact"><b>Participation rate</b><span>20% of ADV per session</span></div>
+          <div class="sop-fact"><b>Volume window</b><span>Trailing 365 calendar days ≈ 1 trading year</span></div>
+          <div class="sop-fact"><b>Participation scenarios</b><span>10% · 20% · 25% of ADV per session</span></div>
+          <div class="sop-fact"><b>Portfolio targets</b><span>25% · 50% · 75% · 100% · user-defined</span></div>
           <div class="sop-fact"><b>Tiers</b><span>≤1d liquid · ≤5d moderate · &gt;5d illiquid</span></div>
           <div class="sop-fact"><b>Untradeable</b><span>No volume in the window</span></div>
         </div>
         <p><b>Why ADV divides by market sessions, not trade days:</b> a scrip that printed on 3 of
-          30 sessions is genuinely thin; averaging over only its 3 trade days would make it look
-          falsely liquid. The 20% participation assumption is the share of daily volume a seller can
-          realistically absorb without moving the price against themselves.</p>
+          246 sessions is genuinely thin; averaging over only its trade days would make it look
+          falsely liquid. Participation is a capacity assumption, not a guarantee; lower settings
+          are more conservative.</p>
+        <p><b>Portfolio liquidation algorithm.</b> Holdings sell simultaneously up to their own
+          daily capacity. A continuous piecewise-linear solve finds the first day the requested
+          market value is reached. If untradeable value makes a target impossible, the table shows
+          “Not achievable” instead of a fabricated day count.</p>
         <p><b>Card metrics.</b> <i>Sellable in 1/5 days</i> = value-weighted share of the book
-          exitable in that window at 20% participation. <i>Avg days to exit</i> = value-weighted
+          exitable in that window at the selected participation. <i>Avg days to exit</i> = value-weighted
           mean DTL over tradeable names. <i>Illiquid positions</i> counts names over 5 days
-          (untradeables shown separately). <b>Interpretation:</b> in a falling market you rarely get
-          even 20% participation — treat DTL as a best-case exit clock.</p>
+          (untradeables shown separately). The milestone table reports 25/50/75/100% and any custom
+          target. <b>Interpretation:</b> stressed-market volume can disappear, so treat DTL as a
+          normal-market capacity estimate, not a guaranteed exit clock.</p>
       </section>
 
       <!-- 13 ────────────────────────────────────────────────────────── -->
@@ -504,9 +536,19 @@ effective holdings = 10,000 / HHI</span>
         <p><b>Interpretation.</b> HHI weights big positions quadratically, so one 60% name dominates
           the score no matter how many small names sit around it. <i>Effective holdings</i> converts
           that into an intuitive count: “my 23 positions behave like N equal-weight positions.”
-          A perfectly equal 10-stock book scores HHI 1,000 / effective 10. The Top-5 bars show
-          exactly where the concentration lives. Bands match the broker-analytics desk so the two
-          screens read consistently.</p>
+          A perfectly equal 10-stock book scores HHI 1,000 / effective 10.</p>
+        <h4>Top-10 attribution table</h4>
+        <span class="sop-formula">cumulative concentration at rank k = Σ weightᵢ, i = 1…k
+1-year return contributionᵢ (percentage points) = current weightᵢ × Σ daily returnᵢ,t
+risk contributionᵢ = RCᵢ ÷ portfolio factor variance × 100       (RCᵢ from §11)</span>
+        <p>The Top-10 table displays portfolio weight, cumulative concentration, current-weight
+          arithmetic return contribution, Euler factor-risk contribution and a single-name risk
+          indicator. The indicator uses the policy thresholds: low below 12%, moderate from 12%
+          to below 15%, high at 15% or above.</p>
+        <p class="sop-note">Return contribution is an analytical one-year, current-weight
+          attribution. My Portfolio has no transaction/cash-flow history, so it is not audited
+          time-weighted or money-weighted performance. Contributions use available EOD returns;
+          missing prints contribute zero under the same convention as portfolio VaR.</p>
       </section>
 
       <!-- 15 ────────────────────────────────────────────────────────── -->
@@ -516,6 +558,9 @@ effective holdings = 10,000 / HHI</span>
         <ul>
           <li><b>Everything is end-of-day.</b> Intraday moves, and anything after the last sync,
             are invisible to the desk.</li>
+          <li><b>NAV equals marked portfolio value in this module.</b> My Portfolio does not
+            maintain fund units, cash, accrued fees, liabilities or subscriptions/redemptions.
+            Scenario NAV therefore means stressed market value, not accounting NAV per unit.</li>
           <li><b>Stale prices flatter risk.</b> A name that hasn't traded for days shows zero
             return — volatility, VaR and beta for very thin names are best-effort floors, not
             ceilings. The liquidity card tells you which names to distrust.</li>

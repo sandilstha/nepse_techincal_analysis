@@ -225,13 +225,21 @@
     setInterval(load, 60000);   // refresh once a minute
   }
 
-  fetch(window.PF_DATA_URL || "/portfolio/api/data/", { headers: { Accept: "application/json" } })
-    .then(function (r) { return r.json(); })
-    .then(render)
-    .catch(function () {
-      var k = el("pf-kpis");
-      if (k) k.innerHTML = "<div class='pf-error'>Could not load portfolio data.</div>";
+  function loadPortfolio(params) {
+    var url = new URL(window.PF_DATA_URL || "/portfolio/api/data/", window.location.origin);
+    Object.keys(params || {}).forEach(function (key) {
+      url.searchParams.set(key, params[key]);
     });
+    return fetch(url.toString(), { headers: { Accept: "application/json" } })
+      .then(function (r) { return r.json(); })
+      .then(render)
+      .catch(function () {
+        var k = el("pf-kpis");
+        if (k) k.innerHTML = "<div class='pf-error'>Could not load portfolio data.</div>";
+      });
+  }
+
+  loadPortfolio();
 
   function render(d) {
     if (!d || !d.ok) {
@@ -293,7 +301,8 @@
       "risk-" + (c.risk || "low"));
     html += tile("Portfolio Beta", beta == null ? na : beta.toFixed(2),
       beta == null ? "insufficient history" :
-      (beta > 1 ? "more volatile than NEPSE" : "less volatile than NEPSE"));
+      (beta > 1 ? "more volatile than NEPSE" : "less volatile than NEPSE") +
+      " · " + (d.beta_coverage_pct || 0).toFixed(1) + "% weight covered");
     box.innerHTML = html;
   }
 
@@ -715,21 +724,36 @@
     var box = el("pf-conc");
     if (!box) return;
     var c = d.concentration || {};
-    var rows = (d.rows || []).slice(0, 5);
+    var rows = c.top_holdings || [];
     var bandText = { low: "Well diversified", moderate: "Moderately concentrated", high: "Highly concentrated" };
-    var top = "<div class='pf-conc-top'>" + rows.map(function (r) {
-      return "<div class='pf-conc-row'><span class='pf-tkr'>" + esc(r.symbol) + "</span>" +
-        "<span class='pf-conc-bar'><i style='width:" + Math.min(100, r.weight) + "%'></i></span>" +
-        "<span class='pf-conc-w'>" + pct(r.weight) + "</span></div>";
-    }).join("") + "</div>";
+    var top = "<div class='pf-mini-table-wrap'><table class='pf-mini-table pf-top10-table'>" +
+      "<thead><tr><th>#</th><th>Holding</th><th>Weight</th><th>Return contrib.</th>" +
+      "<th>Risk contrib.</th><th>Cumulative</th><th>Indicator</th></tr></thead><tbody>" +
+      rows.map(function (r, i) {
+        var ret = r.return_contribution_pct, risk = r.risk_contribution_pct;
+        var retClass = ret == null ? "" : (ret >= 0 ? "num-pos" : "num-neg");
+        return "<tr><td>" + (i + 1) + "</td><td><b>" + esc(r.symbol) + "</b></td>" +
+          "<td>" + pct(r.weight) + "</td>" +
+          "<td class='" + retClass + "'>" + (ret == null ? "—" : (ret >= 0 ? "+" : "") + ret.toFixed(2) + " pp") + "</td>" +
+          "<td>" + (risk == null ? "—" : risk.toFixed(2) + "%") + "</td>" +
+          "<td><span class='pf-cum-value'>" + pct(r.cumulative_weight) + "</span>" +
+            "<span class='pf-cum-bar'><i style='width:" + Math.min(100, r.cumulative_weight) + "%'></i></span></td>" +
+          "<td><span class='pf-risk-badge risk-" + esc(r.concentration_risk) + "'>" +
+            esc(r.concentration_risk) + "</span></td></tr>";
+      }).join("") + "</tbody></table></div>";
     box.innerHTML =
       "<div class='pf-conc-summary'>" +
         "<div><span class='pf-conc-num risk-" + (c.risk || "low") + "'>" + nf(c.hhi || 0) + "</span>" +
         "<span class='pf-conc-cap'>HHI — " + esc(bandText[c.risk] || "—") + "</span></div>" +
         "<div><span class='pf-conc-num'>" + (c.effective_holdings || 0).toFixed(1) + "</span>" +
         "<span class='pf-conc-cap'>effective holdings</span></div>" +
+        "<div><span class='pf-conc-num'>" + pct(c.top10_weight || 0) + "</span>" +
+        "<span class='pf-conc-cap'>Top-10 concentration</span></div>" +
       "</div>" +
-      "<div class='pf-conc-label'>Top 5 positions</div>" + top;
+      top +
+      "<div class='pf-var-note'>Return contribution is one-year current-weight arithmetic attribution (" +
+      (c.return_observations || 0) + " observed sessions), not transaction-adjusted performance. " +
+      "Risk contribution is the holding's Euler contribution in the weekly NEPSE factor model.</div>";
   }
 
   function renderCompliance(c) {
@@ -783,11 +807,24 @@
         "<span class='pf-var-val num-neg'>-" + rs(Math.abs(rsv)) + "</span>" +
         "<span class='pf-var-pct num-neg'>-" + Math.abs(pctv).toFixed(2) + "%</span></div>";
     }
-    if (v) v.innerHTML =
-      lossRow("1-day VaR · 95%", V.hist_95_1d_rs, V.hist_95_1d_pct, true) +
-      lossRow("1-day VaR · 99%", V.hist_99_1d_rs, V.hist_99_1d_pct) +
-      lossRow("10-day VaR · 95%", V.hist_95_10d_rs, V.hist_95_10d_pct) +
-      lossRow("Expected shortfall · CVaR 95%", V.cvar_95_1d_rs, V.cvar_95_1d_pct) +
+    function varCell(value) {
+      return value == null ? "—" : "-" + Math.abs(value).toFixed(2) + "%";
+    }
+    var matrix = "<div class='pf-mini-table-wrap'><table class='pf-mini-table pf-var-matrix'>" +
+      "<thead><tr><th>Method</th><th>1D 95%</th><th>1D 99%</th><th>10D 95%</th><th>10D 99%</th></tr></thead><tbody>" +
+      "<tr><td><b>Historical VaR</b></td><td>" + varCell(V.hist_95_1d_pct) + "</td><td>" +
+        varCell(V.hist_99_1d_pct) + "</td><td>" + varCell(V.hist_95_10d_pct) + "</td><td>" +
+        varCell(V.hist_99_10d_pct) + "</td></tr>" +
+      "<tr><td><b>Parametric VaR</b></td><td>" + varCell(V.param_95_1d_pct) + "</td><td>" +
+        varCell(V.param_99_1d_pct) + "</td><td>" + varCell(V.param_95_10d_pct) + "</td><td>" +
+        varCell(V.param_99_10d_pct) + "</td></tr>" +
+      "<tr><td><b>Expected Shortfall</b></td><td>" + varCell(V.cvar_95_1d_pct) + "</td><td>" +
+        varCell(V.cvar_99_1d_pct) + "</td><td>" + varCell(V.cvar_95_10d_pct) + "</td><td>" +
+        varCell(V.cvar_99_10d_pct) + "</td></tr></tbody></table></div>";
+    if (v) v.innerHTML = matrix +
+      lossRow("Historical VaR · 1D 95%", V.hist_95_1d_rs, V.hist_95_1d_pct, true) +
+      lossRow("Historical VaR · 10D 99%", V.hist_99_10d_rs, V.hist_99_10d_pct) +
+      lossRow("Expected Shortfall · 10D 99%", V.cvar_99_10d_rs, V.cvar_99_10d_pct) +
       "<div class='pf-stat-grid'>" +
         stat("Ann. volatility", risk.ann_vol_pct == null ? "—" : risk.ann_vol_pct.toFixed(1) + "%") +
         stat("Worst session", risk.worst_day ? risk.worst_day.pct.toFixed(2) + "%" : "—",
@@ -796,11 +833,15 @@
         stat("Worst 5-session", risk.worst_5d_pct == null ? "—" : risk.worst_5d_pct.toFixed(2) + "%") +
       "</div>" +
       "<div class='pf-var-note'>Historical simulation over " + risk.sessions +
-      " sessions. Parametric 95% (normal) ≈ -" + rs(Math.abs(V.param_95_1d_rs)) +
-      " — shown only for comparison; NEPSE returns are fat-tailed &amp; circuit-bounded, " +
-      "so the historical figure governs.</div>";
+      " sessions; 10-day historical values use overlapping compounded windows. " +
+      "Parametric values use normal quantiles and √time scaling for comparison. " +
+      "Historical risk remains primary for fat-tailed, circuit-bounded NEPSE returns.</div>";
 
     if (st) {
+      if (!risk.scenarios || !risk.scenarios.length) {
+        st.innerHTML = "<div class='pf-muted'>" + esc(risk.stress_reason || "Beta scenarios unavailable.") + "</div>";
+        return;
+      }
       var maxAbs = risk.scenarios.reduce(function (m, s) {
         return Math.max(m, Math.abs(s.impact_pct || 0)); }, 0) || 1;
       st.innerHTML = "<div class='pf-stress-list'>" + risk.scenarios.map(function (s) {
@@ -815,10 +856,24 @@
           "<span class='pf-stress-pct " + (neg ? "num-neg" : "num-pos") + "'>" +
             (s.impact_pct > 0 ? "+" : "") + s.impact_pct.toFixed(1) + "%</span></div>";
       }).join("") + "</div>" +
+      "<div class='pf-mini-table-wrap'><table class='pf-mini-table pf-scenario-table'>" +
+        "<thead><tr><th>Scenario</th><th>NEPSE</th><th>Move</th><th>Stressed Value / NAV</th><th>Gain/Loss</th></tr></thead><tbody>" +
+        risk.scenarios.map(function (s) {
+          var cls = s.impact_rs < 0 ? "num-neg" : "num-pos";
+          return "<tr><td>" + esc(s.label) +
+            (s.reference ? "<small class='pf-scenario-ref'>" + esc(s.reference) + "</small>" : "") +
+            "</td><td>" +
+            (s.target_index == null ? "—" : nf(Math.round(s.target_index))) + "</td><td>" +
+            (s.shock > 0 ? "+" : "") + s.shock.toFixed(2) + "%</td><td>" +
+            rsCompact(s.portfolio_value) + "</td><td class='" + cls + "'>" +
+            signedRs(s.impact_rs) + " (" + (s.gain_loss_pct > 0 ? "+" : "") +
+            s.gain_loss_pct.toFixed(2) + "%)</td></tr>";
+        }).join("") + "</tbody></table></div>" +
       "<div class='pf-var-note'>Beta-propagated (β = " + risk.beta_used +
       "): NEPSE shocks show % and index-point move from " +
       (idxVal == null ? "the current index" : nf(Math.round(idxVal)) + " pts") +
-      ". Book impact flows via beta. Worst observed session: " +
+      ". Stressed Value / NAV is one figure because this portfolio has no separate cash, liability or unit ledger. " +
+      "Book impact flows via beta. Worst observed session: " +
       (risk.worst_day ? risk.worst_day.pct.toFixed(2) + "% on " + risk.worst_day.date : "—") + ".</div>";
     }
   }
@@ -871,6 +926,25 @@
     var box = el("pf-liq");
     if (!box) return;
     if (!L || !L.ok) { box.innerHTML = "<div class='pf-muted'>Liquidity data unavailable.</div>"; return; }
+    var participation = el("pf-liq-participation");
+    var target = el("pf-liq-target");
+    var run = el("pf-liq-calculate");
+    if (participation) participation.value = String(L.participation_pct || 20);
+    if (target) target.value = String(L.custom_target_pct || 100);
+    if (run && !run._pfBound) {
+      run._pfBound = true;
+      run.addEventListener("click", function () {
+        var p = participation ? participation.value : 20;
+        var t = target ? target.value : 100;
+        run.disabled = true;
+        loadPortfolio({ participation: p, liquidation_pct: t }).then(function () {
+          run.disabled = false;
+        });
+      });
+      if (target) target.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") run.click();
+      });
+    }
     var illiq = L.illiquid_count + (L.untradeable_count ? " (" + L.untradeable_count + " untradeable)" : "");
     var kpis = "<div class='pf-stat-grid pf-liq-kpis'>" +
       stat("Sellable in 1 day", (L.liquidatable_1d_pct || 0).toFixed(1) + "%", "of book value") +
@@ -878,6 +952,16 @@
       stat("Avg days to exit", L.wavg_days == null ? "—" : L.wavg_days.toFixed(1), "value-weighted") +
       stat("Illiquid positions", illiq, "> 5 days to exit") +
       "</div>";
+    var scenarioRows = (L.liquidation_scenarios || {})[String(L.participation_pct)] || [];
+    var milestones = "<div class='pf-liq-label'>Portfolio liquidation milestones</div>" +
+      "<div class='pf-mini-table-wrap'><table class='pf-mini-table pf-liq-table'>" +
+      "<thead><tr><th>Portfolio to sell</th><th>Days to liquidate</th><th>Liquidity risk</th></tr></thead><tbody>" +
+      scenarioRows.map(function (row) {
+        return "<tr" + (row.custom ? " class='is-custom'" : "") + "><td>" +
+          row.target_pct.toFixed(1) + "%" + (row.custom ? " · custom" : "") + "</td><td>" +
+          (row.days == null ? "Not achievable" : dtlText(row.days)) + "</td><td>" +
+          "<span class='pf-liq-tier tier-" + esc(row.risk) + "'>" + esc(row.risk) + "</span></td></tr>";
+      }).join("") + "</tbody></table></div>";
     var list = "<div class='pf-liq-label'>Least liquid holdings</div><div class='pf-liq-list'>" +
       (L.least_liquid || []).map(function (r) {
         return "<div class='pf-liq-row'><span class='pf-tkr'>" + esc(r.symbol) + "</span>" +
@@ -885,10 +969,11 @@
           "<span class='pf-liq-adv'>ADV " + nf(r.adv_qty) + "</span>" +
           "<span class='pf-liq-dtl'>" + dtlText(r.dtl) + "</span></div>";
       }).join("") + "</div>";
-    box.innerHTML = kpis + list +
-      "<div class='pf-var-note'>Days-to-liquidate = position ÷ (" + L.participation_pct + "% of the " +
-      L.lookback_sessions + "-session average daily volume). Assumes you can trade ~" + L.participation_pct +
-      "% of ADV per session without moving the price — thin NEPSE names exit slowly.</div>";
+    box.innerHTML = kpis + milestones + list +
+      "<div class='pf-var-note'>Days-to-liquidate uses " + L.lookback_sessions +
+      " market sessions from a one-year ADV window and caps each holding at " +
+      L.participation_pct + "% of ADV per session. Positions sell simultaneously; " +
+      "an unreachable target includes value with no observed volume.</div>";
   }
 
 })();

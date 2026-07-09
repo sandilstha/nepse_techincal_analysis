@@ -690,9 +690,10 @@
 .pf-stress-list { display: flex; flex-direction: column; gap: 8px; }
 .pf-stress-row { display: grid; grid-template-columns: 150px 1fr 96px 58px; align-items: center; gap: 8px; }
 .pf-stress-label {
-  display: inline-flex; align-items: baseline; gap: 7px; min-width: 0;
-  font: 700 12.5px/1.2 'Manrope', sans-serif; color: var(--ink-1); white-space: nowrap;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0;
+  font: 700 12.5px/1.2 'Manrope', sans-serif; color: var(--ink-1);
 }
+.pf-stress-label > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .pf-stress-label small { font: 600 11px/1 'Manrope', sans-serif; color: var(--ink-3); }
 .pf-stress-bar { height: 9px; background: var(--surface-2); border-radius: 5px; overflow: hidden; position: relative; }
 .pf-stress-bar i { display: block; height: 100%; border-radius: 5px; }
@@ -750,6 +751,83 @@
 .pf-liq-tier.tier-moderate { color: #d8941f; background: rgba(216,148,31,.14); }
 .pf-liq-tier.tier-illiquid { color: var(--down); background: var(--down-soft); }
 .pf-liq-tier.tier-untradeable { color: var(--ink-3); background: var(--surface-2); border: 1px solid var(--line); }
+
+/* Stress-test controls and compact analytical tables */
+.pf-liq-controls {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px;
+  padding: 10px 16px 0;
+}
+.pf-liq-controls label {
+  display: flex; flex-direction: column; gap: 4px;
+  font: 700 9.5px/1 'Manrope', sans-serif; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--ink-3);
+}
+.pf-liq-controls select,
+.pf-liq-controls input {
+  box-sizing: border-box; min-height: 30px; border: 1px solid var(--line);
+  border-radius: var(--radius-sm); background: var(--surface-2); color: var(--ink-1);
+  padding: 5px 8px; font: 600 11px/1 'Manrope', sans-serif;
+}
+.pf-liq-controls input { width: 78px; }
+.pf-liq-controls label > span { display: inline-flex; align-items: center; gap: 4px; }
+.pf-liq-controls .pf-btn { min-height: 30px; padding: 0 12px; }
+.pf-mini-table-wrap {
+  width: 100%; overflow-x: auto; margin: 10px 0;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+}
+.pf-mini-table {
+  width: 100%; min-width: 520px; border-collapse: collapse;
+  font: 500 11px/1.25 'Manrope', sans-serif; color: var(--ink-1);
+}
+.pf-mini-table th {
+  padding: 7px 9px; text-align: right; white-space: nowrap;
+  font: 700 9.5px/1.2 'Manrope', sans-serif; text-transform: uppercase;
+  letter-spacing: .03em; color: var(--ink-3); background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+.pf-mini-table td {
+  padding: 7px 9px; text-align: right; white-space: nowrap;
+  border-bottom: 1px solid var(--line-soft);
+}
+.pf-mini-table tr:last-child td { border-bottom: 0; }
+.pf-mini-table th:first-child,
+.pf-mini-table td:first-child { text-align: left; }
+.pf-top10-table th:nth-child(2),
+.pf-top10-table td:nth-child(2) { text-align: left; }
+.pf-var-matrix { min-width: 560px; }
+.pf-scenario-table { min-width: 620px; }
+.pf-scenario-ref {
+  display: block; margin-top: 2px; color: var(--ink-3);
+  font: 500 9.5px/1.2 'Manrope', sans-serif;
+}
+.pf-top10-table { min-width: 760px; }
+.pf-cum-value { display: block; }
+.pf-cum-bar {
+  display: block; width: 82px; height: 4px; margin-top: 3px; margin-left: auto;
+  overflow: hidden; border-radius: 3px; background: var(--surface-2);
+}
+.pf-cum-bar i { display: block; height: 100%; background: var(--accent); }
+.pf-risk-badge {
+  display: inline-block; min-width: 56px; padding: 3px 7px; text-align: center;
+  border-radius: 999px; font: 700 9.5px/1.2 'Manrope', sans-serif;
+  text-transform: uppercase;
+}
+.pf-risk-badge.risk-low { color: var(--up); background: var(--up-soft); }
+.pf-risk-badge.risk-moderate { color: #d8941f; background: rgba(216,148,31,.14); }
+.pf-risk-badge.risk-high { color: var(--down); background: var(--down-soft); }
+.pf-liq-table { min-width: 380px; }
+.pf-liq-table tr.is-custom td { background: var(--accent-soft); }
+@media (max-width: 620px) {
+  .pf-liq-controls { align-items: stretch; }
+  .pf-liq-controls label { flex: 1 1 42%; }
+  .pf-liq-controls select,
+  .pf-liq-controls label > span,
+  .pf-liq-controls input { width: 100%; }
+  .pf-liq-controls .pf-btn { flex: 1 1 100%; }
+  .pf-conc-summary { flex-wrap: wrap; gap: 14px 22px; }
+  .pf-stress-row { grid-template-columns: 120px 1fr 74px; }
+  .pf-stress-pct { display: none; }
+}
 
 /* ── Holdings table ──────────────────────────────────────────────────────── */
 .pf-table-wrap { max-height: 600px; overflow: auto; }
