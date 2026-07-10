@@ -34,7 +34,52 @@
     .fa-tabrow .fa-subtabs { flex: 1 1 auto; margin: 0; }
     .fa-searchbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
     .fa-searchbar .fa-brand { font-size: 15px; letter-spacing: .02em; opacity: .85; }
-    .fa-searchbar .fa-input { width: 280px; max-width: 60vw; text-transform: none; }
+    .fa-company-picker { position: relative; width: min(440px, 70vw); }
+    .fa-searchbar .fa-company-picker .fa-input { width: 100%; max-width: none; text-transform: none; }
+    .fa-company-picker .fa-input[aria-expanded="true"] {
+      border-color: var(--accent, #4a90e2);
+      box-shadow: 0 0 0 2px var(--accent-soft, rgba(74,144,226,.14));
+    }
+    .fa-company-menu {
+      position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; right: 0;
+      max-height: min(430px, 65vh); overflow-y: auto;
+      border: 1px solid var(--line, rgba(128,128,128,.3)); border-radius: 10px;
+      background: var(--raised, var(--surface, #07142e)); box-shadow: var(--shadow, 0 18px 44px -22px #000);
+      padding: 5px;
+    }
+    .fa-company-menu[hidden], .fa-company-group[hidden], .fa-company-option[hidden],
+    .fa-company-empty[hidden] { display: none; }
+    .fa-company-group + .fa-company-group { margin-top: 5px; }
+    .fa-company-sector-head {
+      position: sticky; top: -5px; z-index: 1;
+      display: flex; justify-content: space-between; gap: 12px;
+      padding: 8px 9px 6px; background: var(--raised, var(--surface, #07142e));
+      color: var(--ink-3, #6f88ad); font-size: 10px; font-weight: 800;
+      letter-spacing: .07em; text-transform: uppercase;
+      border-bottom: 1px solid var(--line-soft, rgba(128,128,128,.12));
+    }
+    .fa-company-count { font-variant-numeric: tabular-nums; }
+    .fa-company-option {
+      display: grid; grid-template-columns: minmax(72px, auto) minmax(0, 1fr);
+      align-items: center; gap: 10px; width: 100%;
+      border: 0; border-radius: 7px; padding: 8px 9px;
+      background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer;
+    }
+    .fa-company-option:hover, .fa-company-option.is-active {
+      background: var(--accent-soft, rgba(74,144,226,.14));
+    }
+    .fa-company-symbol { color: var(--accent, #4a90e2); font-size: 12px; font-weight: 800; }
+    .fa-company-name {
+      min-width: 0; color: var(--ink-2, currentColor); font-size: 12px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .fa-company-empty { padding: 18px 10px; color: var(--ink-3, #6f88ad); font-size: 12px; text-align: center; }
+    @media (max-width: 560px) {
+      .fa-searchbar { align-items: stretch; }
+      .fa-searchbar .fa-brand { width: 100%; }
+      .fa-company-picker { width: calc(100% - 52px); }
+      .fa-company-option { grid-template-columns: 68px minmax(0, 1fr); }
+    }
 
     .fa-company { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
     .fa-company h1 { font-size: 22px; margin: 0; letter-spacing: .02em; }
@@ -325,12 +370,35 @@
     <section id="fa-panel-statement" class="fa-subpanel" role="tabpanel">
       <div class="fa-searchbar">
         <strong class="fa-brand">Company</strong>
-        <input id="fa-symbol" class="fa-input" list="fa-symlist" value="{{ symbol }}"
-               placeholder="Search company / symbol" aria-label="Symbol" autocomplete="off">
-        <datalist id="fa-symlist">
-          {% for s in symbols %}<option value="{{ s.symbol }}">{{ s.symbol }}{% if s.name %} — {{ s.name }}{% endif %}</option>{% endfor %}
-        </datalist>
-        <button id="fa-go" class="fa-btn">Go</button>
+        <div class="fa-company-picker" id="fa-company-picker">
+          <input id="fa-symbol" class="fa-input" value="{{ symbol }}"
+                 placeholder="Search symbol, company, or sector" aria-label="Company"
+                 role="combobox" aria-autocomplete="list" aria-haspopup="listbox"
+                 aria-controls="fa-company-menu" aria-expanded="false" autocomplete="off">
+          <div id="fa-company-menu" class="fa-company-menu" role="listbox"
+               aria-label="Companies grouped by sector" hidden>
+            {% regroup symbols by sector as sector_groups %}
+            {% for group in sector_groups %}
+              <section class="fa-company-group" data-sector="{{ group.grouper }}">
+                <div class="fa-company-sector-head">
+                  <span>{{ group.grouper }}</span>
+                  <span class="fa-company-count">{{ group.list|length }}</span>
+                </div>
+                {% for company in group.list %}
+                  <button type="button" class="fa-company-option" role="option"
+                          data-symbol="{{ company.symbol }}" aria-selected="false">
+                    <span class="fa-company-symbol">{{ company.symbol }}</span>
+                    <span class="fa-company-name">{{ company.name|default:"Name unavailable" }}</span>
+                  </button>
+                {% endfor %}
+              </section>
+            {% endfor %}
+            <div id="fa-company-empty" class="fa-company-empty" hidden>
+              No matching company. You can still enter a valid symbol directly.
+            </div>
+          </div>
+        </div>
+        <button id="fa-go" class="fa-btn" type="button">Go</button>
       </div>
 
       <div id="fa-status" class="fa-status">Search a company to view its fundamentals.</div>

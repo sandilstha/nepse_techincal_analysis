@@ -260,8 +260,8 @@
     "semantic_hash": "bb318371ce8811435f42f4a6ba8d64a7"
   },
   "core_analysis/tests.py": {
-    "mtime": 1783577532.5859487,
-    "ast_hash": "aaa73480a4338d5272d8247eeccf67c9",
+    "mtime": 1783597419.1090052,
+    "ast_hash": "8506fe6f94e51248683e04662a592d25",
     "semantic_hash": ""
   },
   "core_analysis/udf_views.py": {
@@ -350,8 +350,8 @@
     "semantic_hash": ""
   },
   "core_analysis/portfolio_views.py": {
-    "mtime": 1783574861.191581,
-    "ast_hash": "e50bf06fd87d31d756babcecb41583a0",
+    "mtime": 1783596131.790378,
+    "ast_hash": "b7501207fce8b79e6869ba082e5ae1f9",
     "semantic_hash": ""
   },
   "core_analysis/services/portfolio_analytics.py": {
@@ -360,8 +360,8 @@
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/portfolio.js": {
-    "mtime": 1783577553.1404893,
-    "ast_hash": "bc1696697f073de9053e9e00871fc7fa",
+    "mtime": 1783596132.5902655,
+    "ast_hash": "64a16a7859bcb95e5b637c8faa9a2bd1",
     "semantic_hash": ""
   },
   "core_analysis/management/commands/grant_staff.py": {
@@ -385,13 +385,13 @@
     "semantic_hash": ""
   },
   "core_analysis/fundamental_views.py": {
-    "mtime": 1783328522.7037086,
-    "ast_hash": "b66e6e3f04cb0cdc38bec4818e8c3bea",
+    "mtime": 1783588738.2083695,
+    "ast_hash": "20df9cdd18fe61a3e064055b04c081c5",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/fundamentals.js": {
-    "mtime": 1782903225.4082232,
-    "ast_hash": "77605601dbd9f4a3b70919b75eec29dd",
+    "mtime": 1783588739.8246462,
+    "ast_hash": "eda1e0049c638fcca7942ae8717fe309",
     "semantic_hash": ""
   },
   "core_analysis/migrations/0009_holdingcost.py": {

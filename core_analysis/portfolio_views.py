@@ -34,6 +34,12 @@ MAX_UPLOAD_BYTES = 2 * 1024 * 1024      # a holdings CSV is tiny; cap to be safe
 MAX_DOC_UPLOAD_BYTES = 8 * 1024 * 1024  # holdings/WACC reports can be multi-page PDFs
 _DOC_EXTENSIONS = (".pdf", ".xlsx", ".xlsm", ".xls")
 _SYMBOL_RE = re.compile(r"^[A-Z0-9]+$")
+_OWNER_NAME_RE = re.compile(
+    r"(?:holder|bo|beneficiary(?:\s+owner)?|account\s+holder|client)\s+name"
+    r"\s*[:\-]\s*(.+?)(?=\s+(?:boid|bo\s+id|client\s+id|dp\s+id|report\s+date|date)"
+    r"\s*[:\-]|$)",
+    re.IGNORECASE,
+)
 
 
 def _asset_version():
@@ -130,23 +136,47 @@ def parse_holdings_csv(text):
     return _normalize_holdings_table(csv.reader(io.StringIO(text)))
 
 
-def parse_holdings_report(upload):
-    """Parse an uploaded 'My Shares' holdings file (CSV / Excel / PDF) -> rows.
+def _extract_holdings_owner(table, document_text=""):
+    """Return the account-holder name carried in a holdings report, if present."""
+    sources = list((document_text or "").splitlines())
+    sources.extend(
+        " ".join(" ".join(str(cell or "").split()) for cell in row)
+        for row in table
+    )
+    for source in sources:
+        match = _OWNER_NAME_RE.search(" ".join(source.split()))
+        if not match:
+            continue
+        candidate = match.group(1).strip(" :,|-")
+        candidate = re.split(r"\s+(?=\d{8,}\b)", candidate, maxsplit=1)[0].strip()
+        if not candidate or len(candidate) > 120 or not re.search(r"[A-Za-z]{2}", candidate):
+            continue
+        if candidate.isupper():
+            candidate = candidate.title()
+        return _normalize_portfolio_name(candidate)
+    return ""
 
-    Dispatches on the filename extension exactly like ``parse_wacc_report``;
-    every branch yields a raw table that ``_normalize_holdings_table`` maps to
-    ``{symbol, quantity, last_close, ltp}`` rows.
-    """
+
+def parse_holdings_report_details(upload):
+    """Parse holdings plus metadata -> ``(rows, skipped, owner_name)``."""
     name = (upload.name or "").lower()
     data = upload.read()
     if name.endswith(".pdf"):
-        table = _table_from_pdf(data)
+        table, document_text = _table_and_text_from_pdf(data)
     elif name.endswith((".xlsx", ".xlsm", ".xls")):
         table = _table_from_excel(data)
+        document_text = ""
     else:
-        text = data.decode("utf-8-sig", errors="replace")
-        table = list(csv.reader(io.StringIO(text)))
-    return _normalize_holdings_table(table)
+        document_text = data.decode("utf-8-sig", errors="replace")
+        table = list(csv.reader(io.StringIO(document_text)))
+    rows, skipped = _normalize_holdings_table(table)
+    return rows, skipped, _extract_holdings_owner(table, document_text)
+
+
+def parse_holdings_report(upload):
+    """Back-compatible holdings parser returning ``(rows, skipped)``."""
+    rows, skipped, _owner = parse_holdings_report_details(upload)
+    return rows, skipped
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -216,16 +246,25 @@ def _normalize_wacc_table(table):
     return rows, skipped
 
 
-def _table_from_pdf(data):
-    """All table rows from every page of a PDF, in document order."""
+def _table_and_text_from_pdf(data):
+    """All PDF table rows and page text, in document order."""
     import pdfplumber
 
-    out = []
+    out, text = [], []
     with pdfplumber.open(io.BytesIO(data)) as pdf:
         for page in pdf.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text.append(page_text)
             for tbl in page.extract_tables():
                 out.extend(tbl)
-    return out
+    return out, "\n".join(text)
+
+
+def _table_from_pdf(data):
+    """All table rows from every page of a PDF, in document order."""
+    table, _text = _table_and_text_from_pdf(data)
+    return table
 
 
 def _table_from_excel(data):
@@ -395,13 +434,16 @@ def _unique_portfolio_name(user, base_name):
     from core_analysis.models import Portfolio
 
     base = _normalize_portfolio_name(base_name) or DEFAULT_PORTFOLIO_NAME
-    existing = set(Portfolio.objects.filter(user=user).values_list("name", flat=True))
-    if base not in existing:
+    existing = {
+        name.casefold()
+        for name in Portfolio.objects.filter(user=user).values_list("name", flat=True)
+    }
+    if base.casefold() not in existing:
         return base
     for n in range(2, 1000):
         suffix = f" {n}"
         candidate = f"{base[:120 - len(suffix)]}{suffix}"
-        if candidate not in existing:
+        if candidate.casefold() not in existing:
             return candidate
     return f"{base[:112]} {Portfolio.objects.filter(user=user).count() + 1}"
 
@@ -433,8 +475,6 @@ def _is_approver(user):
 @login_required(login_url="login")
 def portfolio_view(request):
     """Render the Risk & Portfolio dashboard shell for the logged-in user."""
-    from core_analysis.models import Portfolio
-
     portfolio = _get_selected_portfolio(request)
     active_portfolios, archived_portfolios = _portfolio_rows(request.user)
     is_approver = _is_approver(request.user)
@@ -453,7 +493,6 @@ def portfolio_view(request):
             "archived_portfolios": archived_portfolios,
             "active_holdings_count": portfolio.holdings.count(),
             "active_costs_count": portfolio.costs.count(),
-            "portfolio_type_choices": Portfolio.TYPE_CHOICES,
             "has_holdings": portfolio.holdings.exists(),
             "is_approver": is_approver,
             "pending_approvals": pending_count,
@@ -513,10 +552,53 @@ def portfolio_manage(request):
 
     action = (request.POST.get("action") or "").strip().lower()
     redirect_portfolio = None
+    create_import = None
+    create_cost_import = None
+
+    # Parse an optional holdings file before opening the database transaction.
+    # Selecting a file on the create form therefore creates, names and fills the
+    # portfolio in one request; an invalid file never leaves an empty portfolio.
+    if action == "create" and request.FILES.get("file"):
+        upload = request.FILES["file"]
+        is_doc = (upload.name or "").lower().endswith(_DOC_EXTENSIONS)
+        limit = MAX_DOC_UPLOAD_BYTES if is_doc else MAX_UPLOAD_BYTES
+        if upload.size and upload.size > limit:
+            messages.error(request, "That file is too large to be a holdings report.")
+            return redirect(_portfolio_url(_get_selected_portfolio(request)))
+        try:
+            create_import = parse_holdings_report_details(upload)
+        except Exception:
+            logger.exception("holdings parse failed while creating portfolio for user %s", request.user.id)
+            messages.error(
+                request,
+                "Could not read that file — upload the Meroshare 'My Shares' export.",
+            )
+            return redirect(_portfolio_url(_get_selected_portfolio(request)))
+        if not create_import[0]:
+            messages.error(request, "No holdings found in that file. Check the format and try again.")
+            return redirect(_portfolio_url(_get_selected_portfolio(request)))
+
+    if action == "create" and request.FILES.get("wacc_file"):
+        wacc_upload = request.FILES["wacc_file"]
+        if wacc_upload.size and wacc_upload.size > MAX_DOC_UPLOAD_BYTES:
+            messages.error(request, "That file is too large to be a WACC report.")
+            return redirect(_portfolio_url(_get_selected_portfolio(request)))
+        try:
+            create_cost_import = parse_wacc_report(wacc_upload)
+        except Exception:
+            logger.exception("WACC parse failed while creating portfolio for user %s", request.user.id)
+            messages.error(
+                request,
+                "Could not read that file — upload the broker 'My WACC' report.",
+            )
+            return redirect(_portfolio_url(_get_selected_portfolio(request)))
+        if not create_cost_import[0]:
+            messages.error(request, "No WACC rows found in that file. Check the format and try again.")
+            return redirect(_portfolio_url(_get_selected_portfolio(request)))
 
     try:
         with transaction.atomic():
-            _ensure_portfolio_defaults(request.user)
+            default_portfolio = _ensure_portfolio_defaults(request.user)
 
             if action == "create":
                 name = _normalize_portfolio_name(request.POST.get("name"))
@@ -524,22 +606,103 @@ def portfolio_manage(request):
                 valid_types = {key for key, _label in Portfolio.TYPE_CHOICES}
                 if ptype not in valid_types:
                     ptype = Portfolio.CUSTOM
+                if create_import:
+                    rows, skipped, owner_name = create_import
+                    type_label = dict(Portfolio.TYPE_CHOICES).get(ptype, DEFAULT_PORTFOLIO_NAME)
+                    if not name:
+                        name = _unique_portfolio_name(
+                            request.user, owner_name or type_label
+                        )
                 if not name:
                     # No name field on the form — derive a unique one from the type
                     # (e.g. "Personal", then "Personal 2"). Rename afterwards to taste.
                     type_label = dict(Portfolio.TYPE_CHOICES).get(ptype, DEFAULT_PORTFOLIO_NAME)
                     name = _unique_portfolio_name(request.user, type_label)
-                elif Portfolio.objects.filter(user=request.user, name=name).exists():
+                elif Portfolio.objects.filter(user=request.user, name__iexact=name).exists():
                     messages.error(request, "A portfolio with that name already exists.")
                     return redirect(_portfolio_url(_get_selected_portfolio(request)))
-                make_default = not Portfolio.objects.filter(user=request.user, is_archived=False).exists()
-                redirect_portfolio = Portfolio.objects.create(
-                    user=request.user,
-                    name=name,
-                    portfolio_type=ptype,
-                    is_default=make_default,
+                reuse_placeholder = (
+                    (create_import or create_cost_import)
+                    and Portfolio.objects.filter(user=request.user).count() == 1
+                    and default_portfolio.name == DEFAULT_PORTFOLIO_NAME
+                    and not default_portfolio.holdings.exists()
+                    and not default_portfolio.costs.exists()
                 )
-                messages.success(request, f"Created portfolio '{redirect_portfolio.name}'.")
+                if reuse_placeholder:
+                    redirect_portfolio = default_portfolio
+                    redirect_portfolio.name = name
+                    redirect_portfolio.portfolio_type = ptype
+                    redirect_portfolio.save(
+                        update_fields=["name", "portfolio_type", "updated_at"]
+                    )
+                else:
+                    make_default = not Portfolio.objects.filter(
+                        user=request.user, is_archived=False
+                    ).exists()
+                    redirect_portfolio = Portfolio.objects.create(
+                        user=request.user,
+                        name=name,
+                        portfolio_type=ptype,
+                        is_default=make_default,
+                    )
+                if create_import:
+                    Holding.objects.bulk_create([
+                        Holding(
+                            portfolio=redirect_portfolio,
+                            symbol=row["symbol"],
+                            quantity=row["quantity"],
+                            last_close=row["last_close"],
+                            ltp=row["ltp"],
+                        )
+                        for row in rows
+                    ])
+                    note = (
+                        f"Created portfolio '{redirect_portfolio.name}' and imported "
+                        f"{len(rows)} holdings."
+                    )
+                    if not owner_name and not _normalize_portfolio_name(request.POST.get("name")):
+                        note += " Owner name was not present in the report; you can rename it."
+                    if skipped:
+                        note += f" ({skipped} non-position lines skipped.)"
+                    if create_cost_import:
+                        cost_rows, cost_skipped = create_cost_import
+                        HoldingCost.objects.bulk_create([
+                            HoldingCost(
+                                portfolio=redirect_portfolio,
+                                symbol=row["symbol"],
+                                wacc_rate=row["wacc_rate"],
+                                quantity=row["quantity"] or 0,
+                                total_cost=row["total_cost"],
+                                modified=row["modified"] or "",
+                            )
+                            for row in cost_rows
+                        ])
+                        note += f" Imported {len(cost_rows)} WACC rows."
+                        if cost_skipped:
+                            note += f" ({cost_skipped} non-data WACC lines skipped.)"
+                    messages.success(request, note)
+                elif create_cost_import:
+                    cost_rows, cost_skipped = create_cost_import
+                    HoldingCost.objects.bulk_create([
+                        HoldingCost(
+                            portfolio=redirect_portfolio,
+                            symbol=row["symbol"],
+                            wacc_rate=row["wacc_rate"],
+                            quantity=row["quantity"] or 0,
+                            total_cost=row["total_cost"],
+                            modified=row["modified"] or "",
+                        )
+                        for row in cost_rows
+                    ])
+                    note = (
+                        f"Created portfolio '{redirect_portfolio.name}' and imported "
+                        f"{len(cost_rows)} WACC rows."
+                    )
+                    if cost_skipped:
+                        note += f" ({cost_skipped} non-data lines skipped.)"
+                    messages.success(request, note)
+                else:
+                    messages.success(request, f"Created portfolio '{redirect_portfolio.name}'.")
 
             elif action == "rename":
                 portfolio = _owned_portfolio(
@@ -549,7 +712,11 @@ def portfolio_manage(request):
                 if portfolio is None or not name:
                     messages.error(request, "Choose a portfolio and enter a valid name.")
                     return redirect(_portfolio_url(_get_selected_portfolio(request)))
-                if Portfolio.objects.filter(user=request.user, name=name).exclude(pk=portfolio.pk).exists():
+                if (
+                    Portfolio.objects.filter(user=request.user, name__iexact=name)
+                    .exclude(pk=portfolio.pk)
+                    .exists()
+                ):
                     messages.error(request, "A portfolio with that name already exists.")
                     return redirect(_portfolio_url(portfolio if not portfolio.is_archived else None))
                 portfolio.name = name
@@ -641,6 +808,18 @@ def portfolio_manage(request):
                 if portfolio is None:
                     messages.error(request, "Portfolio not found.")
                     return redirect(_portfolio_url(_get_selected_portfolio(request)))
+                if not portfolio.is_archived:
+                    active_count = (
+                        Portfolio.objects.select_for_update()
+                        .filter(user=request.user, is_archived=False)
+                        .count()
+                    )
+                    if active_count <= 1:
+                        messages.error(
+                            request,
+                            "The last active portfolio cannot be deleted. Create another portfolio first.",
+                        )
+                        return redirect(_portfolio_url(portfolio))
                 name = portfolio.name
                 portfolio.delete()
                 redirect_portfolio = _ensure_portfolio_defaults(request.user)
@@ -762,7 +941,7 @@ def portfolio_approval_action(request):
 @require_POST
 def portfolio_import(request):
     """Replace the user's holdings with an uploaded 'My Shares' file (CSV / Excel / PDF)."""
-    from core_analysis.models import Holding
+    from core_analysis.models import Holding, Portfolio
 
     upload = request.FILES.get("file")
     if not upload:
@@ -775,7 +954,7 @@ def portfolio_import(request):
         return redirect("portfolio")
 
     try:
-        rows, skipped = parse_holdings_report(upload)
+        rows, skipped, owner_name = parse_holdings_report_details(upload)
     except Exception:
         logger.exception("holdings parse failed for user %s", request.user.id)
         messages.error(
@@ -790,6 +969,18 @@ def portfolio_import(request):
 
     portfolio = _get_selected_portfolio(request)
     with transaction.atomic():
+        auto_named = False
+        if (
+            owner_name
+            and portfolio.name == DEFAULT_PORTFOLIO_NAME
+            and not portfolio.holdings.exists()
+            and not portfolio.costs.exists()
+            and not Portfolio.objects.filter(
+                user=request.user, name__iexact=owner_name
+            ).exclude(pk=portfolio.pk).exists()
+        ):
+            portfolio.name = owner_name
+            auto_named = True
         portfolio.holdings.all().delete()
         Holding.objects.bulk_create([
             Holding(
@@ -801,9 +992,11 @@ def portfolio_import(request):
             )
             for r in rows
         ])
-        portfolio.save()  # bump updated_at so cached payloads invalidate
+        portfolio.save()  # persist auto-name and bump updated_at for cached payloads
 
     note = f"Imported {len(rows)} holdings into {portfolio.name}."
+    if auto_named:
+        note += " Portfolio name was read from the report."
     if skipped:
         note += f" ({skipped} non-position lines skipped.)"
     messages.success(request, note)

@@ -151,8 +151,21 @@
       <section class="sop-sec" id="imports">
         <p class="sop-kicker">Section 3</p>
         <h3>Importing holdings &amp; cost basis</h3>
+        <h4 id="portfolio-management">3.0 Managing multiple portfolios</h4>
+        <p>Create a portfolio in one ordered row: <b>Name → Upload Holdings → Upload WACC →
+          Create Portfolio</b>. Name may be left blank when the holdings report contains
+          <i>Holder Name</i> or <i>BO Name</i>; WACC is optional. Both files are validated before
+          the portfolio and its rows are created in one database transaction. Portfolio names are
+          unique per account without case sensitivity. Use <b>Duplicate</b>
+          to create an independent copy of holdings and WACC rows. When two or more active
+          portfolios exist, each portfolio tab provides a delete control. Deletion permanently
+          removes that portfolio and its holdings and WACC rows; the last active portfolio cannot
+          be deleted. Archived portfolios may be permanently deleted from Manage portfolios.</p>
         <h4 id="imports-holdings">3.1 Update Holdings — “My Shares” file (CSV, Excel or PDF)</h4>
-        <p>Export “My Shares” from Meroshare and upload it as-is. The parser locates the
+        <p>Export “My Shares” from Meroshare and choose it once. First-time and new-portfolio
+          imports start immediately after file selection. When the report includes
+          <i>Holder Name</i> or <i>BO Name</i>, that value becomes the portfolio name automatically;
+          otherwise the selected portfolio type provides the fallback name. The parser locates the
           <i>Scrip</i>, <i>Current Balance</i>, <i>Last Closing Price</i> and <i>LTP</i> columns by
           header name (order-independent), skips header/total/blank lines and zero balances, and
           de-duplicates symbols. PDF uploads are read table-by-table across every page; Excel
