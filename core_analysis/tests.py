@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.template.loader import render_to_string
 from django.test import Client, RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
@@ -177,6 +178,140 @@ class MultiPortfolioManagementTests(TestCase):
         )
         self.client.force_login(self.user)
 
+    @staticmethod
+    def _holdings_upload(owner="SHARADA DEVI SHRESTHA"):
+        content = (
+            f"Holder Name :,{owner}\n"
+            "Scrip,Current Balance,Last Closing Price,Last Transaction Price (LTP)\n"
+            "NABIL,10,500,502\n"
+        )
+        return SimpleUploadedFile(
+            "my-shares.csv", content.encode("utf-8"), content_type="text/csv"
+        )
+
+    @staticmethod
+    def _wacc_upload():
+        content = (
+            "Scrip Name,WACC Calculated Quantity,WACC Rate,"
+            "Total Cost of Capital,Last Modification Date\n"
+            "NABIL,10,400,4000,2026-07-09\n"
+        )
+        return SimpleUploadedFile(
+            "my-wacc.csv", content.encode("utf-8"), content_type="text/csv"
+        )
+
+    def test_holdings_report_extracts_owner_name(self):
+        from core_analysis.portfolio_views import parse_holdings_report_details
+
+        rows, skipped, owner = parse_holdings_report_details(self._holdings_upload())
+
+        self.assertEqual(owner, "Sharada Devi Shrestha")
+        self.assertEqual([row["symbol"] for row in rows], ["NABIL"])
+        self.assertEqual(skipped, 1)
+
+    def test_first_import_automatically_names_default_portfolio(self):
+        self.client.get(reverse("portfolio"))
+        portfolio = Portfolio.objects.get(user=self.user)
+
+        response = self.client.post(
+            reverse("portfolio_import"),
+            {"portfolio_id": portfolio.id, "file": self._holdings_upload()},
+        )
+
+        portfolio.refresh_from_db()
+        self.assertRedirects(
+            response,
+            f"{reverse('portfolio')}?portfolio={portfolio.id}",
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(portfolio.name, "Sharada Devi Shrestha")
+        self.assertEqual(portfolio.holdings.count(), 1)
+
+    def test_create_with_file_reuses_empty_default_and_imports_in_one_request(self):
+        response = self.client.post(
+            reverse("portfolio_manage"),
+            {
+                "action": "create",
+                "portfolio_type": Portfolio.PERSONAL,
+                "file": self._holdings_upload(),
+            },
+        )
+
+        portfolio = Portfolio.objects.get(user=self.user)
+        self.assertRedirects(
+            response,
+            f"{reverse('portfolio')}?portfolio={portfolio.id}",
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(portfolio.name, "Sharada Devi Shrestha")
+        self.assertEqual(portfolio.holdings.count(), 1)
+
+    def test_create_imports_holdings_and_wacc_together_and_honors_typed_name(self):
+        response = self.client.post(
+            reverse("portfolio_manage"),
+            {
+                "action": "create",
+                "name": "Family Portfolio",
+                "portfolio_type": Portfolio.PERSONAL,
+                "file": self._holdings_upload(),
+                "wacc_file": self._wacc_upload(),
+            },
+        )
+
+        portfolio = Portfolio.objects.get(user=self.user)
+        self.assertRedirects(
+            response,
+            f"{reverse('portfolio')}?portfolio={portfolio.id}",
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(portfolio.name, "Family Portfolio")
+        self.assertEqual(portfolio.holdings.count(), 1)
+        self.assertEqual(portfolio.costs.count(), 1)
+        self.assertEqual(portfolio.costs.get().symbol, "NABIL")
+
+    def test_create_controls_render_in_requested_order(self):
+        response = self.client.get(reverse("portfolio"))
+        html = response.content.decode()
+
+        positions = [
+            html.index('name="name"'),
+            html.index('id="pf-new-portfolio-file"'),
+            html.index('id="pf-new-wacc-file"'),
+            html.index(">Create Portfolio</button>"),
+        ]
+        self.assertEqual(positions, sorted(positions))
+        self.assertContains(response, 'class="pf-manager-form pf-create-series"')
+        self.assertContains(response, 'class="pf-portfolio-manager" open')
+        self.assertNotContains(response, 'class="pf-import-card"')
+        self.assertContains(
+            response,
+            'class="pf-file-picker pf-file-picker-combined"',
+            count=2,
+        )
+        self.assertContains(response, "My Shares Values")
+        self.assertContains(response, "My WACC Report")
+        self.assertNotContains(response, "Choose Holdings")
+        self.assertNotContains(response, "Choose WACC")
+        self.assertNotContains(response, "Upload WACC <small>optional</small>")
+
+    def test_holdings_toolbar_offers_portfolio_delete_instead_of_clear(self):
+        primary = Portfolio.objects.create(user=self.user, name="Saraswoti Joshi Shrestha")
+        Portfolio.objects.create(user=self.user, name="Other", is_default=True)
+        Holding.objects.create(
+            portfolio=primary, symbol="NABIL", quantity=10, last_close=500, ltp=502
+        )
+
+        response = self.client.get(reverse("portfolio"), {"portfolio": primary.id})
+
+        self.assertContains(response, "Delete Portfolio")
+        self.assertNotContains(response, "Clear Holdings")
+        self.assertContains(response, f'data-name="{primary.name}"')
+        self.assertContains(
+            response,
+            'class="pf-file-picker pf-file-picker-combined"',
+            count=4,
+        )
+
     def test_portfolio_page_creates_default_portfolio(self):
         response = self.client.get(reverse("portfolio"))
 
@@ -255,6 +390,66 @@ class MultiPortfolioManagementTests(TestCase):
         self.assertEqual(duplicate.holdings.count(), 1)
         self.assertEqual(duplicate.costs.count(), 1)
         self.assertNotEqual(duplicate.holdings.first().portfolio_id, source.id)
+
+    def test_delete_active_duplicate_cascades_data_and_keeps_an_active_portfolio(self):
+        primary = Portfolio.objects.create(user=self.user, name="Primary", is_default=True)
+        duplicate = Portfolio.objects.create(user=self.user, name="Primary Copy")
+        Holding.objects.create(
+            portfolio=duplicate, symbol="NABIL", quantity=10, last_close=500, ltp=502
+        )
+        HoldingCost.objects.create(
+            portfolio=duplicate, symbol="NABIL", wacc_rate=400, quantity=10, total_cost=4000
+        )
+
+        response = self.client.post(
+            reverse("portfolio_manage"),
+            {"action": "delete", "portfolio_id": duplicate.id},
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('portfolio')}?portfolio={primary.id}",
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(Portfolio.objects.filter(pk=duplicate.pk).exists())
+        self.assertTrue(Portfolio.objects.filter(pk=primary.pk, is_default=True).exists())
+
+    def test_last_active_portfolio_cannot_be_deleted(self):
+        portfolio = Portfolio.objects.create(user=self.user, name="Only", is_default=True)
+
+        response = self.client.post(
+            reverse("portfolio_manage"),
+            {"action": "delete", "portfolio_id": portfolio.id},
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('portfolio')}?portfolio={portfolio.id}",
+            fetch_redirect_response=False,
+        )
+        self.assertTrue(Portfolio.objects.filter(pk=portfolio.pk).exists())
+
+    def test_portfolio_names_are_case_insensitively_unique(self):
+        Portfolio.objects.create(user=self.user, name="Personal", is_default=True)
+
+        self.client.post(
+            reverse("portfolio_manage"),
+            {"action": "create", "name": "personal", "portfolio_type": Portfolio.PERSONAL},
+        )
+
+        self.assertEqual(Portfolio.objects.filter(user=self.user).count(), 1)
+
+    def test_compact_selector_replaces_redundant_portfolio_tabs(self):
+        Portfolio.objects.create(user=self.user, name="Primary", is_default=True)
+        Portfolio.objects.create(user=self.user, name="Primary Copy")
+
+        response = self.client.get(reverse("portfolio"))
+
+        self.assertContains(response, 'id="pf-portfolio-select"')
+        self.assertContains(response, "Primary (default)")
+        self.assertContains(response, "Primary Copy")
+        self.assertNotContains(response, 'class="pf-portfolio-tabs"')
+        self.assertNotContains(response, 'class="pf-tab-delete"')
 
     def test_portfolio_data_api_uses_requested_portfolio(self):
         p1 = Portfolio.objects.create(user=self.user, name="Personal", is_default=True)

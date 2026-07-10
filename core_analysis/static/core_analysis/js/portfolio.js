@@ -9,7 +9,8 @@
   bindFileInputs();
   bindHelpLinks();
   bindPortfolioSelector();
-  bindPortfolioRename();    // inline rename on tabs + archived rows — runs even with no holdings
+  bindPortfolioRename();    // archived-row rename — runs even with no holdings
+  bindPortfolioDelete();    // safe confirmation for permanent portfolio deletion
   initApprovals();          // admin notification bell — runs even with no holdings
   if (!window.PF_HAS_HOLDINGS) return;
 
@@ -57,6 +58,24 @@
         name.title = label;
       }
       input.addEventListener("change", syncName);
+      input.addEventListener("change", function () {
+        var form = input.form;
+        if (
+          !form ||
+          !form.hasAttribute("data-pf-auto-upload") ||
+          !input.files ||
+          !input.files.length
+        ) return;
+        Array.prototype.forEach.call(
+          form.querySelectorAll('button[type="submit"]'),
+          function (button) {
+            button.disabled = true;
+            button.textContent = "Importing…";
+          }
+        );
+        if (form.requestSubmit) form.requestSubmit();
+        else form.submit();
+      });
       syncName();
     });
   }
@@ -71,8 +90,8 @@
   }
 
   // ── Inline portfolio rename ───────────────────────────────────────────
-  // The pencil on each active tab and the "Rename" button on each archived
-  // row carry [data-pf-rename] with the portfolio id + current name. We prompt
+  // Archived rows carry [data-pf-rename] with the portfolio id + current name.
+  // We prompt
   // for a new name and POST the existing "rename" action to /portfolio/manage/
   // (same endpoint the manager panel's Rename form uses) — the server does the
   // final normalise / dup-name check and flashes the result.
@@ -92,6 +111,31 @@
       next = next.replace(/\s+/g, " ").trim();
       if (!next || next === current.trim()) return;   // empty or unchanged
       submitManage(manageUrl, { action: "rename", portfolio_id: id, name: next });
+    });
+  }
+
+  // Confirm permanent deletion without interpolating a user-controlled
+  // portfolio name into inline JavaScript.
+  function bindPortfolioDelete() {
+    function confirmDelete(name) {
+      return window.confirm(
+        'Delete "' + (name || "this portfolio") +
+        '" and all of its holdings and WACC rows? This cannot be undone.'
+      );
+    }
+
+    document.addEventListener("submit", function (e) {
+      var form = e.target.closest ? e.target.closest("[data-pf-delete]") : null;
+      if (form && !confirmDelete(form.getAttribute("data-name"))) {
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener("click", function (e) {
+      var button = e.target.closest ? e.target.closest("[data-pf-delete-button]") : null;
+      if (button && !confirmDelete(button.getAttribute("data-name"))) {
+        e.preventDefault();
+      }
     });
   }
 
