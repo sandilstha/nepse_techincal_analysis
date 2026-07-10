@@ -11,14 +11,14 @@
   <link rel="stylesheet" href="{% static 'core_analysis/css/portfolio.css' %}?v={{ asset_version }}">
   <style>
     /* Portfolio Summary + holdings desk (scoped to this page). */
-    .pf-sum-controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin-bottom:8px;padding:10px 12px 0}
+    .pf-sum-controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px;margin-bottom:6px;padding:8px 10px 0}
     .pf-sum-idx{display:flex;flex-direction:column;gap:4px}
     .pf-sum-idx label{font-size:10px;text-transform:uppercase;letter-spacing:.04em;opacity:.7}
     .pf-sum-idx input{width:116px;padding:6px 8px;border-radius:8px;
       border:1px solid rgba(150,160,190,.35);background:transparent;color:inherit;font:inherit}
     .pf-sum-idx input[readonly]{opacity:.7}
-    .pf-idx-change{font-weight:700;padding:6px 2px;min-width:64px}
-    .pf-sum-tiles{margin-bottom:10px;padding:0 12px}
+    .pf-idx-change{font-weight:700;padding:4px 2px;min-width:64px}
+    .pf-sum-tiles{margin-bottom:7px;padding:0 10px}
     .pf-sum-table th,.pf-sum-table td{white-space:nowrap;text-align:right;overflow:hidden;text-overflow:ellipsis}
     .pf-sum-table th.l,.pf-sum-table td.l{text-align:left}
     .pf-sum-table thead .pf-sum-grp th{border-bottom:1px solid rgba(150,160,190,.25);
@@ -118,7 +118,7 @@
               <span>2 &middot; Upload Holdings</span>
               <span class="pf-upload">
                 <input class="pf-file-input" type="file" name="file"
-                       accept=".csv,.xlsx,.xlsm,.xls,.pdf" id="pf-new-portfolio-file" required>
+                       accept=".csv,.xlsx,.xlsm,.pdf" id="pf-new-portfolio-file" required>
                 <label class="pf-file-picker pf-file-picker-combined" for="pf-new-portfolio-file">
                   <span class="pf-file-name" data-empty-label="My Shares Values">My Shares Values</span>
                 </label>
@@ -128,7 +128,7 @@
               <span>3 &middot; Upload WACC</span>
               <span class="pf-upload">
                 <input class="pf-file-input" type="file" name="wacc_file"
-                       accept=".csv,.xlsx,.xlsm,.xls,.pdf" id="pf-new-wacc-file">
+                       accept=".csv,.xlsx,.xlsm,.pdf" id="pf-new-wacc-file">
                 <label class="pf-file-picker pf-file-picker-combined" for="pf-new-wacc-file">
                   <span class="pf-file-name" data-empty-label="My WACC Report">My WACC Report</span>
                 </label>
@@ -183,20 +183,20 @@
   <!-- ── Compact toolbar (delete active portfolio) ────────────────────── -->
   <section class="pf-toolbar">
     <div class="pf-toolbar-left">
-      <span class="pf-toolbar-label" id="pf-toolbar-name">{{ active_portfolio.name }}</span>
+      <div class="pf-toolbar-title-line">
+        <span class="pf-toolbar-label" id="pf-toolbar-name">{{ active_portfolio.name }}</span>
+        <form method="post" action="{% url 'portfolio_manage' %}" class="pf-delete-form"
+              data-pf-delete data-name="{{ active_portfolio.name }}">
+          {% csrf_token %}
+          <input type="hidden" name="portfolio_id" value="{{ active_portfolio.id }}">
+          <button type="submit" name="action" value="delete" class="pf-btn pf-btn-danger"
+                  {% if active_portfolios|length <= 1 %}disabled
+                  title="Create another portfolio before deleting the last active portfolio"{% endif %}>
+            Delete Portfolio
+          </button>
+        </form>
+      </div>
       <span class="pf-toolbar-asof" id="pf-asof"></span>
-    </div>
-    <div class="pf-toolbar-actions">
-      <form method="post" action="{% url 'portfolio_manage' %}" class="pf-delete-form"
-            data-pf-delete data-name="{{ active_portfolio.name }}">
-        {% csrf_token %}
-        <input type="hidden" name="portfolio_id" value="{{ active_portfolio.id }}">
-        <button type="submit" name="action" value="delete" class="pf-btn pf-btn-danger"
-                {% if active_portfolios|length <= 1 %}disabled
-                title="Create another portfolio before deleting the last active portfolio"{% endif %}>
-          Delete Portfolio
-        </button>
-      </form>
     </div>
   </section>
 

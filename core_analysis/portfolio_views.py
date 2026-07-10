@@ -13,7 +13,9 @@ from __future__ import annotations
 import csv
 import io
 import logging
+import math
 import re
+import zipfile
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -32,7 +34,17 @@ logger = logging.getLogger(__name__)
 DEFAULT_PORTFOLIO_NAME = "My Portfolio"
 MAX_UPLOAD_BYTES = 2 * 1024 * 1024      # a holdings CSV is tiny; cap to be safe
 MAX_DOC_UPLOAD_BYTES = 8 * 1024 * 1024  # holdings/WACC reports can be multi-page PDFs
-_DOC_EXTENSIONS = (".pdf", ".xlsx", ".xlsm", ".xls")
+MAX_EXCEL_UNCOMPRESSED_BYTES = 32 * 1024 * 1024
+MAX_TABLE_ROWS = 5_000
+MAX_TABLE_COLUMNS = 100
+MAX_IMPORT_ROWS = 1_000
+MAX_PDF_PAGES = 50
+MAX_QUANTITY = 10**16
+MAX_SNAPSHOT_PRICE = 10**12
+MAX_WACC_RATE = 10**10
+MAX_TOTAL_COST = 10**16
+_ALLOWED_UPLOAD_EXTENSIONS = (".csv", ".pdf", ".xlsx", ".xlsm")
+_DOC_EXTENSIONS = (".pdf", ".xlsx", ".xlsm")
 _SYMBOL_RE = re.compile(r"^[A-Z0-9]+$")
 _OWNER_NAME_RE = re.compile(
     r"(?:holder|bo|beneficiary(?:\s+owner)?|account\s+holder|client)\s+name"
@@ -59,9 +71,33 @@ def _num(value):
     if not s:
         return None
     try:
-        return float(s)
-    except ValueError:
+        parsed = float(s)
+    except (ValueError, OverflowError):
         return None
+    return parsed if math.isfinite(parsed) else None
+
+
+def _upload_validation_error(upload, report_name):
+    """Return a user-facing error for unsupported or over-sized report files."""
+    name = (getattr(upload, "name", "") or "").lower()
+    extension = next(
+        (suffix for suffix in _ALLOWED_UPLOAD_EXTENSIONS if name.endswith(suffix)),
+        None,
+    )
+    if extension is None:
+        return f"Unsupported {report_name} file. Upload a CSV, XLSX, XLSM or PDF file."
+    limit = MAX_DOC_UPLOAD_BYTES if extension in _DOC_EXTENSIONS else MAX_UPLOAD_BYTES
+    if upload.size and upload.size > limit:
+        return f"That file is too large to be a {report_name} report."
+    return None
+
+
+def _check_table_shape(row_number, raw):
+    """Reject documents whose expanded table shape is unreasonable for a portfolio."""
+    if row_number > MAX_TABLE_ROWS:
+        raise ValueError("Report contains too many table rows.")
+    if len(raw or []) > MAX_TABLE_COLUMNS:
+        raise ValueError("Report contains too many table columns.")
 
 
 def _map_columns(header):
@@ -99,7 +135,8 @@ def _normalize_holdings_table(table):
     counts non-position lines that were ignored (header/total/blank/invalid).
     """
     rows, skipped, col, seen = [], 0, None, set()
-    for raw in table:
+    for row_number, raw in enumerate(table, start=1):
+        _check_table_shape(row_number, raw)
         norm = [" ".join(str(c or "").split()) for c in raw]
         if not norm or all(not c for c in norm):
             continue
@@ -113,21 +150,33 @@ def _normalize_holdings_table(table):
             skipped += 1
             continue
         sym = norm[col["symbol"]].strip().upper()
-        if not sym or sym.startswith("TOTAL") or not _SYMBOL_RE.match(sym) or sym in seen:
+        if (
+            not sym
+            or len(sym) > 20
+            or sym.startswith("TOTAL")
+            or not _SYMBOL_RE.match(sym)
+            or sym in seen
+        ):
             skipped += 1
             continue
         cell = lambda k: norm[col[k]] if k in col and col[k] < len(norm) else None
         qty = _num(cell("qty"))
-        if not qty:  # drop zero / blank balances
+        if qty is None or not 0 < qty < MAX_QUANTITY:
             skipped += 1
             continue
+        close = _num(cell("close"))
+        ltp = _num(cell("ltp"))
+        close = close if close is not None and 0 <= close < MAX_SNAPSHOT_PRICE else None
+        ltp = ltp if ltp is not None and 0 <= ltp < MAX_SNAPSHOT_PRICE else None
         seen.add(sym)
         rows.append({
             "symbol": sym,
             "quantity": qty,
-            "last_close": _num(cell("close")),
-            "ltp": _num(cell("ltp")),
+            "last_close": close,
+            "ltp": ltp,
         })
+        if len(rows) > MAX_IMPORT_ROWS:
+            raise ValueError("Report contains too many holdings.")
     return rows, skipped
 
 
@@ -163,7 +212,7 @@ def parse_holdings_report_details(upload):
     data = upload.read()
     if name.endswith(".pdf"):
         table, document_text = _table_and_text_from_pdf(data)
-    elif name.endswith((".xlsx", ".xlsm", ".xls")):
+    elif name.endswith((".xlsx", ".xlsm")):
         table = _table_from_excel(data)
         document_text = ""
     else:
@@ -210,10 +259,11 @@ def _normalize_wacc_table(table):
 
     Returns ``(rows, skipped)`` where each row is
     ``{symbol, wacc_rate, quantity, total_cost, modified}``. Rows without a
-    usable rate/cost, the header, and any total line are skipped.
+    usable WACC rate, the header, and any total line are skipped.
     """
     rows, skipped, col, seen = [], 0, None, set()
-    for raw in table:
+    for row_number, raw in enumerate(table, start=1):
+        _check_table_shape(row_number, raw)
         norm = [" ".join(str(c or "").split()) for c in raw]
         if not norm or all(not c for c in norm):
             continue
@@ -227,22 +277,40 @@ def _normalize_wacc_table(table):
             skipped += 1
             continue
         sym = norm[col["symbol"]].strip().upper()
-        if not sym or sym.startswith("TOTAL") or not _SYMBOL_RE.match(sym) or sym in seen:
+        if (
+            not sym
+            or len(sym) > 20
+            or sym.startswith("TOTAL")
+            or not _SYMBOL_RE.match(sym)
+            or sym in seen
+        ):
             skipped += 1
             continue
         cell = lambda k: norm[col[k]] if k in col and col[k] < len(norm) else None
         rate, cost = _num(cell("rate")), _num(cell("cost"))
-        if rate is None and cost is None:
+        qty = _num(cell("qty"))
+        if rate is None:
+            skipped += 1
+            continue
+        if not 0 <= rate < MAX_WACC_RATE:
+            skipped += 1
+            continue
+        if qty is not None and not 0 <= qty < MAX_QUANTITY:
+            skipped += 1
+            continue
+        if cost is not None and not 0 <= cost < MAX_TOTAL_COST:
             skipped += 1
             continue
         seen.add(sym)
         rows.append({
             "symbol": sym,
             "wacc_rate": rate,
-            "quantity": _num(cell("qty")),
+            "quantity": qty,
             "total_cost": cost,
             "modified": (cell("modified") or "")[:32],
         })
+        if len(rows) > MAX_IMPORT_ROWS:
+            raise ValueError("Report contains too many WACC rows.")
     return rows, skipped
 
 
@@ -252,11 +320,19 @@ def _table_and_text_from_pdf(data):
 
     out, text = [], []
     with pdfplumber.open(io.BytesIO(data)) as pdf:
+        if len(pdf.pages) > MAX_PDF_PAGES:
+            raise ValueError("PDF contains too many pages.")
         for page in pdf.pages:
             page_text = page.extract_text()
             if page_text:
                 text.append(page_text)
-            for tbl in page.extract_tables():
+            for tbl in page.extract_tables() or ():
+                if not tbl:
+                    continue
+                if len(out) + len(tbl) > MAX_TABLE_ROWS:
+                    raise ValueError("PDF contains too many table rows.")
+                for offset, row in enumerate(tbl, start=1):
+                    _check_table_shape(len(out) + offset, row)
                 out.extend(tbl)
     return out, "\n".join(text)
 
@@ -270,9 +346,22 @@ def _table_from_pdf(data):
 def _table_from_excel(data):
     from openpyxl import load_workbook
 
-    wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
-    ws = wb.active
-    return [list(row) for row in ws.iter_rows(values_only=True)]
+    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+        members = archive.infolist()
+        if len(members) > 1_000:
+            raise ValueError("Spreadsheet archive contains too many files.")
+        if sum(member.file_size for member in members) > MAX_EXCEL_UNCOMPRESSED_BYTES:
+            raise ValueError("Spreadsheet expands beyond the safe processing limit.")
+    wb = load_workbook(
+        io.BytesIO(data), read_only=True, data_only=True, keep_links=False
+    )
+    try:
+        ws = wb.active
+        if ws.max_row > MAX_TABLE_ROWS or ws.max_column > MAX_TABLE_COLUMNS:
+            raise ValueError("Spreadsheet dimensions exceed the safe processing limit.")
+        return [list(row) for row in ws.iter_rows(values_only=True)]
+    finally:
+        wb.close()
 
 
 def parse_wacc_report(upload):
@@ -286,7 +375,7 @@ def parse_wacc_report(upload):
     data = upload.read()
     if name.endswith(".pdf"):
         table = _table_from_pdf(data)
-    elif name.endswith((".xlsx", ".xlsm", ".xls")):
+    elif name.endswith((".xlsx", ".xlsm")):
         table = _table_from_excel(data)
     else:
         text = data.decode("utf-8-sig", errors="replace")
@@ -430,6 +519,27 @@ def _get_selected_portfolio(request, *, include_archived=False):
     return portfolio
 
 
+def _get_mutation_portfolio(request):
+    """Resolve a posted target strictly; never fall back after an invalid explicit ID."""
+    raw_id = request.POST.get("portfolio_id")
+    if raw_id in (None, ""):
+        raw_id = request.POST.get("portfolio")
+    if raw_id not in (None, ""):
+        return _owned_portfolio(request.user, raw_id)
+    return _get_selected_portfolio(request)
+
+
+def _locked_active_portfolio(user, portfolio_id):
+    """Lock an owned active portfolio before replacing its imported rows."""
+    from core_analysis.models import Portfolio
+
+    return (
+        Portfolio.objects.select_for_update()
+        .filter(user=user, pk=portfolio_id, is_archived=False)
+        .first()
+    )
+
+
 def _unique_portfolio_name(user, base_name):
     from core_analysis.models import Portfolio
 
@@ -520,7 +630,14 @@ def portfolio_data_api(request):
     """JSON valuation + risk roll-up for the user's portfolio."""
     from core_analysis.services import portfolio_analytics as pa
 
-    portfolio = _get_selected_portfolio(request)
+    requested_id = request.GET.get("portfolio")
+    if requested_id not in (None, ""):
+        portfolio = _owned_portfolio(request.user, requested_id)
+        if portfolio is None:
+            return JsonResponse({"ok": False, "error": "Portfolio not found."}, status=404)
+        _remember_portfolio(request, portfolio)
+    else:
+        portfolio = _get_selected_portfolio(request)
     try:
         payload = pa.build_portfolio_payload(
             portfolio,
@@ -560,10 +677,9 @@ def portfolio_manage(request):
     # portfolio in one request; an invalid file never leaves an empty portfolio.
     if action == "create" and request.FILES.get("file"):
         upload = request.FILES["file"]
-        is_doc = (upload.name or "").lower().endswith(_DOC_EXTENSIONS)
-        limit = MAX_DOC_UPLOAD_BYTES if is_doc else MAX_UPLOAD_BYTES
-        if upload.size and upload.size > limit:
-            messages.error(request, "That file is too large to be a holdings report.")
+        upload_error = _upload_validation_error(upload, "holdings")
+        if upload_error:
+            messages.error(request, upload_error)
             return redirect(_portfolio_url(_get_selected_portfolio(request)))
         try:
             create_import = parse_holdings_report_details(upload)
@@ -580,8 +696,9 @@ def portfolio_manage(request):
 
     if action == "create" and request.FILES.get("wacc_file"):
         wacc_upload = request.FILES["wacc_file"]
-        if wacc_upload.size and wacc_upload.size > MAX_DOC_UPLOAD_BYTES:
-            messages.error(request, "That file is too large to be a WACC report.")
+        upload_error = _upload_validation_error(wacc_upload, "WACC")
+        if upload_error:
+            messages.error(request, upload_error)
             return redirect(_portfolio_url(_get_selected_portfolio(request)))
         try:
             create_cost_import = parse_wacc_report(wacc_upload)
@@ -943,15 +1060,19 @@ def portfolio_import(request):
     """Replace the user's holdings with an uploaded 'My Shares' file (CSV / Excel / PDF)."""
     from core_analysis.models import Holding, Portfolio
 
+    portfolio = _get_mutation_portfolio(request)
+    if portfolio is None:
+        messages.error(request, "Portfolio not found.")
+        return redirect(_portfolio_url(_get_selected_portfolio(request)))
+
     upload = request.FILES.get("file")
     if not upload:
         messages.error(request, "Please choose a holdings file (CSV, Excel or PDF) to upload.")
-        return redirect("portfolio")
-    is_doc = (upload.name or "").lower().endswith(_DOC_EXTENSIONS)
-    limit = MAX_DOC_UPLOAD_BYTES if is_doc else MAX_UPLOAD_BYTES
-    if upload.size and upload.size > limit:
-        messages.error(request, "That file is too large to be a holdings report.")
-        return redirect("portfolio")
+        return redirect(_portfolio_url(portfolio))
+    upload_error = _upload_validation_error(upload, "holdings")
+    if upload_error:
+        messages.error(request, upload_error)
+        return redirect(_portfolio_url(portfolio))
 
     try:
         rows, skipped, owner_name = parse_holdings_report_details(upload)
@@ -961,14 +1082,17 @@ def portfolio_import(request):
             request,
             "Could not read that file — upload the Meroshare 'My Shares' export (CSV, Excel or PDF).",
         )
-        return redirect("portfolio")
+        return redirect(_portfolio_url(portfolio))
 
     if not rows:
         messages.error(request, "No holdings found in that file. Check the format and try again.")
-        return redirect("portfolio")
+        return redirect(_portfolio_url(portfolio))
 
-    portfolio = _get_selected_portfolio(request)
     with transaction.atomic():
+        portfolio = _locked_active_portfolio(request.user, portfolio.id)
+        if portfolio is None:
+            messages.error(request, "Portfolio not found or no longer active.")
+            return redirect(_portfolio_url(_get_selected_portfolio(request)))
         auto_named = False
         if (
             owner_name
@@ -1014,13 +1138,19 @@ def portfolio_wacc_import(request):
     """
     from core_analysis.models import HoldingCost
 
+    portfolio = _get_mutation_portfolio(request)
+    if portfolio is None:
+        messages.error(request, "Portfolio not found.")
+        return redirect(_portfolio_url(_get_selected_portfolio(request)))
+
     upload = request.FILES.get("file")
     if not upload:
         messages.error(request, "Please choose your 'My WACC' report to upload.")
-        return redirect("portfolio")
-    if upload.size and upload.size > MAX_DOC_UPLOAD_BYTES:
-        messages.error(request, "That file is too large to be a WACC report.")
-        return redirect("portfolio")
+        return redirect(_portfolio_url(portfolio))
+    upload_error = _upload_validation_error(upload, "WACC")
+    if upload_error:
+        messages.error(request, upload_error)
+        return redirect(_portfolio_url(portfolio))
 
     try:
         rows, skipped = parse_wacc_report(upload)
@@ -1030,15 +1160,18 @@ def portfolio_wacc_import(request):
             request,
             "Could not read that file — upload the broker 'My WACC' report (CSV, Excel or PDF).",
         )
-        return redirect("portfolio")
+        return redirect(_portfolio_url(portfolio))
 
     if not rows:
         messages.error(request, "No WACC rows found in that file. Check the format and try again.")
-        return redirect("portfolio")
+        return redirect(_portfolio_url(portfolio))
 
-    portfolio = _get_selected_portfolio(request)
-    held = set(portfolio.holdings.values_list("symbol", flat=True))
     with transaction.atomic():
+        portfolio = _locked_active_portfolio(request.user, portfolio.id)
+        if portfolio is None:
+            messages.error(request, "Portfolio not found or no longer active.")
+            return redirect(_portfolio_url(_get_selected_portfolio(request)))
+        held = set(portfolio.holdings.values_list("symbol", flat=True))
         portfolio.costs.all().delete()
         HoldingCost.objects.bulk_create([
             HoldingCost(
@@ -1068,8 +1201,16 @@ def portfolio_wacc_import(request):
 @require_POST
 def portfolio_clear(request):
     """Wipe the user's holdings (keeps the empty portfolio)."""
-    portfolio = _get_selected_portfolio(request)
-    portfolio.holdings.all().delete()
-    portfolio.save()
+    portfolio = _get_mutation_portfolio(request)
+    if portfolio is None:
+        messages.error(request, "Portfolio not found.")
+        return redirect(_portfolio_url(_get_selected_portfolio(request)))
+    with transaction.atomic():
+        portfolio = _locked_active_portfolio(request.user, portfolio.id)
+        if portfolio is None:
+            messages.error(request, "Portfolio not found or no longer active.")
+            return redirect(_portfolio_url(_get_selected_portfolio(request)))
+        portfolio.holdings.all().delete()
+        portfolio.save()
     messages.success(request, f"Holdings cleared for {portfolio.name}.")
     return redirect(_portfolio_url(portfolio))

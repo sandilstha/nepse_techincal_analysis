@@ -141,7 +141,7 @@ def _aggregate_day(date_str):
 
     from core_analysis.models import NepseFloorsheet
 
-    base = NepseFloorsheet.objects.filter(business_date=date_str)
+    base = NepseFloorsheet.objects.filter(business_date=date_str, quantity__gt=0)
     buy, sell, sector = {}, {}, {}
 
     for r in (
@@ -151,7 +151,9 @@ def _aggregate_day(date_str):
     ):
         sym = r["stock_symbol"]
         if sym:
-            buy.setdefault(sym, {})[r["buyer"]] = [float(r["q"] or 0), float(r["a"] or 0)]
+            buy.setdefault(sym, {})[r["buyer"]] = [
+                float(r["q"] or 0), max(0.0, float(r["a"] or 0))
+            ]
 
     for r in (
         base.filter(seller__isnull=False)
@@ -160,7 +162,9 @@ def _aggregate_day(date_str):
     ):
         sym = r["stock_symbol"]
         if sym:
-            sell.setdefault(sym, {})[r["seller"]] = [float(r["q"] or 0), float(r["a"] or 0)]
+            sell.setdefault(sym, {})[r["seller"]] = [
+                float(r["q"] or 0), max(0.0, float(r["a"] or 0))
+            ]
 
     for r in (
         base.exclude(sector__isnull=True)
@@ -472,9 +476,9 @@ def _metric_index(view):
     return 1 if view == "turnover" else 0
 
 
-def _symbol_total(agg, sym):
-    """Total traded shares for a symbol on the buy side (== sell side)."""
-    return sum(q for q, _a in agg["buy"].get(sym, {}).values())
+def _side_total(side_map, sym, metric_index=0):
+    """Quantity or turnover total for one side, robust to a missing counterparty."""
+    return sum(cell[metric_index] for cell in side_map.get(sym, {}).values())
 
 
 def _row(broker_or_sym, qty, amt, pct):
@@ -723,9 +727,34 @@ def broker_favorites(brokers, range_key="today", view="shares", start=None, end=
             for sym, q, a in items
         ]
         rows.sort(key=lambda r: r["amount"] if mi else r["quantity"], reverse=True)
-        return rows[:TOP_N]
+        return rows[:TOP_N], {
+            "quantity": round(sum(q for _sym, q, _a in items)),
+            "amount": round(sum(a for _sym, _q, a in items), 2),
+            "stocks": len(items),
+        }
 
-    return {"ok": True, "buy": side(agg["buy"]), "sell": side(agg["sell"])}
+    buy_rows, buy_summary = side(agg["buy"])
+    sell_rows, sell_summary = side(agg["sell"])
+    touched = {
+        sym
+        for side_map in (agg["buy"], agg["sell"])
+        for sym, broker_cells in side_map.items()
+        if any(broker_cells.get(b) for b in sel)
+    }
+    return {
+        "ok": True,
+        "buy": buy_rows,
+        "sell": sell_rows,
+        "summary": {
+            "buy_quantity": buy_summary["quantity"],
+            "sell_quantity": sell_summary["quantity"],
+            "buy_amount": buy_summary["amount"],
+            "sell_amount": sell_summary["amount"],
+            "buy_stocks": buy_summary["stocks"],
+            "sell_stocks": sell_summary["stocks"],
+            "stocks_touched": len(touched),
+        },
+    }
 
 
 def stock_wise(symbol, range_key="today", view="shares", start=None, end=None):
@@ -737,11 +766,8 @@ def stock_wise(symbol, range_key="today", view="shares", start=None, end=None):
     if not agg or not symbol:
         return {"ok": False, "buy": [], "sell": [], "holdings": []}
     mi = _metric_index(view)
-    total = _symbol_total(agg, symbol)
-    turnover = sum(a for _q, a in agg["buy"].get(symbol, {}).values())
-    denom = turnover if mi else total
-
     def side(side_map):
+        denom = _side_total(side_map, symbol, mi)
         rows = [
             _row(broker, q, a, (100.0 * (a if mi else q) / denom) if denom else 0.0)
             for broker, (q, a) in side_map.get(symbol, {}).items()
@@ -841,26 +867,29 @@ def broker_concentration(range_key="today", sector="All", start=None, end=None):
     for sym in symbols:
         if sector and sector != "All" and agg["sector"].get(sym) != sector:
             continue
-        total = _symbol_total(agg, sym)
-        if total <= 0:
+        buy_total = _side_total(agg["buy"], sym)
+        sell_total = _side_total(agg["sell"], sym)
+        market_total = max(buy_total, sell_total)
+        if market_total <= 0:
             continue
 
-        def top3(side_map):
+        def top3(side_map, side_total):
             brokers = sorted(
                 side_map.get(sym, {}).items(), key=lambda kv: kv[1][0], reverse=True
             )[:3]
             out = [
-                {"broker": b, "pct": round(100.0 * q / total, 2)}
+                {"broker": b, "pct": round(100.0 * q / side_total, 2)}
                 for b, (q, _a) in brokers
+                if side_total > 0
             ]
             return out, round(sum(x["pct"] for x in out), 2)
 
-        buy_top, buy_sum = top3(agg["buy"])
-        sell_top, sell_sum = top3(agg["sell"])
+        buy_top, buy_sum = top3(agg["buy"], buy_total)
+        sell_top, sell_sum = top3(agg["sell"], sell_total)
         rows.append(
             {
                 "symbol": sym,
-                "total": round(total),
+                "total": round(market_total),
                 "buy": buy_top,
                 "buy_sum": buy_sum,
                 "sell": sell_top,
@@ -881,17 +910,26 @@ def hotstocks(range_key="today", view="shares", sector="All", start=None, end=No
     for sym in symbols:
         if sector and sector != "All" and agg["sector"].get(sym) != sector:
             continue
-        qty = _symbol_total(agg, sym)
+        buy_qty = _side_total(agg["buy"], sym)
+        sell_qty = _side_total(agg["sell"], sym)
+        if buy_qty >= sell_qty:
+            qty = buy_qty
+            amt = _side_total(agg["buy"], sym, 1)
+        else:
+            qty = sell_qty
+            amt = _side_total(agg["sell"], sym, 1)
         if qty <= 0:
             continue
-        amt = sum(a for _q, a in agg["buy"].get(sym, {}).values())
 
-        def lead(side_map):
+        def lead(side_map, side_total):
             brokers = side_map.get(sym, {})
             if not brokers:
                 return None
             b, (q, _a) = max(brokers.items(), key=lambda kv: kv[1][0])
-            return {"broker": b, "pct": round(100.0 * q / qty, 2) if qty else 0}
+            return {
+                "broker": b,
+                "pct": round(100.0 * q / side_total, 2) if side_total else 0,
+            }
 
         rows.append(
             {
@@ -902,8 +940,8 @@ def hotstocks(range_key="today", view="shares", sector="All", start=None, end=No
                 "avg_price": round(amt / qty, 2) if qty else 0.0,
                 "buyers": len(agg["buy"].get(sym, {})),
                 "sellers": len(agg["sell"].get(sym, {})),
-                "top_buy": lead(agg["buy"]),
-                "top_sell": lead(agg["sell"]),
+                "top_buy": lead(agg["buy"], buy_qty),
+                "top_sell": lead(agg["sell"], sell_qty),
             }
         )
     rows.sort(key=lambda r: r["amount"] if view == "turnover" else r["quantity"],
@@ -1061,8 +1099,12 @@ def broker_persistence(brokers, range_key="1w", sector="All", exclude_mf=False,
 
         # HHI over every broker trading this stock in the window (buy side; buy
         # qty == sell qty in aggregate). share_i in 0..1 → squared → ×10000.
-        cells = agg["buy"].get(sym, {})
-        total_q = sum(q for q, _a in cells.values())
+        buy_cells = agg["buy"].get(sym, {})
+        sell_cells = agg["sell"].get(sym, {})
+        buy_q = sum(q for q, _a in buy_cells.values())
+        sell_q = sum(q for q, _a in sell_cells.values())
+        cells = buy_cells if buy_q >= sell_q else sell_cells
+        total_q = max(buy_q, sell_q)
         hhi, dominant = 0.0, None
         if total_q > 0:
             top_b, top_q = None, 0.0

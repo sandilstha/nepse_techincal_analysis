@@ -80,9 +80,10 @@ LIMITS = {
 
 def _f(value, default=0.0):
     try:
-        return float(value)
-    except (TypeError, ValueError):
+        parsed = float(value)
+    except (TypeError, ValueError, OverflowError):
         return default
+    return parsed if math.isfinite(parsed) else default
 
 
 def normalize_participation_rate(value):
@@ -904,7 +905,8 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
             price = _f(h.last_close) or _f(h.ltp)
             priced_on, mcap = None, 0.0
             price_source = "snapshot"
-        qty = _f(h.quantity)
+        price = max(0.0, _f(price))
+        qty = max(0.0, _f(h.quantity))
         value = qty * price
         total += value
         name, sector = meta.get(h.symbol, (h.symbol, "Uncategorized"))
@@ -928,7 +930,7 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
         # Book value marks the CURRENT balance at its average cost; paper P/L is
         # market value minus that. None until the user imports the WACC report.
         cost = costs.get(h.symbol)
-        wacc = _f(cost.wacc_rate) if (cost and cost.wacc_rate is not None) else None
+        wacc = max(0.0, _f(cost.wacc_rate)) if (cost and cost.wacc_rate is not None) else None
         cost_value = round(wacc * qty, 2) if wacc is not None else None
         pl = round(value - cost_value, 2) if cost_value is not None else None
 

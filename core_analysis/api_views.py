@@ -21,6 +21,7 @@ Routes (wired in api_urls.py under /api/v1/):
 """
 from __future__ import annotations
 
+import re
 from datetime import date
 
 from rest_framework import viewsets
@@ -79,6 +80,8 @@ class _DateRangeFilterMixin:
         params = self.request.query_params
         date_from = _parse_date(params.get("date_from"), "date_from")
         date_to = _parse_date(params.get("date_to"), "date_to")
+        if date_from and date_to and date_from > date_to:
+            raise ValidationError({"date_from": "Must not be after date_to."})
         if date_from:
             queryset = queryset.filter(**{f"{self.date_field}__gte": date_from})
         if date_to:
@@ -177,9 +180,9 @@ def _parse_int(raw, param_name):
 class NepseFloorsheetViewSet(_DateRangeFilterMixin, viewsets.ReadOnlyModelViewSet):
     """Trade-level floorsheet rows. ?symbol=, ?sector=, ?buyer=, ?seller=, ?date_from=, ?date_to=.
 
-    This is a very large table (one row per executed trade), so a ?date_from /
-    ?date_to window — or at least a ?symbol / ?buyer / ?seller filter — is
-    strongly recommended; pagination otherwise walks the whole feed page by page.
+    This is a very large table (one row per executed trade), so list requests must
+    provide an indexed entity filter (?symbol / ?sector / ?buyer / ?seller) or a
+    bounded date_from + date_to window. Pagination is still hard-capped per page.
     """
 
     serializer_class = NepseFloorsheetSerializer
@@ -188,6 +191,28 @@ class NepseFloorsheetViewSet(_DateRangeFilterMixin, viewsets.ReadOnlyModelViewSe
     ordering_fields = ["business_date", "stock_symbol", "amount", "quantity", "trade_time"]
     ordering = ["-business_date", "stock_symbol"]
 
+    def list(self, request, *args, **kwargs):
+        """Require an indexed slice instead of counting the entire trade table."""
+        params = request.query_params
+        entity_filters = ("symbol", "sector", "buyer", "seller")
+        if not any((params.get(name) or "").strip() for name in entity_filters):
+            date_from = _parse_date(params.get("date_from"), "date_from")
+            date_to = _parse_date(params.get("date_to"), "date_to")
+            if not date_from or not date_to:
+                raise ValidationError({
+                    "filters": (
+                        "Provide symbol, sector, buyer or seller; otherwise provide both "
+                        "date_from and date_to."
+                    )
+                })
+            if date_from > date_to:
+                raise ValidationError({"date_from": "Must not be after date_to."})
+            if (date_to - date_from).days > 31:
+                raise ValidationError({
+                    "date_to": "Unscoped floorsheet date windows cannot exceed 32 days."
+                })
+        return super().list(request, *args, **kwargs)
+
     def get_queryset(self):
         qs = NepseFloorsheet.objects.all()
         params = self.request.query_params
@@ -195,6 +220,14 @@ class NepseFloorsheetViewSet(_DateRangeFilterMixin, viewsets.ReadOnlyModelViewSe
         sector = (params.get("sector") or "").strip()
         buyer = _parse_int(params.get("buyer"), "buyer")
         seller = _parse_int(params.get("seller"), "seller")
+        if symbol and not re.fullmatch(r"[A-Z0-9._-]{1,50}", symbol):
+            raise ValidationError({"symbol": "Expected a valid 1-50 character ticker."})
+        if len(sector) > 100:
+            raise ValidationError({"sector": "Must be 100 characters or fewer."})
+        if buyer is not None and buyer <= 0:
+            raise ValidationError({"buyer": "Expected a positive broker number."})
+        if seller is not None and seller <= 0:
+            raise ValidationError({"seller": "Expected a positive broker number."})
         if symbol:
             qs = qs.filter(stock_symbol=symbol)
         if sector:

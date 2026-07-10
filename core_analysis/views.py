@@ -1522,6 +1522,12 @@ def trigger_floorsheet_sync_view(request):
     except ValueError:
         messages.error(request, "Invalid floorsheet sync date format. Use YYYY-MM-DD.")
         return redirect("crud_dashboard")
+    if from_date and to_date and from_date > to_date:
+        messages.error(request, "Floorsheet sync start date cannot be after the end date.")
+        return redirect("crud_dashboard")
+    if from_date and to_date and (to_date - from_date).days + 1 > 366:
+        messages.error(request, "Floorsheet sync from the web dashboard is limited to 366 days.")
+        return redirect("crud_dashboard")
 
     try:
         kwargs = {}

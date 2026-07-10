@@ -2,7 +2,7 @@ import json
 import unittest
 from contextlib import ExitStack
 from datetime import date, datetime, timedelta, timezone
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
@@ -302,8 +302,11 @@ class MultiPortfolioManagementTests(TestCase):
         )
 
         response = self.client.get(reverse("portfolio"), {"portfolio": primary.id})
+        html = response.content.decode()
 
+        self.assertContains(response, 'class="pf-toolbar-title-line"')
         self.assertContains(response, "Delete Portfolio")
+        self.assertLess(html.index('id="pf-toolbar-name"'), html.index("Delete Portfolio"))
         self.assertNotContains(response, "Clear Holdings")
         self.assertNotContains(response, "Update Holdings")
         self.assertNotContains(response, "Import WACC (cost)")
@@ -495,8 +498,77 @@ class MultiPortfolioManagementTests(TestCase):
             liquidation_target="62.5",
         )
 
+    def test_portfolio_data_api_rejects_another_users_portfolio(self):
+        other = get_user_model().objects.create_user(username="other-investor")
+        foreign = Portfolio.objects.create(user=other, name="Private")
+
+        response = self.client.get(
+            reverse("portfolio_data_api"), {"portfolio": foreign.id}
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {"ok": False, "error": "Portfolio not found."})
+
+    def test_import_and_clear_never_fall_back_from_a_foreign_portfolio_id(self):
+        own = Portfolio.objects.create(user=self.user, name="Own", is_default=True)
+        Holding.objects.create(
+            portfolio=own, symbol="NABIL", quantity=25, last_close=500, ltp=502
+        )
+        HoldingCost.objects.create(
+            portfolio=own, symbol="NABIL", wacc_rate=400, quantity=25, total_cost=10_000
+        )
+        other = get_user_model().objects.create_user(username="foreign-owner")
+        foreign = Portfolio.objects.create(user=other, name="Foreign", is_default=True)
+
+        self.client.post(
+            reverse("portfolio_import"),
+            {"portfolio_id": foreign.id, "file": self._holdings_upload()},
+        )
+        self.client.post(
+            reverse("portfolio_wacc_import"),
+            {"portfolio_id": foreign.id, "file": self._wacc_upload()},
+        )
+        self.client.post(reverse("portfolio_clear"), {"portfolio_id": foreign.id})
+
+        self.assertEqual(own.holdings.get().quantity, 25)
+        self.assertEqual(own.costs.get().wacc_rate, 400)
+        self.assertFalse(foreign.holdings.exists())
+        self.assertFalse(foreign.costs.exists())
+
+    def test_import_rejects_unsupported_extension_without_replacing_holdings(self):
+        portfolio = Portfolio.objects.create(user=self.user, name="Own", is_default=True)
+        Holding.objects.create(portfolio=portfolio, symbol="NABIL", quantity=25)
+        disguised_csv = SimpleUploadedFile(
+            "my-shares.exe",
+            b"Scrip,Current Balance\nCHCL,99\n",
+            content_type="application/octet-stream",
+        )
+
+        response = self.client.post(
+            reverse("portfolio_import"),
+            {"portfolio_id": portfolio.id, "file": disguised_csv},
+            follow=True,
+        )
+
+        self.assertContains(response, "Unsupported holdings file")
+        self.assertEqual(list(portfolio.holdings.values_list("symbol", flat=True)), ["NABIL"])
+
+    def test_archiving_with_limited_update_fields_also_clears_default(self):
+        portfolio = Portfolio.objects.create(user=self.user, name="Own", is_default=True)
+
+        portfolio.is_archived = True
+        portfolio.save(update_fields=["is_archived"])
+        portfolio.refresh_from_db()
+
+        self.assertTrue(portfolio.is_archived)
+        self.assertFalse(portfolio.is_default)
+
 
 class PortfolioStressAnalyticsTests(SimpleTestCase):
+    def test_float_coercion_rejects_non_finite_values(self):
+        self.assertEqual(portfolio_analytics._f(float("nan"), 7.0), 7.0)
+        self.assertEqual(portfolio_analytics._f(float("inf"), 7.0), 7.0)
+
     def test_liquidation_milestones_use_parallel_position_capacity(self):
         rows = [
             {"value": 1000.0, "adv_qty": 100.0, "price": 10.0},
@@ -725,6 +797,50 @@ class UdfChartBarsTests(SimpleTestCase):
 
 
 class WaccImportTests(SimpleTestCase):
+    def test_holdings_normalizer_rejects_non_positive_and_non_finite_balances(self):
+        from core_analysis.portfolio_views import _normalize_holdings_table
+
+        table = [
+            ["Scrip", "Current Balance", "Last Closing Price", "LTP"],
+            ["NEG", "-1", "100", "100"],
+            ["NAN", "NaN", "100", "100"],
+            ["INF", "Infinity", "100", "100"],
+            ["OK", "2", "-100", "101"],
+        ]
+
+        rows, skipped = _normalize_holdings_table(table)
+
+        self.assertEqual([row["symbol"] for row in rows], ["OK"])
+        self.assertIsNone(rows[0]["last_close"])
+        self.assertEqual(rows[0]["ltp"], 101)
+        self.assertEqual(skipped, 3)
+
+    def test_normalizers_reject_unreasonable_position_counts(self):
+        from core_analysis.portfolio_views import MAX_IMPORT_ROWS, _normalize_holdings_table
+
+        table = [["Scrip", "Current Balance"]]
+        table.extend([f"S{i}", "1"] for i in range(MAX_IMPORT_ROWS + 1))
+
+        with self.assertRaisesRegex(ValueError, "too many holdings"):
+            _normalize_holdings_table(table)
+
+    def test_wacc_normalizer_rejects_invalid_or_out_of_range_values(self):
+        from core_analysis.portfolio_views import _normalize_wacc_table
+
+        table = [
+            ["Scrip Name", "WACC Calculated Quantity", "WACC Rate", "Total Cost"],
+            ["NEG", "10", "-1", "100"],
+            ["INF", "10", "Infinity", "100"],
+            ["HUGE", "10", "1e50", "100"],
+            ["SYMBOL-THAT-IS-FAR-TOO-LONG", "10", "100", "1000"],
+            ["OK", "10", "100", "1000"],
+        ]
+
+        rows, skipped = _normalize_wacc_table(table)
+
+        self.assertEqual([row["symbol"] for row in rows], ["OK"])
+        self.assertEqual(skipped, 4)
+
     def test_normalize_maps_newline_headers_and_skips_noise(self):
         from core_analysis.portfolio_views import _normalize_wacc_table
         # Mirrors pdfplumber's extraction: header cells carry embedded newlines.
@@ -1230,6 +1346,65 @@ class NepseContributorsParserTests(unittest.TestCase):
 
 @unittest.skipIf(broker_analytics is None, "Django settings unavailable")
 class BrokerFlowRadarTests(SimpleTestCase):
+    def test_persistence_hhi_uses_populated_side_when_buy_counterparty_is_incomplete(self):
+        agg = {
+            "dates": ["2026-07-09"],
+            "buy": {"NABIL": {1: [10.0, 1_000.0]}},
+            "sell": {
+                "NABIL": {
+                    2: [40.0, 4_000.0],
+                    3: [60.0, 6_000.0],
+                }
+            },
+            "sector": {"NABIL": "Commercial Banks"},
+        }
+
+        with (
+            patch.object(broker_analytics, "_window_aggregate", return_value=agg),
+            patch.object(broker_analytics, "get_day_aggregate", return_value=agg),
+        ):
+            result = broker_analytics.broker_persistence([2])
+
+        row = result["rows"][0]
+        self.assertEqual(row["side"], "sell")
+        self.assertEqual(row["hhi"], 5200)
+        self.assertEqual(row["dominant"], {"broker": 3, "pct": 60.0})
+
+    def test_favorites_summary_covers_full_desk_not_only_top_ten_rows(self):
+        buy = {
+            f"S{i}": {1: [float(i), float(i * 100)]}
+            for i in range(1, 13)
+        }
+        agg = {"dates": ["2026-07-09"], "buy": buy, "sell": {}, "sector": {}}
+
+        with patch.object(broker_analytics, "_window_aggregate", return_value=agg):
+            result = broker_analytics.broker_favorites([1])
+
+        self.assertEqual(len(result["buy"]), 10)
+        self.assertEqual(result["summary"]["buy_stocks"], 12)
+        self.assertEqual(result["summary"]["stocks_touched"], 12)
+        self.assertEqual(result["summary"]["buy_amount"], 7_800.0)
+
+    def test_side_percentages_use_each_sides_own_total_when_counterparty_is_missing(self):
+        agg = {
+            "dates": ["2026-07-09"],
+            "buy": {"NABIL": {1: [100.0, 10_000.0]}},
+            "sell": {"NABIL": {2: [40.0, 4_000.0]}},
+            "sector": {"NABIL": "Commercial Banks"},
+        }
+
+        with patch.object(broker_analytics, "_window_aggregate", return_value=agg):
+            stock = broker_analytics.stock_wise("NABIL")
+            concentration = broker_analytics.broker_concentration()
+            hot = broker_analytics.hotstocks()
+
+        self.assertEqual(stock["buy"][0]["pct"], 100.0)
+        self.assertEqual(stock["sell"][0]["pct"], 100.0)
+        self.assertEqual(concentration["rows"][0]["buy_sum"], 100.0)
+        self.assertEqual(concentration["rows"][0]["sell_sum"], 100.0)
+        self.assertEqual(hot["rows"][0]["top_buy"]["pct"], 100.0)
+        self.assertEqual(hot["rows"][0]["top_sell"]["pct"], 100.0)
+
     def test_broker_flow_radar_ranks_and_labels_flow(self):
         agg = {
             "dates": ["2026-06-19"],
@@ -1255,6 +1430,249 @@ class BrokerFlowRadarTests(SimpleTestCase):
         self.assertEqual(rows[0]["matching_amount"], 300.0)
         self.assertEqual(rows[0]["stance"], "Distributing")
         self.assertEqual(rows[1]["stance"], "Accumulating")
+
+
+class FloorsheetEndpointValidationTests(SimpleTestCase):
+    def test_frontend_escapes_upstream_labels_before_html_rendering(self):
+        from pathlib import Path
+
+        source = (
+            Path(__file__).parent
+            / "static"
+            / "core_analysis"
+            / "js"
+            / "floorsheet-brokers.js"
+        ).read_text(encoding="utf-8")
+
+        for fragment in (
+            "esc(r.broker_name",
+            "esc(r.symbol)",
+            "esc(r.sector)",
+            "esc(cell.getAttribute(\"data-sym\"))",
+        ):
+            self.assertIn(fragment, source)
+
+    def test_valid_dashboard_query_is_normalized_before_service_call(self):
+        with patch(
+            "core_analysis.broker_views.ba.broker_favorites",
+            return_value={"ok": True, "buy": [], "sell": []},
+        ) as builder:
+            response = self.client.get(
+                reverse("broker_favorites_api"),
+                {
+                    "brokers": "2, 2, 5",
+                    "view": "turnover",
+                    "range": "custom",
+                    "start_date": "2026-07-01",
+                    "end_date": "2026-07-09",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        builder.assert_called_once_with(
+            [2, 5],
+            view="turnover",
+            range_key="custom",
+            start="2026-07-01",
+            end="2026-07-09",
+        )
+
+    def test_dashboard_apis_reject_malformed_or_runaway_queries(self):
+        too_many = ",".join(str(i) for i in range(1, 202))
+        cases = [
+            ("broker_favorites_api", {"brokers": "1,not-a-broker"}),
+            ("broker_favorites_api", {"brokers": too_many}),
+            ("stock_wise_api", {"symbol": "<script>"}),
+            ("hotstocks_api", {"view": "money"}),
+            ("net_holding_api", {"brokers": "1", "exclude_mf": "perhaps"}),
+            ("broker_flow_radar_api", {"range": "yesterday"}),
+            ("broker_flow_radar_api", {"range": "custom", "start_date": "2026-07-01"}),
+            (
+                "broker_flow_radar_api",
+                {"range": "custom", "start_date": "2026-07-10", "end_date": "2026-07-01"},
+            ),
+            (
+                "broker_flow_radar_api",
+                {"range": "custom", "start_date": "2025-01-01", "end_date": "2026-07-01"},
+            ),
+            ("broker_persistence_api", {"brokers": "1", "lookback": "5y"}),
+        ]
+
+        for route_name, params in cases:
+            with self.subTest(route=route_name, params=params):
+                response = self.client.get(reverse(route_name), params)
+                self.assertEqual(response.status_code, 400)
+                self.assertFalse(response.json()["ok"])
+
+    def test_raw_floorsheet_api_requires_a_bounded_indexed_slice(self):
+        cases = [
+            {},
+            {"date_from": "2026-07-01"},
+            {"date_from": "2026-07-10", "date_to": "2026-07-01"},
+            {"date_from": "2026-05-01", "date_to": "2026-07-01"},
+            {"symbol": "<script>"},
+        ]
+
+        for params in cases:
+            with self.subTest(params=params):
+                response = self.client.get("/api/v1/floorsheet/", params)
+                self.assertEqual(response.status_code, 400)
+
+
+class FloorsheetSyncSecurityTests(SimpleTestCase):
+    def test_valid_sync_row_is_normalized_without_database_write_in_dry_run(self):
+        from io import StringIO
+
+        from core_analysis.management.commands.sync_floorsheet import Command
+
+        payload = {
+            "results": [
+                {
+                    "id": "1",
+                    "calculation_date": "2026-07-09",
+                    "stock_symbol": " nabil ",
+                    "contract_no": "C-1",
+                    "sector": "Commercial Banks",
+                    "buyer": "1",
+                    "seller": "2",
+                    "quantity": "1,000",
+                    "rate": "500.25",
+                    "amount": "500,250",
+                }
+            ]
+        }
+        with patch(
+            "core_analysis.management.commands.sync_floorsheet._fetch_page",
+            return_value=(payload, None),
+        ), patch(
+            "core_analysis.management.commands.sync_floorsheet.NepseFloorsheet"
+        ) as floorsheet_model:
+            command = Command()
+            command.stdout = StringIO()
+            processed, skipped = command._sync_one_day(
+                Mock(),
+                "https://trusted.example",
+                date(2026, 7, 9),
+                page_size=100,
+                batch_size=100,
+                max_pages=None,
+                dry_run=True,
+            )
+
+        self.assertEqual((processed, skipped), (1, 0))
+        floorsheet_model.assert_called_once()
+        kwargs = floorsheet_model.call_args.kwargs
+        self.assertEqual(kwargs["stock_symbol"], "NABIL")
+        self.assertEqual(kwargs["quantity"], 1000)
+
+    def test_pagination_refuses_cross_origin_next_url(self):
+        from django.core.management.base import CommandError
+
+        from core_analysis.management.commands.sync_floorsheet import _fetch_page
+
+        response = Mock()
+        response.status_code = 200
+        response.url = "https://trusted.example/api/floorsheet/?page=1"
+        response.headers = {}
+        response.json.return_value = {
+            "results": [],
+            "next": "https://attacker.example/steal-credentials",
+        }
+        session = Mock()
+        session.get.return_value = response
+
+        with self.assertRaisesRegex(CommandError, "cross-origin"):
+            _fetch_page(
+                session,
+                response.url,
+                allowed_origin="https://trusted.example",
+            )
+
+        session.get.assert_called_once_with(
+            response.url, timeout=30, allow_redirects=False
+        )
+
+    def test_numeric_cleaners_reject_fractional_nonfinite_and_out_of_range_values(self):
+        from decimal import Decimal
+
+        from core_analysis.management.commands.sync_floorsheet import (
+            _clean_decimal,
+            _clean_int,
+        )
+
+        self.assertIsNone(_clean_int("1.5"))
+        self.assertIsNone(_clean_int("Infinity"))
+        self.assertIsNone(_clean_int("0", minimum=1))
+        self.assertEqual(_clean_int("1,234", minimum=1), 1234)
+        self.assertIsNone(
+            _clean_decimal("NaN", default=None, minimum=Decimal("0"))
+        )
+        self.assertIsNone(
+            _clean_decimal("-1", default=None, minimum=Decimal("0"))
+        )
+
+    def test_sync_rejects_wrong_day_rows_and_pagination_loops(self):
+        from django.core.management.base import CommandError
+
+        from core_analysis.management.commands.sync_floorsheet import Command
+
+        day = date(2026, 7, 9)
+        payload = {
+            "results": [
+                {
+                    "id": 1,
+                    "calculation_date": "2026-07-08",
+                    "stock_symbol": "NABIL",
+                    "buyer": 1,
+                    "seller": 2,
+                    "quantity": 10,
+                }
+            ]
+        }
+        same_url = "https://trusted.example/api/floorsheet/?page=1"
+        with patch(
+            "core_analysis.management.commands.sync_floorsheet._fetch_page",
+            return_value=(payload, same_url),
+        ), patch(
+            "core_analysis.management.commands.sync_floorsheet.NepseFloorsheet"
+        ) as floorsheet_model:
+            with self.assertRaisesRegex(CommandError, "pagination loop"):
+                Command()._sync_one_day(
+                    Mock(),
+                    "https://trusted.example",
+                    day,
+                    page_size=100,
+                    batch_size=100,
+                    max_pages=None,
+                    dry_run=True,
+                )
+        floorsheet_model.assert_not_called()
+
+
+class FloorsheetSyncViewTests(TestCase):
+    def setUp(self):
+        self.staff = get_user_model().objects.create_user(
+            username="floorsheet-admin", password="StrongPass123!", is_staff=True
+        )
+        self.client.force_login(self.staff)
+
+    def test_web_sync_rejects_reversed_and_oversized_ranges_before_running_command(self):
+        cases = [
+            {"from_date": "2026-07-10", "to_date": "2026-07-01"},
+            {"from_date": "2025-01-01", "to_date": "2026-07-01"},
+        ]
+
+        with patch("core_analysis.views.call_command") as call_command:
+            for payload in cases:
+                with self.subTest(payload=payload):
+                    response = self.client.post(reverse("trigger_floorsheet_sync"), payload)
+                    self.assertRedirects(
+                        response,
+                        reverse("crud_dashboard"),
+                        fetch_redirect_response=False,
+                    )
+
+        call_command.assert_not_called()
 
 
 def make_price_frame(close_values):
