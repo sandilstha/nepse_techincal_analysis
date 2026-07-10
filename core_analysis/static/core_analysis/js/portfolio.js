@@ -28,6 +28,14 @@
     var v = Math.round(n || 0);
     return (v >= 0 ? "+" : "-") + "Rs " + nf(Math.abs(v));
   }
+  function liqRiskLabel(key) {
+    return ({
+      liquid: "Low",
+      moderate: "Moderate",
+      illiquid: "High",
+      untradeable: "Very High"
+    })[key] || key || "Very High";
+  }
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
@@ -840,11 +848,6 @@
     }
     var V = risk.var;
     var idxVal = indexInfo && indexInfo.value;
-    function indexPointText(shock) {
-      if (idxVal == null || shock == null) return "";
-      var pts = idxVal * shock / 100;
-      return (pts >= 0 ? "+" : "") + nf(Math.round(pts)) + " pts";
-    }
     function lossRow(label, rsv, pctv, big) {
       return "<div class='pf-var-row" + (big ? " big" : "") + "'>" +
         "<span class='pf-var-label'>" + esc(label) + "</span>" +
@@ -853,6 +856,55 @@
     }
     function varCell(value) {
       return value == null ? "—" : "-" + Math.abs(value).toFixed(2) + "%";
+    }
+    function shortScenarioLabel(label) {
+      return String(label || "")
+        .replace(/^Current NEPSE$/, "Current")
+        .replace(/^NEPSE\s+/, "")
+        .replace(/^at\s+/, "")
+        .replace(/all-time high/i, "ATH");
+    }
+    function renderStressChart(rows, maxAbs) {
+      var width = 720, height = 210, left = 42, right = 18, top = 22, bottom = 46;
+      var plotW = width - left - right, plotH = height - top - bottom;
+      maxAbs = maxAbs || 1;
+      var zeroY = top + plotH / 2;
+      var step = plotW / Math.max(rows.length, 1);
+      var barW = Math.max(12, Math.min(46, step * 0.54));
+      var parts = [
+        "<div class='pf-stress-chart' role='img' aria-label='Portfolio beta stress gain/loss chart'>",
+        "<svg class='pf-stress-svg' viewBox='0 0 " + width + " " + height + "' focusable='false'>",
+        "<line class='pf-stress-grid' x1='" + left + "' x2='" + (width - right) + "' y1='" + top + "' y2='" + top + "'></line>",
+        "<line class='pf-stress-grid' x1='" + left + "' x2='" + (width - right) + "' y1='" + (top + plotH) + "' y2='" + (top + plotH) + "'></line>",
+        "<line class='pf-stress-axis' x1='" + left + "' x2='" + (width - right) + "' y1='" + zeroY + "' y2='" + zeroY + "'></line>",
+        "<text class='pf-stress-axis-label' x='" + (left - 8) + "' y='" + (top + 4) + "' text-anchor='end'>+" + maxAbs.toFixed(1) + "%</text>",
+        "<text class='pf-stress-axis-label' x='" + (left - 8) + "' y='" + (zeroY + 4) + "' text-anchor='end'>0%</text>",
+        "<text class='pf-stress-axis-label' x='" + (left - 8) + "' y='" + (top + plotH + 4) + "' text-anchor='end'>-" + maxAbs.toFixed(1) + "%</text>"
+      ];
+      rows.forEach(function (s, i) {
+        var pctv = s.gain_loss_pct || s.impact_pct || 0;
+        var x = left + step * i + (step - barW) / 2;
+        var y = zeroY - (pctv / maxAbs) * (plotH / 2);
+        var barY = Math.min(y, zeroY);
+        var barH = Math.max(2, Math.abs(y - zeroY));
+        var cls = pctv < 0 ? "down" : (pctv > 0 ? "up" : "flat");
+        parts.push(
+          "<g class='pf-stress-bar-g'>",
+          "<rect class='pf-stress-bar-rect " + cls + "' x='" + x.toFixed(1) + "' y='" + barY.toFixed(1) +
+            "' width='" + barW.toFixed(1) + "' height='" + barH.toFixed(1) + "' rx='4'>",
+          "<title>" + esc(s.label) + ": " + signedRs(s.impact_rs) + " (" +
+            (pctv > 0 ? "+" : "") + pctv.toFixed(2) + "%)</title>",
+          "</rect>",
+          "<text class='pf-stress-value' x='" + (x + barW / 2).toFixed(1) + "' y='" +
+            (pctv >= 0 ? Math.max(top + 12, barY - 6) : Math.min(top + plotH + 16, barY + barH + 13)).toFixed(1) +
+            "' text-anchor='middle'>" + (pctv > 0 ? "+" : "") + pctv.toFixed(1) + "%</text>",
+          "<text class='pf-stress-xlabel' x='" + (x + barW / 2).toFixed(1) + "' y='" + (height - 18) +
+            "' text-anchor='middle'>" + esc(shortScenarioLabel(s.label)) + "</text>",
+          "</g>"
+        );
+      });
+      parts.push("</svg></div>");
+      return parts.join("");
     }
     var matrix = "<div class='pf-mini-table-wrap'><table class='pf-mini-table pf-var-matrix'>" +
       "<thead><tr><th>Method</th><th>1D 95%</th><th>1D 99%</th><th>10D 95%</th><th>10D 99%</th></tr></thead><tbody>" +
@@ -888,18 +940,7 @@
       }
       var maxAbs = risk.scenarios.reduce(function (m, s) {
         return Math.max(m, Math.abs(s.impact_pct || 0)); }, 0) || 1;
-      st.innerHTML = "<div class='pf-stress-list'>" + risk.scenarios.map(function (s) {
-        var neg = s.impact_rs < 0;
-        var w = (100 * Math.abs(s.impact_pct) / maxAbs).toFixed(1);
-        var idxPts = indexPointText(s.shock);
-        return "<div class='pf-stress-row'>" +
-          "<span class='pf-stress-label'><span>" + esc(s.label) + "</span>" +
-            (idxPts ? "<small>" + esc(idxPts) + "</small>" : "") + "</span>" +
-          "<span class='pf-stress-bar'><i class='" + (neg ? "down" : "up") + "' style='width:" + w + "%'></i></span>" +
-          "<span class='pf-stress-rs " + (neg ? "num-neg" : "num-pos") + "'>" + signedRs(s.impact_rs) + "</span>" +
-          "<span class='pf-stress-pct " + (neg ? "num-neg" : "num-pos") + "'>" +
-            (s.impact_pct > 0 ? "+" : "") + s.impact_pct.toFixed(1) + "%</span></div>";
-      }).join("") + "</div>" +
+      st.innerHTML = renderStressChart(risk.scenarios, maxAbs) +
       "<div class='pf-mini-table-wrap'><table class='pf-mini-table pf-scenario-table'>" +
         "<thead><tr><th>Scenario</th><th>NEPSE</th><th>Move</th><th>Stressed Value / NAV</th><th>Gain/Loss</th></tr></thead><tbody>" +
         risk.scenarios.map(function (s) {
@@ -1004,12 +1045,14 @@
         return "<tr" + (row.custom ? " class='is-custom'" : "") + "><td>" +
           row.target_pct.toFixed(1) + "%" + (row.custom ? " · custom" : "") + "</td><td>" +
           (row.days == null ? "Not achievable" : dtlText(row.days)) + "</td><td>" +
-          "<span class='pf-liq-tier tier-" + esc(row.risk) + "'>" + esc(row.risk) + "</span></td></tr>";
+          "<span class='pf-liq-tier tier-" + esc(row.risk) + "'>" +
+            esc(row.risk_label || liqRiskLabel(row.risk)) + "</span></td></tr>";
       }).join("") + "</tbody></table></div>";
     var list = "<div class='pf-liq-label'>Least liquid holdings</div><div class='pf-liq-list'>" +
       (L.least_liquid || []).map(function (r) {
         return "<div class='pf-liq-row'><span class='pf-tkr'>" + esc(r.symbol) + "</span>" +
-          "<span class='pf-liq-tier tier-" + esc(r.tier) + "'>" + esc(r.tier) + "</span>" +
+          "<span class='pf-liq-tier tier-" + esc(r.tier) + "'>" +
+            esc(r.risk_label || liqRiskLabel(r.tier)) + "</span>" +
           "<span class='pf-liq-adv'>ADV " + nf(r.adv_qty) + "</span>" +
           "<span class='pf-liq-dtl'>" + dtlText(r.dtl) + "</span></div>";
       }).join("") + "</div>";

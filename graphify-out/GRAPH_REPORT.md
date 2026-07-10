@@ -1,16 +1,16 @@
-# Graph Report - nepse_analytics_platform  (2026-07-09)
+# Graph Report - nepse_analytics_platform  (2026-07-10)
 
 ## Corpus Check
-- 85 files · ~125,509 words
+- 85 files · ~125,957 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2434 nodes · 5964 edges · 141 communities (85 shown, 56 thin omitted)
+- 2437 nodes · 5971 edges · 139 communities (89 shown, 50 thin omitted)
 - Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 280 edges (avg confidence: 0.52)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9d33a30b`
+- Built from commit: `5578f73e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -66,6 +66,7 @@
 - [[_COMMUNITY_Community 48|Community 48]]
 - [[_COMMUNITY_Community 49|Community 49]]
 - [[_COMMUNITY_Community 50|Community 50]]
+- [[_COMMUNITY_Community 51|Community 51]]
 - [[_COMMUNITY_Community 52|Community 52]]
 - [[_COMMUNITY_Community 53|Community 53]]
 - [[_COMMUNITY_Community 54|Community 54]]
@@ -76,19 +77,17 @@
 - [[_COMMUNITY_Community 59|Community 59]]
 - [[_COMMUNITY_Community 60|Community 60]]
 - [[_COMMUNITY_Community 61|Community 61]]
-- [[_COMMUNITY_Community 62|Community 62]]
 - [[_COMMUNITY_Community 63|Community 63]]
 - [[_COMMUNITY_Community 64|Community 64]]
 - [[_COMMUNITY_Community 65|Community 65]]
 - [[_COMMUNITY_Community 66|Community 66]]
 - [[_COMMUNITY_Community 67|Community 67]]
-- [[_COMMUNITY_Community 68|Community 68]]
 - [[_COMMUNITY_Community 69|Community 69]]
 - [[_COMMUNITY_Community 70|Community 70]]
 - [[_COMMUNITY_Community 71|Community 71]]
 - [[_COMMUNITY_Community 72|Community 72]]
+- [[_COMMUNITY_Community 73|Community 73]]
 - [[_COMMUNITY_Community 74|Community 74]]
-- [[_COMMUNITY_Community 75|Community 75]]
 - [[_COMMUNITY_Community 76|Community 76]]
 - [[_COMMUNITY_Community 77|Community 77]]
 - [[_COMMUNITY_Community 78|Community 78]]
@@ -102,11 +101,11 @@
 - [[_COMMUNITY_Community 86|Community 86]]
 - [[_COMMUNITY_Community 87|Community 87]]
 - [[_COMMUNITY_Community 88|Community 88]]
-- [[_COMMUNITY_Community 89|Community 89]]
 - [[_COMMUNITY_Community 90|Community 90]]
 - [[_COMMUNITY_Community 91|Community 91]]
 - [[_COMMUNITY_Community 92|Community 92]]
 - [[_COMMUNITY_Community 93|Community 93]]
+- [[_COMMUNITY_Community 94|Community 94]]
 - [[_COMMUNITY_Community 95|Community 95]]
 - [[_COMMUNITY_Community 96|Community 96]]
 - [[_COMMUNITY_Community 97|Community 97]]
@@ -121,6 +120,7 @@
 - [[_COMMUNITY_Community 110|Community 110]]
 - [[_COMMUNITY_Community 111|Community 111]]
 - [[_COMMUNITY_Community 112|Community 112]]
+- [[_COMMUNITY_Community 113|Community 113]]
 - [[_COMMUNITY_Community 114|Community 114]]
 - [[_COMMUNITY_Community 115|Community 115]]
 - [[_COMMUNITY_Community 116|Community 116]]
@@ -133,16 +133,15 @@
 - [[_COMMUNITY_Community 123|Community 123]]
 - [[_COMMUNITY_Community 124|Community 124]]
 - [[_COMMUNITY_Community 125|Community 125]]
-- [[_COMMUNITY_Community 126|Community 126]]
 - [[_COMMUNITY_Community 127|Community 127]]
 - [[_COMMUNITY_Community 128|Community 128]]
+- [[_COMMUNITY_Community 129|Community 129]]
 - [[_COMMUNITY_Community 130|Community 130]]
 - [[_COMMUNITY_Community 131|Community 131]]
 - [[_COMMUNITY_Community 132|Community 132]]
 - [[_COMMUNITY_Community 133|Community 133]]
 - [[_COMMUNITY_Community 134|Community 134]]
 - [[_COMMUNITY_Community 135|Community 135]]
-- [[_COMMUNITY_Community 136|Community 136]]
 - [[_COMMUNITY_Community 137|Community 137]]
 - [[_COMMUNITY_Community 141|Community 141]]
 - [[_COMMUNITY_Community 143|Community 143]]
@@ -174,11 +173,11 @@
 ## Import Cycles
 - None detected.
 
-## Communities (141 total, 56 thin omitted)
+## Communities (139 total, 50 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.18
-Nodes (39): api_urls.py — router for the read-only Data API (mounted at /api/v1/).  Kept sep, CompanyProfileViewSet, _DateRangeFilterMixin, FinancialStatementViewSet, NepseDailyStockPriceViewSet, NepseFloorsheetViewSet, NepseMarketIndexViewSet, api_views.py — read-only Data API over every database table.  Each model is expo (+31 more)
+Cohesion: 0.16
+Nodes (41): Safety-net backfill for the company list.  The dropdown reads from ``CompanyProf, api_urls.py — router for the read-only Data API (mounted at /api/v1/).  Kept sep, CompanyProfileViewSet, _DateRangeFilterMixin, FinancialStatementViewSet, NepseDailyStockPriceViewSet, NepseFloorsheetViewSet, NepseMarketIndexViewSet (+33 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.06
@@ -186,7 +185,7 @@ Nodes (80): Any, DataFrame, Series, _add_level(), _add_retracements(), _add_wind
 
 ### Community 3 - "Community 3"
 Cohesion: 0.17
-Nodes (21): _breadth(), _build_eod_payload(), build_payload(), _cached_contributors(), _contributors_block(), _gainers(), _heatmap(), _latest_stock_rows() (+13 more)
+Nodes (17): _breadth(), _build_eod_payload(), _contributors_block(), _gainers(), _heatmap(), _latest_stock_rows(), _losers(), _most_active() (+9 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.15
@@ -202,15 +201,19 @@ Nodes (51): applyTheme(), baseChartOpts(), computeGreed(), cssVar(), deferNonCri
 
 ### Community 7 - "Community 7"
 Cohesion: 0.06
-Nodes (13): _(), ce(), ct, de(), dt(), fe(), In(), mt() (+5 more)
+Nodes (14): _(), b(), ce(), ct, de(), dt(), fe(), In() (+6 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.15
-Nodes (4): cs, ii, k(), u()
+Cohesion: 0.18
+Nodes (3): ii, k(), u()
 
 ### Community 10 - "Community 10"
-Cohesion: 0.08
-Nodes (46): _coerce_id(), _ensure_portfolio_defaults(), _extract_holdings_owner(), _get_selected_portfolio(), _map_columns(), _map_wacc_columns(), _normalize_holdings_table(), _normalize_portfolio_name() (+38 more)
+Cohesion: 0.16
+Nodes (23): _coerce_id(), _ensure_portfolio_defaults(), _extract_holdings_owner(), _get_selected_portfolio(), _normalize_portfolio_name(), _owned_portfolio(), parse_wacc_report(), portfolio_clear() (+15 more)
+
+### Community 11 - "Community 11"
+Cohesion: 0.11
+Nodes (3): E(), ki(), Rs
 
 ### Community 12 - "Community 12"
 Cohesion: 0.17
@@ -218,15 +221,15 @@ Nodes (7): gs(), ks(), ls(), ms(), Ss(), ws, xs()
 
 ### Community 13 - "Community 13"
 Cohesion: 0.14
-Nodes (27): _asset_version(), broker_concentration_api(), broker_favorites_api(), broker_flow_radar_api(), broker_meta_api(), broker_persistence_api(), broker_signals_api(), floorsheet_sop_view() (+19 more)
+Nodes (28): _asset_version(), broker_concentration_api(), broker_favorites_api(), broker_flow_radar_api(), broker_meta_api(), broker_persistence_api(), broker_signals_api(), floorsheet_sop_view() (+20 more)
 
 ### Community 14 - "Community 14"
 Cohesion: 0.18
 Nodes (28): $(), addChip(), addIndicator(), addOscPane(), alignIndicatorSeries(), allCharts(), barTimeLookup(), baseOptions() (+20 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.15
-Nodes (29): _adx(), _arr(), _atr(), _bbands(), _cci(), _cmf(), _ema(), _emit() (+21 more)
+Cohesion: 0.07
+Nodes (53): _adx(), _arr(), _atr(), _bbands(), _cci(), _cmf(), _ema(), _emit() (+45 more)
 
 ### Community 17 - "Community 17"
 Cohesion: 0.15
@@ -237,11 +240,11 @@ Cohesion: 0.25
 Nodes (15): Any, _advanced(), build_sr_brief(), _build_user_text(), generate_sr_ai_analysis(), _inline(), _institutional(), _ladder() (+7 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.14
-Nodes (4): bn, gi(), vt(), wn()
+Cohesion: 0.13
+Nodes (3): bn, vt(), wn()
 
 ### Community 21 - "Community 21"
-Cohesion: 0.17
+Cohesion: 0.16
 Nodes (8): Any, DataFrame, Series, ndarray, AdvancedMarketStructureAnalyzer, generate_dummy_ohlcv(), MarketStructureConfig, run_advanced_market_structure_analysis()
 
 ### Community 25 - "Community 25"
@@ -253,24 +256,32 @@ Cohesion: 0.10
 Nodes (46): attachZoom(), buildFairValue(), buildPeerRanks(), buildScatter(), buildSummary(), cagr(), closeCompanyMenu(), el() (+38 more)
 
 ### Community 27 - "Community 27"
-Cohesion: 0.14
-Nodes (21): _append_live_index_bar(), _bars(), _chart_bars(), _clean_symbol(), _company_symbols(), _day_to_ts(), _f(), _live_index_bar() (+13 more)
+Cohesion: 0.15
+Nodes (19): _map_columns(), _normalize_holdings_table(), _num(), parse_holdings_csv(), parse_holdings_report(), parse_holdings_report_details(), portfolio_import(), Back-compat CSV entry point — see ``_normalize_holdings_table``. (+11 more)
+
+### Community 29 - "Community 29"
+Cohesion: 0.10
+Nodes (5): ie(), ne(), pe(), ve(), zn()
 
 ### Community 32 - "Community 32"
 Cohesion: 0.21
 Nodes (16): a(), c(), d(), e(), f(), g(), h(), i() (+8 more)
 
+### Community 33 - "Community 33"
+Cohesion: 0.14
+Nodes (3): fi(), nt, xt()
+
 ### Community 34 - "Community 34"
-Cohesion: 0.27
-Nodes (13): _build_url(), _can_stop_after_page(), _clean_date(), _clean_datetime(), _clean_decimal(), _clean_int(), _clean_text(), Command (+5 more)
+Cohesion: 0.16
+Nodes (18): BaseCommand, backfill_missing_company_profiles(), Command, Create CompanyProfile rows for recently-traded symbols that have none.      Retu, Command, _build_url(), _can_stop_after_page(), _clean_date() (+10 more)
 
 ### Community 35 - "Community 35"
-Cohesion: 0.14
-Nodes (40): bindPortfolioRename(), bindSummaryControl(), bindSummaryFilters(), bindSummaryHeaderSort(), computeExp(), dtlText(), el(), esc() (+32 more)
+Cohesion: 0.13
+Nodes (41): bindPortfolioRename(), bindSummaryControl(), bindSummaryFilters(), bindSummaryHeaderSort(), computeExp(), dtlText(), el(), esc() (+33 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.18
-Nodes (5): ee(), he, le(), qn(), se()
+Cohesion: 0.15
+Nodes (4): ee(), le(), qn(), se()
 
 ### Community 39 - "Community 39"
 Cohesion: 0.21
@@ -280,9 +291,13 @@ Nodes (14): Refresh contributors off-thread so page/API responses never wait on 
 Cohesion: 0.13
 Nodes (19): fundamental_analysis_view(), fundamental_sop_view(), Render the Fundamental Analysis desk shell.      The symbol is only the initial, Short methodology SOP for the Fundamental Analysis Morningstar tab., _asset_version(), _empty_payload(), market_insights_api(), market_insights_view() (+11 more)
 
+### Community 41 - "Community 41"
+Cohesion: 0.28
+Nodes (3): At, qs(), ye()
+
 ### Community 42 - "Community 42"
-Cohesion: 0.15
-Nodes (17): _contributors_index_metrics(), _enrich(), _f(), _greed_history(), _nepse_history(), Coerce Decimal/str/None to a finite float, else None., Turn raw daily rows into display dicts with computed daily change., Value / change for one NepseSubIndices row. `closingIndex` is populated     and (+9 more)
+Cohesion: 0.14
+Nodes (21): build_payload(), _cached_contributors(), _contributors_index_metrics(), _enrich(), _f(), _greed_history(), _nepse_history(), Coerce Decimal/str/None to a finite float, else None. (+13 more)
 
 ### Community 44 - "Community 44"
 Cohesion: 0.22
@@ -301,28 +316,28 @@ Cohesion: 0.18
 Nodes (3): kn, qt, vs()
 
 ### Community 48 - "Community 48"
-Cohesion: 0.15
-Nodes (4): nn(), ot(), R(), T()
+Cohesion: 0.16
+Nodes (3): ds(), T(), Ts()
 
 ### Community 49 - "Community 49"
 Cohesion: 0.20
 Nodes (12): _enrich_live(), _live_close(), _live_get(), _live_index_by_name(), _live_index_metrics(), First non-null value among the given keys (tolerates camelCase + snake_case)., Effective close for a live quote.      The official closePrice is null intrada, Map raw live-feed quotes (camelCase or snake_case) into display dicts. (+4 more)
 
 ### Community 52 - "Community 52"
-Cohesion: 0.18
-Nodes (3): fi(), mi, wi()
+Cohesion: 0.13
+Nodes (5): bi(), di(), mi, vi(), wi()
 
 ### Community 53 - "Community 53"
-Cohesion: 0.12
+Cohesion: 0.11
 Nodes (3): Cn, on, st
 
-### Community 55 - "Community 55"
-Cohesion: 0.13
-Nodes (3): b(), ke, S()
+### Community 54 - "Community 54"
+Cohesion: 0.18
+Nodes (4): nn(), ot(), R(), un()
 
 ### Community 56 - "Community 56"
-Cohesion: 0.09
-Nodes (4): Et, kt, nt, te()
+Cohesion: 0.16
+Nodes (3): Et, kt, te()
 
 ### Community 57 - "Community 57"
 Cohesion: 0.33
@@ -333,31 +348,27 @@ Cohesion: 0.15
 Nodes (16): broker_concentration(), broker_favorites(), hotstocks(), _metric_index(), Return a date object if ``raw`` is a valid ISO 'YYYY-MM-DD', else None., Resolve the aggregate for a tab's date selection.      ``range_key`` == 'custo, 0 = quantity (shares traded), 1 = amount (turnover)., Total traded shares for a symbol on the buy side (== sell side). (+8 more)
 
 ### Community 59 - "Community 59"
-Cohesion: 0.10
-Nodes (3): f(), os(), us
+Cohesion: 0.07
+Nodes (4): f(), os(), us, zs
 
 ### Community 60 - "Community 60"
-Cohesion: 0.06
-Nodes (42): _build_benchmark_sparkline(), build_dashboard_context(), _build_index_dataframes(), _build_rrg_index_choices(), _build_standard_dataframe(), _canonical_market_index_symbol(), crud_dashboard_view(), crud_delete_handler() (+34 more)
+Cohesion: 0.09
+Nodes (33): _build_benchmark_sparkline(), build_dashboard_context(), _build_index_dataframes(), _build_rrg_index_choices(), _build_standard_dataframe(), _canonical_market_index_symbol(), crud_dashboard_view(), _dashboard_asset_version() (+25 more)
 
 ### Community 61 - "Community 61"
 Cohesion: 0.11
 Nodes (5): ci(), ji, oi(), qi(), ui()
 
 ### Community 64 - "Community 64"
-Cohesion: 0.12
-Nodes (5): bi(), G, jt, vi(), xi
+Cohesion: 0.13
+Nodes (5): G, H, jt, X(), Z()
 
 ### Community 65 - "Community 65"
 Cohesion: 0.20
 Nodes (5): ae(), it, O(), oe(), ue()
 
-### Community 67 - "Community 67"
-Cohesion: 0.11
-Nodes (5): d(), es(), hs(), jn(), v()
-
 ### Community 69 - "Community 69"
-Cohesion: 0.26
+Cohesion: 0.19
 Nodes (10): DataFrame, Series, _prepare_price_frame(), Calculates Relative Rotation Graph (RRG) coordinates (RS-Ratio and RS-Momentum), Rolling z-score of ``series`` over ``lookback`` bars.      std == 0 (a locally f, run_rrg_simulation(), _z(), _format_date() (+2 more)
 
 ### Community 70 - "Community 70"
@@ -366,7 +377,7 @@ Nodes (4): _parse_date(), _parse_int(), Parse an integer query param, raising a 
 
 ### Community 71 - "Community 71"
 Cohesion: 0.06
-Nodes (61): _beta_resid(), _beta_stress_scenarios(), build_compliance(), build_portfolio_payload(), _check_max(), _company_meta(), _compounded_windows(), _cost_summary() (+53 more)
+Nodes (62): _beta_resid(), _beta_stress_scenarios(), build_compliance(), build_portfolio_payload(), _check_max(), _company_meta(), _compounded_windows(), _cost_summary() (+54 more)
 
 ### Community 74 - "Community 74"
 Cohesion: 0.29
@@ -400,10 +411,6 @@ Nodes (15): _custom_trading_dates(), _day_has_rows(), _fiscal_year_start(), get_
 Cohesion: 0.11
 Nodes (35): _abbr(), _build_strategy(), _cell_bg(), _color(), _compound_window(), _compute(), _confidence(), _empty_row() (+27 more)
 
-### Community 83 - "Community 83"
-Cohesion: 0.27
-Nodes (4): ie(), ne(), ve(), zn()
-
 ### Community 84 - "Community 84"
 Cohesion: 0.29
 Nodes (10): get_custom_range_aggregate(), get_range_aggregate(), _merge_into(), _range_generation(), Monotonic token folded into every range-cache key.      ``refresh_after_sync``, Sum of every day aggregate in the range. Cached. None if nothing built., Accumulate one side ({symbol: {broker: [qty, amt]}}) into dst., (buy, sell, sector) for a list of trading-day strings.      Built by merging t (+2 more)
@@ -412,17 +419,33 @@ Nodes (10): get_custom_range_aggregate(), get_range_aggregate(), _merge_into(), 
 Cohesion: 0.50
 Nodes (3): fetch_live_index_rows(), live_index.py — intraday live NEPSE index / sub-index quotes.  Pulls the interna, Return a list of raw live-index dicts, or None if the feed is unavailable.
 
+### Community 87 - "Community 87"
+Cohesion: 0.29
+Nodes (8): _approval_json(), _is_approver(), portfolio_approval_action(), portfolio_approvals_api(), Who may review account requests from the portfolio notification bell.      Staff, One pending request → the JSON the notification bell renders., Pending account requests for the notification bell (staff only).      Returns ``, Approve or reject one pending account request from the bell (staff only).      B
+
 ### Community 93 - "Community 93"
 Cohesion: 0.18
 Nodes (12): broker_persistence(), broker_signals(), _is_mutual_fund(), net_holding(), % price change over the window for each symbol (first vs last close in it)., Four research-desk signals for a broker selection, one window pass.      All d, Match the dropdown's string broker against int keys in the aggregate., Per-stock net position for one or more brokers (Net Holding treemap).      Whe (+4 more)
 
+### Community 94 - "Community 94"
+Cohesion: 0.40
+Nodes (5): build_new_listing_snapshot(), _pct(), New-listing snapshot.  The Momentum / IMM / Stage desks all need a long price hi, Percent change of a over b, rounded; None when b is missing/zero., Build a listing-appropriate metric set for a short-history symbol.      df / sec
+
 ### Community 102 - "Community 102"
-Cohesion: 0.09
-Nodes (6): an(), en(), hn(), ln(), rn(), vn
+Cohesion: 0.18
+Nodes (5): an(), hn(), ln(), rn(), tn()
 
 ### Community 107 - "Community 107"
-Cohesion: 0.20
+Cohesion: 0.22
 Nodes (3): bs(), Ft, wt
+
+### Community 108 - "Community 108"
+Cohesion: 0.40
+Nodes (4): _map_wacc_columns(), _normalize_wacc_table(), Locate the WACC report's columns by header name (order-independent).      Header, Map a raw table (list of cell-lists) to WACC rows + a skipped count.      Return
+
+### Community 109 - "Community 109"
+Cohesion: 0.09
+Nodes (5): gi(), he, ni, pi(), si
 
 ### Community 111 - "Community 111"
 Cohesion: 0.33
@@ -440,9 +463,13 @@ Nodes (3): fetch_live_rows(), live_price.py — intraday live NEPSE quotes for t
 Cohesion: 0.50
 Nodes (3): fetch_market_summary(), nepse_market_summary.py — official daily market totals (turnover / trades / …)., Return the list of daily summary dicts (most recent first), or None.
 
+### Community 116 - "Community 116"
+Cohesion: 0.11
+Nodes (3): AdminApprovalTests, MultiPortfolioManagementTests, TestCase
+
 ### Community 118 - "Community 118"
-Cohesion: 0.10
-Nodes (19): AdminApprovalRegistrationForm, _approval_json(), approval_pending_view(), _asset_version(), _is_approver(), portfolio_approval_action(), portfolio_approvals_api(), _portfolio_rows() (+11 more)
+Cohesion: 0.15
+Nodes (11): AdminApprovalRegistrationForm, approval_pending_view(), _asset_version(), _portfolio_rows(), portfolio_sop_view(), portfolio_view(), Self-service signup that waits for admin approval., Render the Risk & Portfolio dashboard shell for the logged-in user. (+3 more)
 
 ### Community 119 - "Community 119"
 Cohesion: 0.15
@@ -456,21 +483,13 @@ Nodes (5): _classify_agent(), _device(), analytics_views.py — self-hosted visi
 Cohesion: 0.40
 Nodes (5): _market_cap_totals(), _overview(), NEPSE-wide market capitalisation for the latest EOD date and its change     ver, NEPSE-wide traded turnover for the latest EOD date and its change versus     th, _turnover_totals()
 
-### Community 126 - "Community 126"
-Cohesion: 0.40
-Nodes (3): H, X(), Z()
-
 ### Community 128 - "Community 128"
 Cohesion: 0.07
 Nodes (46): _fmt_for(), fundamental_data_api(), fundamental_matrix_api(), fundamental_model_api(), _fundamental_tickers(), _gv_cap_segments(), _gv_clamp(), _gv_dir() (+38 more)
 
 ### Community 131 - "Community 131"
-Cohesion: 0.19
-Nodes (5): A(), Js(), qs(), ye(), zt
-
-### Community 134 - "Community 134"
-Cohesion: 0.14
-Nodes (8): BaseCommand, backfill_missing_company_profiles(), Command, Safety-net backfill for the company list.  The dropdown reads from ``CompanyProf, Create CompanyProfile rows for recently-traded symbols that have none.      Retu, Command, grant_staff — give (or revoke) a My Portfolio account access to the Workbench., Command
+Cohesion: 0.24
+Nodes (3): A(), Js(), zt
 
 ### Community 135 - "Community 135"
 Cohesion: 0.50
@@ -479,21 +498,21 @@ Nodes (4): Series, _compute_rsi(), RSI/RSI-SMA long-only strategy for one-way ma
 ## Knowledge Gaps
 - **15 isolated node(s):** `Migration`, `Migration`, `Migration`, `Migration`, `Migration` (+10 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **56 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **50 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `_()` connect `Community 7` to `Community 2`, `Community 131`, `Community 132`, `Community 8`, `Community 9`, `Community 11`, `Community 12`, `Community 15`, `Community 19`, `Community 20`, `Community 22`, `Community 23`, `Community 24`, `Community 29`, `Community 30`, `Community 31`, `Community 33`, `Community 36`, `Community 37`, `Community 38`, `Community 41`, `Community 43`, `Community 47`, `Community 48`, `Community 50`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 59`, `Community 61`, `Community 62`, `Community 63`, `Community 64`, `Community 65`, `Community 66`, `Community 67`, `Community 72`, `Community 75`, `Community 83`, `Community 87`, `Community 88`, `Community 89`, `Community 102`, `Community 107`, `Community 108`, `Community 109`, `Community 110`, `Community 120`, `Community 122`, `Community 123`, `Community 126`?**
-  _High betweenness centrality (0.111) - this node is a cross-community bridge._
-- **Why does `build_institutional_analysis_rows()` connect `Community 1` to `Community 60`, `Community 45`?**
+- **Why does `_()` connect `Community 7` to `Community 130`, `Community 131`, `Community 132`, `Community 2`, `Community 8`, `Community 9`, `Community 11`, `Community 12`, `Community 15`, `Community 19`, `Community 20`, `Community 22`, `Community 23`, `Community 24`, `Community 29`, `Community 30`, `Community 31`, `Community 33`, `Community 36`, `Community 37`, `Community 38`, `Community 41`, `Community 43`, `Community 47`, `Community 48`, `Community 50`, `Community 51`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 59`, `Community 61`, `Community 63`, `Community 64`, `Community 65`, `Community 66`, `Community 67`, `Community 72`, `Community 73`, `Community 83`, `Community 88`, `Community 102`, `Community 107`, `Community 109`, `Community 110`, `Community 113`, `Community 120`, `Community 122`, `Community 123`?**
+  _High betweenness centrality (0.108) - this node is a cross-community bridge._
+- **Why does `NepseMarketIndex` connect `Community 0` to `Community 129`, `Community 34`, `Community 3`, `Community 71`, `Community 45`, `Community 16`, `Community 82`, `Community 116`, `Community 60`?**
   _High betweenness centrality (0.024) - this node is a cross-community bridge._
-- **Why does `NepseMarketIndex` connect `Community 0` to `Community 34`, `Community 130`, `Community 68`, `Community 3`, `Community 71`, `Community 136`, `Community 45`, `Community 82`, `Community 116`, `Community 27`, `Community 60`?**
-  _High betweenness centrality (0.023) - this node is a cross-community bridge._
+- **Why does `vn` connect `Community 23` to `Community 7`, `Community 9`, `Community 11`, `Community 15`, `Community 19`, `Community 20`, `Community 22`, `Community 30`, `Community 33`, `Community 48`, `Community 51`, `Community 54`, `Community 55`, `Community 59`, `Community 62`, `Community 66`, `Community 68`, `Community 72`, `Community 75`, `Community 102`, `Community 109`, `Community 110`?**
+  _High betweenness centrality (0.022) - this node is a cross-community bridge._
 - **What connects `The uploaded positions (from the Meroshare 'My Shares' CSV).`, `The uploaded cost basis (from the broker 'My WACC' report).`, `Every user's uploaded portfolio — the answer to 'who uploaded a portfolio'.` to the rest of the system?**
-  _317 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _316 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.061122538936232734 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06202950918398073 - nodes in this community are weakly interconnected._
 - **Should `Community 4` be split into smaller, more focused modules?**
   _Cohesion score 0.14619883040935672 - nodes in this community are weakly interconnected._
 - **Should `Community 5` be split into smaller, more focused modules?**

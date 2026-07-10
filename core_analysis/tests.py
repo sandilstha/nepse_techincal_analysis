@@ -294,7 +294,7 @@ class MultiPortfolioManagementTests(TestCase):
         self.assertNotContains(response, "Choose WACC")
         self.assertNotContains(response, "Upload WACC <small>optional</small>")
 
-    def test_holdings_toolbar_offers_portfolio_delete_instead_of_clear(self):
+    def test_holdings_toolbar_offers_only_portfolio_delete(self):
         primary = Portfolio.objects.create(user=self.user, name="Saraswoti Joshi Shrestha")
         Portfolio.objects.create(user=self.user, name="Other", is_default=True)
         Holding.objects.create(
@@ -305,11 +305,19 @@ class MultiPortfolioManagementTests(TestCase):
 
         self.assertContains(response, "Delete Portfolio")
         self.assertNotContains(response, "Clear Holdings")
+        self.assertNotContains(response, "Update Holdings")
+        self.assertNotContains(response, "Import WACC (cost)")
+        self.assertNotContains(response, 'id="pf-holdings-file"')
+        self.assertNotContains(response, 'id="pf-wacc-file"')
+        self.assertNotContains(response, "Rename active")
+        self.assertNotContains(response, "Duplicate")
+        self.assertNotContains(response, "Set Default")
+        self.assertNotContains(response, "Archive")
         self.assertContains(response, f'data-name="{primary.name}"')
         self.assertContains(
             response,
             'class="pf-file-picker pf-file-picker-combined"',
-            count=4,
+            count=2,
         )
 
     def test_portfolio_page_creates_default_portfolio(self):
@@ -526,6 +534,15 @@ class PortfolioStressAnalyticsTests(SimpleTestCase):
             portfolio_analytics._days_to_liquidate_value(rows, 1000.0, 75, 0.20)
         )
 
+    def test_liquidity_risk_labels_match_required_bands(self):
+        self.assertEqual(portfolio_analytics._liquidity_risk_label("liquid"), "Low")
+        self.assertEqual(portfolio_analytics._liquidity_risk_label("moderate"), "Moderate")
+        self.assertEqual(portfolio_analytics._liquidity_risk_label("illiquid"), "High")
+        self.assertEqual(
+            portfolio_analytics._liquidity_risk_label("untradeable"),
+            "Very High",
+        )
+
     def test_var_matrix_contains_all_horizons_confidences_and_methods(self):
         start = date(2026, 1, 1)
         returns = [
@@ -568,10 +585,16 @@ class PortfolioStressAnalyticsTests(SimpleTestCase):
         labels = {row["label"] for row in scenarios}
 
         self.assertTrue({
+            "Current NEPSE",
             "NEPSE -20%", "NEPSE -10%", "NEPSE -5%",
             "NEPSE +5%", "NEPSE +10%", "NEPSE +20%",
             "NEPSE at 3,200", "NEPSE at all-time high",
         }.issubset(labels))
+        current = next(row for row in scenarios if row["kind"] == "current")
+        self.assertEqual(current["shock"], 0.0)
+        self.assertEqual(current["impact_rs"], 0.0)
+        self.assertEqual(current["portfolio_value"], 100000.0)
+        self.assertEqual(current["target_index"], 2800.0)
         for row in scenarios:
             self.assertAlmostEqual(
                 row["portfolio_value"],
@@ -590,7 +613,7 @@ class PortfolioStressAnalyticsTests(SimpleTestCase):
                 "highest_date": "2021-08-18",
             },
         )
-        target_rows = [row for row in scenarios if row["kind"] != "shock"]
+        target_rows = [row for row in scenarios if row["kind"] not in ("shock", "current")]
 
         self.assertEqual(len(target_rows), 1)
         self.assertEqual(target_rows[0]["label"], "NEPSE 3,200 / ATH")

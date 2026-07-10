@@ -174,7 +174,7 @@
   padding-top: 9px;
   margin-top: 10px;
 }
-.pf-portfolio-manager summary {
+.pf-portfolio-manager > summary {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -186,10 +186,10 @@
   text-transform: uppercase;
   list-style: none;
 }
-.pf-portfolio-manager summary::-webkit-details-marker {
+.pf-portfolio-manager > summary::-webkit-details-marker {
   display: none;
 }
-.pf-portfolio-manager summary::before {
+.pf-portfolio-manager > summary::before {
   content: "›";
   display: inline-flex;
   align-items: center;
@@ -201,17 +201,57 @@
   font: 900 17px/1 'Manrope', sans-serif;
   transition: transform .15s ease, background .15s ease;
 }
-.pf-portfolio-manager[open] summary::before {
+.pf-portfolio-manager[open] > summary::before {
   transform: rotate(90deg);
   background: var(--accent-soft);
 }
-.pf-manager-grid {
+.pf-manager-stack {
   display: grid;
-  grid-template-columns: minmax(650px, 1fr) minmax(230px, .38fr) auto;
-  column-gap: 10px;
-  row-gap: 10px;
-  align-items: end;
+  gap: 10px;
   margin-top: 8px;
+}
+.pf-create-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(11, 24, 50, .42);
+  overflow: hidden;
+}
+.pf-create-panel > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 10px;
+  cursor: pointer;
+  color: var(--ink-2);
+  font: 800 11px/1 'Manrope', sans-serif;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  list-style: none;
+}
+.pf-create-panel > summary::-webkit-details-marker {
+  display: none;
+}
+.pf-create-panel > summary::before {
+  content: "+";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--accent);
+  font: 900 14px/1 'Manrope', sans-serif;
+}
+.pf-create-panel[open] > summary {
+  border-bottom: 1px solid var(--line);
+  color: var(--accent);
+}
+.pf-create-panel[open] > summary::before {
+  content: "-";
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
 .pf-manager-form {
   display: grid;
@@ -227,10 +267,7 @@
     minmax(150px, .95fr)
     minmax(130px, .7fr);
   gap: 8px;
-}
-.pf-rename-series {
-  grid-template-columns: minmax(150px, 1fr) auto;
-  gap: 8px;
+  padding: 10px;
 }
 .pf-manager-form > label {
   display: flex;
@@ -293,14 +330,6 @@
   min-height: 34px;
   width: 100%;
 }
-.pf-manager-actions {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 8px;
-  justify-content: flex-end;
-  margin: 0;
-}
-.pf-manager-actions .pf-btn,
 .pf-archived-row .pf-btn {
   min-height: 34px;
   padding: 0 12px;
@@ -340,23 +369,8 @@
   font: 700 10.5px/1 'Manrope', sans-serif;
   white-space: nowrap;
 }
-@media (max-width: 1380px) {
-  .pf-manager-grid {
-    grid-template-columns: 1fr;
-  }
-  .pf-manager-actions {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-  }
-}
 @media (max-width: 1180px) {
-  .pf-manager-grid {
-    grid-template-columns: 1fr;
-  }
   .pf-selector-form {
-    justify-content: flex-start;
-  }
-  .pf-manager-actions {
     justify-content: flex-start;
   }
   .pf-create-series {
@@ -380,8 +394,7 @@
     white-space: normal;
   }
   .pf-selector-form select,
-  .pf-manager-form .pf-btn,
-  .pf-manager-actions .pf-btn {
+  .pf-manager-form .pf-btn {
     width: 100%;
   }
   .pf-archived-row {
@@ -408,7 +421,7 @@
 }
 .pf-section::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 
-/* ── Compact toolbar (returning user: re-import / clear) ─────────────────── */
+/* ── Compact toolbar (returning user: delete active portfolio) ───────────── */
 .pf-toolbar {
   display: grid; grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
   align-items: center; gap: 12px;
@@ -420,22 +433,11 @@
 .pf-toolbar-label { font: 800 17px/1.05 'Manrope', sans-serif; color: var(--ink-1); }
 .pf-toolbar-asof { font: 600 12px/1 'Manrope', sans-serif; color: var(--ink-3); }
 .pf-toolbar-actions {
-  display: grid; grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr) auto;
-  align-items: stretch; justify-content: stretch; gap: 10px; min-width: 0;
-}
-.pf-toolbar-form {
-  display: grid; grid-template-columns: minmax(150px, 1fr) auto;
-  align-items: center; gap: 9px; margin: 0; min-height: 48px; min-width: 0;
-  background: var(--surface-2); border: 1px solid var(--line);
-  border-radius: var(--radius-sm); padding: 7px; box-sizing: border-box;
-}
-.pf-toolbar-form .pf-upload {
-  display: block; min-width: 0;
-}
-.pf-toolbar-form .pf-file-picker { min-height: 32px; width: 100%; }
-.pf-toolbar-form .pf-file-name { min-width: 0; max-width: none; }
-.pf-toolbar-form .pf-btn {
-  min-height: 32px; padding: 0 16px; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
 }
 .pf-toolbar-actions .pf-btn { white-space: nowrap; }
 .pf-delete-form { display: flex; margin: 0; }
@@ -452,18 +454,15 @@
 @media (max-width: 1360px) {
   .pf-toolbar { grid-template-columns: 1fr; align-items: stretch; }
   .pf-toolbar-actions {
-    grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr) auto;
-    justify-content: stretch;
+    justify-content: flex-start;
   }
 }
 @media (max-width: 920px) {
-  .pf-toolbar-actions { grid-template-columns: 1fr; }
+  .pf-toolbar-actions { align-items: stretch; }
   .pf-delete-form .pf-btn { width: 100%; box-sizing: border-box; }
 }
 @media (max-width: 620px) {
   .pf-toolbar { padding: 12px; }
-  .pf-toolbar-form { grid-template-columns: 1fr; }
-  .pf-toolbar-form .pf-btn { width: 100%; }
 }
 
 /* ── Import card ─────────────────────────────────────────────────────────── */
@@ -702,20 +701,27 @@
 
 /* ── Stress scenarios card ───────────────────────────────────────────────── */
 .pf-stress { padding: 12px 16px; }
-.pf-stress-list { display: flex; flex-direction: column; gap: 8px; }
-.pf-stress-row { display: grid; grid-template-columns: 150px 1fr 96px 58px; align-items: center; gap: 8px; }
-.pf-stress-label {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0;
-  font: 700 12.5px/1.2 'Manrope', sans-serif; color: var(--ink-1);
+.pf-stress-chart {
+  width: 100%; overflow-x: auto; margin: 0 0 10px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface-1);
 }
-.pf-stress-label > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.pf-stress-label small { font: 600 11px/1 'Manrope', sans-serif; color: var(--ink-3); }
-.pf-stress-bar { height: 9px; background: var(--surface-2); border-radius: 5px; overflow: hidden; position: relative; }
-.pf-stress-bar i { display: block; height: 100%; border-radius: 5px; }
-.pf-stress-bar i.down { background: linear-gradient(90deg, #ff6e72, #e0575b); }
-.pf-stress-bar i.up { background: linear-gradient(90deg, #15c08a, #1fae7e); }
-.pf-stress-rs { font: 700 12.5px/1 'Manrope', system-ui, sans-serif; text-align: right; }
-.pf-stress-pct { font: 600 12px/1 'Manrope', sans-serif; text-align: right; }
+.pf-stress-svg { display: block; width: 100%; min-width: 620px; height: auto; }
+.pf-stress-grid { stroke: var(--line-soft); stroke-width: 1; }
+.pf-stress-axis { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 4 4; opacity: .75; }
+.pf-stress-axis-label,
+.pf-stress-xlabel,
+.pf-stress-value {
+  font-family: 'Manrope', system-ui, sans-serif; fill: var(--ink-3);
+}
+.pf-stress-axis-label { font-size: 10px; font-weight: 700; }
+.pf-stress-xlabel { font-size: 10px; font-weight: 700; }
+.pf-stress-value { font-size: 10px; font-weight: 800; fill: var(--ink-1); }
+.pf-stress-bar-rect { transition: opacity .15s ease, filter .15s ease; }
+.pf-stress-bar-rect.up { fill: #1fae7e; }
+.pf-stress-bar-rect.down { fill: #e0575b; }
+.pf-stress-bar-rect.flat { fill: var(--ink-3); }
+.pf-stress-bar-g:hover .pf-stress-bar-rect { filter: brightness(1.12); opacity: .92; }
 
 /* ── Risk decomposition (factor model) ───────────────────────────────────── */
 .pf-factors { padding: 12px 16px; }
@@ -840,8 +846,6 @@
   .pf-liq-controls input { width: 100%; }
   .pf-liq-controls .pf-btn { flex: 1 1 100%; }
   .pf-conc-summary { flex-wrap: wrap; gap: 14px 22px; }
-  .pf-stress-row { grid-template-columns: 120px 1fr 74px; }
-  .pf-stress-pct { display: none; }
 }
 
 /* ── Holdings table ──────────────────────────────────────────────────────── */
@@ -949,7 +953,6 @@
 .pf-kpi-label .pf-help { width: 13px; height: 13px; font-size: 8.5px; margin-left: 4px; }
 .pf-sum-table thead .pf-sum-grp .pf-help { width: 12px; height: 12px; font-size: 8px; margin-left: 3px; }
 .pf-card-head .pf-help, .pf-section span .pf-help { position: relative; top: -1px; }
-.pf-toolbar-form .pf-help { align-self: center; }
 
 /* ── Admin notification bell — account requests ────────────────────────── */
 .pf-bell-wrap { position: relative; display: inline-flex; }

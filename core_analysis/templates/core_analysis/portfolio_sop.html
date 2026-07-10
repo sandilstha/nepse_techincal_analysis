@@ -152,25 +152,28 @@
         <p class="sop-kicker">Section 3</p>
         <h3>Importing holdings &amp; cost basis</h3>
         <h4 id="portfolio-management">3.0 Managing multiple portfolios</h4>
-        <p>Create a portfolio in one ordered row: <b>Name → Upload Holdings → Upload WACC →
-          Create Portfolio</b>. Name may be left blank when the holdings report contains
+        <p>Open <b>Manage portfolios</b>, then expand <b>Create new portfolio</b> to add a new
+          account using the ordered inputs: <b>Name, Upload Holdings, Upload WACC, Create
+          Portfolio</b>. Name may be left blank when the holdings report contains
           <i>Holder Name</i> or <i>BO Name</i>; WACC is optional. Both files are validated before
           the portfolio and its rows are created in one database transaction. Portfolio names are
-          unique per account without case sensitivity. Use <b>Duplicate</b>
-          to create an independent copy of holdings and WACC rows. When two or more active
-          portfolios exist, each portfolio tab provides a delete control. Deletion permanently
-          removes that portfolio and its holdings and WACC rows; the last active portfolio cannot
-          be deleted. Archived portfolios may be permanently deleted from Manage portfolios.</p>
-        <h4 id="imports-holdings">3.1 Update Holdings — “My Shares” file (CSV, Excel or PDF)</h4>
-        <p>Export “My Shares” from Meroshare and choose it once. First-time and new-portfolio
-          imports start immediately after file selection. When the report includes
+          unique per account without case sensitivity. For an already-created active portfolio,
+          the compact toolbar exposes only <b>Delete Portfolio</b>; it does not ask for duplicate
+          holdings or WACC uploads and does not show rename, duplicate or archive actions in the
+          day-to-day view. Deletion permanently removes that portfolio and its holdings and WACC
+          rows; the last active portfolio cannot be deleted. Archived portfolios may be restored,
+          duplicated, renamed or permanently deleted from Manage portfolios.</p>
+        <h4 id="imports-holdings">3.1 Upload Holdings — “My Shares” file (CSV, Excel or PDF)</h4>
+        <p>Export “My Shares” from Meroshare and upload it from the <b>Create new portfolio</b>
+          panel. New-portfolio imports run when <b>Create Portfolio</b> is submitted. When the
+          report includes
           <i>Holder Name</i> or <i>BO Name</i>, that value becomes the portfolio name automatically;
           otherwise the selected portfolio type provides the fallback name. The parser locates the
           <i>Scrip</i>, <i>Current Balance</i>, <i>Last Closing Price</i> and <i>LTP</i> columns by
           header name (order-independent), skips header/total/blank lines and zero balances, and
           de-duplicates symbols. PDF uploads are read table-by-table across every page; Excel
-          workbooks use the active sheet. Each upload <b>replaces</b> your previous holdings.
-          Cost basis (WACC) survives a holdings re-upload — it is stored separately.</p>
+          workbooks use the active sheet. The created portfolio receives those holdings, while
+          cost basis (WACC) is stored separately.</p>
         <h4 id="imports-wacc">3.2 Import WACC — broker “My WACC” report (CSV, Excel or PDF)</h4>
         <p>Adds your weighted-average cost per scrip. Rows are matched to holdings by symbol;
           unmatched scrips are kept (they re-match on the next holdings upload). This unlocks
@@ -357,7 +360,7 @@ VaR₉₅(h sessions) = 1.645 · σ_daily · √h          h = 5 (1W) or 20 (1M)
           <tbody>
             <tr><td><b>Vol</b></td><td>Annualised volatility = stdev(daily close-to-close returns, ~1yr window, min 20 obs) × √246 × 100. Daily frequency is used here (unlike beta) because volatility doesn't suffer the thin-trading cross-correlation bias and daily gives 5× the sample.</td></tr>
             <tr><td><b>Beta</b></td><td>Weekly-return OLS beta vs the NEPSE Index — full methodology in <a href="#beta">§4</a>. Green ≤ 1 (defensive), red &gt; 1 (aggressive).</td></tr>
-            <tr><td><b>Liq.</b></td><td>Days-to-liquidate = kitta ÷ (selected participation × one-year average daily volume) — full methodology in <a href="#liquidity">§12</a>. Participation can be 10%, 20% or 25%. Tiers: ≤1d liquid · ≤5d moderate · &gt;5d illiquid · no volume = untradeable.</td></tr>
+            <tr><td><b>Liq.</b></td><td>Days-to-liquidate = kitta ÷ (selected participation × one-year average daily volume) — full methodology in <a href="#liquidity">§12</a>. Participation can be 10%, 20% or 25%. Risk labels: ≤1d Low · ≤5d Moderate · &gt;5d High · no volume = Very High.</td></tr>
           </tbody>
         </table>
         <p class="sop-note">“—” in Vol/Beta means the scrip has too little trading history
@@ -425,13 +428,14 @@ VaR 1M % = 1.645 × (vol/√246) × √20 × 100      Loss 1M = VaR 1M % × valu
 book impact ₨ = impact % × current portfolio value
 stressed portfolio value = current value + book impact ₨
 stressed NAV = stressed portfolio value        (no separate units, cash or liability ledger exists)
-scenarios: NEPSE ±5% · ±10% · ±20% · target 3,200 · all-history highest close</span>
+scenarios: current NEPSE level · NEPSE ±5% · ±10% · ±20% · target 3,200 · all-history highest close</span>
         <p><b>Methodology.</b> Deterministic beta propagation: each hypothetical NEPSE move is
           pushed through the portfolio's weekly-return beta (<a href="#beta">§4</a>). If beta is
           unavailable, scenarios are withheld rather than assuming a market beta. Unlike VaR
           (which asks how likely a loss is), stress asks
           “<i>if</i> this happens, what does it cost?” — no probability attached.</p>
-        <p><b>Outputs.</b> The chart compares gain/loss magnitude. The table shows target NEPSE
+        <p><b>Outputs.</b> The chart compares gain/loss magnitude, including the zero-shock current
+          market level as the baseline. The table shows target NEPSE
           level, market move, a single stressed portfolio value/NAV, rupee impact and percentage
           gain/loss. Value and NAV are intentionally one column because this module has no separate
           cash, liability or fund-unit ledger.</p>
@@ -502,8 +506,8 @@ portfolio DTL at target X% = first D where value sold by day D ≥ X% × portfol
           <div class="sop-fact"><b>Volume window</b><span>Trailing 365 calendar days ≈ 1 trading year</span></div>
           <div class="sop-fact"><b>Participation scenarios</b><span>10% · 20% · 25% of ADV per session</span></div>
           <div class="sop-fact"><b>Portfolio targets</b><span>25% · 50% · 75% · 100% · user-defined</span></div>
-          <div class="sop-fact"><b>Tiers</b><span>≤1d liquid · ≤5d moderate · &gt;5d illiquid</span></div>
-          <div class="sop-fact"><b>Untradeable</b><span>No volume in the window</span></div>
+          <div class="sop-fact"><b>Risk labels</b><span>Low ≤1d · Moderate ≤5d · High &gt;5d · Very High no volume</span></div>
+          <div class="sop-fact"><b>Very High</b><span>No volume in the window</span></div>
         </div>
         <p><b>Why ADV divides by market sessions, not trade days:</b> a scrip that printed on 3 of
           246 sessions is genuinely thin; averaging over only its trade days would make it look

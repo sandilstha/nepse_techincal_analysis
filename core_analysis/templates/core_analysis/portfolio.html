@@ -101,71 +101,45 @@
     </div>
     <details class="pf-portfolio-manager"{% if not has_holdings %} open{% endif %}>
       <summary>Manage portfolios</summary>
-      <div class="pf-manager-grid">
-        <form method="post" action="{% url 'portfolio_manage' %}"
-              class="pf-manager-form pf-create-series" enctype="multipart/form-data">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="create">
-          <input type="hidden" name="portfolio_type" value="personal">
-          <label>
-            <span>1 &middot; Name</span>
-            <input type="text" name="name" maxlength="120"
-                   placeholder="Auto from Holdings report">
-          </label>
-          <div class="pf-manager-upload">
-            <span>2 &middot; Upload Holdings</span>
-            <span class="pf-upload">
-              <input class="pf-file-input" type="file" name="file"
-                     accept=".csv,.xlsx,.xlsm,.xls,.pdf" id="pf-new-portfolio-file" required>
-              <label class="pf-file-picker pf-file-picker-combined" for="pf-new-portfolio-file">
-                <span class="pf-file-name" data-empty-label="My Shares Values">My Shares Values</span>
-              </label>
-            </span>
-          </div>
-          <div class="pf-manager-upload">
-            <span>3 &middot; Upload WACC</span>
-            <span class="pf-upload">
-              <input class="pf-file-input" type="file" name="wacc_file"
-                     accept=".csv,.xlsx,.xlsm,.xls,.pdf" id="pf-new-wacc-file">
-              <label class="pf-file-picker pf-file-picker-combined" for="pf-new-wacc-file">
-                <span class="pf-file-name" data-empty-label="My WACC Report">My WACC Report</span>
-              </label>
-            </span>
-          </div>
-          <div class="pf-create-action">
-            <span>4 &middot; Create Portfolio</span>
-            <button type="submit" class="pf-btn pf-btn-primary">Create Portfolio</button>
-          </div>
-        </form>
-        <form method="post" action="{% url 'portfolio_manage' %}"
-              class="pf-manager-form pf-rename-series">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="rename">
-          <input type="hidden" name="portfolio_id" value="{{ active_portfolio.id }}">
-          <label>
-            <span>Rename active</span>
-            <input type="text" name="name" maxlength="120" value="{{ active_portfolio.name }}" required>
-          </label>
-          <button type="submit" class="pf-btn pf-btn-primary">Rename</button>
-        </form>
-        <form method="post" action="{% url 'portfolio_manage' %}" class="pf-manager-actions">
-          {% csrf_token %}
-          <input type="hidden" name="portfolio_id" value="{{ active_portfolio.id }}">
-          <button type="submit" name="action" value="duplicate" class="pf-btn pf-btn-ghost">Duplicate</button>
-          {% if not active_portfolio.is_default %}
-          <button type="submit" name="action" value="set_default" class="pf-btn pf-btn-ghost">Set Default</button>
-          {% endif %}
-          <button type="submit" name="action" value="archive" class="pf-btn pf-btn-ghost"
-                  onclick="return confirm('Archive {{ active_portfolio.name }}? It will be hidden from the active selector.');">
-            Archive
-          </button>
-          <button type="submit" name="action" value="delete" class="pf-btn pf-btn-danger"
-                  {% if active_portfolios|length <= 1 %}disabled
-                  title="Create another portfolio before deleting the last active portfolio"
-                  {% else %}data-pf-delete-button data-name="{{ active_portfolio.name }}"{% endif %}>
-            Delete
-          </button>
-        </form>
+      <div class="pf-manager-stack">
+        <details class="pf-create-panel"{% if not has_holdings %} open{% endif %}>
+          <summary>Create new portfolio</summary>
+          <form method="post" action="{% url 'portfolio_manage' %}"
+                class="pf-manager-form pf-create-series" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+            <input type="hidden" name="portfolio_type" value="personal">
+            <label>
+              <span>1 &middot; Name</span>
+              <input type="text" name="name" maxlength="120"
+                     placeholder="Auto from Holdings report">
+            </label>
+            <div class="pf-manager-upload">
+              <span>2 &middot; Upload Holdings</span>
+              <span class="pf-upload">
+                <input class="pf-file-input" type="file" name="file"
+                       accept=".csv,.xlsx,.xlsm,.xls,.pdf" id="pf-new-portfolio-file" required>
+                <label class="pf-file-picker pf-file-picker-combined" for="pf-new-portfolio-file">
+                  <span class="pf-file-name" data-empty-label="My Shares Values">My Shares Values</span>
+                </label>
+              </span>
+            </div>
+            <div class="pf-manager-upload">
+              <span>3 &middot; Upload WACC</span>
+              <span class="pf-upload">
+                <input class="pf-file-input" type="file" name="wacc_file"
+                       accept=".csv,.xlsx,.xlsm,.xls,.pdf" id="pf-new-wacc-file">
+                <label class="pf-file-picker pf-file-picker-combined" for="pf-new-wacc-file">
+                  <span class="pf-file-name" data-empty-label="My WACC Report">My WACC Report</span>
+                </label>
+              </span>
+            </div>
+            <div class="pf-create-action">
+              <span>4 &middot; Create Portfolio</span>
+              <button type="submit" class="pf-btn pf-btn-primary">Create Portfolio</button>
+            </div>
+          </form>
+        </details>
       </div>
       {% if archived_portfolios %}
       <div class="pf-archived-list" aria-label="Archived portfolios">
@@ -202,44 +176,17 @@
   <div class="pf-empty" id="pf-empty">
     <div class="pf-empty-icon">📂</div>
     <h3>No holdings in {{ active_portfolio.name }}</h3>
-    <p>Use the open Manage portfolios row above to add Holdings, optional WACC, and create the portfolio.</p>
+    <p>Use the open Create new portfolio panel above to add Holdings, optional WACC, and create the portfolio.</p>
   </div>
   {% else %}
 
-  <!-- ── Compact toolbar (re-import / delete) ─────────────────────────── -->
+  <!-- ── Compact toolbar (delete active portfolio) ────────────────────── -->
   <section class="pf-toolbar">
     <div class="pf-toolbar-left">
       <span class="pf-toolbar-label" id="pf-toolbar-name">{{ active_portfolio.name }}</span>
       <span class="pf-toolbar-asof" id="pf-asof"></span>
     </div>
     <div class="pf-toolbar-actions">
-      <form class="pf-toolbar-form" method="post" action="{% url 'portfolio_import' %}" enctype="multipart/form-data"
-            title="Upload your Meroshare 'My Shares' export (CSV, Excel or PDF) — replaces current holdings">
-        {% csrf_token %}
-        <input type="hidden" name="portfolio_id" value="{{ active_portfolio.id }}">
-        <span class="pf-upload">
-          <input class="pf-file-input" type="file" name="file" accept=".csv,.xlsx,.xlsm,.xls,.pdf" id="pf-holdings-file" required>
-          <label class="pf-file-picker pf-file-picker-combined" for="pf-holdings-file">
-            <span class="pf-file-name" data-empty-label="My Shares Values">My Shares Values</span>
-          </label>
-        </span>
-        <button type="submit" class="pf-btn pf-btn-primary">Update Holdings</button>
-      </form>
-      <!-- Cost-basis import: broker "My WACC" report (CSV / Excel / PDF). Separate
-           form + own file input; matched to holdings by symbol server-side. -->
-      <form class="pf-toolbar-form" method="post" action="{% url 'portfolio_wacc_import' %}" enctype="multipart/form-data"
-            title="Upload your broker 'My WACC' report to add cost basis (WACC, Book Value, Paper P/L)">
-        {% csrf_token %}
-        <input type="hidden" name="portfolio_id" value="{{ active_portfolio.id }}">
-        <span class="pf-upload">
-          <input class="pf-file-input" type="file" name="file" accept=".csv,.xlsx,.xlsm,.xls,.pdf" id="pf-wacc-file" required>
-          <label class="pf-file-picker pf-file-picker-combined" for="pf-wacc-file">
-            <span class="pf-file-name" data-empty-label="My WACC Report">My WACC Report</span>
-          </label>
-        </span>
-        <button type="submit" class="pf-btn pf-btn-primary">Import WACC (cost)</button>
-      </form>
-      <!-- Separate form so deleting never trips the import forms' required file inputs. -->
       <form method="post" action="{% url 'portfolio_manage' %}" class="pf-delete-form"
             data-pf-delete data-name="{{ active_portfolio.name }}">
         {% csrf_token %}
@@ -293,10 +240,10 @@
         <span>Liquidity</span>
         <select id="pf-sum-liq-filter">
           <option value="">All</option>
-          <option value="liquid">Liquid</option>
+          <option value="liquid">Low</option>
           <option value="moderate">Moderate</option>
-          <option value="illiquid">Illiquid</option>
-          <option value="untradeable">Untradeable</option>
+          <option value="illiquid">High</option>
+          <option value="untradeable">Very High</option>
         </select>
       </label>
       <label class="pf-filter-field" for="pf-sum-sort">
