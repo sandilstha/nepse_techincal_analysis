@@ -36,6 +36,11 @@
     if (a >= 1e5) return s + "Rs " + (a / 1e5).toFixed(2) + " L";
     return fmtRs(v);
   }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
   function el(id) { return document.getElementById(id); }
   // Firm name for a broker number (from bootstrap meta), or "" if unmapped.
   function brokerName(b) { return (META.broker_names || {})[String(b)] || ""; }
@@ -70,7 +75,7 @@
     table.innerHTML = '<tbody><tr><td colspan="' + cols + '" class="dsx-loading">Loading…</td></tr></tbody>';
   }
   function empty(table, cols, msg) {
-    table.innerHTML = '<tbody><tr><td colspan="' + cols + '" class="dsx-empty">' + (msg || "No data") + "</td></tr></tbody>";
+    table.innerHTML = '<tbody><tr><td colspan="' + cols + '" class="dsx-empty">' + esc(msg || "No data") + "</td></tr></tbody>";
   }
 
   // ── populate dropdowns ────────────────────────────────────────────────
@@ -297,7 +302,7 @@
     var body = rows.map(function (r, i) {
       var ratio = Math.max(0, Math.min(1, (r.pct || 0) / maxPct));
       var bar = "<span class='dsx-pctbar' style='width:calc((100% - 24px) * " + ratio.toFixed(3) + ")'></span>";
-      return "<tr data-key='" + r.key + "'><td>" + (i + 1) + "</td><td class='l tkr'>" + r.key + "</td><td>" +
+      return "<tr data-key='" + esc(r.key) + "'><td>" + (i + 1) + "</td><td class='l tkr'>" + esc(r.key) + "</td><td>" +
         fmtQty(r.quantity) + "</td><td>" + fmtRs(r.amount) + "</td><td>" +
         fmtPrice(r.avg_price) + "</td><td class='dsx-pctcell'>" + bar +
         "<span class='dsx-pctnum'>" + fmtPct(r.pct) + "</span></td></tr>";
@@ -315,7 +320,7 @@
   function buildBrokerTable(table, rows) {
     if (!rows || !rows.length) { empty(table, 5); return; }
     var body = rows.map(function (r) {
-      return "<tr><td class='l tkr'>" + r.key + "</td><td>" + fmtQty(r.quantity) + "</td><td>" +
+      return "<tr><td class='l tkr'>" + esc(r.key) + "</td><td>" + fmtQty(r.quantity) + "</td><td>" +
         fmtRs(r.amount) + "</td><td>" + fmtPrice(r.avg_price) + "</td><td>" + fmtPct(r.pct) + "</td></tr>";
     }).join("");
     table.innerHTML = sortableHead(table.id, BROKER_COLS) + "<tbody>" + body + "</tbody>";
@@ -331,7 +336,7 @@
     if (!rows || !rows.length) { empty(table, 4); return; }
     var body = rows.map(function (r) {
       var cls = r.quantity >= 0 ? "num-pos" : "num-neg";
-      return "<tr><td class='l tkr'>" + r.key + "</td><td class='" + cls + "'>" + fmtQty(r.quantity) +
+      return "<tr><td class='l tkr'>" + esc(r.key) + "</td><td class='" + cls + "'>" + fmtQty(r.quantity) +
         "</td><td>" + fmtPrice(r.avg_buy) + "</td><td>" + fmtPrice(r.avg_sell) + "</td></tr>";
     }).join("");
     table.innerHTML = sortableHead(table.id, HOLD_COLS) + "<tbody>" + body + "</tbody>";
@@ -370,12 +375,12 @@
     var body = rows.map(function (r, i) {
       var diffCls = r.difference >= 0 ? "num-pos" : "num-neg";
       var stanceCls = r.stance === "Accumulating" ? "buy" : r.stance === "Distributing" ? "sell" : "flat";
-      return "<tr><td>" + (i + 1) + "</td><td class='l tkr'>" + r.broker + "</td><td class='l'>" +
-        (r.broker_name || "—") + "</td><td>" + fmtRs(r.buy_amount) + "</td><td>" +
+      return "<tr><td>" + (i + 1) + "</td><td class='l tkr'>" + esc(r.broker) + "</td><td class='l'>" +
+        esc(r.broker_name || "—") + "</td><td>" + fmtRs(r.buy_amount) + "</td><td>" +
         fmtRs(r.sell_amount) + "</td><td>" + fmtRs(r.total_amount) + "</td><td class='" + diffCls + "'>" +
         fmtSignedRs(r.difference) + "</td><td>" + fmtRs(r.matching_amount) + "</td><td class='" + diffCls + "'>" +
         fmtSignedPct(r.bias_pct) + "</td><td>" + fmtPct(r.matching_pct) + "</td><td>" +
-        "<span class='dsx-tag " + stanceCls + "'>" + r.stance + "</span></td></tr>";
+        "<span class='dsx-tag " + stanceCls + "'>" + esc(r.stance) + "</span></td></tr>";
     }).join("");
     table.innerHTML = sortableHead(table.id, FLOW_COLS) + "<tbody>" + body + "</tbody>";
   }
@@ -458,9 +463,10 @@
     var box = el("fav-kpis");
     if (!box) return;
     if (!d || (!((d.buy || []).length) && !((d.sell || []).length))) { box.innerHTML = ""; return; }
-    var buy = d.buy || [], sell = d.sell || [];
+    var buy = d.buy || [], sell = d.sell || [], summary = d.summary || {};
     var sum = function (rows, k) { return rows.reduce(function (s, r) { return s + (r[k] || 0); }, 0); };
-    var buyAmt = sum(buy, "amount"), sellAmt = sum(sell, "amount");
+    var buyAmt = summary.buy_amount == null ? sum(buy, "amount") : summary.buy_amount;
+    var sellAmt = summary.sell_amount == null ? sum(sell, "amount") : summary.sell_amount;
     var net = buyAmt - sellAmt;
     var stocks = {};
     buy.forEach(function (r) { stocks[r.key] = 1; });
@@ -470,16 +476,16 @@
     sell.forEach(function (r) { if ((r.pct || 0) > top.pct) top = { pct: r.pct, key: r.key, side: "sell" }; });
 
     function tile(label, val, sub, cls) {
-      return "<div class='dsx-kpi'><span class='dsx-kpi-label'>" + label + "</span>" +
+      return "<div class='dsx-kpi'><span class='dsx-kpi-label'>" + esc(label) + "</span>" +
         "<span class='dsx-kpi-val " + (cls || "") + "'>" + val + "</span>" +
-        "<span class='dsx-kpi-sub'>" + (sub || "") + "</span></div>";
+        "<span class='dsx-kpi-sub'>" + esc(sub || "") + "</span></div>";
     }
     box.innerHTML =
-      tile("Buy Turnover", fmtRsCompact(buyAmt), buy.length + " stocks", "num-pos") +
-      tile("Sell Turnover", fmtRsCompact(sellAmt), sell.length + " stocks", "num-neg") +
+      tile("Buy Turnover", fmtRsCompact(buyAmt), (summary.buy_stocks == null ? buy.length : summary.buy_stocks) + " stocks", "num-pos") +
+      tile("Sell Turnover", fmtRsCompact(sellAmt), (summary.sell_stocks == null ? sell.length : summary.sell_stocks) + " stocks", "num-neg") +
       tile("Net Flow", (net >= 0 ? "+" : "") + fmtRsCompact(net),
            net >= 0 ? "Net accumulating" : "Net distributing", net >= 0 ? "num-pos" : "num-neg") +
-      tile("Stocks Touched", nf(Object.keys(stocks).length), "buy ∪ sell side") +
+      tile("Stocks Touched", nf(summary.stocks_touched == null ? Object.keys(stocks).length : summary.stocks_touched), "buy ∪ sell side") +
       tile("Top Concentration", fmtPct(top.pct),
            top.key + " · " + (top.side === "sell" ? "sell" : "buy"), top.side === "sell" ? "num-neg" : "num-pos");
   }
@@ -519,8 +525,8 @@
       var dom = r.dominant ? ("Broker " + r.dominant.broker + " " + fmtPct(r.dominant.pct)) : "—";
       var hhi = "<span class='dsx-hhi risk-" + (r.risk || "low") + "' title='Concentration (HHI) " +
         nf(r.hhi) + " · dominant " + dom + "'>" + nf(r.hhi) + "</span>";
-      return "<div class='dsx-ad-row' data-key='" + r.symbol + "'>" +
-        "<span class='dsx-ad-sym'>" + r.symbol + "</span>" + streak +
+      return "<div class='dsx-ad-row' data-key='" + esc(r.symbol) + "'>" +
+        "<span class='dsx-ad-sym'>" + esc(r.symbol) + "</span>" + streak +
         "<span class='dsx-ad-track'>" + fill + "</span>" +
         "<span class='dsx-ad-net " + (pos ? "num-pos" : "num-neg") + "'>" +
           (pos ? "+" : "") + fmtQty(r.cum_net) + "</span>" + hhi + "</div>";
@@ -549,7 +555,7 @@
         : "<span class='dsx-tag sell' title='Net selling into a rising price'>DISTRIB ↑px</span>";
       var pcCls = r.price_chg >= 0 ? "num-pos" : "num-neg";
       var netCls = r.net >= 0 ? "num-pos" : "num-neg";
-      return "<tr><td class='l tkr'>" + r.symbol + "</td><td class='l'>" + tag + "</td>" +
+      return "<tr><td class='l tkr'>" + esc(r.symbol) + "</td><td class='l'>" + tag + "</td>" +
         "<td class='" + netCls + "'>" + (r.net >= 0 ? "+" : "") + fmtQty(r.net) + "</td>" +
         "<td class='" + pcCls + "'>" + (r.price_chg >= 0 ? "+" : "") + fmtPct(r.price_chg) + "</td></tr>";
     }).join("") + "</table>";
@@ -563,7 +569,7 @@
       var pos = r.net >= 0;
       var w = (50 * Math.abs(r.net || 0) / maxAbs).toFixed(2);
       var fill = "<span class='dsx-ad-fill " + (pos ? "buy" : "sell") + "' style='width:" + w + "%'></span>";
-      return "<div class='dsx-sec-row'><span class='dsx-sec-name' title='" + r.sector + "'>" + r.sector + "</span>" +
+      return "<div class='dsx-sec-row'><span class='dsx-sec-name' title='" + esc(r.sector) + "'>" + esc(r.sector) + "</span>" +
         "<span class='dsx-ad-track'>" + fill + "</span>" +
         "<span class='dsx-ad-net " + (pos ? "num-pos" : "num-neg") + "'>" + (pos ? "+" : "") + fmtQty(r.net) + "</span></div>";
     }).join("");
@@ -579,7 +585,7 @@
         var bw = (100 * r.buyers / tot).toFixed(1);
         var split = "<span class='dsx-split'><i class='buy' style='width:" + bw + "%'></i></span>";
         var netCls = r.net > 0 ? "num-pos" : r.net < 0 ? "num-neg" : "";
-        return "<tr><td class='l tkr'>" + r.symbol + "</td><td class='num-pos'>" + r.buyers +
+        return "<tr><td class='l tkr'>" + esc(r.symbol) + "</td><td class='num-pos'>" + r.buyers +
           "</td><td class='num-neg'>" + r.sellers + "</td><td class='" + netCls + "'>" +
           (r.net > 0 ? "+" : "") + r.net + " " + split + "</td></tr>";
       }).join("") + "</table>";
@@ -591,7 +597,7 @@
     el("sig-two").innerHTML = "<table class='dsx-sig-tbl'>" +
       "<thead><tr><th class='l'>Ticker</th><th>Buy</th><th>Sell</th><th>Churn</th></tr></thead>" +
       rows.map(function (r) {
-        return "<tr><td class='l tkr'>" + r.symbol + "</td><td class='num-pos'>" + fmtQty(r.buy) +
+        return "<tr><td class='l tkr'>" + esc(r.symbol) + "</td><td class='num-pos'>" + fmtQty(r.buy) +
           "</td><td class='num-neg'>" + fmtQty(r.sell) + "</td><td><span class='dsx-churn' title='" +
           fmtQty(r.two_sided) + " shares two-sided'>" + r.churn.toFixed(0) + "%</span></td></tr>";
       }).join("") + "</table>";
@@ -662,9 +668,16 @@
       var chip = document.createElement("span");
       chip.className = "dsx-sel-chip" + (summary ? " summary" : "");
       if (title) chip.title = title;
-      chip.innerHTML = "<b>" + label + "</b>" +
-        "<button type='button' class='dsx-sel-x' aria-label='" + ariaX + "'>×</button>";
-      chip.querySelector(".dsx-sel-x").addEventListener("click", function (e) {
+      var bold = document.createElement("b");
+      bold.textContent = label;
+      var remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "dsx-sel-x";
+      remove.setAttribute("aria-label", ariaX);
+      remove.textContent = "×";
+      chip.appendChild(bold);
+      chip.appendChild(remove);
+      remove.addEventListener("click", function (e) {
         e.stopPropagation(); onX();
       });
       return chip;
@@ -812,8 +825,8 @@
     var body = rows.map(function (r, i) {
       var tb = r.top_buy ? r.top_buy.broker + " (" + fmtPct(r.top_buy.pct) + ")" : "—";
       var ts = r.top_sell ? r.top_sell.broker + " (" + fmtPct(r.top_sell.pct) + ")" : "—";
-      return "<tr><td>" + (i + 1) + "</td><td class='l tkr'>" + r.symbol + "</td><td class='l'>" +
-        (r.sector || "") + "</td><td>" + fmtQty(r.quantity) + "</td><td>" + fmtRs(r.amount) +
+      return "<tr><td>" + (i + 1) + "</td><td class='l tkr'>" + esc(r.symbol) + "</td><td class='l'>" +
+        esc(r.sector || "") + "</td><td>" + fmtQty(r.quantity) + "</td><td>" + fmtRs(r.amount) +
         "</td><td>" + fmtPrice(r.avg_price) + "</td><td>" + r.buyers + "</td><td>" + r.sellers +
         "</td><td class='num-pos'>" + tb + "</td><td class='num-neg'>" + ts + "</td></tr>";
     }).join("");
@@ -907,7 +920,11 @@
       " / Net " + (it.net > 0 ? "+" : "") + nf(it.net);
     if (w > 34 && h > 18) {
       var fs = Math.max(9, Math.min(15, Math.sqrt(w * h) / 6));
-      d.innerHTML = '<span class="dsx-tm-label" style="font-size:' + fs + 'px">' + it.symbol + "</span>";
+      var label = document.createElement("span");
+      label.className = "dsx-tm-label";
+      label.style.fontSize = fs + "px";
+      label.textContent = it.symbol;
+      d.appendChild(label);
     }
     box.appendChild(d);
   }
@@ -925,7 +942,7 @@
       var show = function (cell, clientX, clientY) {
         var net = +cell.getAttribute("data-net") || 0;
         tip.innerHTML =
-          '<div class="dsx-tm-tip-sym">' + cell.getAttribute("data-sym") + '</div>' +
+          '<div class="dsx-tm-tip-sym">' + esc(cell.getAttribute("data-sym")) + '</div>' +
           '<div class="dsx-tm-tip-row"><span>Buy</span><b class="num-pos">' + fmtQty(+cell.getAttribute("data-buy") || 0) + '</b></div>' +
           '<div class="dsx-tm-tip-row"><span>Sell</span><b class="num-neg">' + fmtQty(+cell.getAttribute("data-sell") || 0) + '</b></div>' +
           '<div class="dsx-tm-tip-row net"><span>Net</span><b class="' + (net >= 0 ? "num-pos" : "num-neg") + '">' +
@@ -997,7 +1014,7 @@
       return b ? b.broker + " (" + fmtPct(b.pct) + ")" : "—";
     }
     var body = rows.map(function (r) {
-      return "<tr><td class='l tkr'>" + r.symbol + "</td><td>" + fmtQty(r.total) + "</td>" +
+      return "<tr><td class='l tkr'>" + esc(r.symbol) + "</td><td>" + fmtQty(r.total) + "</td>" +
         "<td class='grp num-pos'>" + cell(r.buy, 0) + "</td><td class='num-pos'>" + cell(r.buy, 1) +
         "</td><td class='num-pos'>" + cell(r.buy, 2) + "</td><td class='buysum'>" + fmtPct(r.buy_sum) + "</td>" +
         "<td class='grp num-neg'>" + cell(r.sell, 0) + "</td><td class='num-neg'>" + cell(r.sell, 1) +

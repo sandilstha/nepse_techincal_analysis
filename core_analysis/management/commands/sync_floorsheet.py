@@ -19,6 +19,7 @@ Examples:
     python manage.py sync_floorsheet
 """
 import os
+import re
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
@@ -34,6 +35,14 @@ from core_analysis.models import NepseFloorsheet
 # globally via the NEPSE_API_BASE_URL environment variable.
 DEFAULT_API_BASE_URL = os.environ.get("NEPSE_API_BASE_URL", "http://192.168.1.100:8000")
 FLOORSHEET_PATH = "/api/nepse-data/api/floorsheet/"
+MAX_PAGE_SIZE = 10_000
+MAX_BATCH_SIZE = 10_000
+HARD_MAX_PAGES_PER_DAY = 1_000
+MAX_BIGINT = 2**63 - 1
+MAX_INTEGER = 2**31 - 1
+MAX_RATE = Decimal("100000000")
+MAX_AMOUNT = Decimal("10000000000000")
+_SYMBOL_RE = re.compile(r"^[A-Z0-9._-]{1,50}$")
 
 
 class Command(BaseCommand):
@@ -103,9 +112,11 @@ class Command(BaseCommand):
         api_token = (options.get("api_token") or "").strip()
         api_key = (options.get("api_key") or "").strip()
         api_cookie = (options.get("api_cookie") or "").strip()
-        page_size = max(int(options.get("page_size") or 5000), 1)
-        batch_size = max(int(options.get("batch_size") or 2000), 1)
+        page_size = min(max(int(options.get("page_size") or 5000), 1), MAX_PAGE_SIZE)
+        batch_size = min(max(int(options.get("batch_size") or 2000), 1), MAX_BATCH_SIZE)
         max_pages = options.get("max_pages")
+        if max_pages is not None and max_pages <= 0:
+            raise CommandError("--max-pages must be a positive integer.")
         dry_run = bool(options.get("dry_run"))
 
         # Normalise the date window. A single date works; an open end fills from
@@ -183,21 +194,37 @@ class Command(BaseCommand):
         )
         batch = []
         seen_ids = set()
+        seen_urls = set()
         pages = 0
         processed = 0
         skipped_invalid = 0
 
         while url:
+            if url in seen_urls:
+                raise CommandError(f"Floorsheet API pagination loop detected at {url}.")
+            seen_urls.add(url)
             pages += 1
-            payload, url = _fetch_page(session, url)
+            payload, url = _fetch_page(session, url, allowed_origin=api_base_url)
             for item in payload.get("results", []):
-                row_id = _clean_int(item.get("id"))
+                if not isinstance(item, dict):
+                    skipped_invalid += 1
+                    continue
+                row_id = _clean_int(item.get("id"), minimum=1, maximum=MAX_BIGINT)
                 business_date = _clean_date(item.get("calculation_date"))
                 symbol = _clean_text(item.get("stock_symbol")).upper()
+                buyer = _clean_int(item.get("buyer"), minimum=1, maximum=MAX_INTEGER)
+                seller = _clean_int(item.get("seller"), minimum=1, maximum=MAX_INTEGER)
+                quantity = _clean_int(item.get("quantity"), minimum=1, maximum=MAX_INTEGER)
 
                 # The source 'id' is the primary key; symbol and date are NOT NULL
                 # in the table. Everything else mirrors the feed and may be null.
-                if row_id is None or business_date is None or not symbol:
+                if (
+                    row_id is None
+                    or business_date != day
+                    or not _SYMBOL_RE.fullmatch(symbol)
+                    or quantity is None
+                    or (buyer is None and seller is None)
+                ):
                     skipped_invalid += 1
                     continue
                 if row_id in seen_ids:
@@ -207,15 +234,19 @@ class Command(BaseCommand):
                 batch.append(
                     NepseFloorsheet(
                         id=row_id,
-                        contract_no=_clean_text(item.get("contract_no")) or None,
+                        contract_no=_clean_text(item.get("contract_no"), 255) or None,
                         business_date=business_date,
                         stock_symbol=symbol,
-                        sector=_clean_text(item.get("sector")) or None,
-                        buyer=_clean_int(item.get("buyer")),
-                        seller=_clean_int(item.get("seller")),
-                        quantity=_clean_int(item.get("quantity")),
-                        rate=_clean_decimal(item.get("rate"), default=None),
-                        amount=_clean_decimal(item.get("amount"), default=None),
+                        sector=_clean_text(item.get("sector"), 100) or None,
+                        buyer=buyer,
+                        seller=seller,
+                        quantity=quantity,
+                        rate=_clean_decimal(
+                            item.get("rate"), default=None, minimum=Decimal("0"), maximum=MAX_RATE
+                        ),
+                        amount=_clean_decimal(
+                            item.get("amount"), default=None, minimum=Decimal("0"), maximum=MAX_AMOUNT
+                        ),
                         trade_time=_clean_time(item.get("time")),
                     )
                 )
@@ -228,6 +259,10 @@ class Command(BaseCommand):
                     batch = []
             if max_pages and pages >= max_pages:
                 break
+            if url and pages >= HARD_MAX_PAGES_PER_DAY:
+                raise CommandError(
+                    f"Floorsheet API exceeded {HARD_MAX_PAGES_PER_DAY} pages for {day}."
+                )
 
         if batch:
             if not dry_run:
@@ -249,7 +284,7 @@ def _latest_trading_date(session, api_base_url):
         FLOORSHEET_PATH,
         {"format": "json", "ordering": "-calculation_date", "page_size": 1},
     )
-    payload, _next = _fetch_page(session, url)
+    payload, _next = _fetch_page(session, url, allowed_origin=api_base_url)
     results = payload.get("results") or []
     if not results:
         return None
@@ -269,9 +304,29 @@ def _merge_query_params(url, params):
     return urlunparse(parsed._replace(query=urlencode(query)))
 
 
-def _fetch_page(session, url):
+def _same_origin(url, allowed_origin):
+    candidate = urlparse(url)
+    allowed = urlparse(allowed_origin)
+    return (
+        candidate.scheme in {"http", "https"}
+        and candidate.scheme.lower() == allowed.scheme.lower()
+        and candidate.netloc.lower() == allowed.netloc.lower()
+    )
+
+
+def _fetch_page(session, url, allowed_origin=None):
+    if allowed_origin and not _same_origin(url, allowed_origin):
+        raise CommandError("Refusing a floorsheet request outside the configured API origin.")
     try:
-        response = session.get(url, timeout=30)
+        response = session.get(url, timeout=30, allow_redirects=False)
+        if 300 <= response.status_code < 400:
+            location = response.headers.get("Location")
+            redirect_url = urljoin(response.url, location) if location else ""
+            if not redirect_url or (allowed_origin and not _same_origin(redirect_url, allowed_origin)):
+                raise CommandError("Refusing an unsafe floorsheet API redirect.")
+            response = session.get(redirect_url, timeout=30, allow_redirects=False)
+            if 300 <= response.status_code < 400:
+                raise CommandError("Floorsheet API returned too many redirects.")
         response.raise_for_status()
         payload = response.json()
     except requests.RequestException as exc:
@@ -289,9 +344,16 @@ def _fetch_page(session, url):
     except ValueError as exc:
         raise CommandError(f"Floorsheet API returned invalid JSON for {url}.") from exc
 
+    if not isinstance(payload, dict) or not isinstance(payload.get("results", []), list):
+        raise CommandError("Floorsheet API returned an invalid paginated payload.")
+
     next_url = payload.get("next")
     if next_url:
+        if not isinstance(next_url, str):
+            raise CommandError("Floorsheet API returned an invalid pagination URL.")
         next_url = urljoin(response.url, next_url)
+        if allowed_origin and not _same_origin(next_url, allowed_origin):
+            raise CommandError("Refusing an unsafe cross-origin floorsheet pagination URL.")
     return payload, next_url
 
 
@@ -321,8 +383,9 @@ def _configure_session(session, api_base_url="", api_token="", api_key="", api_c
         session.headers["Cookie"] = api_cookie
 
 
-def _clean_text(value):
-    return str(value).strip() if value is not None else ""
+def _clean_text(value, max_length=None):
+    cleaned = str(value).strip() if value is not None else ""
+    return cleaned[:max_length] if max_length is not None else cleaned
 
 
 def _clean_date(value):
@@ -340,25 +403,39 @@ def _clean_time(value):
     return parse_time(str(value).strip())
 
 
-def _clean_decimal(value, default=Decimal("0.00")):
+def _clean_decimal(value, default=Decimal("0.00"), minimum=None, maximum=None):
     if value is None:
         return default
     value_str = str(value).replace(",", "").strip()
     if value_str == "" or value_str.lower() in {"none", "null", "nan", "-"}:
         return default
     try:
-        return Decimal(value_str)
+        cleaned = Decimal(value_str)
     except (InvalidOperation, ValueError):
         return default
+    if not cleaned.is_finite():
+        return default
+    if minimum is not None and cleaned < minimum:
+        return default
+    if maximum is not None and cleaned >= maximum:
+        return default
+    return cleaned
 
 
-def _clean_int(value, default=None):
+def _clean_int(value, default=None, minimum=None, maximum=None):
     if value is None:
         return default
     value_str = str(value).replace(",", "").strip()
     if value_str == "" or value_str.lower() in {"none", "null", "nan", "-"}:
         return default
     try:
-        return int(Decimal(value_str))
+        cleaned = Decimal(value_str)
     except (InvalidOperation, ValueError):
         return default
+    if not cleaned.is_finite() or cleaned != cleaned.to_integral_value():
+        return default
+    if minimum is not None and cleaned < Decimal(minimum):
+        return default
+    if maximum is not None and cleaned > Decimal(maximum):
+        return default
+    return int(cleaned)

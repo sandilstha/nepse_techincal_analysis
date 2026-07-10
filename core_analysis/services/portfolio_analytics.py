@@ -54,8 +54,14 @@ PARTICIPATION_RATES = (0.10, 0.20, 0.25)
 PARTICIPATION_RATE = 0.20
 LIQUIDATION_TARGETS = (25.0, 50.0, 75.0, 100.0)
 DTL_LIQUID, DTL_MODERATE = 1.0, 5.0   # days-to-liquidate tier thresholds
+LIQUIDITY_RISK_LABELS = {
+    "liquid": "Low",
+    "moderate": "Moderate",
+    "illiquid": "High",
+    "untradeable": "Very High",
+}
 CACHE_TTL = 180
-PAYLOAD_VERSION = 2
+PAYLOAD_VERSION = 3
 
 # Default investment-policy limits monitored on every portfolio. "warn" raises a
 # watch, "breach" a violation. Sensible institutional defaults tuned for a
@@ -74,9 +80,10 @@ LIMITS = {
 
 def _f(value, default=0.0):
     try:
-        return float(value)
-    except (TypeError, ValueError):
+        parsed = float(value)
+    except (TypeError, ValueError, OverflowError):
         return default
+    return parsed if math.isfinite(parsed) else default
 
 
 def normalize_participation_rate(value):
@@ -481,6 +488,7 @@ def _beta_stress_scenarios(port_beta, total_value, index_info):
     if port_beta is None:
         return []
     current = _f((index_info or {}).get("value"))
+    current_date = (index_info or {}).get("date")
     scenarios = []
 
     def add(label, shock, kind, target=None, reference=None):
@@ -504,6 +512,9 @@ def _beta_stress_scenarios(port_beta, total_value, index_info):
             "reference": reference,
         })
 
+    if current:
+        reference = f"Latest NEPSE close on {current_date}" if current_date else "Latest NEPSE close"
+        add("Current NEPSE", 0.0, "current", current, reference)
     for shock in (-20, -10, -5, 5, 10, 20):
         add(f"NEPSE {shock:+d}%", float(shock), "shock")
     if current:
@@ -815,6 +826,10 @@ def _liquidity_risk(days):
     return "illiquid"
 
 
+def _liquidity_risk_label(tier):
+    return LIQUIDITY_RISK_LABELS.get(tier, "Very High")
+
+
 def _liquidation_scenarios(rows, total_value, custom_target):
     """Return milestone DTL rows for every supported participation limit."""
     targets = list(LIQUIDATION_TARGETS)
@@ -826,10 +841,12 @@ def _liquidation_scenarios(rows, total_value, custom_target):
         rate_rows = []
         for target in targets:
             days = _days_to_liquidate_value(rows, total_value, target, rate)
+            tier = _liquidity_risk(days)
             rate_rows.append({
                 "target_pct": round(target, 1),
                 "days": round(days, 2) if days is not None else None,
-                "risk": _liquidity_risk(days),
+                "risk": tier,
+                "risk_label": _liquidity_risk_label(tier),
                 "custom": abs(target - custom) < 1e-9 and target not in LIQUIDATION_TARGETS,
             })
         output[str(round(rate * 100))] = rate_rows
@@ -888,7 +905,8 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
             price = _f(h.last_close) or _f(h.ltp)
             priced_on, mcap = None, 0.0
             price_source = "snapshot"
-        qty = _f(h.quantity)
+        price = max(0.0, _f(price))
+        qty = max(0.0, _f(h.quantity))
         value = qty * price
         total += value
         name, sector = meta.get(h.symbol, (h.symbol, "Uncategorized"))
@@ -912,7 +930,7 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
         # Book value marks the CURRENT balance at its average cost; paper P/L is
         # market value minus that. None until the user imports the WACC report.
         cost = costs.get(h.symbol)
-        wacc = _f(cost.wacc_rate) if (cost and cost.wacc_rate is not None) else None
+        wacc = max(0.0, _f(cost.wacc_rate)) if (cost and cost.wacc_rate is not None) else None
         cost_value = round(wacc * qty, 2) if wacc is not None else None
         pl = round(value - cost_value, 2) if cost_value is not None else None
 
@@ -938,6 +956,7 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
             "adv_qty": round(adv, 2),
             "dtl": round(dtl, 2) if dtl is not None else None,
             "liq_tier": tier,
+            "liquidity_risk": _liquidity_risk_label(tier),
         })
 
     # Weights + concentration.
@@ -997,6 +1016,7 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
         "ok": bool(rows),
         "participation_pct": round(participation_rate * 100),
         "participation_options": [round(rate * 100) for rate in PARTICIPATION_RATES],
+        "risk_labels": LIQUIDITY_RISK_LABELS,
         "custom_target_pct": round(liquidation_target, 1),
         "lookback_sessions": liq_sessions,
         "lookback_calendar_days": LIQ_LOOKBACK_DAYS,
@@ -1010,7 +1030,7 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
         "untradeable_count": sum(1 for r in rows if r["dtl"] is None),
         "least_liquid": [
             {"symbol": r["symbol"], "dtl": r["dtl"], "tier": r["liq_tier"],
-             "adv_qty": r["adv_qty"], "weight": r["weight"]}
+             "risk_label": r["liquidity_risk"], "adv_qty": r["adv_qty"], "weight": r["weight"]}
             for r in least_liquid
         ],
     }

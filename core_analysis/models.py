@@ -331,6 +331,9 @@ class Portfolio(models.Model):
     def save(self, *args, **kwargs):
         if self.is_archived:
             self.is_default = False
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | {"is_default"}
         super().save(*args, **kwargs)
         if self.is_default:
             Portfolio.objects.filter(user_id=self.user_id, is_default=True).exclude(pk=self.pk).update(
