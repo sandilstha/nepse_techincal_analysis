@@ -11,6 +11,7 @@ from .portfolio_views import (
     portfolio_approval_action,
     portfolio_import,
     portfolio_wacc_import,
+    portfolio_ledger_import,
     portfolio_clear,
 )
 from .views import (
@@ -22,7 +23,8 @@ from .views import (
     trigger_daily_api_sync_view,
     trigger_floorsheet_sync_view,
     symbol_autocomplete_view,
-    trigger_sync_and_calculate
+    trigger_sync_and_calculate,
+    stage_sop_view,
 )
 from .insights_views import (
     market_insights_view,
@@ -97,6 +99,7 @@ urlpatterns = [
     path('portfolio/api/approvals/action/', portfolio_approval_action, name='portfolio_approval_action'),
     path('portfolio/import/', portfolio_import, name='portfolio_import'),
     path('portfolio/wacc/', portfolio_wacc_import, name='portfolio_wacc_import'),
+    path('portfolio/ledger/', portfolio_ledger_import, name='portfolio_ledger_import'),
     path('portfolio/clear/', portfolio_clear, name='portfolio_clear'),
 
     # Floor sheet — Dalal Street X broker analytics (built on the floorsheet feed).
@@ -114,6 +117,8 @@ urlpatterns = [
 
     # Analytics workbench (moved off root to /workbench/)
     path('workbench/', crud_dashboard_view, name='crud_dashboard'),
+    # Methodology SOP for the Stage Analysis desk (Technical Analysis tab).
+    path('stage/sop/', stage_sop_view, name='stage_sop'),
     # AJAX: run one tab's calculation and return only its results partial.
     path('workbench/calc/', dashboard_tab_calc, name='dashboard_tab_calc'),
     # AJAX: Gemini narrative for the Support & Resistance tab (JSON).

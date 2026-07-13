@@ -233,6 +233,14 @@
   gap: 7px;
   margin-top: 6px;
 }
+.pf-active-actions {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 0; padding: 8px;
+}
+.pf-active-actions > span {
+  color: var(--ink-3); font: 600 11px/1.35 'Manrope', sans-serif;
+}
+.pf-active-actions .pf-btn { min-height: 32px; flex: 0 0 auto; }
 .pf-create-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -424,6 +432,8 @@
     grid-template-columns: 1fr;
     align-items: stretch;
   }
+  .pf-active-actions { align-items: stretch; flex-direction: column; }
+  .pf-active-actions .pf-btn { width: 100%; }
 }
 
 /* ── Flash messages ──────────────────────────────────────────────────────── */
@@ -443,42 +453,27 @@
   text-transform: uppercase; color: var(--ink-3); white-space: nowrap;
 }
 .pf-section::after { content: ""; flex: 1; height: 1px; background: var(--line); }
-
-/* ── Compact toolbar (returning user: delete active portfolio) ───────────── */
-.pf-toolbar {
-  display: flex; align-items: center;
-  background: var(--surface); border: 1px solid var(--line);
-  border-radius: var(--radius-sm); box-shadow: var(--shadow);
-  padding: 6px 8px; margin: 6px 0 2px;
+.pf-broker-section { gap: 9px; margin-top: 18px; }
+.pf-broker-section::before {
+  content: ""; width: 4px; height: 24px; border-radius: 3px; background: var(--accent);
 }
-.pf-toolbar-left { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.pf-toolbar-title-line {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  min-width: 0;
+.pf-broker-section span {
+  color: var(--ink-1); font-size: 17px; font-weight: 700;
+  letter-spacing: 0; text-transform: none;
 }
-.pf-toolbar-label { font: 800 14px/1.1 'Manrope', sans-serif; color: var(--ink-1); }
-.pf-toolbar-asof { font: 600 11px/1 'Manrope', sans-serif; color: var(--ink-3); }
-.pf-delete-form { display: flex; margin: 0; }
-.pf-delete-form .pf-btn {
-  min-height: 26px;
-  padding: 0 9px;
-  font-size: 10.5px;
-  line-height: 1;
-  white-space: nowrap;
+.pf-broker-section::after {
+  background: repeating-linear-gradient(
+    to right, var(--line) 0, var(--line) 1px, transparent 1px, transparent 3px
+  );
 }
-.pf-toolbar-hint { font: 500 11.5px/1 'Manrope', sans-serif; color: var(--ink-3); margin-right: 2px; }
+.pf-section-meta {
+  color: var(--ink-3); font: 600 10.5px/1 'Manrope', sans-serif; white-space: nowrap;
+}
 .pf-btn-danger { background: var(--down-soft); color: var(--down); border: 1px solid var(--down); }
 .pf-btn-danger:hover { background: var(--down); color: #fff; }
 .pf-btn-danger:disabled {
   opacity: .45;
   cursor: not-allowed;
-}
-@media (max-width: 620px) {
-  .pf-toolbar { padding: 6px 7px; }
-  .pf-toolbar-title-line { gap: 5px; }
 }
 
 /* ── Import card ─────────────────────────────────────────────────────────── */
@@ -548,12 +543,56 @@
 .pf-kpi-val.risk-low { color: var(--up); }
 .pf-kpi-val.risk-moderate { color: #d8941f; }
 .pf-kpi-val.risk-high { color: var(--down); }
+.pf-overview-strip {
+  grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0;
+  border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.pf-overview-strip .pf-kpi {
+  min-width: 0; border: 0; border-right: 1px solid var(--line-soft);
+  border-radius: 0; box-shadow: none; padding: 13px 14px;
+}
+.pf-overview-strip .pf-kpi:first-child { border-left: 0; }
+.pf-overview-strip .pf-kpi:last-child { border-right: 0; }
+.pf-overview-strip .pf-kpi-label {
+  font-size: 11px; letter-spacing: 0; text-transform: none;
+}
+.pf-overview-strip .pf-kpi-val { font-size: 17px; }
+@media (max-width: 1100px) {
+  .pf-overview-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pf-overview-strip .pf-kpi:nth-child(3n) { border-right: 0; }
+  .pf-overview-strip .pf-kpi:nth-child(-n+3) { border-bottom: 1px solid var(--line-soft); }
+}
+@media (max-width: 620px) {
+  .pf-overview-strip { grid-template-columns: 1fr 1fr; }
+  .pf-overview-strip .pf-kpi:nth-child(3n) { border-right: 1px solid var(--line-soft); }
+  .pf-overview-strip .pf-kpi:nth-child(2n) { border-right: 0; }
+  .pf-overview-strip .pf-kpi:nth-child(-n+4) { border-bottom: 1px solid var(--line-soft); }
+}
 
-/* Summary tiles: one equal-width row whatever the tile count (5 without WACC,
-   8 with it) — auto-flow columns so a partial set never leaves empty cells. */
+/* Scenario-only tiles: valuation/P&L already live in Portfolio Overview. */
+.pf-sum-controls {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px;
+  margin-bottom: 6px; padding: 8px 10px 0;
+}
+.pf-sum-idx { display: flex; flex-direction: column; gap: 4px; }
+.pf-sum-idx label {
+  color: var(--ink-3); font: 700 10px/1 'Manrope', sans-serif;
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.pf-sum-idx input {
+  width: 116px; min-height: 30px; padding: 6px 8px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface-2); color: var(--ink-1); font: 600 11px/1 'Manrope', sans-serif;
+}
+.pf-sum-idx input:focus { outline: none; border-color: var(--accent); }
+.pf-sum-idx input[readonly] { opacity: .7; }
+.pf-idx-change { min-width: 64px; padding: 4px 2px; font-weight: 700; }
 .pf-sum-tiles {
   grid-template-columns: none;
   grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px;
+  margin-bottom: 7px; padding: 0 10px;
 }
 .pf-sum-tiles .pf-kpi { padding: 8px 9px; gap: 2px; }
 .pf-sum-tiles .pf-kpi-label { font-size: 9px; letter-spacing: .04em; }
@@ -565,6 +604,8 @@
 /* ── Cards / grid ────────────────────────────────────────────────────────── */
 .pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
 @media (max-width: 1000px) { .pf-grid { grid-template-columns: 1fr; } }
+.pf-risk-attribution-grid { grid-template-columns: minmax(320px, .8fr) minmax(0, 1.2fr); }
+@media (max-width: 1180px) { .pf-risk-attribution-grid { grid-template-columns: 1fr; } }
 .pf-risk-market-grid { align-items: stretch; }
 .pf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
 @media (max-width: 1100px) { .pf-grid-3 { grid-template-columns: 1fr 1fr; } }
@@ -575,15 +616,41 @@
 }
 /* Standalone cards (not inside a grid) still need their own bottom rhythm. */
 .pf-summary-card { margin-bottom: 0; }
+.pf-holdings-tabs {
+  display: flex; align-items: flex-end; gap: 16px; min-height: 44px;
+  padding: 0 14px; border-bottom: 1px solid var(--line); background: var(--surface);
+}
+.pf-holdings-tab {
+  position: relative; align-self: stretch; appearance: none; border: 0;
+  background: transparent; color: var(--ink-2); padding: 0 1px;
+  font: 800 12px/1 'Manrope', sans-serif; cursor: pointer;
+}
+.pf-holdings-tab::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+  border-radius: 2px; background: transparent;
+}
+.pf-holdings-tab:hover,
+.pf-holdings-tab.active { color: var(--accent); }
+.pf-holdings-tab.active::after { background: var(--accent); }
+.pf-summary-tools { border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.pf-summary-tools > summary {
+  cursor: pointer; list-style: none; padding: 8px 12px;
+  color: var(--ink-3); font: 700 10.5px/1 'Manrope', sans-serif;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.pf-summary-tools > summary::-webkit-details-marker { display: none; }
+.pf-summary-tools > summary::before { content: "+"; color: var(--accent); margin-right: 6px; }
+.pf-summary-tools[open] > summary::before { content: "−"; }
+.pf-summary-tools[open] > summary { border-bottom: 1px solid var(--line); }
 /* The last content row shouldn't hug the viewport bottom. */
 .mi-shell > .pf-grid:last-child,
 .mi-shell > .pf-grid-3:last-child { margin-bottom: 18px; }
 .pf-summary-card .pf-table-wrap {
-  max-height: 304px;
+  max-height: 430px;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   scrollbar-gutter: stable;
-  border-top: 1px solid var(--line);
+  border-top: 0;
 }
 .pf-summary-card .pf-note { background: var(--surface); }
 .pf-sum-filterbar {
@@ -629,10 +696,122 @@
   padding: 9px 12px; font: 700 13px/1 'Manrope', sans-serif; letter-spacing: .03em;
   color: var(--ink-1); background: var(--surface-2); border-bottom: 1px solid var(--line);
 }
-.pf-holdings-head { display: flex; align-items: baseline; justify-content: space-between; }
-.pf-asof { font: 500 11px/1 'Manrope', sans-serif; color: var(--ink-3); letter-spacing: 0; }
+/* Broker ledger, FY accounting and reconciliation. */
+.pf-ledger-card { margin-bottom: 4px; }
+.pf-ledger-toolbar {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line);
+}
+.pf-manager-ledger-tools { padding: 8px; border-bottom: 0; }
+.pf-ledger-import { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin: 0; }
+.pf-ledger-import .pf-upload { min-height: 34px; }
+.pf-ledger-import .pf-file-picker { min-height: 34px; min-width: 220px; }
+.pf-ledger-import .pf-file-name { max-width: 240px; }
+.pf-ledger-import .pf-btn { min-height: 34px; padding: 0 14px; }
+.pf-fy-filter { display: flex; align-items: center; gap: 7px; margin: 0; }
+.pf-fy-filter label {
+  color: var(--ink-3); font: 800 9.5px/1 'Manrope', sans-serif;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.pf-fy-filter select {
+  min-height: 34px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface-2); color: var(--ink-1); padding: 6px 9px;
+  font: 700 11.5px/1 'Manrope', sans-serif;
+}
+.pf-ledger-status {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 5px 10px;
+  padding: 8px 12px; border-bottom: 1px solid var(--line);
+  font: 600 10.5px/1.25 'Manrope', sans-serif;
+}
+.pf-ledger-status strong { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.pf-ledger-status span { color: var(--ink-2); }
+.pf-ledger-status.is-ok { background: var(--up-soft); color: var(--up); }
+.pf-ledger-status.has-warning { background: rgba(216,148,31,.12); color: #d8941f; }
+.pf-ledger-kpis { padding: 10px 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.pf-ledger-kpis .pf-kpi { box-shadow: none; padding: 8px 10px; }
+.pf-ledger-kpis .pf-kpi-val { font-size: 16px; }
+.pf-ledger-transactions > summary {
+  cursor: pointer; list-style: none; user-select: none;
+}
+.pf-ledger-transactions > summary::-webkit-details-marker { display: none; }
+.pf-ledger-table-head { display: flex; justify-content: space-between; align-items: center; }
+.pf-ledger-table-head span:last-child { color: var(--ink-3); font-size: 10.5px; }
+.pf-ledger-table-meta { display: inline-flex; align-items: center; gap: 8px; }
+.pf-ledger-table-meta b {
+  min-width: 42px; border: 1px solid var(--line); border-radius: 999px;
+  padding: 3px 8px; color: var(--accent); text-align: center;
+  font: 800 9.5px/1 'Manrope', sans-serif; text-transform: uppercase;
+}
+.pf-ledger-toggle-show { display: none; }
+.pf-ledger-collapse:not([open]) .pf-ledger-toggle-hide { display: none; }
+.pf-ledger-collapse:not([open]) .pf-ledger-toggle-show { display: inline-block; }
+.pf-ledger-table-wrap { max-height: 390px; border-top: 1px solid var(--line); }
+.pf-ledger-table { min-width: 1050px; font-size: 11px; }
+.pf-ledger-table td small { display: block; margin-top: 2px; color: var(--ink-3); font-size: 9.5px; }
+.pf-ledger-table td:nth-child(4) { white-space: normal; min-width: 260px; line-height: 1.35; }
+.pf-ledger-particulars { max-width: 420px; }
+.pf-ledger-row-warning { background: rgba(216,148,31,.1); }
+.pf-ledger-type,
+.pf-ledger-flag {
+  display: inline-block; border-radius: 999px; padding: 2px 7px;
+  background: var(--surface-2); color: var(--ink-2);
+  font: 700 9px/1.35 'Manrope', sans-serif; white-space: nowrap;
+}
+.pf-ledger-type.type-buy,
+.pf-ledger-type.type-payment,
+.pf-ledger-type.type-charge,
+.pf-ledger-type.type-tax { color: var(--down); background: var(--down-soft); }
+.pf-ledger-type.type-sell,
+.pf-ledger-type.type-deposit,
+.pf-ledger-type.type-dividend { color: var(--up); background: var(--up-soft); }
+.pf-ledger-flag { color: #d8941f; background: rgba(216,148,31,.14); }
+.pf-reconciliation { border-top: 1px solid var(--line); }
+.pf-reconciliation > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  cursor: pointer; padding: 9px 12px; color: #d8941f;
+  font: 700 11px/1 'Manrope', sans-serif;
+}
+.pf-reconciliation-table-wrap { max-height: 340px; border-top: 1px solid var(--line); }
+.pf-reconciliation-table { min-width: 760px; font-size: 11px; }
+.pf-reconciliation-table th,
+.pf-reconciliation-table td { white-space: nowrap; }
+.pf-reconciliation-table th:last-child,
+.pf-reconciliation-table td:last-child { min-width: 180px; white-space: normal; }
+.pf-ledger-pagination {
+  display: flex; align-items: center; justify-content: flex-end; gap: 9px;
+  padding: 8px 12px; border-top: 1px solid var(--line);
+  font: 700 10.5px/1 'Manrope', sans-serif;
+}
+.pf-ledger-pagination a,
+.pf-ledger-pagination span {
+  min-width: 62px; padding: 5px 8px; border: 1px solid var(--line);
+  border-radius: 999px; color: var(--accent); text-align: center; text-decoration: none;
+}
+.pf-ledger-pagination a:hover { border-color: var(--accent); background: var(--accent-soft); }
+.pf-ledger-pagination .is-disabled { color: var(--ink-3); opacity: .55; }
+.pf-ledger-pagination strong { color: var(--ink-2); }
+.pf-ledger-empty { display: flex; flex-direction: column; gap: 5px; padding: 18px 14px; }
+.pf-ledger-empty strong { color: var(--ink-1); font: 700 14px/1.2 'Manrope', sans-serif; }
+.pf-ledger-empty span { color: var(--ink-3); font: 500 12px/1.45 'Manrope', sans-serif; }
+@media (max-width: 900px) {
+  .pf-ledger-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .pf-ledger-toolbar, .pf-ledger-import { align-items: stretch; }
+  .pf-ledger-import, .pf-ledger-import .pf-upload, .pf-ledger-import .pf-file-picker,
+  .pf-ledger-import .pf-btn, .pf-fy-filter { width: 100%; }
+  .pf-fy-filter select { flex: 1; }
+  .pf-ledger-kpis { grid-template-columns: 1fr; }
+}
 
 /* ── Sector exposure ─────────────────────────────────────────────────────── */
+.pf-risk-sector-subhead {
+  display: flex; align-items: center; gap: 5px; padding: 8px 12px;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  background: var(--surface-2); color: var(--ink-2);
+  font: 800 10px/1 'Manrope', sans-serif; letter-spacing: .05em; text-transform: uppercase;
+}
+.pf-card-head + .pf-risk-sector-subhead { border-top: 0; }
 .pf-sectors { padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; }
 .pf-sec-row { display: grid; grid-template-columns: 130px 1fr 58px 78px; align-items: center; gap: 8px; }
 .pf-sec-name { font: 600 12px/1.2 'Manrope', sans-serif; color: var(--ink-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -694,13 +873,12 @@
 /* ── Value at Risk card ──────────────────────────────────────────────────── */
 .pf-var { padding: 10px 12px; }
 .pf-var-row {
-  display: grid; grid-template-columns: 1fr auto 70px; align-items: baseline; gap: 10px;
+  display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 10px;
   padding: 5px 0; border-bottom: 1px solid var(--line-soft);
 }
 .pf-var-row.big .pf-var-val { font-size: 18px; }
 .pf-var-label { font: 600 12.5px/1.2 'Manrope', sans-serif; color: var(--ink-2); }
 .pf-var-val { font: 700 14px/1 'Manrope', system-ui, sans-serif; text-align: right; }
-.pf-var-pct { font: 600 12px/1 'Manrope', sans-serif; text-align: right; }
 .num-pos { color: var(--up); }
 .num-neg { color: var(--down); }
 .pf-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 8px 0 2px; }
@@ -757,12 +935,6 @@
 .pf-split-legend i.sys { background: var(--accent); }
 .pf-split-legend i.idio { background: #d8941f; }
 .pf-fac-srow { display: grid; grid-template-columns: 130px 1fr 52px; align-items: center; gap: 8px; padding: 3px 0; }
-.pf-fac-chips { display: flex; flex-wrap: wrap; gap: 5px; }
-.pf-fac-chip {
-  font: 600 12px/1 'Manrope', sans-serif; color: var(--ink-2);
-  background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 8px;
-}
-.pf-fac-chip b { color: var(--accent); font-weight: 700; }
 
 /* ── Liquidity card ──────────────────────────────────────────────────────── */
 .pf-liq { padding: 10px 12px; }
@@ -882,37 +1054,6 @@
 .pf-table .pf-tkr { color: var(--accent); font-weight: 700; }
 .pf-table .num-pos { color: var(--up); }
 .pf-table .num-neg { color: var(--down); }
-.pf-sum-table {
-  width: 100%; min-width: 0; table-layout: fixed;
-  font-size: 10.5px; line-height: 1.15;
-}
-.pf-sum-table col.pf-col-rank { width: 3%; }
-.pf-sum-table col.pf-col-symbol { width: 5.6%; }
-.pf-sum-table col.pf-col-kitta { width: 4.6%; }
-.pf-sum-table col.pf-col-wacc { width: 5.8%; }
-.pf-sum-table col.pf-col-ltp { width: 5.8%; }
-.pf-sum-table col.pf-col-value { width: 6.9%; }
-.pf-sum-table col.pf-col-weight { width: 6.2%; }
-.pf-sum-table col.pf-col-vol { width: 5%; }
-.pf-sum-table col.pf-col-beta { width: 4.8%; }
-.pf-sum-table col.pf-col-liq { width: 6.4%; }
-.pf-sum-table col.pf-col-exp-price { width: 6.8%; }
-.pf-sum-table col.pf-col-exp-value { width: 7%; }
-.pf-sum-table col.pf-col-gain { width: 7%; }
-.pf-sum-table col.pf-col-var { width: 5.8%; }
-.pf-sum-table col.pf-col-loss { width: 6.75%; }
-.pf-sum-table thead th,
-.pf-sum-table tbody td {
-  padding: 5px 4px;
-}
-.pf-sum-table thead th {
-  font: 700 9.5px/1.15 'Manrope', sans-serif;
-  letter-spacing: .02em;
-  height: 25px;
-}
-.pf-sum-table tbody tr { height: 24px; }
-.pf-sum-table thead .pf-sum-grp th { top: 0; z-index: 3; }
-.pf-sum-table thead tr:last-child th { top: 25px; z-index: 2; }
 .pf-sort-head {
   appearance: none; border: 0; background: transparent; color: inherit;
   width: 100%; padding: 0; display: inline-flex; align-items: center;
@@ -929,25 +1070,51 @@
   display: inline-block; min-width: 6px; text-align: center;
   color: var(--accent); font-weight: 800;
 }
-.pf-sum-table thead .pf-sum-grp th:nth-child(4),
-.pf-sum-table thead .pf-sum-grp th:nth-child(5),
-.pf-sum-table thead .pf-sum-grp th:nth-child(6),
-.pf-sum-table thead tr:last-child th:nth-child(6),
-.pf-sum-table thead tr:last-child th:nth-child(9),
-.pf-sum-table thead tr:last-child th:nth-child(12),
-.pf-sum-table tbody td:nth-child(8),
-.pf-sum-table tbody td:nth-child(11),
-.pf-sum-table tbody td:nth-child(14) {
-  border-left: 1px solid var(--line);
+/* Broker-style holdings matrix: primary value and a compact secondary metric. */
+.pf-sum-table {
+  width: 100%; min-width: 1180px; table-layout: auto;
+  font-size: 11.5px; line-height: 1.25;
 }
-.pf-sum-table .pf-wcell { min-width: 0; }
-.pf-sum-table .pf-wbar { left: 4px; right: 4px; bottom: 2px; height: 3px; }
-.pf-sum-table .pf-liq-tier { padding: 1px 4px; font-size: 9px; }
+.pf-sum-table col.pf-col-symbol { width: 9%; }
+.pf-sum-table col.pf-col-kitta { width: 8%; }
+.pf-sum-table col.pf-col-wacc { width: 8%; }
+.pf-sum-table col.pf-col-investment { width: 11%; }
+.pf-sum-table col.pf-col-ltp { width: 11%; }
+.pf-sum-table col.pf-col-market { width: 11%; }
+.pf-sum-table col.pf-col-day { width: 11%; }
+.pf-sum-table col.pf-col-unrealized { width: 12%; }
+.pf-sum-table col.pf-col-scenario { width: 10%; }
+.pf-sum-table col.pf-col-maxloss { width: 9%; }
+.pf-sum-table thead th {
+  padding: 8px 10px; border-left: 0 !important;
+  height: 48px; background: var(--surface); color: var(--ink-1);
+  font-size: 10px; vertical-align: bottom;
+}
+.pf-sum-table thead th small {
+  display: block; min-height: 14px; margin-top: 5px;
+  color: var(--ink-3); font: 700 9.5px/1.15 'Manrope', sans-serif;
+  letter-spacing: 0; text-transform: none;
+}
+.pf-sum-table tbody tr { height: 48px; }
+.pf-sum-table tbody tr:nth-child(odd) { background: var(--surface-2); }
+.pf-sum-table tbody td {
+  padding: 8px 10px; border-left: 0 !important; vertical-align: middle;
+}
+.pf-sum-table tbody td small {
+  display: block; min-height: 13px; margin-top: 3px;
+  color: var(--ink-3); font-size: 9.5px; line-height: 1.15;
+}
+.pf-sum-table tbody td small.num-pos { color: var(--up); }
+.pf-sum-table tbody td small.num-neg { color: var(--down); }
+.pf-sum-table .pf-tkr { color: var(--accent); font-size: 12px; }
+.pf-sum-table .pf-tkr small { color: var(--ink-3); font-weight: 500; }
+.pf-sum-table .pf-liq-tier { display: inline-block; padding: 1px 4px; font-size: 9px; }
 .pf-sum-table .pf-snap { padding: 1px 3px; margin-left: 2px; font-size: 8.5px; }
-.pf-wcell { position: relative; min-width: 90px; }
-.pf-wbar { position: absolute; left: 12px; right: 12px; bottom: 4px; height: 4px; border-radius: 3px;
-  background: var(--accent-soft); pointer-events: none; }
-.pf-wnum { position: relative; }
+.pf-sum-table .pf-sort-head { min-height: 16px; }
+@media (max-width: 720px) {
+  .pf-holdings-tabs { gap: 13px; overflow-x: auto; }
+  .pf-holdings-tab { min-width: max-content; }
+}
 .pf-snap {
   font: 600 9.5px/1 'Manrope', sans-serif; color: #d8941f; background: rgba(216,148,31,.14);
   padding: 1px 5px; border-radius: 4px; margin-left: 4px;
@@ -967,7 +1134,6 @@
 }
 .pf-help:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); text-decoration: none; }
 .pf-kpi-label .pf-help { width: 13px; height: 13px; font-size: 8.5px; margin-left: 4px; }
-.pf-sum-table thead .pf-sum-grp .pf-help { width: 12px; height: 12px; font-size: 8px; margin-left: 3px; }
 .pf-card-head .pf-help, .pf-section span .pf-help { position: relative; top: -1px; }
 
 /* ── Admin notification bell — account requests ────────────────────────── */

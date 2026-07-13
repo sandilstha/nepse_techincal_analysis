@@ -3,9 +3,9 @@ portfolio_analytics.py — valuation + risk roll-ups for a user's Portfolio.
 
 Everything is derived from the positions in a ``Portfolio`` plus the local NEPSE
 end-of-day tables (``NepseDailyStockPrice`` for prices, ``NepseMarketIndex`` for
-the benchmark, ``CompanyProfile`` for sector/name). No cost basis is required —
-the Meroshare "My Shares" CSV carries only balances and current prices — so this
-focuses on *position* risk (exposure, concentration, volatility, beta), not P&L.
+the benchmark, ``CompanyProfile`` for sector/name). Position risk works without
+cost data; optional WACC and broker-ledger imports add unrealised P/L, realised
+P/L and broker cash while leaving the market-risk calculations unchanged.
 
 NEPSE realities deliberately shaped the design:
   * Holdings are marked to each scrip's most-recent close (not a single session),
@@ -61,7 +61,7 @@ LIQUIDITY_RISK_LABELS = {
     "untradeable": "Very High",
 }
 CACHE_TTL = 180
-PAYLOAD_VERSION = 3
+PAYLOAD_VERSION = 6
 
 # Default investment-policy limits monitored on every portfolio. "warn" raises a
 # watch, "breach" a violation. Sensible institutional defaults tuned for a
@@ -113,7 +113,7 @@ def _latest_session():
 
 
 def _latest_prices(symbols):
-    """{symbol: (close, business_date, market_cap)} at each symbol's MOST RECENT
+    """{symbol: (close, business_date, market_cap, previous_close)} at each symbol's MOST RECENT
     session — illiquid scrips may not have a row on the very latest day."""
     from core_analysis.models import NepseDailyStockPrice
 
@@ -128,12 +128,15 @@ def _latest_prices(symbols):
             symbol__in=symbols, business_date__gte=start
         )
         .order_by("symbol", "-business_date")
-        .values_list("symbol", "business_date", "close_price", "market_capitalization")
+        .values_list(
+            "symbol", "business_date", "close_price", "market_capitalization",
+            "previous_close",
+        )
     )
     out = {}
-    for sym, bd, close, mcap in rows:
+    for sym, bd, close, mcap, previous_close in rows:
         if sym not in out:
-            out[sym] = (_f(close), bd, _f(mcap))
+            out[sym] = (_f(close), bd, _f(mcap), _f(previous_close))
     return out
 
 
@@ -506,8 +509,8 @@ def _beta_stress_scenarios(port_beta, total_value, index_info):
             "gain_loss_pct": round(impact, 2),
             "impact_rs": round(impact_rs, 2),
             "portfolio_value": round(projected, 2),
-            # My Portfolio has no fund-unit/cash/liability ledger, so marked
-            # portfolio value is also the module's NAV.
+            # The risk engine stresses invested holdings only. Broker cash is
+            # reported in accounting Total Equity and is intentionally not shocked.
             "nav": round(projected, 2),
             "reference": reference,
         })
@@ -686,7 +689,6 @@ def _factor_decomposition(rows, stats, index_wret):
         "beta": round(beta_p, 2),
         "covered_weight_pct": round(sum(w for _r, _b, _e, w in covered) * 100.0, 1),
         "sectors": sec_rows[:8],
-        "top_contributors": name_rows[:6],
         "name_contributors": name_rows,
     }
 
@@ -869,7 +871,7 @@ def _return_attribution(rows, stock_ret, session_dates=None):
 
 
 def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
-                            liquidation_target=100.0):
+                            liquidation_target=100.0, fiscal_year=None):
     """Full valuation + risk roll-up for one portfolio (cached briefly)."""
     participation_rate = normalize_participation_rate(participation_rate)
     liquidation_target = normalize_liquidation_target(liquidation_target)
@@ -879,7 +881,7 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
     # second don't collide on a 1-second-truncated key and serve stale data.
     ck = (
         f"pf_payload_v{PAYLOAD_VERSION}_{portfolio.id}_{portfolio.updated_at.timestamp()}_{latest}_"
-        f"{participation_rate:.2f}_{liquidation_target:.1f}"
+        f"{participation_rate:.2f}_{liquidation_target:.1f}_{fiscal_year or 'latest'}"
     )
     cached = cache.get(ck)
     if cached is not None:
@@ -897,18 +899,26 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
     for h in holdings:
         live = prices.get(h.symbol)
         if live:
-            price, priced_on, mcap = live
+            price, priced_on, mcap, previous_close = live
             price_source = "eod"
         else:
             # Fall back to the imported snapshot price when the scrip isn't in the
             # local EOD table (newly listed / delisted / symbol typo).
-            price = _f(h.last_close) or _f(h.ltp)
+            previous_close = _f(h.last_close)
+            price = _f(h.ltp) or previous_close
             priced_on, mcap = None, 0.0
             price_source = "snapshot"
         price = max(0.0, _f(price))
+        previous_close = max(0.0, _f(previous_close))
         qty = max(0.0, _f(h.quantity))
         value = qty * price
         total += value
+        if previous_close > 0:
+            day_change = price - previous_close
+            day_change_pct = day_change / previous_close * 100.0
+            day_pl = day_change * qty
+        else:
+            day_change = day_change_pct = day_pl = None
         name, sector = meta.get(h.symbol, (h.symbol, "Uncategorized"))
         st = stats.get(h.symbol, {})
 
@@ -940,6 +950,10 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
             "sector": sector,
             "quantity": qty,
             "price": round(price, 2),
+            "previous_close": round(previous_close, 2) if previous_close > 0 else None,
+            "day_change": round(day_change, 2) if day_change is not None else None,
+            "day_change_pct": round(day_change_pct, 2) if day_change_pct is not None else None,
+            "day_pl": round(day_pl, 2) if day_pl is not None else None,
             "value": round(value, 2),
             "price_source": price_source,
             "priced_on": priced_on.isoformat() if priced_on else None,
@@ -1095,9 +1109,23 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
         logger.exception("portfolio compliance failed")
         compliance = {"summary": {"ok": 0, "warn": 0, "breach": 0}, "checks": []}
 
+    cost_summary = _cost_summary(rows)
+    from core_analysis.services.portfolio_ledger import ledger_payload
+
+    accounting = ledger_payload(portfolio, fiscal_year=fiscal_year)
+    cash_balance = accounting.get("cash_balance")
+    unrealized_pl = cost_summary.get("paper_pl")
+    accounting.update({
+        "unrealized_pl": unrealized_pl,
+        "total_pl": (
+            round((accounting.get("all_time_performance") or 0.0) + unrealized_pl, 2)
+            if unrealized_pl is not None else None
+        ),
+        "total_equity": round(total + (cash_balance or 0.0), 2),
+    })
+
     payload = {
         "ok": True,
-        "portfolio": portfolio.name,
         "as_of": latest.isoformat() if latest else None,
         "total_value": round(total, 2),
         "holdings_count": len(rows),
@@ -1117,7 +1145,8 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
         "portfolio_beta": port_beta,
         "beta_coverage_pct": beta_coverage_pct,
         "nepse_index": index_info,
-        "cost": _cost_summary(rows),
+        "cost": cost_summary,
+        "accounting": accounting,
         "snapshot_count": sum(1 for r in rows if r["price_source"] == "snapshot"),
         "risk": risk,
         "liquidity": liquidity,

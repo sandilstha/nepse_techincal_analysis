@@ -1,7 +1,10 @@
     <div class="tab-pane fade {% if active_tab == 'stage_backtest' %}show active{% endif %}" id="stage-backtest-pane" role="tabpanel">
       <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
-        <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">NEPSE Stage Analysis Parameters</h5>
-        <div class="sop-note"><strong>SOP:</strong> Search and select the exact symbol, use a 1Y+ range when possible, then execute Stage scan. Adjusted prices are used first; missing dates are filled from unadjusted fallback and shown in the Source column.</div>
+        <h5 class="mb-2 d-flex align-items-center gap-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">
+          <span>NEPSE Stage Analysis Parameters</span>
+          <a href="{% url 'stage_sop' %}" target="_blank" rel="noopener" title="Stage Analysis methodology (SOP)" style="text-decoration:none; font-size:12px; font-weight:600; color: var(--accent, #4c8dff);">SOP &#9432;</a>
+        </h5>
+        <div class="sop-note"><strong>SOP:</strong> Search and select the exact symbol, use a 1Y+ range when possible, then execute Stage scan. Adjusted prices are used first; missing dates are filled from unadjusted fallback and shown in the Source column. <a href="{% url 'stage_sop' %}" target="_blank" rel="noopener" style="color: var(--accent, #4c8dff); font-weight:600;">Full methodology &rarr;</a></div>
         <form method="GET" action="." id="stageForm">
           <input type="hidden" name="active_tab" value="stage_backtest">
           <input type="hidden" name="stage_backtest_symbol" id="stageSymbolHidden" value="{{ stage_selected_symbol }}">

@@ -1,7 +1,7 @@
 {
   ".claude/settings.json": {
-    "mtime": 1783415477.7943432,
-    "ast_hash": "d8689bc00515e8bda07708116a242ec2",
+    "mtime": 1783924256.5863771,
+    "ast_hash": "6f9721f3d72552f8a19c44a7f0b3f78e",
     "semantic_hash": ""
   },
   ".claude/settings.local.json": {
@@ -25,8 +25,8 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "core_analysis/admin.py": {
-    "mtime": 1783061749.6005335,
-    "ast_hash": "ef00ff6d7eca50d6db09f75c916e3ca8",
+    "mtime": 1783914280.4862566,
+    "ast_hash": "2313e6234d2e1bc1a777b3d405a1fe26",
     "semantic_hash": ""
   },
   "core_analysis/api_urls.py": {
@@ -100,8 +100,8 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "core_analysis/models.py": {
-    "mtime": 1783675361.6929798,
-    "ast_hash": "408f3847c76333f95a28a8cdf3821c44",
+    "mtime": 1783913835.3904266,
+    "ast_hash": "7124fa9c1d5100144cab3a0ae54a011e",
     "semantic_hash": ""
   },
   "core_analysis/serializers.py": {
@@ -260,8 +260,8 @@
     "semantic_hash": "bb318371ce8811435f42f4a6ba8d64a7"
   },
   "core_analysis/tests.py": {
-    "mtime": 1783677269.0220053,
-    "ast_hash": "c00a08d6f9e1dce0e3689a5014a0fd90",
+    "mtime": 1783934749.3942819,
+    "ast_hash": "1e0daaee64ffa2122199917bf8706b77",
     "semantic_hash": ""
   },
   "core_analysis/udf_views.py": {
@@ -270,13 +270,13 @@
     "semantic_hash": ""
   },
   "core_analysis/urls.py": {
-    "mtime": 1783061742.669432,
-    "ast_hash": "643434afed60f4cf1f7e537c664a8a55",
+    "mtime": 1783924202.463573,
+    "ast_hash": "aa9052da8b60cb2e894bd978177d4f2b",
     "semantic_hash": ""
   },
   "core_analysis/views.py": {
-    "mtime": 1783676931.8556511,
-    "ast_hash": "b7d5acb1b8351db7dca30406d47cec94",
+    "mtime": 1783924181.6673405,
+    "ast_hash": "54c883fdd4ffe02b75e9855ed8c74b8b",
     "semantic_hash": ""
   },
   "manage.py": {
@@ -350,18 +350,18 @@
     "semantic_hash": ""
   },
   "core_analysis/portfolio_views.py": {
-    "mtime": 1783675798.363989,
-    "ast_hash": "48678c8bd63b5b82c6e5ed4cb40b910c",
+    "mtime": 1783920180.5867434,
+    "ast_hash": "3fe1519ff8ed993997b2fda83bbd3871",
     "semantic_hash": ""
   },
   "core_analysis/services/portfolio_analytics.py": {
-    "mtime": 1783675362.4243767,
-    "ast_hash": "b65513896cfac71c455d742e580a862b",
+    "mtime": 1783920179.8500466,
+    "ast_hash": "b35d9b467fc73565729f9807795de56b",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/portfolio.js": {
-    "mtime": 1783675363.1304102,
-    "ast_hash": "aa75d31df1631b99223cb1d19fae53a6",
+    "mtime": 1783920137.599022,
+    "ast_hash": "1c1f4b34e0f0d07061b8e09eb2a039e0",
     "semantic_hash": ""
   },
   "core_analysis/management/commands/grant_staff.py": {
@@ -422,6 +422,16 @@
   "core_analysis/migrations/0011_portfolio_multi_management.py": {
     "mtime": 1783064656.067089,
     "ast_hash": "7f41c9a46638ded7957f76d8b413cf98",
+    "semantic_hash": ""
+  },
+  "core_analysis/migrations/0012_broker_ledger.py": {
+    "mtime": 1783913872.1855526,
+    "ast_hash": "fb40482c7f0e3118cd349ea072a83f52",
+    "semantic_hash": ""
+  },
+  "core_analysis/services/portfolio_ledger.py": {
+    "mtime": 1783934824.355659,
+    "ast_hash": "6da35447ce7c60684ed63b3d802e4005",
     "semantic_hash": ""
   }
 }

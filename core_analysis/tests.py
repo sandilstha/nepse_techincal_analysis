@@ -1,7 +1,9 @@
 import json
+import re
 import unittest
 from contextlib import ExitStack
 from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 from unittest.mock import Mock, patch
 
 import numpy as np
@@ -13,7 +15,15 @@ from django.template.loader import render_to_string
 from django.test import Client, RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
 
-from core_analysis.models import AccountApproval, Holding, HoldingCost, Portfolio
+from core_analysis.models import (
+    AccountApproval,
+    BrokerLedgerImport,
+    BrokerLedgerTransaction,
+    BrokerTrade,
+    Holding,
+    HoldingCost,
+    Portfolio,
+)
 
 from core_analysis.services import IMM, msv_strategy, portfolio_analytics
 from core_analysis.services.advanced_market_structure import (
@@ -294,7 +304,7 @@ class MultiPortfolioManagementTests(TestCase):
         self.assertNotContains(response, "Choose WACC")
         self.assertNotContains(response, "Upload WACC <small>optional</small>")
 
-    def test_holdings_toolbar_offers_only_portfolio_delete(self):
+    def test_active_delete_is_kept_inside_manager_without_duplicate_toolbar(self):
         primary = Portfolio.objects.create(user=self.user, name="Saraswoti Joshi Shrestha")
         Portfolio.objects.create(user=self.user, name="Other", is_default=True)
         Holding.objects.create(
@@ -304,9 +314,16 @@ class MultiPortfolioManagementTests(TestCase):
         response = self.client.get(reverse("portfolio"), {"portfolio": primary.id})
         html = response.content.decode()
 
-        self.assertContains(response, 'class="pf-toolbar-title-line"')
+        manager_start = html.index("<summary>Manage portfolios</summary>")
+        manager_end = html.index("</section>", manager_start)
+        active_actions = html.index("<summary>Active portfolio actions</summary>")
+        delete_action = html.index("Delete Portfolio", active_actions)
+
+        self.assertNotContains(response, 'class="pf-toolbar"')
+        self.assertLess(manager_start, active_actions)
+        self.assertLess(active_actions, delete_action)
+        self.assertLess(delete_action, manager_end)
         self.assertContains(response, "Delete Portfolio")
-        self.assertLess(html.index('id="pf-toolbar-name"'), html.index("Delete Portfolio"))
         self.assertNotContains(response, "Clear Holdings")
         self.assertNotContains(response, "Update Holdings")
         self.assertNotContains(response, "Import WACC (cost)")
@@ -322,6 +339,8 @@ class MultiPortfolioManagementTests(TestCase):
             'class="pf-file-picker pf-file-picker-combined"',
             count=2,
         )
+        element_ids = re.findall(r'\sid="([^"]+)"', html)
+        self.assertEqual(len(element_ids), len(set(element_ids)))
 
     def test_portfolio_page_creates_default_portfolio(self):
         response = self.client.get(reverse("portfolio"))
@@ -564,7 +583,309 @@ class MultiPortfolioManagementTests(TestCase):
         self.assertFalse(portfolio.is_default)
 
 
+class PortfolioBrokerLedgerTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="ledger-investor", password="StrongPass123!"
+        )
+        self.client.force_login(self.user)
+        self.portfolio = Portfolio.objects.create(
+            user=self.user, name="Ledger Portfolio", is_default=True
+        )
+        Holding.objects.create(
+            portfolio=self.portfolio, symbol="NABIL", quantity=5, last_close=130, ltp=130
+        )
+        HoldingCost.objects.create(
+            portfolio=self.portfolio,
+            symbol="NABIL",
+            wacc_rate=101,
+            quantity=5,
+            total_cost=505,
+            modified="2026-07-13 10:00:00",
+        )
+
+    @staticmethod
+    def _ledger_upload(name="account-statement.csv", extra_line=""):
+        content = (
+            "Account Name: 7: Test Investor\n"
+            "From Date: 07/13/2026\n"
+            "To Date: 07/13/2026\n"
+            "Fiscal Year: 2082/83\n"
+            "SN,Date AD,Date BS,Voucher No.,Particulars,Reference No.,Branch,Debit,Credit,Balance\n"
+            "1,,,,Opening Balance,,,,,0.00\n"
+            "2,07/13/2026,2083-03-29,JV/000001/R/082-083,Received from Test Investor,R/000001/082-083,KTM,,1000.00,1000.00 CR\n"
+            "3,07/13/2026,2083-03-29,JV/000002/B/082-083,Receivable from client for purchase bill no. B/000002/082-083 (NABIL 10 kitta @ 100.00),B/000002/082-083,KTM,1010.00,,10.00 DR\n"
+            "4,07/13/2026,2083-03-29,JV/000003/S/082-083,Payable to client for sell bill no. S/000003/082-083 (NABIL 5 kitta @ 120.00),S/000003/082-083,KTM,,590.00,580.00 CR\n"
+            f"{extra_line}"
+        )
+        return SimpleUploadedFile(name, content.encode("utf-8"), content_type="text/csv")
+
+    def _import(self, upload=None, portfolio=None):
+        return self.client.post(
+            reverse("portfolio_ledger_import"),
+            {
+                "portfolio_id": (portfolio or self.portfolio).id,
+                "file": upload or self._ledger_upload(),
+            },
+        )
+
+    def test_fiscal_year_uses_exact_bs_month_boundary(self):
+        from core_analysis.services.portfolio_ledger import fiscal_year_from_dates
+
+        self.assertEqual(fiscal_year_from_dates("2082-03-30"), "2081/82")
+        self.assertEqual(fiscal_year_from_dates("2082-04-01"), "2082/83")
+
+    def test_import_persists_cash_transactions_trade_legs_and_metadata(self):
+        response = self._import()
+
+        self.assertRedirects(
+            response,
+            f"{reverse('portfolio')}?portfolio={self.portfolio.id}",
+            fetch_redirect_response=False,
+        )
+        batch = BrokerLedgerImport.objects.get(portfolio=self.portfolio)
+        self.assertEqual(batch.account_code, "7")
+        self.assertEqual(batch.account_name, "Test Investor")
+        self.assertEqual(batch.source_fiscal_year, "2082/83")
+        self.assertEqual(batch.imported_rows, 4)
+        self.assertEqual(batch.warning_count, 0)
+        self.assertEqual(BrokerLedgerTransaction.objects.filter(portfolio=self.portfolio).count(), 4)
+        self.assertEqual(BrokerTrade.objects.filter(transaction__portfolio=self.portfolio).count(), 2)
+        sale = BrokerLedgerTransaction.objects.get(
+            portfolio=self.portfolio, transaction_type=BrokerLedgerTransaction.SELL
+        )
+        self.assertEqual(sale.derived_deductions, Decimal("10.00"))
+        self.assertEqual(sale.balance, Decimal("580.00"))
+        self.assertEqual(sale.fiscal_year, "2082/83")
+
+    def test_weighted_average_realized_pl_cash_and_reconciliation(self):
+        from core_analysis.services.portfolio_ledger import build_ledger_dashboard
+
+        self._import()
+        dashboard = build_ledger_dashboard(self.portfolio, fiscal_year="2082/83")
+
+        self.assertEqual(dashboard["summary"]["purchases"], Decimal("1010.00"))
+        self.assertEqual(dashboard["summary"]["sales"], Decimal("590.00"))
+        self.assertEqual(dashboard["summary"]["charges_and_taxes"], Decimal("20.00"))
+        self.assertEqual(dashboard["summary"]["realized_pl"], Decimal("85.00"))
+        self.assertEqual(dashboard["summary"]["realized_pl_confirmed"], Decimal("85.00"))
+        self.assertEqual(dashboard["summary"]["realized_coverage_pct"], Decimal("100.00"))
+        self.assertEqual(dashboard["summary"]["closing_balance"], Decimal("580.00"))
+        self.assertEqual(dashboard["mismatched_symbols"], 0)
+
+    def test_missing_opening_lot_uses_labelled_wacc_estimate(self):
+        from core_analysis.services.portfolio_ledger import build_ledger_dashboard
+
+        content = (
+            "SN,Date AD,Date BS,Voucher No.,Particulars,Reference No.,Branch,Debit,Credit,Balance\n"
+            "1,,,,Opening Balance,,,,,0.00\n"
+            "2,07/13/2026,2083-03-29,JV/000010/S/082-083,Payable to client for sell bill no. S/000010/082-083 (NABIL 5 kitta @ 120.00),S/000010/082-083,KTM,,590.00,590.00 CR\n"
+        )
+        self._import(
+            SimpleUploadedFile("opening-gap.csv", content.encode(), content_type="text/csv")
+        )
+
+        summary = build_ledger_dashboard(self.portfolio, "2082/83")["summary"]
+        self.assertEqual(summary["realized_pl_confirmed"], Decimal("0.00"))
+        self.assertEqual(summary["realized_pl_estimated"], Decimal("85.00"))
+        self.assertEqual(summary["estimated_sale_qty"], Decimal("5.00"))
+        self.assertEqual(summary["realized_coverage_pct"], Decimal("0.00"))
+
+    def test_sequence_and_running_balance_gaps_are_flagged(self):
+        from core_analysis.services.portfolio_ledger import build_ledger_dashboard
+
+        content = (
+            "SN,Date AD,Date BS,Voucher No.,Particulars,Reference No.,Branch,Debit,Credit,Balance\n"
+            "1,,,,Opening Balance,,,,,0.00\n"
+            "3,07/13/2026,2083-03-29,JV/000020/R/082-083,Received from Test,R/000020/082-083,KTM,,100.00,90.00 CR\n"
+        )
+        self._import(
+            SimpleUploadedFile("gapped.csv", content.encode(), content_type="text/csv")
+        )
+
+        gap = BrokerLedgerTransaction.objects.get(source_row_no=3)
+        self.assertTrue(gap.sequence_gap)
+        self.assertTrue(gap.balance_mismatch)
+        self.assertEqual(build_ledger_dashboard(self.portfolio)["integrity_issue_count"], 1)
+
+    def test_exact_reimport_is_idempotent(self):
+        self._import()
+        self._import()
+
+        self.assertEqual(BrokerLedgerImport.objects.filter(portfolio=self.portfolio).count(), 1)
+        self.assertEqual(BrokerLedgerTransaction.objects.filter(portfolio=self.portfolio).count(), 4)
+        self.assertEqual(BrokerTrade.objects.filter(transaction__portfolio=self.portfolio).count(), 2)
+
+    def test_overlapping_different_file_skips_duplicate_transaction_fingerprints(self):
+        self._import()
+        self._import(self._ledger_upload(name="overlap.csv", extra_line="\n"))
+
+        self.assertEqual(BrokerLedgerImport.objects.filter(portfolio=self.portfolio).count(), 2)
+        latest = BrokerLedgerImport.objects.filter(portfolio=self.portfolio).order_by("-id").first()
+        self.assertEqual(latest.imported_rows, 0)
+        self.assertEqual(latest.duplicate_rows, 4)
+        self.assertEqual(BrokerLedgerTransaction.objects.filter(portfolio=self.portfolio).count(), 4)
+
+    def test_identical_rows_in_one_file_are_all_imported(self):
+        """Two genuinely distinct rows that look identical (same day, blank
+        voucher/reference, same amount — e.g. repeated DP charges) must both
+        import. They share every fingerprinted field except the running
+        balance, so the parser has to disambiguate them per occurrence rather
+        than collapse them into one / crash on the unique constraint."""
+        content = (
+            "SN,Date AD,Date BS,Voucher No.,Particulars,Reference No.,Branch,Debit,Credit,Balance\n"
+            "1,,,,Opening Balance,,,,,1000.00\n"
+            "2,07/13/2026,2083-03-29,,DP Charge,,KTM,25.00,,975.00 DR\n"
+            "3,07/13/2026,2083-03-29,,DP Charge,,KTM,25.00,,950.00 DR\n"
+        )
+        response = self._import(
+            SimpleUploadedFile("dp-charges.csv", content.encode(), content_type="text/csv")
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('portfolio')}?portfolio={self.portfolio.id}",
+            fetch_redirect_response=False,
+        )
+        batch = BrokerLedgerImport.objects.get(portfolio=self.portfolio)
+        self.assertEqual(batch.imported_rows, 3)
+        self.assertEqual(batch.duplicate_rows, 0)
+        self.assertEqual(
+            BrokerLedgerTransaction.objects.filter(portfolio=self.portfolio).count(), 3
+        )
+        # Re-importing the same file stays idempotent (file-hash short-circuit).
+        self._import(
+            SimpleUploadedFile("dp-charges.csv", content.encode(), content_type="text/csv")
+        )
+        self.assertEqual(
+            BrokerLedgerTransaction.objects.filter(portfolio=self.portfolio).count(), 3
+        )
+
+    def test_foreign_portfolio_cannot_be_mutated(self):
+        other = get_user_model().objects.create_user(username="ledger-other")
+        foreign = Portfolio.objects.create(user=other, name="Private")
+
+        self._import(portfolio=foreign)
+
+        self.assertFalse(foreign.ledger_transactions.exists())
+        self.assertFalse(self.portfolio.ledger_transactions.exists())
+
+    def test_page_filters_fy_and_exposes_accounting_summary(self):
+        self._import()
+        Holding.objects.filter(portfolio=self.portfolio, symbol="NABIL").update(quantity=6)
+
+        response = self.client.get(
+            reverse("portfolio"), {"portfolio": self.portfolio.id, "fy": "2082/83"}
+        )
+
+        self.assertContains(response, "Broker Ledger &amp; Fiscal Year")
+        self.assertContains(response, "FY 2082/83 Transactions")
+        self.assertContains(response, "Realized P/L")
+        self.assertContains(response, "85.00")
+        self.assertContains(response, "JV/000003/S/082-083")
+        self.assertContains(response, 'class="pf-create-panel pf-ledger-manager-panel"')
+        self.assertContains(response, 'id="pf-ledger-file"', count=1)
+        self.assertContains(response, 'class="pf-reconciliation pf-ledger-collapse" open', count=1)
+        self.assertContains(response, "Holdings/WACC reconciliation", count=1)
+        self.assertContains(response, 'class="pf-ledger-transactions pf-ledger-collapse" open')
+        self.assertContains(response, 'class="pf-ledger-toggle-hide">Hide</b>')
+        self.assertContains(response, 'class="pf-ledger-toggle-show">Show</b>')
+        self.assertContains(response, "Risk Decomposition &amp; Sector Exposure", count=1)
+        self.assertContains(response, 'id="pf-factors"', count=1)
+        self.assertContains(response, 'id="pf-sectors"', count=1)
+
+        html = response.content.decode()
+        manager_start = html.index("<summary>Manage portfolios</summary>")
+        manager_end = html.index("</section>", manager_start)
+        ledger_controls = html.index("Broker Account Statement")
+        self.assertLess(manager_start, ledger_controls)
+        self.assertLess(ledger_controls, manager_end)
+        risk_sector_card = html.index('id="pf-risk-sector-decomposition"')
+        factor_view = html.index('id="pf-factors"')
+        sector_view = html.index('id="pf-sectors"')
+        combined_card = html.index('id="pf-concentration-reconciliation"')
+        concentration = html.index("Concentration &amp; Attribution", combined_card)
+        reconciliation = html.index("Holdings/WACC reconciliation")
+        ledger_section = html.index('id="broker-ledger"')
+        transactions = html.index("FY 2082/83 Transactions")
+        self.assertLess(risk_sector_card, factor_view)
+        self.assertLess(factor_view, sector_view)
+        self.assertLess(sector_view, combined_card)
+        self.assertLess(combined_card, concentration)
+        self.assertLess(concentration, reconciliation)
+        self.assertLess(reconciliation, ledger_section)
+        self.assertLess(ledger_section, transactions)
+
+    def test_empty_portfolio_keeps_reconciliation_in_ledger_fallback(self):
+        self._import()
+        self.portfolio.holdings.all().delete()
+
+        response = self.client.get(reverse("portfolio"), {"portfolio": self.portfolio.id})
+
+        html = response.content.decode()
+        self.assertNotContains(response, 'id="pf-concentration-reconciliation"')
+        self.assertContains(response, "Holdings/WACC reconciliation", count=1)
+        self.assertLess(html.index('id="broker-ledger"'), html.index("Holdings/WACC reconciliation"))
+
+    def test_fy_transactions_paginate_five_rows_at_a_time(self):
+        extra = (
+            "5,07/13/2026,2083-03-29,JV/000004/R/082-083,Received from Test,R/000004/082-083,KTM,,10.00,590.00 CR\n"
+            "6,07/13/2026,2083-03-29,JV/000005/R/082-083,Received from Test,R/000005/082-083,KTM,,10.00,600.00 CR\n"
+            "7,07/13/2026,2083-03-29,JV/000006/R/082-083,Received from Test,R/000006/082-083,KTM,,10.00,610.00 CR\n"
+            "8,07/13/2026,2083-03-29,JV/000007/R/082-083,Received from Test,R/000007/082-083,KTM,,10.00,620.00 CR\n"
+        )
+        self._import(self._ledger_upload(name="paged-ledger.csv", extra_line=extra))
+
+        first = self.client.get(
+            reverse("portfolio"),
+            {"portfolio": self.portfolio.id, "fy": "2082/83", "ledger_page": 1},
+        )
+        self.assertEqual(len(first.context["ledger"]["transactions"]), 5)
+        self.assertContains(first, "Page 1 of 2")
+        self.assertContains(first, "JV/000007/R/082-083")
+        self.assertNotContains(first, "JV/000001/R/082-083")
+
+        second = self.client.get(
+            reverse("portfolio"),
+            {"portfolio": self.portfolio.id, "fy": "2082/83", "ledger_page": 2},
+        )
+        self.assertEqual(len(second.context["ledger"]["transactions"]), 2)
+        self.assertContains(second, "Page 2 of 2")
+        self.assertContains(second, "JV/000001/R/082-083")
+
+    def test_duplicate_portfolio_copies_ledger_independently(self):
+        self._import()
+
+        self.client.post(
+            reverse("portfolio_manage"),
+            {"action": "duplicate", "portfolio_id": self.portfolio.id},
+        )
+
+        duplicate = Portfolio.objects.get(user=self.user, name="Ledger Portfolio Copy")
+        self.assertEqual(duplicate.ledger_imports.count(), 1)
+        self.assertEqual(duplicate.ledger_transactions.count(), 4)
+        self.assertEqual(BrokerTrade.objects.filter(transaction__portfolio=duplicate).count(), 2)
+        self.assertNotEqual(
+            duplicate.ledger_transactions.first().portfolio_id,
+            self.portfolio.id,
+        )
+
+
 class PortfolioStressAnalyticsTests(SimpleTestCase):
+    def test_latest_prices_include_previous_close_for_daily_gain_loss(self):
+        latest = date(2026, 7, 10)
+        with (
+            patch.object(portfolio_analytics, "_latest_session", return_value=latest),
+            patch("core_analysis.models.NepseDailyStockPrice.objects") as objects,
+        ):
+            objects.filter.return_value.order_by.return_value.values_list.return_value = [
+                ("NABIL", latest, Decimal("510.00"), Decimal("1000000"), Decimal("500.00")),
+            ]
+
+            prices = portfolio_analytics._latest_prices(["NABIL"])
+
+        self.assertEqual(prices["NABIL"], (510.0, latest, 1000000.0, 500.0))
+
     def test_float_coercion_rejects_non_finite_values(self):
         self.assertEqual(portfolio_analytics._f(float("nan"), 7.0), 7.0)
         self.assertEqual(portfolio_analytics._f(float("inf"), 7.0), 7.0)

@@ -398,6 +398,168 @@ class HoldingCost(models.Model):
         return f"{self.symbol} @ {self.wacc_rate}"
 
 
+class BrokerLedgerImport(models.Model):
+    """One uploaded broker account-statement file and its import audit trail."""
+
+    portfolio = models.ForeignKey(
+        Portfolio, on_delete=models.CASCADE, related_name="ledger_imports"
+    )
+    source_name = models.CharField(max_length=255)
+    file_sha256 = models.CharField(max_length=64, db_index=True)
+    account_name = models.CharField(max_length=160, blank=True, default="")
+    account_code = models.CharField(max_length=80, blank=True, default="")
+    report_from_ad = models.DateField(null=True, blank=True)
+    report_to_ad = models.DateField(null=True, blank=True)
+    source_fiscal_year = models.CharField(max_length=20, blank=True, default="")
+    imported_rows = models.PositiveIntegerField(default=0)
+    duplicate_rows = models.PositiveIntegerField(default=0)
+    warning_count = models.PositiveIntegerField(default=0)
+    imported_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "portfolio_ledger_import"
+        ordering = ["-imported_at", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["portfolio", "file_sha256"],
+                name="uniq_pf_ledger_file",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.portfolio}: {self.source_name}"
+
+
+class BrokerLedgerTransaction(models.Model):
+    """A normalized cash-ledger row from a private broker account statement."""
+
+    OPENING = "opening"
+    DEPOSIT = "deposit"
+    BUY = "buy"
+    SELL = "sell"
+    PAYMENT = "payment"
+    DIVIDEND = "dividend"
+    CHARGE = "charge"
+    TAX = "tax"
+    ADJUSTMENT = "adjustment"
+    OTHER = "other"
+    TYPE_CHOICES = (
+        (OPENING, "Opening balance"),
+        (DEPOSIT, "Deposit / receipt"),
+        (BUY, "Purchase bill"),
+        (SELL, "Sale bill"),
+        (PAYMENT, "Payment / withdrawal"),
+        (DIVIDEND, "Dividend"),
+        (CHARGE, "Charge"),
+        (TAX, "Tax"),
+        (ADJUSTMENT, "Adjustment"),
+        (OTHER, "Other"),
+    )
+    CR = "CR"
+    DR = "DR"
+    BALANCE_SIDE_CHOICES = ((CR, "Credit"), (DR, "Debit"))
+
+    portfolio = models.ForeignKey(
+        Portfolio, on_delete=models.CASCADE, related_name="ledger_transactions"
+    )
+    import_batch = models.ForeignKey(
+        BrokerLedgerImport, on_delete=models.CASCADE, related_name="transactions"
+    )
+    source_row_no = models.PositiveIntegerField(null=True, blank=True)
+    date_ad = models.DateField(null=True, blank=True, db_index=True)
+    date_bs = models.CharField(max_length=10, blank=True, default="")
+    fiscal_year = models.CharField(max_length=10, blank=True, default="", db_index=True)
+    voucher_no = models.CharField(max_length=80, blank=True, default="")
+    transaction_type = models.CharField(
+        max_length=16, choices=TYPE_CHOICES, default=OTHER, db_index=True
+    )
+    particulars = models.TextField(blank=True, default="")
+    reference_no = models.CharField(max_length=100, blank=True, default="")
+    branch = models.CharField(max_length=40, blank=True, default="")
+    debit = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    credit = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    balance = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    balance_side = models.CharField(
+        max_length=2, choices=BALANCE_SIDE_CHOICES, blank=True, default=""
+    )
+    derived_deductions = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    fingerprint = models.CharField(max_length=64)
+    sequence_gap = models.BooleanField(default=False)
+    balance_mismatch = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "portfolio_ledger_transaction"
+        ordering = ["date_ad", "source_row_no", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["portfolio", "fingerprint"],
+                name="uniq_pf_ledger_tx",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(debit__gte=0), name="ledger_debit_nonneg"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(credit__gte=0), name="ledger_credit_nonneg"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(derived_deductions__gte=0),
+                name="ledger_deduct_nonneg",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["portfolio", "date_ad"], name="pf_ledger_date_idx"),
+            models.Index(
+                fields=["portfolio", "fiscal_year", "transaction_type"],
+                name="pf_ledger_fy_type_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.date_ad or 'Opening'} {self.get_transaction_type_display()}"
+
+
+class BrokerTrade(models.Model):
+    """One symbol/quantity/price leg parsed from a broker purchase or sale bill."""
+
+    BUY = "buy"
+    SELL = "sell"
+    SIDE_CHOICES = ((BUY, "Buy"), (SELL, "Sell"))
+
+    transaction = models.ForeignKey(
+        BrokerLedgerTransaction, on_delete=models.CASCADE, related_name="trades"
+    )
+    symbol = models.CharField(max_length=20, db_index=True)
+    side = models.CharField(max_length=4, choices=SIDE_CHOICES)
+    quantity = models.DecimalField(max_digits=18, decimal_places=2)
+    price = models.DecimalField(max_digits=14, decimal_places=4)
+    gross_amount = models.DecimalField(max_digits=18, decimal_places=2)
+    allocated_deductions = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    net_amount = models.DecimalField(max_digits=18, decimal_places=2)
+
+    class Meta:
+        db_table = "portfolio_broker_trade"
+        ordering = ["transaction_id", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(quantity__gt=0), name="broker_trade_qty_pos"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(price__gte=0), name="broker_trade_price_nonneg"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(gross_amount__gte=0), name="broker_trade_gross_nonneg"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(allocated_deductions__gte=0),
+                name="broker_trade_deduct_nonneg",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.side.upper()} {self.symbol} x{self.quantity}"
+
+
 class PageVisit(models.Model):
     """
     Table: site_page_visit
