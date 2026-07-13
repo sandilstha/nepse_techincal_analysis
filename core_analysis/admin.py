@@ -2,7 +2,15 @@ from django.contrib import admin, messages
 from django.db.models import Count
 from django.utils import timezone
 
-from .models import AccountApproval, Holding, HoldingCost, Portfolio
+from .models import (
+    AccountApproval,
+    BrokerLedgerImport,
+    BrokerLedgerTransaction,
+    BrokerTrade,
+    Holding,
+    HoldingCost,
+    Portfolio,
+)
 
 
 @admin.action(description="Approve selected account requests")
@@ -104,11 +112,19 @@ class PortfolioAdmin(admin.ModelAdmin):
         "is_archived",
         "holdings_count",
         "costs_count",
+        "ledger_count",
         "created_at",
         "updated_at",
     )
     list_filter = ("portfolio_type", "is_default", "is_archived", "created_at", "updated_at")
-    search_fields = ("user__username", "user__email", "name", "holdings__symbol")
+    search_fields = (
+        "user__username",
+        "user__email",
+        "name",
+        "holdings__symbol",
+        "ledger_transactions__voucher_no",
+        "ledger_transactions__reference_no",
+    )
     readonly_fields = ("created_at", "updated_at")
     date_hierarchy = "updated_at"
     ordering = ("-updated_at",)
@@ -117,7 +133,8 @@ class PortfolioAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request).select_related("user")
         return qs.annotate(_holdings=Count("holdings", distinct=True),
-                           _costs=Count("costs", distinct=True))
+                           _costs=Count("costs", distinct=True),
+                           _ledger=Count("ledger_transactions", distinct=True))
 
     @admin.display(description="Holdings", ordering="_holdings")
     def holdings_count(self, obj):
@@ -126,6 +143,10 @@ class PortfolioAdmin(admin.ModelAdmin):
     @admin.display(description="Cost rows", ordering="_costs")
     def costs_count(self, obj):
         return obj._costs
+
+    @admin.display(description="Ledger rows", ordering="_ledger")
+    def ledger_count(self, obj):
+        return obj._ledger
 
 
 @admin.register(Holding)
@@ -143,3 +164,42 @@ class HoldingAdmin(admin.ModelAdmin):
     @admin.display(description="User", ordering="portfolio__user__username")
     def owner(self, obj):
         return obj.portfolio.user
+
+
+@admin.register(BrokerLedgerImport)
+class BrokerLedgerImportAdmin(admin.ModelAdmin):
+    list_display = (
+        "source_name", "portfolio", "account_name", "report_from_ad", "report_to_ad",
+        "imported_rows", "duplicate_rows", "warning_count", "imported_at",
+    )
+    list_filter = ("imported_at",)
+    search_fields = ("source_name", "account_name", "account_code", "portfolio__name", "portfolio__user__username")
+    readonly_fields = ("file_sha256", "imported_at")
+    ordering = ("-imported_at",)
+
+
+@admin.register(BrokerLedgerTransaction)
+class BrokerLedgerTransactionAdmin(admin.ModelAdmin):
+    list_display = (
+        "date_ad", "date_bs", "fiscal_year", "transaction_type", "voucher_no",
+        "debit", "credit", "balance", "portfolio",
+    )
+    list_filter = ("transaction_type", "fiscal_year", "balance_side", "sequence_gap", "balance_mismatch")
+    search_fields = (
+        "voucher_no", "reference_no", "particulars", "portfolio__name",
+        "portfolio__user__username", "trades__symbol",
+    )
+    readonly_fields = ("fingerprint", "created_at")
+    date_hierarchy = "date_ad"
+    ordering = ("-date_ad", "-id")
+
+
+@admin.register(BrokerTrade)
+class BrokerTradeAdmin(admin.ModelAdmin):
+    list_display = ("symbol", "side", "quantity", "price", "net_amount", "transaction")
+    list_filter = ("side",)
+    search_fields = (
+        "symbol", "transaction__voucher_no", "transaction__reference_no",
+        "transaction__portfolio__user__username",
+    )
+    ordering = ("-transaction__date_ad", "-id")

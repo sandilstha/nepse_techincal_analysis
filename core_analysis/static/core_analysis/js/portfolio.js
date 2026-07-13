@@ -128,7 +128,7 @@
     function confirmDelete(name) {
       return window.confirm(
         'Delete "' + (name || "this portfolio") +
-        '" and all of its holdings and WACC rows? This cannot be undone.'
+        '" and all of its holdings, WACC and broker-ledger rows? This cannot be undone.'
       );
     }
 
@@ -299,7 +299,6 @@
       if (k) k.innerHTML = "<div class='pf-error'>" + esc((d && d.error) || "No data") + "</div>";
       return;
     }
-    syncActivePortfolio(d);
     renderKpis(d);
     renderSummaryDesk(d);
     renderCompliance(d.compliance);
@@ -311,14 +310,6 @@
     if (el("pf-asof")) el("pf-asof").textContent = d.as_of ? "Priced at " + d.as_of + " close" : "";
   }
 
-  function syncActivePortfolio(d) {
-    var name = d.portfolio_name || d.portfolio || "";
-    ["pf-active-name-top", "pf-active-name-main", "pf-toolbar-name"].forEach(function (id) {
-      var node = el(id);
-      if (node && name) node.textContent = name;
-    });
-  }
-
   function tile(label, val, sub, cls, help) {
     return "<div class='pf-kpi'><span class='pf-kpi-label'>" + esc(label) + (help || "") + "</span>" +
       "<span class='pf-kpi-val " + (cls || "") + "'>" + val + "</span>" +
@@ -328,44 +319,57 @@
   function renderKpis(d) {
     var box = el("pf-kpis");
     if (!box) return;
-    var c = d.concentration || {};
     var cost = d.cost || {};
-    var risk = d.risk || {};
-    var var95 = risk.ok && risk.var ? risk.var : null;
-    var beta = d.portfolio_beta;
+    var accounting = d.accounting || {};
     var na = "\u2014";
-    var html = tile("Portfolio Value", rsCompact(d.total_value), d.holdings_count + " holdings");
-    if (cost.has_cost) {
-      html += tile("Paper P/L", signedRs(cost.paper_pl),
-        (cost.paper_pl_pct == null ? na : (cost.paper_pl_pct >= 0 ? "+" : "") + cost.paper_pl_pct.toFixed(2) + "%") + " vs cost",
-        cost.paper_pl >= 0 ? "num-pos" : "num-neg");
-    } else {
-      html += tile("Diversification", (c.effective_holdings || 0).toFixed(1),
-        "effective holdings (of " + d.holdings_count + ")");
-    }
-    html += tile("1-Day VaR", var95 ? "-" + rsCompact(Math.abs(var95.hist_95_1d_rs)) : na,
-      var95 ? Math.abs(var95.hist_95_1d_pct).toFixed(2) + "% historical 95%" : "insufficient history",
-      var95 ? "num-neg" : "");
-    html += tile("Largest Position", c.top_symbol ? c.top_symbol + " / " + pct(c.top_weight) : na,
-      "single-name weight");
-    html += tile("Concentration", nf(c.hhi || 0),
-      (c.effective_holdings || 0).toFixed(1) + " effective / " + (c.risk || "low") + " risk",
-      "risk-" + (c.risk || "low"));
-    html += tile("Portfolio Beta", beta == null ? na : beta.toFixed(2),
-      beta == null ? "insufficient history" :
-      (beta > 1 ? "more volatile than NEPSE" : "less volatile than NEPSE") +
-      " · " + (d.beta_coverage_pct || 0).toFixed(1) + "% weight covered");
+    var netWorth = accounting.has_ledger ? accounting.total_equity : d.total_value;
+    var dayRows = (d.rows || []).filter(function (row) {
+      if (row.day_pl == null) return false;
+      return cost.has_cost ? row.cost_value != null : row.previous_close > 0;
+    });
+    var dayPl = dayRows.length ? dayRows.reduce(function (sum, row) {
+      return sum + (row.day_pl || 0);
+    }, 0) : null;
+    var dayBase = dayRows.reduce(function (sum, row) {
+      return sum + (cost.has_cost
+        ? (row.cost_value || 0)
+        : ((row.previous_close || 0) * (row.quantity || 0)));
+    }, 0);
+    var dayPct = dayPl == null || !dayBase ? null : 100 * dayPl / dayBase;
+    var dayCoverage = dayRows.length && dayRows.length < (d.holdings_count || 0)
+      ? " · " + dayRows.length + "/" + d.holdings_count + " holdings" : "";
+    var daySub = dayPct == null ? "daily change unavailable" :
+      (dayPct >= 0 ? "+" : "") + dayPct.toFixed(2) + "% vs " +
+      (cost.has_cost ? "investment" : "previous value") + dayCoverage;
+    var unrealizedSub = cost.paper_pl_pct == null ? "import WACC to calculate" :
+      (cost.paper_pl_pct >= 0 ? "+" : "") + cost.paper_pl_pct.toFixed(2) + "%";
+    var realized = accounting.has_ledger ? accounting.realized_pl : null;
+    var html = tile("Investment", cost.has_cost ? rsCompact(cost.book_value) : na,
+      cost.has_cost ? cost.covered_count + " costed holdings" : "WACC not imported");
+    html += tile("Latest Market Value", rsCompact(d.total_value), d.holdings_count + " holdings");
+    html += tile("Net Worth", rsCompact(netWorth),
+      accounting.has_ledger ? "market value + broker cash" : "market value");
+    html += tile("Day Gain/Loss", dayPl == null ? na : signedRs(dayPl), daySub,
+      dayPl == null ? "" : (dayPl >= 0 ? "num-pos" : "num-neg"));
+    html += tile("Unrealized Gain/Loss", cost.paper_pl == null ? na : signedRs(cost.paper_pl),
+      unrealizedSub, cost.paper_pl == null ? "" : (cost.paper_pl >= 0 ? "num-pos" : "num-neg"));
+    html += tile("Realized Gain/Loss", realized == null ? na : signedRs(realized),
+      accounting.has_ledger ? "all-time from broker ledger" : "import ledger to calculate",
+      realized == null ? "" : (realized >= 0 ? "num-pos" : "num-neg"));
     box.innerHTML = html;
   }
 
-  // ── Portfolio Summary — Beta Forecast & VaR ───────────────────────────
-  // A sector-grouped desk driven by a "what if NEPSE moves to X" scenario.
+  // ── Stock Holdings — Beta Forecast & VaR ──────────────────────────────
+  // A broker-style holdings desk driven by a "what if NEPSE moves to X" scenario.
   // The whole recompute is client-side (beta × index move) so Recalculate is
   // instant and never refetches. VaR/loss come pre-computed from the payload.
-  var SUMMARY_DEFAULTS = { query: "", sector: "", liquidity: "", sort: "value", dir: "desc" };
+  var SUMMARY_DEFAULTS = {
+    tab: "top", query: "", sector: "", liquidity: "", sort: "value", dir: "desc"
+  };
   var state = {
     data: null,
     summary: {
+      tab: SUMMARY_DEFAULTS.tab,
       query: SUMMARY_DEFAULTS.query,
       sector: SUMMARY_DEFAULTS.sector,
       liquidity: SUMMARY_DEFAULTS.liquidity,
@@ -391,6 +395,7 @@
 
   function resetSummaryFilters() {
     state.summary = {
+      tab: SUMMARY_DEFAULTS.tab,
       query: SUMMARY_DEFAULTS.query,
       sector: SUMMARY_DEFAULTS.sector,
       liquidity: SUMMARY_DEFAULTS.liquidity,
@@ -401,6 +406,26 @@
 
   function bindSummaryFilters(rows) {
     syncSummarySectorOptions(rows || []);
+    Array.prototype.forEach.call(document.querySelectorAll("[data-pf-holdings-tab]"), function (button) {
+      if (button._pfBound) return;
+      button._pfBound = true;
+      button.addEventListener("click", function () {
+        var tab = button.getAttribute("data-pf-holdings-tab") || "top";
+        state.summary.tab = tab;
+        if (tab === "gaining") {
+          state.summary.sort = "day";
+          state.summary.dir = "desc";
+        } else if (tab === "losing") {
+          state.summary.sort = "day";
+          state.summary.dir = "asc";
+        } else {
+          state.summary.sort = "value";
+          state.summary.dir = "desc";
+        }
+        syncSummaryFilterControls();
+        recalcSummary();
+      });
+    });
     bindSummaryControl("pf-sum-query", "input", function (node) {
       state.summary.query = node.value || "";
       recalcSummary();
@@ -471,6 +496,11 @@
       dir.textContent = state.summary.dir === "asc" ? "Asc" : "Desc";
       dir.setAttribute("aria-pressed", state.summary.dir === "asc" ? "true" : "false");
     }
+    Array.prototype.forEach.call(document.querySelectorAll("[data-pf-holdings-tab]"), function (button) {
+      var active = button.getAttribute("data-pf-holdings-tab") === state.summary.tab;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-selected", active ? "true" : "false");
+    });
   }
 
   function summaryMetric(r, key, changePct) {
@@ -481,6 +511,9 @@
     if (key === "price") return r.price;
     if (key === "value") return r.value;
     if (key === "weight") return r.weight;
+    if (key === "day") return r.day_pl;
+    if (key === "unrealized") return r.pl;
+    if (key === "cost") return r.cost_value;
     if (key === "vol") return r.vol;
     if (key === "beta") return r.beta;
     if (key === "dtl") return r.dtl;
@@ -499,6 +532,8 @@
     var q = (f.query || "").toLowerCase().trim();
     var wrapped = rows.map(function (r, idx) { return { row: r, idx: idx }; }).filter(function (item) {
       var r = item.row;
+      if (f.tab === "gaining" && !(r.day_pl > 0)) return false;
+      if (f.tab === "losing" && !(r.day_pl < 0)) return false;
       var hay = [r.symbol, r.company, r.sector].join(" ").toLowerCase();
       if (q && hay.indexOf(q) === -1) return false;
       if (f.sector && (r.sector || "Other") !== f.sector) return false;
@@ -534,14 +569,9 @@
     var cur = el("pf-idx-current"), exp = el("pf-idx-expected");
     if (cur) cur.value = idx == null ? "—" : nf(idx);
     if (exp && !exp.value) exp.value = idx == null ? "" : idx;
-    var rc = el("pf-recalc");
-    if (rc && !rc._bound) { rc._bound = true; rc.addEventListener("click", recalcSummary); }
     if (exp && !exp._bound) {
       exp._bound = true;
       exp.addEventListener("input", recalcSummary);
-      exp.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") { e.preventDefault(); recalcSummary(); }
-      });
     }
     recalcSummary();
   }
@@ -562,34 +592,23 @@
       chEl.className = "pf-idx-change " + (changePct >= 0 ? "num-pos" : "num-neg");
     }
 
-    var totVal = 0, totExp = 0, totL1w = 0, totL1m = 0, costedExp = 0;
+    var totVal = d.total_value || 0, totExp = 0, totL1w = 0, totL1m = 0, costedExp = 0;
     rows.forEach(function (r) {
       var e = computeExp(r, changePct);
-      totVal += r.value || 0;
       totExp += e.expValue || 0;
       totL1w += r.loss_1w || 0;
       totL1m += r.loss_1m || 0;
-      if (r.cost_value != null) costedExp += e.expValue || 0;   // costed subset, for Exp. Paper P/L
+      if (r.cost_value != null) costedExp += e.expValue || 0;   // costed subset, for expected unrealised P/L
     });
 
     var cost = d.cost || {};
-    var nHold = d.holdings_count || rows.length;
     var tiles = el("pf-sum-tiles");
     if (tiles) {
       var html = "";
-      if (cost.has_cost) {
-        html += tile("Book Value", rsCompact(cost.book_value), cost.covered_count + " of " + nHold + " costed");
-      }
-      html += tile("Market Value", rsCompact(totVal), nHold + " holdings");
-      if (cost.has_cost) {
-        html += tile("Paper P/L", signedRs(cost.paper_pl),
-          (cost.paper_pl_pct == null ? "—" : (cost.paper_pl_pct >= 0 ? "+" : "") + cost.paper_pl_pct.toFixed(2) + "%") + " vs cost",
-          cost.paper_pl >= 0 ? "num-pos" : "num-neg");
-      }
       html += tile("Expected Value", rsCompact(totExp),
         (changePct >= 0 ? "+" : "") + changePct.toFixed(2) + "% NEPSE scenario");
       if (cost.has_cost) {
-        html += tile("Exp. Paper P/L", signedRs(costedExp - cost.book_value), "at scenario",
+        html += tile("Expected Unrealized P/L", signedRs(costedExp - cost.book_value), "at scenario",
           (costedExp - cost.book_value) >= 0 ? "num-pos" : "num-neg");
       }
       html += tile("Scenario P/L", signedRs(totExp - totVal), "vs current value",
@@ -623,19 +642,18 @@
         base += " " + d.snapshot_count + " holding(s) are priced from your uploaded snapshot because they are not in the NEPSE EOD feed.";
       }
       var costNote = (cost.has_cost)
-        ? " WACC · Book Value · Paper P/L are from your imported “My WACC” report (" + cost.covered_count + " scrips matched)."
-        : " Import your broker “My WACC” report (button top-right) to add WACC, Book Value & Paper P/L.";
+        ? " WACC and unrealised P/L use your imported “My WACC” report (" + cost.covered_count + " scrips matched)."
+        : " Import your broker “My WACC” report to add WACC and unrealised P/L.";
       note.innerHTML = base + costNote;
     }
   }
 
   function summaryColgroup() {
     return "<colgroup>" +
-      "<col class='pf-col-rank'><col class='pf-col-symbol'>" +
-      "<col class='pf-col-kitta'><col class='pf-col-wacc'><col class='pf-col-ltp'><col class='pf-col-value'><col class='pf-col-weight'>" +
-      "<col class='pf-col-vol'><col class='pf-col-beta'><col class='pf-col-liq'>" +
-      "<col class='pf-col-exp-price'><col class='pf-col-exp-value'><col class='pf-col-gain'>" +
-      "<col class='pf-col-var'><col class='pf-col-loss'><col class='pf-col-var'><col class='pf-col-loss'>" +
+      "<col class='pf-col-symbol'><col class='pf-col-kitta'><col class='pf-col-wacc'>" +
+      "<col class='pf-col-investment'><col class='pf-col-ltp'><col class='pf-col-market'>" +
+      "<col class='pf-col-day'><col class='pf-col-unrealized'>" +
+      "<col class='pf-col-scenario'><col class='pf-col-maxloss'>" +
       "</colgroup>";
   }
 
@@ -671,88 +689,62 @@
     if (!t) return;
     var colgroup = summaryColgroup();
     var head = "<thead>" +
-      "<tr class='pf-sum-grp'><th rowspan='2'>#</th><th rowspan='2' class='l'>" + summarySortHeader("Symbol", "symbol") + "</th>" +
-        "<th colspan='5'>Portfolio Status</th>" +
-        "<th colspan='3'>Risk &amp; Liquidity</th>" +
-        "<th colspan='3'>Sensitivity (Beta Forecast)</th>" +
-        "<th colspan='4'>Max Loss Potential (VaR)</th></tr>" +
-      "<tr><th>" + summarySortHeader("Kitta", "quantity") + "</th>" +
-        "<th>" + summarySortHeader("WACC", "wacc", "Sort by weighted average cost") + "</th>" +
-        "<th>" + summarySortHeader("LTP", "price") + "</th>" +
-        "<th>" + summarySortHeader("Value", "value") + "</th>" +
-        "<th>" + summarySortHeader("Weight", "weight") + "</th>" +
-        "<th>" + summarySortHeader("Vol", "vol", "Sort by annualised volatility") + "</th>" +
-        "<th>" + summarySortHeader("Beta", "beta", "Sort by beta vs NEPSE index") + "</th>" +
-        "<th>" + summarySortHeader("Liq.", "dtl", "Sort by days to liquidate") + "</th>" +
-        "<th>" + summarySortHeader("Exp Px", "expPrice", "Sort by expected price") + "</th>" +
-        "<th>" + summarySortHeader("Exp Val", "expValue", "Sort by expected value") + "</th>" +
-        "<th>" + summarySortHeader("G/L", "gain", "Sort by gain or loss") + "</th>" +
-        "<th>" + summarySortHeader("VaR 1W", "var1w") + "</th>" +
-        "<th>" + summarySortHeader("Loss 1W", "loss1w") + "</th>" +
-        "<th>" + summarySortHeader("VaR 1M", "var1m") + "</th>" +
-        "<th>" + summarySortHeader("Loss 1M", "loss1m") + "</th></tr></thead>";
+      "<tr><th class='l'>" + summarySortHeader("Symbol", "symbol") + "</th>" +
+        "<th>" + summarySortHeader("Quantity", "quantity") + "</th>" +
+        "<th>" + summarySortHeader("Avg Cost", "wacc", "Sort by weighted average cost") + "</th>" +
+        "<th>" + summarySortHeader("Investment Cost", "cost") + "<small>Cost weight</small></th>" +
+        "<th>" + summarySortHeader("LTP", "price") + "<small>Change (% Chg)</small></th>" +
+        "<th>" + summarySortHeader("Market Value", "value") + "<small>Market weight</small></th>" +
+        "<th>" + summarySortHeader("Today's Gain/Loss", "day") + "<small>Gain/Loss %</small></th>" +
+        "<th>" + summarySortHeader("Unrealized Gain/Loss", "unrealized") + "<small>Gain/Loss %</small></th>" +
+        "<th>" + summarySortHeader("Scenario Value", "expValue") + "<small>Scenario gain/loss</small></th>" +
+        "<th>Max Loss<small>VaR 1W / 1M</small></th></tr></thead>";
 
     if (!rows.length) {
-      t.innerHTML = colgroup + head + "<tbody><tr><td colspan='17' class='pf-muted'>No matching holdings</td></tr></tbody>";
+      var emptyLabel = state.summary.tab === "gaining" ? "No gaining holdings today" :
+        (state.summary.tab === "losing" ? "No losing holdings today" : "No matching holdings");
+      t.innerHTML = colgroup + head + "<tbody><tr><td colspan='10' class='pf-muted'>" + emptyLabel + "</td></tr></tbody>";
       bindSummaryHeaderSort(t);
       return;
     }
 
-    // Group by sector, preserving the payload's value-descending order.
-    var groups = {}, order = [];
-    var totalValue = (state.data && state.data.total_value) || rows.reduce(function (sum, r) { return sum + (r.value || 0); }, 0);
-    rows.forEach(function (r) {
-      var s = r.sector || "Other";
-      if (!groups[s]) { groups[s] = []; order.push(s); }
-      groups[s].push(r);
-    });
-
-    var body = "", sn = 0;
-    order.forEach(function (sec) {
-      var grp = groups[sec];
-      var gVal = 0, gExp = 0, gWeight = 0, gL1w = 0, gL1m = 0;
-      var rowsHtml = grp.map(function (r) {
-        sn++;
-        var e = computeExp(r, changePct);
-        gVal += r.value || 0; gExp += e.expValue || 0;
-        gWeight += r.weight != null ? r.weight : (totalValue ? (100 * (r.value || 0) / totalValue) : 0);
-        gL1w += r.loss_1w || 0; gL1m += r.loss_1m || 0;
-        var snap = r.price_source === "snapshot"
-          ? " <span class='pf-snap' title='Priced from your CSV snapshot'>snap</span>" : "";
-        var betaCls = r.beta == null ? "" : (r.beta > 1 ? "num-neg" : "num-pos");
-        var tier = r.liq_tier || "untradeable";
-        return "<tr>" +
-          "<td>" + sn + "</td>" +
-          "<td class='l pf-tkr'>" + esc(r.symbol) + "</td>" +
-          "<td>" + nf(r.quantity) + "</td>" +
-          "<td>" + (r.wacc == null ? "—" : nf(r.wacc)) + "</td>" +
-          "<td>" + nf(r.price) + snap + "</td>" +
-          "<td>" + nf(Math.round(r.value)) + "</td>" +
-          "<td class='pf-wcell'><span class='pf-wbar' style='width:" + Math.min(100, r.weight || 0) + "%'></span>" +
-            "<span class='pf-wnum'>" + pct(r.weight) + "</span></td>" +
-          "<td>" + (r.vol == null ? "—" : r.vol.toFixed(1) + "%") + "</td>" +
-          "<td class='" + betaCls + "'>" + (r.beta == null ? "—" : r.beta.toFixed(2)) + "</td>" +
-          "<td><span class='pf-liq-tier tier-" + esc(tier) + "'>" + dtlText(r.dtl) + "</span></td>" +
-          "<td>" + (e.expPrice == null ? "—" : nf(Math.round(e.expPrice * 100) / 100)) + "</td>" +
-          "<td>" + nf(Math.round(e.expValue)) + "</td>" +
-          "<td class='" + (e.gain >= 0 ? "num-pos" : "num-neg") + "'>" + snf(e.gain) + "</td>" +
-          "<td class='num-neg'>" + (r.var_1w_pct == null ? "—" : r.var_1w_pct.toFixed(2) + "%") + "</td>" +
-          "<td class='num-neg'>" + (r.loss_1w == null ? "—" : nf(Math.round(r.loss_1w))) + "</td>" +
-          "<td class='num-neg'>" + (r.var_1m_pct == null ? "—" : r.var_1m_pct.toFixed(2) + "%") + "</td>" +
-          "<td class='num-neg'>" + (r.loss_1m == null ? "—" : nf(Math.round(r.loss_1m))) + "</td>" +
-          "</tr>";
-      }).join("");
-      var gGain = gExp - gVal;
-      body += "<tr class='pf-sum-sector'>" +
-        "<td></td><td class='l'>" + esc(sec) + "</td>" +
-        "<td></td><td></td><td></td><td>" + nf(Math.round(gVal)) + "</td><td>" + pct(gWeight) + "</td>" +
-        "<td></td><td></td><td></td>" +
-        "<td></td><td>" + nf(Math.round(gExp)) + "</td>" +
-        "<td class='" + (gGain >= 0 ? "num-pos" : "num-neg") + "'>" + snf(gGain) + "</td>" +
-        "<td></td><td class='num-neg'>" + nf(Math.round(gL1w)) + "</td>" +
-        "<td></td><td class='num-neg'>" + nf(Math.round(gL1m)) + "</td></tr>" +
-        rowsHtml;
-    });
+    var totalBook = ((state.data || {}).cost || {}).book_value || 0;
+    var body = rows.map(function (r) {
+      var e = computeExp(r, changePct);
+      var snap = r.price_source === "snapshot"
+        ? " <span class='pf-snap' title='Priced from your uploaded snapshot'>snap</span>" : "";
+      var tier = r.liq_tier || "untradeable";
+      var costWeight = r.cost_value != null && totalBook ? 100 * r.cost_value / totalBook : null;
+      var dayClass = r.day_pl == null ? "" : (r.day_pl >= 0 ? "num-pos" : "num-neg");
+      var plClass = r.pl == null ? "" : (r.pl >= 0 ? "num-pos" : "num-neg");
+      var scenarioClass = e.gain >= 0 ? "num-pos" : "num-neg";
+      var unrealizedPct = r.cost_value ? 100 * r.pl / r.cost_value : null;
+      var dayPlBase = r.cost_value || ((r.previous_close || 0) * (r.quantity || 0));
+      var dayPlPct = r.day_pl == null || !dayPlBase ? null : 100 * r.day_pl / dayPlBase;
+      var dayChange = r.day_change == null ? "—" : snf(r.day_change);
+      var dayChangePct = r.day_change_pct == null ? "—" :
+        (r.day_change_pct >= 0 ? "+" : "") + r.day_change_pct.toFixed(2) + "%";
+      return "<tr>" +
+        "<td class='l pf-tkr'>" + esc(r.symbol) +
+          "<small>" + esc(r.sector || "Other") + "</small></td>" +
+        "<td>" + nf(r.quantity) +
+          "<small><span class='pf-liq-tier tier-" + esc(tier) + "'>" + dtlText(r.dtl) + "</span></small></td>" +
+        "<td>" + (r.wacc == null ? "—" : nf(r.wacc)) + "</td>" +
+        "<td>" + (r.cost_value == null ? "—" : nf(r.cost_value)) +
+          "<small>" + (costWeight == null ? "—" : costWeight.toFixed(2) + "%") + "</small></td>" +
+        "<td>" + nf(r.price) + snap +
+          "<small class='" + dayClass + "'>" + dayChange + " (" + dayChangePct + ")</small></td>" +
+        "<td>" + nf(r.value) + "<small>" + pct(r.weight) + "</small></td>" +
+        "<td class='" + dayClass + "'>" + (r.day_pl == null ? "—" : snf(r.day_pl)) +
+          "<small>" + (dayPlPct == null ? "—" : (dayPlPct >= 0 ? "+" : "") + dayPlPct.toFixed(2) + "%") + "</small></td>" +
+        "<td class='" + plClass + "'>" + (r.pl == null ? "—" : snf(r.pl)) +
+          "<small>" + (unrealizedPct == null ? "—" : (unrealizedPct >= 0 ? "+" : "") + unrealizedPct.toFixed(2) + "%") + "</small></td>" +
+        "<td>" + nf(Math.round(e.expValue)) +
+          "<small class='" + scenarioClass + "'>" + snf(e.gain) + "</small></td>" +
+        "<td class='num-neg'>" + (r.loss_1w == null ? "—" : nf(Math.round(r.loss_1w))) +
+          "<small>" + (r.loss_1m == null ? "—" : nf(Math.round(r.loss_1m))) + "</small></td>" +
+        "</tr>";
+    }).join("");
     t.innerHTML = colgroup + head + "<tbody>" + body + "</tbody>";
     bindSummaryHeaderSort(t);
   }
@@ -848,11 +840,10 @@
     }
     var V = risk.var;
     var idxVal = indexInfo && indexInfo.value;
-    function lossRow(label, rsv, pctv, big) {
+    function lossRow(label, rsv, big) {
       return "<div class='pf-var-row" + (big ? " big" : "") + "'>" +
         "<span class='pf-var-label'>" + esc(label) + "</span>" +
-        "<span class='pf-var-val num-neg'>-" + rs(Math.abs(rsv)) + "</span>" +
-        "<span class='pf-var-pct num-neg'>-" + Math.abs(pctv).toFixed(2) + "%</span></div>";
+        "<span class='pf-var-val num-neg'>-" + rs(Math.abs(rsv)) + "</span></div>";
     }
     function varCell(value) {
       return value == null ? "—" : "-" + Math.abs(value).toFixed(2) + "%";
@@ -918,9 +909,9 @@
         varCell(V.cvar_99_1d_pct) + "</td><td>" + varCell(V.cvar_95_10d_pct) + "</td><td>" +
         varCell(V.cvar_99_10d_pct) + "</td></tr></tbody></table></div>";
     if (v) v.innerHTML = matrix +
-      lossRow("Historical VaR · 1D 95%", V.hist_95_1d_rs, V.hist_95_1d_pct, true) +
-      lossRow("Historical VaR · 10D 99%", V.hist_99_10d_rs, V.hist_99_10d_pct) +
-      lossRow("Expected Shortfall · 10D 99%", V.cvar_99_10d_rs, V.cvar_99_10d_pct) +
+      lossRow("Historical VaR · 1D 95%", V.hist_95_1d_rs, true) +
+      lossRow("Historical VaR · 10D 99%", V.hist_99_10d_rs) +
+      lossRow("Expected Shortfall · 10D 99%", V.cvar_99_10d_rs) +
       "<div class='pf-stat-grid'>" +
         stat("Ann. volatility", risk.ann_vol_pct == null ? "—" : risk.ann_vol_pct.toFixed(1) + "%") +
         stat("Worst session", risk.worst_day ? risk.worst_day.pct.toFixed(2) + "%" : "—",
@@ -942,7 +933,7 @@
         return Math.max(m, Math.abs(s.impact_pct || 0)); }, 0) || 1;
       st.innerHTML = renderStressChart(risk.scenarios, maxAbs) +
       "<div class='pf-mini-table-wrap'><table class='pf-mini-table pf-scenario-table'>" +
-        "<thead><tr><th>Scenario</th><th>NEPSE</th><th>Move</th><th>Stressed Value / NAV</th><th>Gain/Loss</th></tr></thead><tbody>" +
+        "<thead><tr><th>Scenario</th><th>NEPSE</th><th>Move</th><th>Stressed Holdings</th><th>Gain/Loss</th></tr></thead><tbody>" +
         risk.scenarios.map(function (s) {
           var cls = s.impact_rs < 0 ? "num-neg" : "num-pos";
           return "<tr><td>" + esc(s.label) +
@@ -957,9 +948,8 @@
       "<div class='pf-var-note'>Beta-propagated (β = " + risk.beta_used +
       "): NEPSE shocks show % and index-point move from " +
       (idxVal == null ? "the current index" : nf(Math.round(idxVal)) + " pts") +
-      ". Stressed Value / NAV is one figure because this portfolio has no separate cash, liability or unit ledger. " +
-      "Book impact flows via beta. Worst observed session: " +
-      (risk.worst_day ? risk.worst_day.pct.toFixed(2) + "% on " + risk.worst_day.date : "—") + ".</div>";
+      ". Stress scenarios cover invested holdings; Broker Cash is included in Total Equity but is not market-shocked. " +
+      "Book impact flows via beta.</div>";
     }
   }
 
@@ -990,11 +980,7 @@
           "<span class='pf-sec-bar'><i style='width:" + w + "%'></i></span>" +
           "<span class='pf-sec-pct'>" + s.pct.toFixed(1) + "%</span></div>";
       }).join("");
-    var contrib = "<div class='pf-liq-label'>Top risk contributors</div><div class='pf-fac-chips'>" +
-      (f.top_contributors || []).map(function (c) {
-        return "<span class='pf-fac-chip'><b>" + esc(c.symbol) + "</b> " + c.pct.toFixed(1) + "%</span>";
-      }).join("") + "</div>";
-    box.innerHTML = split + stats + sectors + contrib +
+    box.innerHTML = split + stats + sectors +
       "<div class='pf-var-note'>Single-factor (NEPSE) model. <b>Market</b> risk moves with the index and can't be " +
       "diversified away; <b>stock-specific</b> risk can be cut by diversifying. Covers " +
       f.covered_weight_pct.toFixed(0) + "% of book value (names with price history).</div>";

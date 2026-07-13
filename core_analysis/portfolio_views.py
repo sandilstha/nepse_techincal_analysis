@@ -11,6 +11,7 @@ icon on the dashboard links into.
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import logging
 import math
@@ -383,6 +384,24 @@ def parse_wacc_report(upload):
     return _normalize_wacc_table(table)
 
 
+def parse_broker_ledger_report(upload):
+    """Parse a broker Account Statement (PDF/CSV/Excel) and hash its content."""
+    from core_analysis.services.portfolio_ledger import normalize_broker_ledger
+
+    name = (upload.name or "").lower()
+    data = upload.read()
+    file_sha256 = hashlib.sha256(data).hexdigest()
+    document_text = ""
+    if name.endswith(".pdf"):
+        table, document_text = _table_and_text_from_pdf(data)
+    elif name.endswith((".xlsx", ".xlsm")):
+        table = _table_from_excel(data)
+    else:
+        document_text = data.decode("utf-8-sig", errors="replace")
+        table = list(csv.reader(io.StringIO(document_text)))
+    return normalize_broker_ledger(table, document_text), file_sha256
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Auth
 # ─────────────────────────────────────────────────────────────────────────────
@@ -563,7 +582,11 @@ def _portfolio_rows(user):
 
     rows = (
         Portfolio.objects.filter(user=user)
-        .annotate(holdings_count=Count("holdings", distinct=True), costs_count=Count("costs", distinct=True))
+        .annotate(
+            holdings_count=Count("holdings", distinct=True),
+            costs_count=Count("costs", distinct=True),
+            ledger_count=Count("ledger_transactions", distinct=True),
+        )
         .order_by("is_archived", "-is_default", "name")
     )
     active, archived = [], []
@@ -585,7 +608,15 @@ def _is_approver(user):
 @login_required(login_url="login")
 def portfolio_view(request):
     """Render the Risk & Portfolio dashboard shell for the logged-in user."""
+    from core_analysis.services.portfolio_ledger import build_ledger_dashboard
+
     portfolio = _get_selected_portfolio(request)
+    ledger = build_ledger_dashboard(
+        portfolio,
+        fiscal_year=request.GET.get("fy"),
+        row_limit=5,
+        page=request.GET.get("ledger_page"),
+    )
     active_portfolios, archived_portfolios = _portfolio_rows(request.user)
     is_approver = _is_approver(request.user)
     pending_count = 0
@@ -601,9 +632,8 @@ def portfolio_view(request):
             "active_portfolio": portfolio,
             "active_portfolios": active_portfolios,
             "archived_portfolios": archived_portfolios,
-            "active_holdings_count": portfolio.holdings.count(),
-            "active_costs_count": portfolio.costs.count(),
             "has_holdings": portfolio.holdings.exists(),
+            "ledger": ledger,
             "is_approver": is_approver,
             "pending_approvals": pending_count,
         },
@@ -639,11 +669,14 @@ def portfolio_data_api(request):
     else:
         portfolio = _get_selected_portfolio(request)
     try:
-        payload = pa.build_portfolio_payload(
-            portfolio,
-            participation_rate=request.GET.get("participation", pa.PARTICIPATION_RATE),
-            liquidation_target=request.GET.get("liquidation_pct", 100.0),
-        )
+        build_kwargs = {
+            "participation_rate": request.GET.get("participation", pa.PARTICIPATION_RATE),
+            "liquidation_target": request.GET.get("liquidation_pct", 100.0),
+        }
+        fiscal_year = (request.GET.get("fy") or "").strip()
+        if fiscal_year:
+            build_kwargs["fiscal_year"] = fiscal_year
+        payload = pa.build_portfolio_payload(portfolio, **build_kwargs)
         payload.update({
             "portfolio_id": portfolio.id,
             "portfolio_name": portfolio.name,
@@ -877,6 +910,9 @@ def portfolio_manage(request):
                     )
                     for c in source.costs.all()
                 ])
+                from core_analysis.services.portfolio_ledger import duplicate_ledger
+
+                duplicate_ledger(source, redirect_portfolio)
                 messages.success(request, f"Duplicated '{source.name}' as '{redirect_portfolio.name}'.")
 
             elif action == "set_default":
@@ -1194,6 +1230,65 @@ def portfolio_wacc_import(request):
     if skipped:
         note += f" ({skipped} non-data lines skipped.)"
     messages.success(request, note)
+    return redirect(_portfolio_url(portfolio))
+
+
+@login_required(login_url="login")
+@require_POST
+def portfolio_ledger_import(request):
+    """Merge a broker account statement into the selected private portfolio."""
+    from core_analysis.services.portfolio_ledger import import_parsed_ledger
+
+    portfolio = _get_mutation_portfolio(request)
+    if portfolio is None:
+        messages.error(request, "Portfolio not found.")
+        return redirect(_portfolio_url(_get_selected_portfolio(request)))
+
+    upload = request.FILES.get("file")
+    if not upload:
+        messages.error(request, "Please choose a broker Account Statement to upload.")
+        return redirect(_portfolio_url(portfolio))
+    upload_error = _upload_validation_error(upload, "broker ledger")
+    if upload_error:
+        messages.error(request, upload_error)
+        return redirect(_portfolio_url(portfolio))
+
+    try:
+        parsed, file_sha256 = parse_broker_ledger_report(upload)
+    except Exception:
+        logger.exception("broker ledger parse failed for user %s", request.user.id)
+        messages.error(
+            request,
+            "Could not read that file — upload the broker Account Statement (CSV, Excel or PDF).",
+        )
+        return redirect(_portfolio_url(portfolio))
+
+    try:
+        with transaction.atomic():
+            portfolio = _locked_active_portfolio(request.user, portfolio.id)
+            if portfolio is None:
+                messages.error(request, "Portfolio not found or no longer active.")
+                return redirect(_portfolio_url(_get_selected_portfolio(request)))
+            result = import_parsed_ledger(
+                portfolio,
+                parsed,
+                source_name=upload.name or "Broker Account Statement",
+                file_sha256=file_sha256,
+            )
+    except IntegrityError:
+        logger.exception("broker ledger import conflicted for user %s", request.user.id)
+        messages.error(request, "That ledger overlaps an import being processed. Please retry.")
+        return redirect(_portfolio_url(portfolio))
+
+    if result["already_imported"]:
+        messages.info(request, "This exact broker ledger file was already imported; no rows changed.")
+    else:
+        note = f"Imported {result['imported']} broker ledger transaction(s) into {portfolio.name}."
+        if result["duplicates"]:
+            note += f" Skipped {result['duplicates']} duplicate row(s)."
+        if parsed["warnings"]:
+            note += f" Flagged {len(parsed['warnings'])} reconciliation warning(s)."
+        messages.success(request, note)
     return redirect(_portfolio_url(portfolio))
 
 

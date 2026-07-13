@@ -6,7 +6,8 @@
       "Bash(python manage.py test core_analysis.tests.RrgAnalyticsTests --keepdb)",
       "Bash(python manage.py test core_analysis.tests.RrgAnalyticsTests.test_rrg_formula_reports_overlap_quality --keepdb)",
       "Bash(python manage.py test core_analysis.tests.RrgAnalyticsTests core_analysis.tests.MSVStrategyTests core_analysis.tests.IMMScoringTests core_analysis.tests.SupportResistanceTests --keepdb)",
-      "Bash(python manage.py test core_analysis.tests.MultiPortfolioManagementTests core_analysis.tests.AdminApprovalTests --keepdb)"
+      "Bash(python manage.py test core_analysis.tests.MultiPortfolioManagementTests core_analysis.tests.AdminApprovalTests --keepdb)",
+      "Bash(python manage.py shell -c ' *)"
     ]
   },
   "hooks": {

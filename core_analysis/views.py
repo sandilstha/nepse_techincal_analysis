@@ -138,6 +138,21 @@ def _dashboard_asset_version():
     return latest or 1
 
 
+@require_GET
+def stage_sop_view(request):
+    """Methodology SOP for the Stage Analysis desk (Technical Analysis tab).
+
+    Static content — every stage rule, parameter and formula is documented in
+    the template itself, so it never touches the analytics engine. The desk's
+    (?) help icon deep-links here.
+    """
+    return render(
+        request,
+        "core_analysis/stage_sop.html",
+        {"asset_version": _dashboard_asset_version()},
+    )
+
+
 def _safe_float(value, default):
     try:
         return float(value)
