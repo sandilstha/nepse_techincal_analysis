@@ -809,12 +809,16 @@ def _build_confluence_ladder(zones, latest_price, max_each: int = 5):
     # Rank by the same NEAR EDGE used to qualify: ordering by centre can put a
     # wide zone whose edge is closest to price behind a narrow farther one, so
     # R1/S1 would not be the truly nearest level.
+    # The far edge must sit strictly beyond the price: a zero-width zone pinned
+    # exactly at the latest price (low == high == price) would otherwise pass
+    # BOTH filters and list as R1 and S1 at 0.00% distance. It is the zone price
+    # is trading inside — _detect_price_zone surfaces it instead.
     res_zones = sorted(
-        [z for z in zones if z["low"] >= latest_price and qualified(z)],
+        [z for z in zones if z["low"] >= latest_price and z["high"] > latest_price and qualified(z)],
         key=lambda z: z["low"],
     )
     sup_zones = sorted(
-        [z for z in zones if z["high"] <= latest_price and qualified(z)],
+        [z for z in zones if z["high"] <= latest_price and z["low"] < latest_price and qualified(z)],
         key=lambda z: z["high"],
         reverse=True,
     )
@@ -1155,8 +1159,19 @@ def run_support_resistance_analysis(
     )
     confluence_resistances, confluence_supports = _build_confluence_ladder(confluence_zones, latest_price)
     price_zone = _detect_price_zone(confluence_zones, latest_price)
-    nearest_resistance = confluence_resistances[0] if confluence_resistances else _bollinger_headline(boll_upper, "Bollinger Upper Band Resistance")
-    nearest_support = confluence_supports[0] if confluence_supports else _bollinger_headline(boll_lower, "Bollinger Lower Band Support")
+    # Bollinger fallback must stay on the correct side of the price: after a
+    # close OUTSIDE the bands (%B > 1 or < 0 — new range extremes, exactly when
+    # no confluence zone qualifies on that side) the band would otherwise be
+    # served as a headline "support" above price / "resistance" below it,
+    # inverting the R/R math and the SNR wall reads downstream.
+    nearest_resistance = confluence_resistances[0] if confluence_resistances else None
+    if nearest_resistance is None:
+        boll_res = _bollinger_headline(boll_upper, "Bollinger Upper Band Resistance")
+        nearest_resistance = boll_res if boll_res and boll_res["price"] > latest_price else None
+    nearest_support = confluence_supports[0] if confluence_supports else None
+    if nearest_support is None:
+        boll_sup = _bollinger_headline(boll_lower, "Bollinger Lower Band Support")
+        nearest_support = boll_sup if boll_sup and boll_sup["price"] < latest_price else None
     nearest_level_basis = (nearest_resistance or nearest_support or {}).get("basis", "Confluence")
 
     support_distance = abs(latest_price - nearest_support["price"]) if nearest_support else None
@@ -1328,7 +1343,16 @@ def _build_institutional_context(support_metrics: dict[str, Any], advanced: dict
     zones_sorted = sorted(zones, key=lambda z: _safe_float(z.get("strength")) or 0.0, reverse=True)
 
     last_event = structure_events[-1] if structure_events else {}
+    # A liquidity sweep is an EVENT whose expected reaction plays out within a
+    # few sessions — unlike structure (BOS/CHoCH), it is not a persistent state.
+    # Without a recency gate, a sweep from months ago keeps driving the SMC/ICT,
+    # BTMM and Wyckoff reads ("Spring — mark-up expected") every day after.
+    # Only honour a sweep that printed within the last 10 chart sessions; the
+    # dates share the same YYYY-MM-DD formatter, so set membership is exact.
     last_sweep = sweeps[-1] if sweeps else {}
+    recent_dates = {c.get("date") for c in candles[-10:] if c.get("date")}
+    if last_sweep and recent_dates and last_sweep.get("date") not in recent_dates:
+        last_sweep = {}
     sweep_type = str(last_sweep.get("type") or "")
     if "Sell-side" in sweep_type:
         sweep_side = "Sell-side"
