@@ -745,6 +745,10 @@
 .pf-ledger-toggle-show { display: none; }
 .pf-ledger-collapse:not([open]) .pf-ledger-toggle-hide { display: none; }
 .pf-ledger-collapse:not([open]) .pf-ledger-toggle-show { display: inline-block; }
+.pf-holdings-collapse > summary { cursor: pointer; list-style: none; user-select: none; }
+.pf-holdings-collapse > summary::-webkit-details-marker { display: none; }
+.pf-holdings-collapse-head { padding: 11px 14px; border-bottom: 1px solid var(--line); }
+.pf-holdings-collapse:not([open]) > .pf-holdings-collapse-head { border-bottom: none; }
 .pf-ledger-table-wrap { max-height: 390px; border-top: 1px solid var(--line); }
 .pf-ledger-table { min-width: 1050px; font-size: 11px; }
 .pf-ledger-table td small { display: block; margin-top: 2px; color: var(--ink-3); font-size: 9.5px; }

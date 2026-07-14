@@ -209,7 +209,13 @@
   <!-- ══ Portfolio Summary ════════════════════════════════════════════ -->
   <div class="pf-section pf-broker-section"><span>Stock Holdings
     <a class="pf-help" href="{% url 'portfolio_sop' %}#portfolio-summary" title="Portfolio Summary desk — full methodology">?</a></span></div>
-  <div class="pf-card pf-summary-card">
+  <details class="pf-card pf-summary-card pf-ledger-collapse pf-holdings-collapse">
+    <summary class="pf-card-head pf-ledger-table-head pf-holdings-collapse-head">
+      <span>Holdings / WACC</span>
+      <span class="pf-ledger-table-meta">
+        <b class="pf-ledger-toggle-hide">Hide</b><b class="pf-ledger-toggle-show">Show</b>
+      </span>
+    </summary>
     <div class="pf-holdings-tabs" role="tablist" aria-label="Stock holdings view">
       <button type="button" class="pf-holdings-tab active" data-pf-holdings-tab="top"
               role="tab" aria-selected="true">Top Holdings</button>
@@ -288,7 +294,7 @@
       <table class="pf-table pf-sum-table" id="pf-sum-table"></table>
     </div>
     <div class="pf-note" id="pf-sum-note"></div>
-  </div>
+  </details>
 
   {% endif %}
 

@@ -1,16 +1,16 @@
-# Graph Report - nepse_analytics_platform  (2026-07-13)
+# Graph Report - nepse_analytics_platform  (2026-07-14)
 
 ## Corpus Check
-- 87 files · ~132,878 words
+- 87 files · ~133,143 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2551 nodes · 6389 edges · 140 communities (88 shown, 52 thin omitted)
+- 2551 nodes · 6389 edges · 140 communities (89 shown, 51 thin omitted)
 - Extraction: 93% EXTRACTED · 7% INFERRED · 0% AMBIGUOUS · INFERRED: 436 edges (avg confidence: 0.52)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e9b2b989`
+- Built from commit: `55e9fe8b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -81,6 +81,7 @@
 - [[_COMMUNITY_Community 65|Community 65]]
 - [[_COMMUNITY_Community 66|Community 66]]
 - [[_COMMUNITY_Community 67|Community 67]]
+- [[_COMMUNITY_Community 68|Community 68]]
 - [[_COMMUNITY_Community 69|Community 69]]
 - [[_COMMUNITY_Community 70|Community 70]]
 - [[_COMMUNITY_Community 71|Community 71]]
@@ -128,7 +129,6 @@
 - [[_COMMUNITY_Community 120|Community 120]]
 - [[_COMMUNITY_Community 121|Community 121]]
 - [[_COMMUNITY_Community 122|Community 122]]
-- [[_COMMUNITY_Community 123|Community 123]]
 - [[_COMMUNITY_Community 124|Community 124]]
 - [[_COMMUNITY_Community 125|Community 125]]
 - [[_COMMUNITY_Community 126|Community 126]]
@@ -177,7 +177,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (140 total, 52 thin omitted)
+## Communities (140 total, 51 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.18
@@ -204,8 +204,8 @@ Cohesion: 0.14
 Nodes (51): applyTheme(), baseChartOpts(), computeGreed(), cssVar(), deferNonCritical(), destroyCharts(), dirClass(), el() (+43 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.06
-Nodes (17): _(), ae(), ce(), ct, de(), di(), dt(), fe() (+9 more)
+Cohesion: 0.05
+Nodes (18): _(), ae(), ce(), ct, de(), di(), dt(), fe() (+10 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.12
@@ -285,7 +285,7 @@ Nodes (40): bindPortfolioRename(), bindSummaryControl(), bindSummaryFilters(), b
 
 ### Community 36 - "Community 36"
 Cohesion: 0.08
-Nodes (6): ee(), gn, le(), ne(), qn(), se()
+Nodes (5): ee(), gn, le(), qn(), se()
 
 ### Community 39 - "Community 39"
 Cohesion: 0.21
@@ -316,8 +316,8 @@ Cohesion: 0.17
 Nodes (15): _build_url(), _clean_date(), _clean_decimal(), _clean_int(), _clean_text(), _clean_time(), Command, _configure_session() (+7 more)
 
 ### Community 47 - "Community 47"
-Cohesion: 0.12
-Nodes (6): ie(), kn, qt, ve(), vs(), zn()
+Cohesion: 0.18
+Nodes (3): kn, qt, vs()
 
 ### Community 49 - "Community 49"
 Cohesion: 0.20
@@ -366,6 +366,10 @@ Nodes (5): ci(), ji, oi(), qi(), ui()
 ### Community 62 - "Community 62"
 Cohesion: 0.23
 Nodes (15): backfill_missing_company_profiles(), Create CompanyProfile rows for recently-traded symbols that have none.      Retu, _build_url(), _can_stop_after_page(), _clean_date(), _clean_datetime(), _clean_decimal(), _clean_int() (+7 more)
+
+### Community 68 - "Community 68"
+Cohesion: 0.31
+Nodes (4): ie(), ne(), ve(), zn()
 
 ### Community 69 - "Community 69"
 Cohesion: 0.26
@@ -510,12 +514,12 @@ Nodes (4): _metric_index(), 0 = quantity (shares traded), 1 = amount (turnover).
 ## Knowledge Gaps
 - **16 isolated node(s):** `Migration`, `Migration`, `Migration`, `Migration`, `Migration` (+11 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **52 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **51 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `_()` connect `Community 7` to `Community 2`, `Community 131`, `Community 8`, `Community 9`, `Community 12`, `Community 15`, `Community 19`, `Community 20`, `Community 22`, `Community 151`, `Community 23`, `Community 25`, `Community 154`, `Community 29`, `Community 30`, `Community 31`, `Community 34`, `Community 36`, `Community 37`, `Community 44`, `Community 47`, `Community 48`, `Community 52`, `Community 53`, `Community 55`, `Community 56`, `Community 59`, `Community 61`, `Community 63`, `Community 64`, `Community 65`, `Community 66`, `Community 67`, `Community 70`, `Community 87`, `Community 88`, `Community 102`, `Community 107`, `Community 108`, `Community 112`, `Community 113`, `Community 120`, `Community 122`, `Community 123`?**
+- **Why does `_()` connect `Community 7` to `Community 2`, `Community 131`, `Community 8`, `Community 9`, `Community 12`, `Community 15`, `Community 19`, `Community 20`, `Community 22`, `Community 151`, `Community 23`, `Community 25`, `Community 154`, `Community 29`, `Community 30`, `Community 31`, `Community 34`, `Community 36`, `Community 37`, `Community 44`, `Community 47`, `Community 48`, `Community 52`, `Community 53`, `Community 55`, `Community 56`, `Community 59`, `Community 61`, `Community 63`, `Community 64`, `Community 65`, `Community 66`, `Community 67`, `Community 68`, `Community 70`, `Community 87`, `Community 88`, `Community 102`, `Community 107`, `Community 108`, `Community 112`, `Community 113`, `Community 120`, `Community 122`?**
   _High betweenness centrality (0.101) - this node is a cross-community bridge._
 - **Why does `NepseMarketIndex` connect `Community 0` to `Community 3`, `Community 132`, `Community 140`, `Community 144`, `Community 145`, `Community 16`, `Community 27`, `Community 38`, `Community 45`, `Community 46`, `Community 54`, `Community 60`, `Community 62`, `Community 71`, `Community 73`, `Community 76`, `Community 82`, `Community 89`, `Community 110`, `Community 116`?**
   _High betweenness centrality (0.028) - this node is a cross-community bridge._

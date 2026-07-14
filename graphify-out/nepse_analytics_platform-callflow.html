@@ -60,7 +60,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
 <div class="container">
 
 <h1>nepse_analytics_platform — Complete Call Flow &amp; Architecture Documentation</h1>
-<p class="subtitle">Generated from graphify knowledge graph: 2551 nodes, 6389 edges, 140 communities. Commit: e9b2b98</p>
+<p class="subtitle">Generated from graphify knowledge graph: 2551 nodes, 6389 edges, 140 communities. Commit: 55e9fe8</p>
 
 <div class="nav">
     <a href="#overview">Architecture Overview</a>
@@ -76,8 +76,8 @@ hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
     <a href="#community-19">Community 19</a>
     <a href="#community-5">Community 5</a>
     <a href="#community-6">Community 6</a>
+    <a href="#community-7">Community 7</a>
     <a href="#community-26">Community 26</a>
-    <a href="#community-35">Community 35</a>
     <a href="#other">Other</a>
 </div>
 
@@ -112,20 +112,20 @@ flowchart LR
     class COMMUNITY_5_2966028D module;
     COMMUNITY_6_7D637A07("Community 6<br/><small>52 nodes</small>")
     class COMMUNITY_6_7D637A07 module;
+    COMMUNITY_7_989501FC("Community 7<br/><small>49 nodes</small>")
+    class COMMUNITY_7_989501FC module;
     COMMUNITY_26_029F571A("Community 26<br/><small>48 nodes</small>")
     class COMMUNITY_26_029F571A module;
-    COMMUNITY_35_B2C5BAA1("Community 35<br/><small>45 nodes</small>")
-    class COMMUNITY_35_B2C5BAA1 module;
-    OTHER_D0941E68("Other<br/><small>1125 nodes</small>")
+    OTHER_D0941E68("Other<br/><small>1121 nodes</small>")
     class OTHER_D0941E68 module;
-    OTHER_D0941E68 -->|calls x147| COMMUNITY_87_69906CA1
-    EXTRACT_PIPELINE_5F350230 -->|calls x127| OTHER_D0941E68
+    OTHER_D0941E68 -->|calls x141| COMMUNITY_87_69906CA1
+    EXTRACT_PIPELINE_5F350230 -->|calls x126| OTHER_D0941E68
+    COMMUNITY_7_989501FC -->|contains x108| OTHER_D0941E68
     COMMUNITY_87_69906CA1 -->|calls x85| OTHER_D0941E68
-    OTHER_D0941E68 -->|calls x71| EXTRACT_PIPELINE_5F350230
-    COMMUNITY_19_9462A0B9 -->|calls x33| OTHER_D0941E68
+    OTHER_D0941E68 -->|calls x62| EXTRACT_PIPELINE_5F350230
+    COMMUNITY_19_9462A0B9 -->|calls x32| OTHER_D0941E68
     BUILD_GRAPH_321CBB04 -->|contains x30| INGEST_CACHE_UPDATE_FF457338
     SERVE_API_35EC8E86 -->|imports x29| BUILD_GRAPH_321CBB04
-    OTHER_D0941E68 -->|calls x27| COMMUNITY_19_9462A0B9
     OTHER_D0941E68 -->|calls x26| BUILD_GRAPH_321CBB04
     BUILD_GRAPH_321CBB04 -->|contains x25| OTHER_D0941E68
     EXTRACT_PIPELINE_5F350230 -->|calls x25| COMMUNITY_87_69906CA1
@@ -146,19 +146,19 @@ flowchart LR
     <h4>Architecture Layers</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
-      <tr><td>Extraction Pipeline</td><td>89</td><td><code>34</code></td></tr><tr><td>Graph Build</td><td>369</td><td><code>1, 71, 60, 82, 118, 17, 72, 3, 40, 75</code></td></tr><tr><td>Analysis &amp; Clustering</td><td>40</td><td><code>126, 62</code></td></tr><tr><td>Outputs &amp; Docs</td><td>39</td><td><code>10, 83</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>28</td><td><code>76, 124</code></td></tr><tr><td>Ingestion &amp; Updates</td><td>81</td><td><code>42, 119, 18, 39, 57</code></td></tr><tr><td>Serving API</td><td>194</td><td><code>16, 0, 128, 13, 129</code></td></tr><tr><td>Tests &amp; Fixtures</td><td>247</td><td><code>89, 21, 46, 116, 132, 45, 73, 54, 136, 27, 38, 140, 43, 110, 144, 145</code></td></tr><tr><td>Community 87</td><td>73</td><td><code>87</code></td></tr><tr><td>Community 19</td><td>68</td><td><code>19</code></td></tr><tr><td>Community 5</td><td>53</td><td><code>5</code></td></tr><tr><td>Community 6</td><td>52</td><td><code>6</code></td></tr><tr><td>Community 26</td><td>48</td><td><code>26</code></td></tr><tr><td>Community 35</td><td>45</td><td><code>35</code></td></tr><tr><td>Other</td><td>1125</td><td><code>7, 9, 48, 108, 15, 36, 12, 22, 14, 55, 59, 30, 70, 2, 67, 8, 23, 25, 29, 32, 63, 47, 56, 61, 93, 24, 31, 4, 53, 66, 112, 28, 37, 11, 120, 20, 49, 69, 131, 64, 122, 84, 102, 107, 151, 50, 65, 74, 79, 111, 44, 58, 77, 78, 80, 113, 125, 33, 51, 52, 114, 115, 123, 143, 153, 154, 41, 85, 86, 88, 117, 90, 91, 92, 100, 101, 121, 127, 133, 137, 141, 146, 95, 96, 97, 98, 99, 103, 104, 105, 106</code></td></tr>
+      <tr><td>Extraction Pipeline</td><td>89</td><td><code>34</code></td></tr><tr><td>Graph Build</td><td>369</td><td><code>1, 71, 60, 82, 118, 17, 72, 3, 40, 75</code></td></tr><tr><td>Analysis &amp; Clustering</td><td>40</td><td><code>126, 62</code></td></tr><tr><td>Outputs &amp; Docs</td><td>39</td><td><code>10, 83</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>28</td><td><code>76, 124</code></td></tr><tr><td>Ingestion &amp; Updates</td><td>81</td><td><code>42, 119, 18, 39, 57</code></td></tr><tr><td>Serving API</td><td>194</td><td><code>16, 0, 128, 13, 129</code></td></tr><tr><td>Tests &amp; Fixtures</td><td>247</td><td><code>89, 21, 46, 116, 132, 45, 73, 54, 136, 27, 38, 140, 43, 110, 144, 145</code></td></tr><tr><td>Community 87</td><td>73</td><td><code>87</code></td></tr><tr><td>Community 19</td><td>68</td><td><code>19</code></td></tr><tr><td>Community 5</td><td>53</td><td><code>5</code></td></tr><tr><td>Community 6</td><td>52</td><td><code>6</code></td></tr><tr><td>Community 7</td><td>49</td><td><code>7</code></td></tr><tr><td>Community 26</td><td>48</td><td><code>26</code></td></tr><tr><td>Other</td><td>1121</td><td><code>35, 9, 48, 108, 15, 36, 12, 22, 14, 55, 59, 30, 2, 67, 8, 23, 25, 29, 32, 63, 31, 56, 61, 70, 93, 24, 4, 53, 66, 112, 28, 37, 11, 120, 20, 49, 69, 131, 47, 52, 64, 122, 84, 102, 107, 151, 68, 50, 65, 74, 79, 111, 44, 58, 77, 78, 80, 113, 125, 33, 51, 114, 115, 143, 153, 154, 41, 85, 86, 88, 117, 90, 91, 92, 100, 101, 121, 127, 133, 137, 141, 146, 95, 96, 97, 98, 99, 103, 104, 105, 106</code></td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Core Flow</h4>
-    <div class="arrow-chain">Community 6 -&gt; Extraction Pipeline -&gt; Other -&gt; Community 87 -&gt; Community 19 -&gt; Graph Build -&gt; Ingestion &amp; Updates</div>
+    <div class="arrow-chain">Community 6 -&gt; Extraction Pipeline -&gt; Other -&gt; Community 87 -&gt; Community 19 -&gt; Community 7 -&gt; Graph Build</div>
   </div>
 </div>
 <div class="grid">
   <div class="card">
     <h4>Graph Report Highlights</h4>
     <ul>
-      <li>2551 nodes · 6389 edges · 140 communities (88 shown, 52 thin omitted)</li>
+      <li>2551 nodes · 6389 edges · 140 communities (89 shown, 51 thin omitted)</li>
       <li>Extraction: 93% EXTRACTED · 7% INFERRED · 0% AMBIGUOUS · INFERRED: 436 edges (avg confidence: 0.52)</li>
       <li>Token cost: 0 input · 0 output</li>
       <li>1. `_()` - 162 edges</li>
@@ -4335,8 +4335,345 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 14. Community 26 ====== -->
-<h2 id="community-26">14. Community 26</h2>
+<!-- ====== 14. Community 7 ====== -->
+<h2 id="community-7">14. Community 7</h2>
+<p>Community 7 groups implementation around analysis, static, vendor, lightweight, mostly in core_analysis/vendor/lightweight-charts.standalone.production.js. This section covers 49 nodes and 59 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Community 7 (49 nodes, 59 edges)
+    vendor_lightweight_charts_standalone_production_43f64b7f("ct<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_a18dbb71("_()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_f8563356("dt()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_8ca1ad5a("ut<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_b256fd8e("ae()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_90ca1c3b("ce()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_20a0ca88("constructor()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_3ca636a2("K()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_1c4da54b("K()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_e4349e3f("O()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_9113dfaf("oe()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_b9519769("q()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_f47526f0("constructor()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_d6e5a736("constructor()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_0454ecfe("format()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_00ca6a62("X()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_a27c617a("constructor()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_0ff66007("J()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    vendor_lightweight_charts_standalone_production_a18dbb71 -->|method| vendor_lightweight_charts_standalone_production_20a0ca88
+    vendor_lightweight_charts_standalone_production_a18dbb71 -->|calls| vendor_lightweight_charts_standalone_production_3ca636a2
+    vendor_lightweight_charts_standalone_production_a18dbb71 -->|calls| vendor_lightweight_charts_standalone_production_1c4da54b
+    vendor_lightweight_charts_standalone_production_e4349e3f -->|calls| vendor_lightweight_charts_standalone_production_9113dfaf
+    vendor_lightweight_charts_standalone_production_b9519769 -->|method| vendor_lightweight_charts_standalone_production_f47526f0
+    vendor_lightweight_charts_standalone_production_8ca1ad5a -->|method| vendor_lightweight_charts_standalone_production_d6e5a736
+    vendor_lightweight_charts_standalone_production_8ca1ad5a -->|method| vendor_lightweight_charts_standalone_production_0454ecfe
+    vendor_lightweight_charts_standalone_production_8ca1ad5a -->|method| vendor_lightweight_charts_standalone_production_00ca6a62
+    vendor_lightweight_charts_standalone_production_43f64b7f -->|method| vendor_lightweight_charts_standalone_production_a27c617a
+    vendor_lightweight_charts_standalone_production_43f64b7f -->|method| vendor_lightweight_charts_standalone_production_0ff66007
+    vendor_lightweight_charts_standalone_production_43f64b7f -->|method| vendor_lightweight_charts_standalone_production_3ca636a2
+    vendor_lightweight_charts_standalone_production_f8563356 -->|calls| vendor_lightweight_charts_standalone_production_3ca636a2
+    vendor_lightweight_charts_standalone_production_f8563356 -->|calls| vendor_lightweight_charts_standalone_production_1c4da54b
+    vendor_lightweight_charts_standalone_production_b256fd8e -->|calls| vendor_lightweight_charts_standalone_production_9113dfaf
+    %% Omitted for readability: 31 nodes, 0 edges
+    class vendor_lightweight_charts_standalone_production_43f64b7f function;
+    class vendor_lightweight_charts_standalone_production_a18dbb71 function;
+    class vendor_lightweight_charts_standalone_production_f8563356 function;
+    class vendor_lightweight_charts_standalone_production_8ca1ad5a function;
+    class vendor_lightweight_charts_standalone_production_b256fd8e function;
+    class vendor_lightweight_charts_standalone_production_90ca1c3b function;
+    class vendor_lightweight_charts_standalone_production_20a0ca88 function;
+    class vendor_lightweight_charts_standalone_production_3ca636a2 function;
+    class vendor_lightweight_charts_standalone_production_1c4da54b function;
+    class vendor_lightweight_charts_standalone_production_e4349e3f function;
+    class vendor_lightweight_charts_standalone_production_9113dfaf function;
+    class vendor_lightweight_charts_standalone_production_b9519769 function;
+    class vendor_lightweight_charts_standalone_production_f47526f0 function;
+    class vendor_lightweight_charts_standalone_production_d6e5a736 function;
+    class vendor_lightweight_charts_standalone_production_0454ecfe function;
+    class vendor_lightweight_charts_standalone_production_00ca6a62 function;
+    class vendor_lightweight_charts_standalone_production_a27c617a function;
+    class vendor_lightweight_charts_standalone_production_0ff66007 function;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>_()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>K()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>K()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>_() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>v()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>v() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>m()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>m() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>P()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>P() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>O()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>oe()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>O() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>W()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>W() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>.constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>_()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>No direct outbound edge</td>
+  <td>.constructor() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>q()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>q() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>.constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>q()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>No direct outbound edge</td>
+  <td>.constructor() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>ut</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>format()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>X()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>ut node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>.constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>ut</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>No direct outbound edge</td>
+  <td>.constructor() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>.format()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>ut</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>No direct outbound edge</td>
+  <td>.format() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>ct</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>J()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>K()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br>+1 more</td>
+  <td>ct node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>.constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>ct</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>No direct outbound edge</td>
+  <td>.constructor() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>.us()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>ct</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>No direct outbound edge</td>
+  <td>.us() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>dt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>K()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>K()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>mt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>dt() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>pt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>mt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>pt() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>mt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>dt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>pt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>No direct outbound edge</td>
+  <td>mt() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>bt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>bt() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>.K()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>_()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>dt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>No direct outbound edge</td>
+  <td>.K() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>gt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>gt() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>yt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>yt() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>.J()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>ct</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>No direct outbound edge</td>
+  <td>.J() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>.K()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>_()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>ct</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>dt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>No direct outbound edge</td>
+  <td>.K() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>Tt</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>Ds()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>Tt node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>.Ds()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>Tt</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>No direct outbound edge</td>
+  <td>.Ds() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>.K()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>oe()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>.K() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>.X()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>ut</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>No direct outbound edge</td>
+  <td>.X() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>di()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>$t()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>di() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>.constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>di()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
+  <td>No direct outbound edge</td>
+  <td>.constructor() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>core_analysis/vendor/lightweight-charts.standalone.production.js</code></td><td>49 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x35, method x12, calls x12. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 15. Community 26 ====== -->
+<h2 id="community-26">15. Community 26</h2>
 <p>Community 26 groups implementation around analysis, fundamentalsjs, static, fmtpct, mostly in core_analysis/js/fundamentals.js. This section covers 48 nodes and 117 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
@@ -4682,75 +5019,70 @@ flowchart LR
 </div>
 <hr>
 
-<!-- ====== 15. Community 35 ====== -->
-<h2 id="community-35">15. Community 35</h2>
-<p>Community 35 groups implementation around analysis, portfoliojs, static, pct, mostly in core_analysis/js/portfolio.js. This section covers 45 nodes and 134 internal edges; the diagram shows only representative relationships to stay readable.</p>
+<!-- ====== 16. Other ====== -->
+<h2 id="other">16. Other</h2>
+<p>Other groups implementation around analysis, static, vendor, lightweight, mostly in core_analysis/vendor/lightweight-charts.standalone.production.js, core_analysis/services/broker_analytics.py, core_analysis/js/portfolio.js. This section covers 1121 nodes and 2080 internal edges; the diagram shows only representative relationships to stay readable.</p>
 
 <div class="mermaid">
 %%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
 flowchart LR
-    %% Section: Community 35 (45 nodes, 134 edges)
-    js_portfolio_el_23c88ebd("el()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_esc_2862f6ae("esc()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_nf_80e5f340("nf()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_render_14b3d701("render()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_bindsummaryfilters_7c856d1e("bindSummaryFilters()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_pct_71ca2a48("pct()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_bindsummarycontrol_88c932b5("bindSummaryControl()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_initapprovals_568aa6ee("initApprovals()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_loadportfolio_0efe293e("loadPortfolio()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_recalcsummary_efc7ae56("recalcSummary()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_rendercompliance_4122e41e("renderCompliance()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_renderconc_ae84438f("renderConc()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_renderfactors_0cb92a37("renderFactors()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_renderkpis_9b8208f6("renderKpis()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_renderliquidity_0f96d75e("renderLiquidity()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_renderrisk_fa09aa64("renderRisk()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_rendersectors_d0f3aec8("renderSectors()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_rendersummarydesk_517e26a4("renderSummaryDesk()<br/><small>core_analysis/js/portfolio.js</small>")
-    js_portfolio_el_23c88ebd -->|calls| js_portfolio_bindsummarycontrol_88c932b5
-    js_portfolio_el_23c88ebd -->|calls| js_portfolio_initapprovals_568aa6ee
-    js_portfolio_el_23c88ebd -->|calls| js_portfolio_loadportfolio_0efe293e
-    js_portfolio_el_23c88ebd -->|calls| js_portfolio_recalcsummary_efc7ae56
-    js_portfolio_el_23c88ebd -->|calls| js_portfolio_render_14b3d701
-    js_portfolio_el_23c88ebd -->|calls| js_portfolio_rendercompliance_4122e41e
-    js_portfolio_el_23c88ebd -->|calls| js_portfolio_renderconc_ae84438f
-    js_portfolio_el_23c88ebd -->|calls| js_portfolio_renderfactors_0cb92a37
-    js_portfolio_el_23c88ebd -->|calls| js_portfolio_renderkpis_9b8208f6
-    js_portfolio_el_23c88ebd -->|calls| js_portfolio_renderliquidity_0f96d75e
-    js_portfolio_el_23c88ebd -->|calls| js_portfolio_renderrisk_fa09aa64
-    js_portfolio_el_23c88ebd -->|calls| js_portfolio_rendersectors_d0f3aec8
-    js_portfolio_el_23c88ebd -->|calls| js_portfolio_rendersummarydesk_517e26a4
-    js_portfolio_nf_80e5f340 -->|calls| js_portfolio_renderconc_ae84438f
-    js_portfolio_nf_80e5f340 -->|calls| js_portfolio_renderkpis_9b8208f6
-    js_portfolio_nf_80e5f340 -->|calls| js_portfolio_renderliquidity_0f96d75e
-    js_portfolio_nf_80e5f340 -->|calls| js_portfolio_renderrisk_fa09aa64
-    js_portfolio_nf_80e5f340 -->|calls| js_portfolio_rendersummarydesk_517e26a4
-    js_portfolio_pct_71ca2a48 -->|calls| js_portfolio_renderconc_ae84438f
-    js_portfolio_pct_71ca2a48 -->|calls| js_portfolio_renderkpis_9b8208f6
-    js_portfolio_pct_71ca2a48 -->|calls| js_portfolio_rendersectors_d0f3aec8
-    js_portfolio_esc_2862f6ae -->|calls| js_portfolio_render_14b3d701
-    js_portfolio_esc_2862f6ae -->|calls| js_portfolio_rendercompliance_4122e41e
-    js_portfolio_esc_2862f6ae -->|calls| js_portfolio_renderconc_ae84438f
-    %% Omitted for readability: 27 nodes, 17 edges
-    class js_portfolio_el_23c88ebd function;
-    class js_portfolio_esc_2862f6ae function;
-    class js_portfolio_nf_80e5f340 function;
-    class js_portfolio_render_14b3d701 function;
-    class js_portfolio_bindsummaryfilters_7c856d1e function;
-    class js_portfolio_pct_71ca2a48 function;
-    class js_portfolio_bindsummarycontrol_88c932b5 function;
-    class js_portfolio_initapprovals_568aa6ee function;
-    class js_portfolio_loadportfolio_0efe293e function;
-    class js_portfolio_recalcsummary_efc7ae56 function;
-    class js_portfolio_rendercompliance_4122e41e function;
-    class js_portfolio_renderconc_ae84438f function;
-    class js_portfolio_renderfactors_0cb92a37 function;
-    class js_portfolio_renderkpis_9b8208f6 function;
-    class js_portfolio_renderliquidity_0f96d75e function;
-    class js_portfolio_renderrisk_fa09aa64 function;
-    class js_portfolio_rendersectors_d0f3aec8 function;
-    class js_portfolio_rendersummarydesk_517e26a4 function;
+    %% Section: Other (1121 nodes, 2080 edges)
+    subgraph other_core_analysis_vendor_lightweight_charts_st_ff0bf584["core_analysis/vendor/lightweight-charts.standalone.production.js"]
+        vendor_lightweight_charts_standalone_production_b334d764("as()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+        vendor_lightweight_charts_standalone_production_7acfcd49("yi<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+        vendor_lightweight_charts_standalone_production_48de3298("fs()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+        vendor_lightweight_charts_standalone_production_1771f078("Be<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+        vendor_lightweight_charts_standalone_production_bd51901f("hs()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+        vendor_lightweight_charts_standalone_production_9cccda55("pn<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
+    end
+    subgraph other_core_analysis_portfolio_views_py_1870d63b["core_analysis/portfolio_views.py"]
+        core_analysis_portfolio_views_extract_holdings_o_9de2fb14("_extract_holdings_owner()<br/><small>core_analysis/portfolio_views.py</small>")
+        core_analysis_portfolio_views_normalize_portfoli_53fb36ae("_normalize_portfolio_name()<br/><small>core_analysis/portfolio_views.py</small>")
+        core_analysis_portfolio_views_unique_portfolio_n_553db867("_unique_portfolio_name()<br/><small>core_analysis/portfolio_views.py</small>")
+    end
+    subgraph other_core_analysis_services_RGG_Chart_py_b7513002["core_analysis/services/RGG_Chart.py"]
+        services_rgg_chart_run_rrg_simulation_174f4a2f("run_rrg_simulation()<br/><small>core_analysis/services/RGG_Chart.py</small>")
+        services_rgg_chart_prepare_price_frame_55c9f2df("_prepare_price_frame()<br/><small>core_analysis/services/RGG_Chart.py</small>")
+        services_rgg_chart_z_8a8e757f("_z()<br/><small>core_analysis/services/RGG_Chart.py</small>")
+    end
+    subgraph other_core_analysis_services_RGG_indices_py_94a36efc["core_analysis/services/RGG_indices.py"]
+        services_rgg_indices_run_rrg_indices_simulation_d7aa2f60("run_rrg_indices_simulation()<br/><small>core_analysis/services/RGG_indices.py</small>")
+        services_rgg_indices_ordered_nepse_indices_2935b0b2("ordered_nepse_indices()<br/><small>core_analysis/services/RGG_indices.py</small>")
+        services_rgg_indices_format_date_9d96de80("_format_date()<br/><small>core_analysis/services/RGG_indices.py</small>")
+    end
+    subgraph other_core_analysis_services_RSI_SMA_py_a47b71af["core_analysis/services/RSI_SMA.py"]
+        services_rsi_sma_compute_rsi_4fab1ccd("_compute_rsi()<br/><small>core_analysis/services/RSI_SMA.py</small>")
+        services_rsi_sma_run_rsi_sma_long_only_simulatio_6f946602("long only simulation()<br/><small>core_analysis/services/RSI_SMA.py</small>")
+    end
+    services_broker_analytics_fiscal_year_start_83be8e32("_fiscal_year_start()<br/><small>core_analysis/services/broker_analytics.py</small>")
+    core_analysis_portfolio_views_extract_holdings_o_9de2fb14 -->|calls| core_analysis_portfolio_views_normalize_portfoli_53fb36ae
+    core_analysis_portfolio_views_normalize_portfoli_53fb36ae -->|calls| core_analysis_portfolio_views_unique_portfolio_n_553db867
+    services_rgg_chart_run_rrg_simulation_174f4a2f -->|calls| services_rgg_chart_prepare_price_frame_55c9f2df
+    services_rgg_chart_run_rrg_simulation_174f4a2f -->|calls| services_rgg_chart_z_8a8e757f
+    services_rgg_chart_run_rrg_simulation_174f4a2f -->|calls| services_rgg_indices_run_rrg_indices_simulation_d7aa2f60
+    services_rgg_indices_ordered_nepse_indices_2935b0b2 -->|calls| services_rgg_indices_run_rrg_indices_simulation_d7aa2f60
+    services_rgg_indices_run_rrg_indices_simulation_d7aa2f60 -->|calls| services_rgg_indices_format_date_9d96de80
+    services_rsi_sma_compute_rsi_4fab1ccd -->|calls| services_rsi_sma_run_rsi_sma_long_only_simulatio_6f946602
+    vendor_lightweight_charts_standalone_production_48de3298 -->|method| vendor_lightweight_charts_standalone_production_48de3298
+    %% Omitted for readability: 1103 nodes, 0 edges
+    class vendor_lightweight_charts_standalone_production_b334d764 function;
+    class vendor_lightweight_charts_standalone_production_7acfcd49 function;
+    class vendor_lightweight_charts_standalone_production_48de3298 function;
+    class vendor_lightweight_charts_standalone_production_1771f078 klass;
+    class vendor_lightweight_charts_standalone_production_bd51901f function;
+    class vendor_lightweight_charts_standalone_production_9cccda55 function;
+    class core_analysis_portfolio_views_extract_holdings_o_9de2fb14 function;
+    class core_analysis_portfolio_views_normalize_portfoli_53fb36ae function;
+    class core_analysis_portfolio_views_unique_portfolio_n_553db867 function;
+    class services_rgg_chart_run_rrg_simulation_174f4a2f function;
+    class services_rgg_chart_prepare_price_frame_55c9f2df function;
+    class services_rgg_chart_z_8a8e757f function;
+    class services_rgg_indices_run_rrg_indices_simulation_d7aa2f60 function;
+    class services_rgg_indices_ordered_nepse_indices_2935b0b2 function;
+    class services_rgg_indices_format_date_9d96de80 function;
+    class services_rsi_sma_compute_rsi_4fab1ccd function;
+    class services_rsi_sma_run_rsi_sma_long_only_simulatio_6f946602 function;
+    class services_broker_analytics_fiscal_year_start_83be8e32 function;
     classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
     classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
     classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
@@ -5019,361 +5351,19 @@ flowchart LR
     <h4>Key Files</h4>
     <table style="width:100%;font-size:0.85rem;">
       <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>core_analysis/js/portfolio.js</code></td><td>45 nodes</td></tr>
-    </table>
-  </div>
-  <div class="card">
-    <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: calls x90, contains x44. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
-  </div>
-</div>
-<hr>
-
-<!-- ====== 16. Other ====== -->
-<h2 id="other">16. Other</h2>
-<p>Other groups implementation around analysis, static, vendor, lightweight, mostly in core_analysis/vendor/lightweight-charts.standalone.production.js, core_analysis/services/broker_analytics.py, core_analysis/js/ta-chart.js. This section covers 1125 nodes and 2118 internal edges; the diagram shows only representative relationships to stay readable.</p>
-
-<div class="mermaid">
-%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
-flowchart LR
-    %% Section: Other (1125 nodes, 2118 edges)
-    subgraph other_core_analysis_vendor_lightweight_charts_st_ff0bf584["core_analysis/vendor/lightweight-charts.standalone.production.js"]
-        vendor_lightweight_charts_standalone_production_b334d764("as()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
-        vendor_lightweight_charts_standalone_production_7acfcd49("yi<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
-        vendor_lightweight_charts_standalone_production_48de3298("fs()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
-        vendor_lightweight_charts_standalone_production_1771f078("Be<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
-        vendor_lightweight_charts_standalone_production_bd51901f("hs()<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
-        vendor_lightweight_charts_standalone_production_9cccda55("pn<br/><small>core_analysis/vendor/lightweight-charts.standalone.production.js</small>")
-    end
-    subgraph other_core_analysis_portfolio_views_py_1870d63b["core_analysis/portfolio_views.py"]
-        core_analysis_portfolio_views_extract_holdings_o_9de2fb14("_extract_holdings_owner()<br/><small>core_analysis/portfolio_views.py</small>")
-        core_analysis_portfolio_views_normalize_portfoli_53fb36ae("_normalize_portfolio_name()<br/><small>core_analysis/portfolio_views.py</small>")
-        core_analysis_portfolio_views_unique_portfolio_n_553db867("_unique_portfolio_name()<br/><small>core_analysis/portfolio_views.py</small>")
-    end
-    subgraph other_core_analysis_services_RGG_Chart_py_b7513002["core_analysis/services/RGG_Chart.py"]
-        services_rgg_chart_run_rrg_simulation_174f4a2f("run_rrg_simulation()<br/><small>core_analysis/services/RGG_Chart.py</small>")
-        services_rgg_chart_prepare_price_frame_55c9f2df("_prepare_price_frame()<br/><small>core_analysis/services/RGG_Chart.py</small>")
-        services_rgg_chart_z_8a8e757f("_z()<br/><small>core_analysis/services/RGG_Chart.py</small>")
-    end
-    subgraph other_core_analysis_services_RGG_indices_py_94a36efc["core_analysis/services/RGG_indices.py"]
-        services_rgg_indices_run_rrg_indices_simulation_d7aa2f60("run_rrg_indices_simulation()<br/><small>core_analysis/services/RGG_indices.py</small>")
-        services_rgg_indices_ordered_nepse_indices_2935b0b2("ordered_nepse_indices()<br/><small>core_analysis/services/RGG_indices.py</small>")
-        services_rgg_indices_format_date_9d96de80("_format_date()<br/><small>core_analysis/services/RGG_indices.py</small>")
-    end
-    subgraph other_core_analysis_services_RSI_SMA_py_a47b71af["core_analysis/services/RSI_SMA.py"]
-        services_rsi_sma_compute_rsi_4fab1ccd("_compute_rsi()<br/><small>core_analysis/services/RSI_SMA.py</small>")
-        services_rsi_sma_run_rsi_sma_long_only_simulatio_6f946602("long only simulation()<br/><small>core_analysis/services/RSI_SMA.py</small>")
-    end
-    services_broker_analytics_fiscal_year_start_83be8e32("_fiscal_year_start()<br/><small>core_analysis/services/broker_analytics.py</small>")
-    core_analysis_portfolio_views_extract_holdings_o_9de2fb14 -->|calls| core_analysis_portfolio_views_normalize_portfoli_53fb36ae
-    core_analysis_portfolio_views_normalize_portfoli_53fb36ae -->|calls| core_analysis_portfolio_views_unique_portfolio_n_553db867
-    services_rgg_chart_run_rrg_simulation_174f4a2f -->|calls| services_rgg_chart_prepare_price_frame_55c9f2df
-    services_rgg_chart_run_rrg_simulation_174f4a2f -->|calls| services_rgg_chart_z_8a8e757f
-    services_rgg_chart_run_rrg_simulation_174f4a2f -->|calls| services_rgg_indices_run_rrg_indices_simulation_d7aa2f60
-    services_rgg_indices_ordered_nepse_indices_2935b0b2 -->|calls| services_rgg_indices_run_rrg_indices_simulation_d7aa2f60
-    services_rgg_indices_run_rrg_indices_simulation_d7aa2f60 -->|calls| services_rgg_indices_format_date_9d96de80
-    services_rsi_sma_compute_rsi_4fab1ccd -->|calls| services_rsi_sma_run_rsi_sma_long_only_simulatio_6f946602
-    vendor_lightweight_charts_standalone_production_48de3298 -->|method| vendor_lightweight_charts_standalone_production_48de3298
-    %% Omitted for readability: 1107 nodes, 0 edges
-    class vendor_lightweight_charts_standalone_production_b334d764 function;
-    class vendor_lightweight_charts_standalone_production_7acfcd49 function;
-    class vendor_lightweight_charts_standalone_production_48de3298 function;
-    class vendor_lightweight_charts_standalone_production_1771f078 klass;
-    class vendor_lightweight_charts_standalone_production_bd51901f function;
-    class vendor_lightweight_charts_standalone_production_9cccda55 function;
-    class core_analysis_portfolio_views_extract_holdings_o_9de2fb14 function;
-    class core_analysis_portfolio_views_normalize_portfoli_53fb36ae function;
-    class core_analysis_portfolio_views_unique_portfolio_n_553db867 function;
-    class services_rgg_chart_run_rrg_simulation_174f4a2f function;
-    class services_rgg_chart_prepare_price_frame_55c9f2df function;
-    class services_rgg_chart_z_8a8e757f function;
-    class services_rgg_indices_run_rrg_indices_simulation_d7aa2f60 function;
-    class services_rgg_indices_ordered_nepse_indices_2935b0b2 function;
-    class services_rgg_indices_format_date_9d96de80 function;
-    class services_rsi_sma_compute_rsi_4fab1ccd function;
-    class services_rsi_sma_run_rsi_sma_long_only_simulatio_6f946602 function;
-    class services_broker_analytics_fiscal_year_start_83be8e32 function;
-    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
-    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
-    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
-    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
-    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
-    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
-    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
-    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
-    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
-</div>
-
-<h3>Call Details</h3>
-<table class="call-table">
-<tr>
-  <th style="width:5%">#</th>
-  <th style="width:28%">Node</th>
-  <th style="width:10%">Type</th>
-  <th style="width:17%">Caller</th>
-  <th style="width:20%">Callees</th>
-  <th style="width:20%">Description</th>
-</tr>
-<tr>
-  <td>1</td>
-  <td><code>_()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>K()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>k()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br>+2 more</td>
-  <td>_() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>2</td>
-  <td><code>v()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>d()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>No direct outbound edge</td>
-  <td>v() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>3</td>
-  <td><code>m()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>m() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>4</td>
-  <td><code>P()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>P() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>5</td>
-  <td><code>O()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>oe()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>O() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>6</td>
-  <td><code>W()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>W() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>7</td>
-  <td><code>.constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>_()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>No direct outbound edge</td>
-  <td>.constructor() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>8</td>
-  <td><code>q()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>q() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>9</td>
-  <td><code>.constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>q()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>No direct outbound edge</td>
-  <td>.constructor() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>10</td>
-  <td><code>ct</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>format()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>J()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br>+2 more</td>
-  <td>ct node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>11</td>
-  <td><code>.constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>ct</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>No direct outbound edge</td>
-  <td>.constructor() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>12</td>
-  <td><code>.us()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>ct</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>No direct outbound edge</td>
-  <td>.us() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>13</td>
-  <td><code>dt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>K()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>K()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>mt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>dt() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>14</td>
-  <td><code>pt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>mt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>pt() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>15</td>
-  <td><code>mt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>dt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>pt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>No direct outbound edge</td>
-  <td>mt() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>16</td>
-  <td><code>bt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>bt() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>17</td>
-  <td><code>.K()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>_()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>dt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>wt</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>No direct outbound edge</td>
-  <td>.K() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>18</td>
-  <td><code>gt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>gt() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>19</td>
-  <td><code>yt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>yt() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>20</td>
-  <td><code>.J()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>ct</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>No direct outbound edge</td>
-  <td>.J() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>21</td>
-  <td><code>.K()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>_()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>ct</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>dt()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>No direct outbound edge</td>
-  <td>.K() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>22</td>
-  <td><code>Tt</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-class">Class</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>Ds()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>Tt node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>23</td>
-  <td><code>.Ds()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>Tt</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>No direct outbound edge</td>
-  <td>.Ds() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>24</td>
-  <td><code>.K()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>it</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><code>oe()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>.K() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>25</td>
-  <td><code>di()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>$t()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>_h()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>di() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>26</td>
-  <td><code>.constructor()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>di()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>No direct outbound edge</td>
-  <td>.constructor() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>27</td>
-  <td><code>.$t()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>di()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>No direct outbound edge</td>
-  <td>.$t() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>28</td>
-  <td><code>xn()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td><code>Gl()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>xn() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>29</td>
-  <td><code>ns()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td>External entry / no inbound edge</td>
-  <td>No direct outbound edge</td>
-  <td>ns() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-<tr>
-  <td>30</td>
-  <td><code>ae()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><span class="tag tag-func">Function</span></td>
-  <td><code>E()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td><code>oe()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small><br><code>ue()</code><br><small style="color:var(--muted)">core_analysis/vendor/lightweight-charts.standalone.production.js</small></td>
-  <td>ae() node in core_analysis/vendor/lightweight-charts.standalone.production.js.</td>
-</tr>
-</table>
-
-<div class="grid">
-  <div class="card">
-    <h4>Key Files</h4>
-    <table style="width:100%;font-size:0.85rem;">
-      <tr><th>File</th><th>Coverage</th></tr>
-      <tr><td><code>core_analysis/vendor/lightweight-charts.standalone.production.js</code></td><td>845 nodes</td></tr>
+      <tr><td><code>core_analysis/vendor/lightweight-charts.standalone.production.js</code></td><td>796 nodes</td></tr>
 <tr><td><code>core_analysis/services/broker_analytics.py</code></td><td>62 nodes</td></tr>
+<tr><td><code>core_analysis/js/portfolio.js</code></td><td>45 nodes</td></tr>
 <tr><td><code>core_analysis/js/ta-chart.js</code></td><td>28 nodes</td></tr>
 <tr><td><code>core_analysis/services/market_insights.py</code></td><td>23 nodes</td></tr>
 <tr><td><code>core_analysis/vendor/apexcharts.min.js</code></td><td>20 nodes</td></tr>
 <tr><td><code>core_analysis/js/ohlc-chart.js</code></td><td>17 nodes</td></tr>
 <tr><td><code>core_analysis/js/dashboard.js</code></td><td>14 nodes</td></tr>
-<tr><td><code>core_analysis/services/RGG_Chart.py</code></td><td>8 nodes</td></tr>
     </table>
   </div>
   <div class="card">
     <h4>Design Notes</h4>
-    <p>This section comes from graphify community clustering. Relationship summary: calls x1115, method x652, contains x269, explains x64. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+    <p>This section comes from graphify community clustering. Relationship summary: calls x1186, method x637, contains x176, explains x64. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
   </div>
 </div>
 <hr>
@@ -5403,7 +5393,7 @@ flowchart LR
 
 <div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
   <p>nepse_analytics_platform — Architecture Documentation</p>
-  <p>Generated: 2026-07-13 09:28 UTC · graphify callflow-html</p>
+  <p>Generated: 2026-07-14 08:57 UTC · graphify callflow-html</p>
 </div>
 
 </div><!-- .container -->

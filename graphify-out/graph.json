@@ -9237,7 +9237,7 @@
       "label": "_detect_price_zone()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L826",
+      "source_location": "L830",
       "_origin": "ast",
       "id": "services_support_resistance_detect_price_zone",
       "community": 1,
@@ -9247,7 +9247,7 @@
       "label": "_bollinger_headline()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L853",
+      "source_location": "L857",
       "_origin": "ast",
       "id": "services_support_resistance_bollinger_headline",
       "community": 1,
@@ -9257,7 +9257,7 @@
       "label": "_round2()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L875",
+      "source_location": "L879",
       "_origin": "ast",
       "id": "services_support_resistance_round2",
       "community": 1,
@@ -9267,7 +9267,7 @@
       "label": "_classic_pivot()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L885",
+      "source_location": "L889",
       "_origin": "ast",
       "id": "services_support_resistance_classic_pivot",
       "community": 1,
@@ -9277,7 +9277,7 @@
       "label": "_woodie_pivot()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L895",
+      "source_location": "L899",
       "_origin": "ast",
       "id": "services_support_resistance_woodie_pivot",
       "community": 1,
@@ -9287,7 +9287,7 @@
       "label": "_fibonacci_pivot()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L905",
+      "source_location": "L909",
       "_origin": "ast",
       "id": "services_support_resistance_fibonacci_pivot",
       "community": 1,
@@ -9297,7 +9297,7 @@
       "label": "_camarilla_pivot()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L915",
+      "source_location": "L919",
       "_origin": "ast",
       "id": "services_support_resistance_camarilla_pivot",
       "community": 1,
@@ -9307,7 +9307,7 @@
       "label": "compute_pivot_average()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L924",
+      "source_location": "L928",
       "_origin": "ast",
       "id": "services_support_resistance_compute_pivot_average",
       "community": 1,
@@ -9317,7 +9317,7 @@
       "label": "run_support_resistance_analysis()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L971",
+      "source_location": "L975",
       "_origin": "ast",
       "id": "services_support_resistance_run_support_resistance_analysis",
       "community": 1,
@@ -9327,7 +9327,7 @@
       "label": "_safe_float()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1237",
+      "source_location": "L1252",
       "_origin": "ast",
       "id": "services_support_resistance_safe_float",
       "community": 1,
@@ -9337,7 +9337,7 @@
       "label": "_price_text()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1245",
+      "source_location": "L1260",
       "_origin": "ast",
       "id": "services_support_resistance_price_text",
       "community": 1,
@@ -9347,7 +9347,7 @@
       "label": "_zone_text()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1250",
+      "source_location": "L1265",
       "_origin": "ast",
       "id": "services_support_resistance_zone_text",
       "community": 1,
@@ -9357,7 +9357,7 @@
       "label": "_zone_touches()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1256",
+      "source_location": "L1271",
       "_origin": "ast",
       "id": "services_support_resistance_zone_touches",
       "community": 1,
@@ -9367,7 +9367,7 @@
       "label": "_dir_from_text()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1261",
+      "source_location": "L1276",
       "_origin": "ast",
       "id": "services_support_resistance_dir_from_text",
       "community": 1,
@@ -9377,7 +9377,7 @@
       "label": "_premium_discount()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1270",
+      "source_location": "L1285",
       "_origin": "ast",
       "id": "services_support_resistance_premium_discount",
       "community": 1,
@@ -9387,7 +9387,7 @@
       "label": "_pack()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1291",
+      "source_location": "L1306",
       "_origin": "ast",
       "id": "services_support_resistance_pack",
       "community": 1,
@@ -9397,7 +9397,7 @@
       "label": "_build_institutional_context()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1303",
+      "source_location": "L1318",
       "_origin": "ast",
       "id": "services_support_resistance_build_institutional_context",
       "community": 1,
@@ -9407,7 +9407,7 @@
       "label": "_read_smc_ict()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1377",
+      "source_location": "L1401",
       "_origin": "ast",
       "id": "services_support_resistance_read_smc_ict",
       "community": 1,
@@ -9417,7 +9417,7 @@
       "label": "_read_rtm_qm()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1432",
+      "source_location": "L1456",
       "_origin": "ast",
       "id": "services_support_resistance_read_rtm_qm",
       "community": 1,
@@ -9427,7 +9427,7 @@
       "label": "_read_btmm()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1520",
+      "source_location": "L1544",
       "_origin": "ast",
       "id": "services_support_resistance_read_btmm",
       "community": 1,
@@ -9437,7 +9437,7 @@
       "label": "_read_malaysian_snr()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1561",
+      "source_location": "L1585",
       "_origin": "ast",
       "id": "services_support_resistance_read_malaysian_snr",
       "community": 1,
@@ -9447,7 +9447,7 @@
       "label": "_read_wyckoff()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1607",
+      "source_location": "L1631",
       "_origin": "ast",
       "id": "services_support_resistance_read_wyckoff",
       "community": 1,
@@ -9457,7 +9457,7 @@
       "label": "_read_elliott_wave()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1649",
+      "source_location": "L1673",
       "_origin": "ast",
       "id": "services_support_resistance_read_elliott_wave",
       "community": 1,
@@ -9467,7 +9467,7 @@
       "label": "_read_volume_flow()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1693",
+      "source_location": "L1717",
       "_origin": "ast",
       "id": "services_support_resistance_read_volume_flow",
       "community": 1,
@@ -9477,7 +9477,7 @@
       "label": "_read_candle_range()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1732",
+      "source_location": "L1756",
       "_origin": "ast",
       "id": "services_support_resistance_read_candle_range",
       "community": 1,
@@ -9487,7 +9487,7 @@
       "label": "_read_structural_sr()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1773",
+      "source_location": "L1797",
       "_origin": "ast",
       "id": "services_support_resistance_read_structural_sr",
       "community": 1,
@@ -9497,7 +9497,7 @@
       "label": "_contradiction_alert()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1822",
+      "source_location": "L1846",
       "_origin": "ast",
       "id": "services_support_resistance_contradiction_alert",
       "community": 1,
@@ -9507,7 +9507,7 @@
       "label": "_framework_weight()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1855",
+      "source_location": "L1879",
       "_origin": "ast",
       "id": "services_support_resistance_framework_weight",
       "community": 1,
@@ -9517,7 +9517,7 @@
       "label": "_institutional_consensus()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1861",
+      "source_location": "L1885",
       "_origin": "ast",
       "id": "services_support_resistance_institutional_consensus",
       "community": 1,
@@ -9527,7 +9527,7 @@
       "label": "build_institutional_analysis_rows()",
       "file_type": "code",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L2182",
+      "source_location": "L2206",
       "_origin": "ast",
       "id": "services_support_resistance_build_institutional_analysis_rows",
       "community": 1,
@@ -9657,9 +9657,9 @@
       "label": "Return the strongest confluence zone the latest price is trading inside,     or",
       "file_type": "rationale",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L827",
+      "source_location": "L831",
       "_origin": "ast",
-      "id": "services_support_resistance_rationale_827",
+      "id": "services_support_resistance_rationale_831",
       "community": 1,
       "norm_label": "return the strongest confluence zone the latest price is trading inside,     or"
     },
@@ -9667,9 +9667,9 @@
       "label": "Average of the four pivot methods per tier + 52-week Fibonacci levels.",
       "file_type": "rationale",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L925",
+      "source_location": "L929",
       "_origin": "ast",
-      "id": "services_support_resistance_rationale_925",
+      "id": "services_support_resistance_rationale_929",
       "community": 1,
       "norm_label": "average of the four pivot methods per tier + 52-week fibonacci levels."
     },
@@ -9677,9 +9677,9 @@
       "label": "Compute support and resistance levels for a price series.      Parameters     --",
       "file_type": "rationale",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L981",
+      "source_location": "L985",
       "_origin": "ast",
-      "id": "services_support_resistance_rationale_981",
+      "id": "services_support_resistance_rationale_985",
       "community": 1,
       "norm_label": "compute support and resistance levels for a price series.      parameters     --"
     },
@@ -9687,9 +9687,9 @@
       "label": "Where price sits inside its dealing range (Bollinger %B).      >0.55 = premium (",
       "file_type": "rationale",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1271",
+      "source_location": "L1286",
       "_origin": "ast",
-      "id": "services_support_resistance_rationale_1271",
+      "id": "services_support_resistance_rationale_1286",
       "community": 1,
       "norm_label": "where price sits inside its dealing range (bollinger %b).      >0.55 = premium ("
     },
@@ -9697,9 +9697,9 @@
       "label": "Pre-compute every data facet the nine framework reads draw from.",
       "file_type": "rationale",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1304",
+      "source_location": "L1319",
       "_origin": "ast",
-      "id": "services_support_resistance_rationale_1304",
+      "id": "services_support_resistance_rationale_1319",
       "community": 1,
       "norm_label": "pre-compute every data facet the nine framework reads draw from."
     },
@@ -9707,9 +9707,9 @@
       "label": "Warn when the frameworks are split with no clear majority.",
       "file_type": "rationale",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1823",
+      "source_location": "L1847",
       "_origin": "ast",
-      "id": "services_support_resistance_rationale_1823",
+      "id": "services_support_resistance_rationale_1847",
       "community": 1,
       "norm_label": "warn when the frameworks are split with no clear majority."
     },
@@ -9717,9 +9717,9 @@
       "label": "Consensus vote weight = self-reported confidence \u00d7 reliability prior.",
       "file_type": "rationale",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1856",
+      "source_location": "L1880",
       "_origin": "ast",
-      "id": "services_support_resistance_rationale_1856",
+      "id": "services_support_resistance_rationale_1880",
       "community": 1,
       "norm_label": "consensus vote weight = self-reported confidence \u00d7 reliability prior."
     },
@@ -9727,9 +9727,9 @@
       "label": "Reliability-weighted confidence vote of the nine framework reads.",
       "file_type": "rationale",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1862",
+      "source_location": "L1886",
       "_origin": "ast",
-      "id": "services_support_resistance_rationale_1862",
+      "id": "services_support_resistance_rationale_1886",
       "community": 1,
       "norm_label": "reliability-weighted confidence vote of the nine framework reads."
     },
@@ -9737,9 +9737,9 @@
       "label": "Build the institutional multi-framework table for the Support & Resistance tab.",
       "file_type": "rationale",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L2186",
+      "source_location": "L2210",
       "_origin": "ast",
-      "id": "services_support_resistance_rationale_2186",
+      "id": "services_support_resistance_rationale_2210",
       "community": 1,
       "norm_label": "build the institutional multi-framework table for the support & resistance tab."
     },
@@ -12740,7 +12740,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c_l",
-      "community": 31,
+      "community": 52,
       "norm_label": ".l()"
     },
     {
@@ -12750,7 +12750,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_c_v",
-      "community": 70,
+      "community": 31,
       "norm_label": ".v()"
     },
     {
@@ -14000,7 +14000,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ut",
-      "community": 123,
+      "community": 7,
       "norm_label": "ut"
     },
     {
@@ -14010,7 +14010,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ut_constructor",
-      "community": 123,
+      "community": 7,
       "norm_label": ".constructor()"
     },
     {
@@ -14020,7 +14020,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ut_format",
-      "community": 123,
+      "community": 7,
       "norm_label": ".format()"
     },
     {
@@ -14390,7 +14390,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zt_qs",
-      "community": 47,
+      "community": 68,
       "norm_label": ".qs()"
     },
     {
@@ -14480,7 +14480,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_lt_qs",
-      "community": 47,
+      "community": 68,
       "norm_label": ".qs()"
     },
     {
@@ -14680,7 +14680,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ut_x",
-      "community": 123,
+      "community": 7,
       "norm_label": ".x()"
     },
     {
@@ -14730,7 +14730,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_qt_qs",
-      "community": 47,
+      "community": 68,
       "norm_label": ".qs()"
     },
     {
@@ -19510,7 +19510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_zn",
-      "community": 47,
+      "community": 68,
       "norm_label": "zn()"
     },
     {
@@ -22050,7 +22050,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ie",
-      "community": 47,
+      "community": 68,
       "norm_label": "ie()"
     },
     {
@@ -22060,7 +22060,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ne",
-      "community": 36,
+      "community": 68,
       "norm_label": "ne()"
     },
     {
@@ -22290,7 +22290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_ve",
-      "community": 47,
+      "community": 68,
       "norm_label": "ve()"
     },
     {
@@ -22510,7 +22510,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_data",
-      "community": 47,
+      "community": 68,
       "norm_label": ".data()"
     },
     {
@@ -22530,7 +22530,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_pe_unsubscribedatachanged",
-      "community": 70,
+      "community": 31,
       "norm_label": ".unsubscribedatachanged()"
     },
     {
@@ -22820,7 +22820,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_subscribevisibletimerangechange",
-      "community": 31,
+      "community": 52,
       "norm_label": ".subscribevisibletimerangechange()"
     },
     {
@@ -22830,7 +22830,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_unsubscribevisibletimerangechange",
-      "community": 70,
+      "community": 31,
       "norm_label": ".unsubscribevisibletimerangechange()"
     },
     {
@@ -22840,7 +22840,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_subscribevisiblelogicalrangechange",
-      "community": 31,
+      "community": 52,
       "norm_label": ".subscribevisiblelogicalrangechange()"
     },
     {
@@ -22850,7 +22850,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_unsubscribevisiblelogicalrangechange",
-      "community": 70,
+      "community": 31,
       "norm_label": ".unsubscribevisiblelogicalrangechange()"
     },
     {
@@ -22870,7 +22870,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_re_unsubscribesizechange",
-      "community": 70,
+      "community": 31,
       "norm_label": ".unsubscribesizechange()"
     },
     {
@@ -23070,7 +23070,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_subscribeclick",
-      "community": 31,
+      "community": 52,
       "norm_label": ".subscribeclick()"
     },
     {
@@ -23080,7 +23080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_unsubscribeclick",
-      "community": 70,
+      "community": 31,
       "norm_label": ".unsubscribeclick()"
     },
     {
@@ -23090,7 +23090,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_subscribecrosshairmove",
-      "community": 31,
+      "community": 52,
       "norm_label": ".subscribecrosshairmove()"
     },
     {
@@ -23100,7 +23100,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_unsubscribecrosshairmove",
-      "community": 70,
+      "community": 31,
       "norm_label": ".unsubscribecrosshairmove()"
     },
     {
@@ -23110,7 +23110,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_subscribedblclick",
-      "community": 31,
+      "community": 52,
       "norm_label": ".subscribedblclick()"
     },
     {
@@ -23120,7 +23120,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_unsubscribedblclick",
-      "community": 70,
+      "community": 31,
       "norm_label": ".unsubscribedblclick()"
     },
     {
@@ -23160,7 +23160,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "vendor_lightweight_charts_standalone_production_be_options",
-      "community": 47,
+      "community": 68,
       "norm_label": ".options()"
     },
     {
@@ -46977,9 +46977,9 @@
       "source_file": "core_analysis/services/portfolio_ledger.py",
       "source_location": "L127",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_portfolio_ledger",
-      "target": "services_portfolio_ledger_identity_parts",
-      "confidence_score": 1.0
+      "target": "services_portfolio_ledger_identity_parts"
     },
     {
       "relation": "contains",
@@ -47133,9 +47133,9 @@
       "source_file": "core_analysis/services/portfolio_ledger.py",
       "source_location": "L140",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_portfolio_ledger_identity_parts",
-      "target": "services_portfolio_ledger_clean",
-      "confidence_score": 1.0
+      "target": "services_portfolio_ledger_clean"
     },
     {
       "relation": "calls",
@@ -47210,9 +47210,9 @@
       "source_file": "core_analysis/services/portfolio_ledger.py",
       "source_location": "L141",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_portfolio_ledger_identity_parts",
-      "target": "services_portfolio_ledger_compact_identifier",
-      "confidence_score": 1.0
+      "target": "services_portfolio_ledger_compact_identifier"
     },
     {
       "relation": "calls",
@@ -47330,9 +47330,9 @@
       "source_file": "core_analysis/services/portfolio_ledger.py",
       "source_location": "L156",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_portfolio_ledger_fingerprint",
-      "target": "services_portfolio_ledger_identity_parts",
-      "confidence_score": 1.0
+      "target": "services_portfolio_ledger_identity_parts"
     },
     {
       "relation": "calls",
@@ -47341,9 +47341,9 @@
       "source_file": "core_analysis/services/portfolio_ledger.py",
       "source_location": "L348",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_portfolio_ledger_normalize_broker_ledger",
-      "target": "services_portfolio_ledger_identity_parts",
-      "confidence_score": 1.0
+      "target": "services_portfolio_ledger_identity_parts"
     },
     {
       "relation": "rationale_for",
@@ -47351,9 +47351,9 @@
       "source_file": "core_analysis/services/portfolio_ledger.py",
       "source_location": "L128",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_portfolio_ledger_rationale_128",
-      "target": "services_portfolio_ledger_identity_parts",
-      "confidence_score": 1.0
+      "target": "services_portfolio_ledger_identity_parts"
     },
     {
       "relation": "calls",
@@ -47372,9 +47372,9 @@
       "source_file": "core_analysis/services/portfolio_ledger.py",
       "source_location": "L151",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_portfolio_ledger_rationale_151",
-      "target": "services_portfolio_ledger_fingerprint",
-      "confidence_score": 1.0
+      "target": "services_portfolio_ledger_fingerprint"
     },
     {
       "relation": "calls",
@@ -47404,9 +47404,9 @@
       "source_file": "core_analysis/services/portfolio_ledger.py",
       "source_location": "L216",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_portfolio_ledger_rationale_216",
-      "target": "services_portfolio_ledger_normalize_broker_ledger",
-      "confidence_score": 1.0
+      "target": "services_portfolio_ledger_normalize_broker_ledger"
     },
     {
       "relation": "rationale_for",
@@ -47414,9 +47414,9 @@
       "source_file": "core_analysis/services/portfolio_ledger.py",
       "source_location": "L377",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_portfolio_ledger_rationale_377",
-      "target": "services_portfolio_ledger_import_parsed_ledger",
-      "confidence_score": 1.0
+      "target": "services_portfolio_ledger_import_parsed_ledger"
     },
     {
       "relation": "rationale_for",
@@ -47424,9 +47424,9 @@
       "source_file": "core_analysis/services/portfolio_ledger.py",
       "source_location": "L440",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_portfolio_ledger_rationale_440",
-      "target": "services_portfolio_ledger_duplicate_ledger",
-      "confidence_score": 1.0
+      "target": "services_portfolio_ledger_duplicate_ledger"
     },
     {
       "relation": "calls",
@@ -47511,9 +47511,9 @@
       "source_file": "core_analysis/services/portfolio_ledger.py",
       "source_location": "L589",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_portfolio_ledger_rationale_589",
-      "target": "services_portfolio_ledger_build_ledger_dashboard",
-      "confidence_score": 1.0
+      "target": "services_portfolio_ledger_build_ledger_dashboard"
     },
     {
       "relation": "calls",
@@ -47532,9 +47532,9 @@
       "source_file": "core_analysis/services/portfolio_ledger.py",
       "source_location": "L801",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "services_portfolio_ledger_rationale_801",
-      "target": "services_portfolio_ledger_ledger_payload",
-      "confidence_score": 1.0
+      "target": "services_portfolio_ledger_ledger_payload"
     },
     {
       "relation": "contains",
@@ -50022,11 +50022,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L827",
+      "source_location": "L831",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_support_resistance_rationale_827",
-      "target": "services_support_resistance_detect_price_zone"
+      "source": "services_support_resistance_rationale_831",
+      "target": "services_support_resistance_detect_price_zone",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -50120,11 +50120,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L925",
+      "source_location": "L929",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_support_resistance_rationale_925",
-      "target": "services_support_resistance_compute_pivot_average"
+      "source": "services_support_resistance_rationale_929",
+      "target": "services_support_resistance_compute_pivot_average",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -50218,11 +50218,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L981",
+      "source_location": "L985",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_support_resistance_rationale_981",
-      "target": "services_support_resistance_run_support_resistance_analysis"
+      "source": "services_support_resistance_rationale_985",
+      "target": "services_support_resistance_run_support_resistance_analysis",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -50481,11 +50481,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1271",
+      "source_location": "L1286",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_support_resistance_rationale_1271",
-      "target": "services_support_resistance_premium_discount"
+      "source": "services_support_resistance_rationale_1286",
+      "target": "services_support_resistance_premium_discount",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -50601,11 +50601,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1304",
+      "source_location": "L1319",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_support_resistance_rationale_1304",
-      "target": "services_support_resistance_build_institutional_context"
+      "source": "services_support_resistance_rationale_1319",
+      "target": "services_support_resistance_build_institutional_context",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -50721,11 +50721,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1823",
+      "source_location": "L1847",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_support_resistance_rationale_1823",
-      "target": "services_support_resistance_contradiction_alert"
+      "source": "services_support_resistance_rationale_1847",
+      "target": "services_support_resistance_contradiction_alert",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -50742,11 +50742,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1856",
+      "source_location": "L1880",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_support_resistance_rationale_1856",
-      "target": "services_support_resistance_framework_weight"
+      "source": "services_support_resistance_rationale_1880",
+      "target": "services_support_resistance_framework_weight",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -50763,11 +50763,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L1862",
+      "source_location": "L1886",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_support_resistance_rationale_1862",
-      "target": "services_support_resistance_institutional_consensus"
+      "source": "services_support_resistance_rationale_1886",
+      "target": "services_support_resistance_institutional_consensus",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
@@ -50817,11 +50817,11 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "core_analysis/services/support_resistance.py",
-      "source_location": "L2186",
+      "source_location": "L2210",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "services_support_resistance_rationale_2186",
-      "target": "services_support_resistance_build_institutional_analysis_rows"
+      "source": "services_support_resistance_rationale_2210",
+      "target": "services_support_resistance_build_institutional_analysis_rows",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -90694,9 +90694,9 @@
       "source_file": "core_analysis/tests.py",
       "source_location": "L729",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_tests_portfoliobrokerledgertests",
-      "target": "core_analysis_tests_portfoliobrokerledgertests_test_identical_rows_in_one_file_are_all_imported",
-      "confidence_score": 1.0
+      "target": "core_analysis_tests_portfoliobrokerledgertests_test_identical_rows_in_one_file_are_all_imported"
     },
     {
       "relation": "method",
@@ -90853,9 +90853,9 @@
       "source_file": "core_analysis/tests.py",
       "source_location": "L741",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_tests_portfoliobrokerledgertests_test_identical_rows_in_one_file_are_all_imported",
-      "target": "core_analysis_tests_portfoliobrokerledgertests_import",
-      "confidence_score": 1.0
+      "target": "core_analysis_tests_portfoliobrokerledgertests_import"
     },
     {
       "relation": "calls",
@@ -90929,9 +90929,9 @@
       "source_file": "core_analysis/tests.py",
       "source_location": "L730",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "core_analysis_tests_rationale_730",
-      "target": "core_analysis_tests_portfoliobrokerledgertests_test_identical_rows_in_one_file_are_all_imported",
-      "confidence_score": 1.0
+      "target": "core_analysis_tests_portfoliobrokerledgertests_test_identical_rows_in_one_file_are_all_imported"
     },
     {
       "relation": "method",
@@ -92918,5 +92918,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "e9b2b9895a393c8fe9406534228aa94bb239cb8d"
+  "built_at_commit": "55e9fe8b2fb62bcf22668f4c53dc1b78e16f3d7a"
 }
