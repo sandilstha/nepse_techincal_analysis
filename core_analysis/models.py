@@ -639,6 +639,77 @@ class AccountApproval(models.Model):
     def is_pending(self):
         return self.status == self.PENDING
 
+
+class MarginEligibleCompany(models.Model):
+    """
+    Table: margin_eligible_companies
+
+    The regulator-/broker-published list of securities eligible for margin
+    lending. Owned by THIS app (managed), so it is maintained entirely from the
+    Django admin — add, remove or update entries without any code change.
+
+    Design notes (future-proofing):
+      * ``symbol`` is the natural key (unique); a company keeps ONE row across
+        list revisions.
+      * Removal is a soft toggle (``is_eligible = False``) rather than a delete,
+        so history/audit survives and re-listing is a one-click flip.
+      * Margin specifics that vary per revision (loan-to-value %, risk group,
+        haircut) each get a typed, nullable column — populate when known,
+        leave null otherwise.
+      * ``metadata`` (JSON) absorbs any attribute added by a future list format
+        without a migration, so the app logic never has to change to store more.
+    """
+    symbol = models.CharField(
+        max_length=20, unique=True, db_index=True,
+        help_text="Trading symbol / ticker, e.g. NABIL (the natural key).",
+    )
+    company_name = models.CharField(max_length=255, blank=True, default="")
+    sector = models.CharField(max_length=100, blank=True, default="", db_index=True)
+
+    # Soft add/remove: flip instead of deleting so the list stays auditable.
+    is_eligible = models.BooleanField(
+        default=True, db_index=True,
+        help_text="Untick to de-list without losing the record.",
+    )
+
+    # Margin specifics — all nullable; fill in as the published list provides them.
+    margin_rate = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True,
+        help_text="Max loan-to-value the broker lends against this scrip, in %% (e.g. 50.00).",
+    )
+    risk_category = models.CharField(
+        max_length=50, blank=True, default="",
+        help_text="Optional risk group / class from the source list (e.g. 'Group A').",
+    )
+    source = models.CharField(
+        max_length=100, blank=True, default="",
+        help_text="Where this entry came from (regulator circular, broker sheet, upload…).",
+    )
+    effective_date = models.DateField(
+        null=True, blank=True,
+        help_text="Date this eligibility takes effect, if the source states one.",
+    )
+    notes = models.TextField(blank=True, default="")
+
+    # Escape hatch for any future field the list may carry — no migration needed.
+    metadata = models.JSONField(default=dict, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "margin_eligible_companies"
+        ordering = ["symbol"]
+        verbose_name = "Margin-eligible company"
+        verbose_name_plural = "Margin-eligible companies"
+        indexes = [
+            models.Index(fields=["is_eligible", "symbol"]),
+        ]
+
+    def __str__(self):
+        state = "eligible" if self.is_eligible else "de-listed"
+        return f"{self.symbol} ({state})"
+
     def approve(self, reviewer=None, note=""):
         self.status = self.APPROVED
         self.reviewed_by = reviewer

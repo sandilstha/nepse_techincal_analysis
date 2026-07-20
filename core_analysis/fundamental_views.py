@@ -341,12 +341,15 @@ def fundamental_data_api(request):
         logger.exception("Morningstar research failed for %s", sym)
         morningstar = None
 
+    from core_analysis.services.margin import margin_status
+
     return JsonResponse(
         {
             "ok": True,
             "symbol": sym,
             "profile": profile
             or {"symbol": sym, "security_name": "", "sector_name": ""},
+            "margin": margin_status(sym),
             "selected": {"fy": selected["fy"], "quarter": selected["quarter"]},
             "periods": period_list,
             "headline": headline,

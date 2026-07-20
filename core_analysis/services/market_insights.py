@@ -722,6 +722,7 @@ def _heatmap(enriched, limit=HEATMAP_POOL):
             "symbol": s["symbol"],
             "sector": s["sector"] or "Uncategorized",
             "pct": s["pct"],
+            "change": s["change"],
             "ltp": s["ltp"],
             "turnover": s["turnover"],
         }

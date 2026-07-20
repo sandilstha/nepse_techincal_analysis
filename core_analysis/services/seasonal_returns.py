@@ -33,6 +33,9 @@ EXCLUDED_INDICES = set(RRG_EXCLUDED_INDICES)
 
 CACHE_TTL = 1800  # 30 min — the EOD indices only change once per session.
 
+# NEPSE headline index key (stored mixed-case across the feed; matched iexact).
+_NEPSE_INDEX_KEY = "NEPSE INDEX"
+
 # Display order: NEPSE headline first, then the sector sub-indices. Anything not
 # listed is appended alphabetically.
 _INDEX_ORDER = [
@@ -741,3 +744,146 @@ def build_seasonal_payload():
     # message on the tab for the full cache window.
     cache.set(ck, payload, CACHE_TTL if payload.get("ok") else 60)
     return payload
+
+
+# ── Market-cycle (Weinstein 4-stage) chart for the NEPSE Index ───────────────
+# Operationalises the "NEPSE Market Cycle Stage Classification" SOP as a chart:
+# the NEPSE Index close with its 50 / 150 (30-week) / 200-day MAs, every session
+# tagged with a Weinstein stage so the chart can shade the timeline by stage.
+_CYCLE_WINDOW = 750          # sessions shown (~3 trading years); MAs use full history
+_MC_SLOPE_LOOKBACK = 10      # bars for the 150-day MA slope
+_MC_SLOPE_BAND = 0.3         # ± % over the lookback that counts as "flat"
+_STAGE_META = {
+    1: {"name": "Stage 1 · Base", "color": "#94a3b8"},
+    2: {"name": "Stage 2 · Advance", "color": "#16a34a"},
+    3: {"name": "Stage 3 · Top", "color": "#eab308"},
+    4: {"name": "Stage 4 · Decline", "color": "#dc2626"},
+}
+
+
+def _classify_cycle_stage(close, ma50, ma150):
+    """Vectorised Weinstein stage per session from price vs. the 150-day (30-week)
+    baseline and the 50-day trigger. Priority Stage 2 > 4 > 3 > 1, matching the
+    SOP: buy strength, avoid confirmed declines, flag tops that roll under the
+    50-day while the baseline stalls, otherwise treat it as a base."""
+    import numpy as np
+
+    slope = (ma150 - ma150.shift(_MC_SLOPE_LOOKBACK)) / ma150.shift(_MC_SLOPE_LOOKBACK) * 100.0
+    rising = slope > _MC_SLOPE_BAND
+    falling = slope < -_MC_SLOPE_BAND
+    above = close > ma150
+    s2 = above & rising
+    s4 = (~above) & falling
+    # Topping: rolled under the 50-day but not yet decisively below the baseline.
+    s3 = (close < ma50) & (close >= ma150 * 0.95)
+    stage = np.select([s2, s4, s3], [2, 4, 3], default=1)
+    stage = np.where(ma150.notna() & ma50.notna(), stage, 0).astype(int)
+    return stage
+
+
+def build_market_cycle(window=_CYCLE_WINDOW):
+    """Cached NEPSE-Index market-cycle chart payload (close + MAs + stage bands).
+
+    Self-contained: reads only the NEPSE Index history, so it never disturbs the
+    seasonal engine. Returns a JSON-serialisable dict for the Seasonal desk chart.
+    """
+    from core_analysis.models import NepseMarketIndex
+
+    latest = (
+        NepseMarketIndex.objects.filter(sector_name__iexact=_NEPSE_INDEX_KEY)
+        .order_by("-business_date")
+        .values_list("business_date", flat=True)
+        .first()
+    )
+    if latest is None:
+        return {"ok": False, "reason": "No NEPSE Index history available."}
+    ck = f"market_cycle_v1_{latest}_{window}"
+    cached = cache.get(ck)
+    if cached is not None:
+        return cached
+    try:
+        payload = _compute_market_cycle(window)
+    except Exception:  # pragma: no cover - never let the chart break the tab
+        logger.exception("market cycle computation failed")
+        payload = {"ok": False, "reason": "Market-cycle engine error."}
+    cache.set(ck, payload, CACHE_TTL if payload.get("ok") else 60)
+    return payload
+
+
+def _compute_market_cycle(window):
+    import pandas as pd
+
+    from core_analysis.models import NepseMarketIndex
+
+    rows = (
+        NepseMarketIndex.objects.filter(sector_name__iexact=_NEPSE_INDEX_KEY)
+        .order_by("business_date")
+        .values_list("business_date", "close_index")
+    )
+    df = pd.DataFrame.from_records(list(rows), columns=["date", "close"])
+    if df.empty:
+        return {"ok": False, "reason": "No NEPSE Index history available."}
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df["close"] = pd.to_numeric(df["close"], errors="coerce")
+    df = df.dropna(subset=["date", "close"])
+    df = df[df["close"] > 0].drop_duplicates(subset="date").sort_values("date")
+    if len(df) < 60:
+        return {"ok": False, "reason": "Not enough NEPSE history for a cycle read."}
+
+    df["ma50"] = df["close"].rolling(50).mean()
+    df["ma150"] = df["close"].rolling(150).mean()   # 30-week baseline
+    df["ma200"] = df["close"].rolling(200).mean()
+    df["stage"] = _classify_cycle_stage(df["close"], df["ma50"], df["ma150"])
+
+    # 50/200 golden & death crosses (computed on the full series, filtered to the
+    # window below) so the marker sits on the exact crossover session.
+    cross_sign = (df["ma50"] - df["ma200"])
+    df["cross"] = ""
+    prev = cross_sign.shift(1)
+    df.loc[(prev <= 0) & (cross_sign > 0), "cross"] = "golden"
+    df.loc[(prev > 0) & (cross_sign <= 0), "cross"] = "death"
+
+    tail = df.tail(window).copy()
+
+    def _ms(ts):
+        return int(pd.Timestamp(ts).value // 1_000_000)   # epoch ms (UTC)
+
+    def _r(v):
+        return None if pd.isna(v) else round(float(v), 2)
+
+    points = [
+        {"x": _ms(r.date), "c": _r(r.close), "m50": _r(r.ma50),
+         "m150": _r(r.ma150), "m200": _r(r.ma200)}
+        for r in tail.itertuples(index=False)
+    ]
+
+    # Contiguous same-stage runs → xaxis bands (skip stage 0 = pre-MA warm-up).
+    bands = []
+    for r in tail.itertuples(index=False):
+        s = int(r.stage)
+        if s == 0:
+            continue
+        x = _ms(r.date)
+        if bands and bands[-1]["s"] == s:
+            bands[-1]["x2"] = x
+        else:
+            bands.append({"x": x, "x2": x, "s": s})
+
+    crosses = [
+        {"x": _ms(r.date), "y": _r(r.close), "t": r.cross}
+        for r in tail.itertuples(index=False) if r.cross
+    ]
+
+    last = tail.iloc[-1]
+    cur = int(last["stage"]) or 1
+    meta = _STAGE_META.get(cur, _STAGE_META[1])
+    return {
+        "ok": True,
+        "as_of": f"{tail['date'].max():%Y-%m-%d}",
+        "coverage": f"{tail['date'].min():%Y-%m-%d} to {tail['date'].max():%Y-%m-%d}",
+        "current": {"num": cur, "name": meta["name"], "color": meta["color"]},
+        "points": points,
+        "bands": bands,
+        "crosses": crosses,
+        "legend": [{"num": k, "name": v["name"], "color": v["color"]} for k, v in _STAGE_META.items()],
+    }

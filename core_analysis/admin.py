@@ -9,6 +9,7 @@ from .models import (
     BrokerTrade,
     Holding,
     HoldingCost,
+    MarginEligibleCompany,
     Portfolio,
 )
 
@@ -203,3 +204,51 @@ class BrokerTradeAdmin(admin.ModelAdmin):
         "transaction__portfolio__user__username",
     )
     ordering = ("-transaction__date_ad", "-id")
+
+
+@admin.action(description="Mark selected as margin-eligible")
+def mark_margin_eligible(modeladmin, request, queryset):
+    n = queryset.update(is_eligible=True)
+    _bust_margin_cache()
+    modeladmin.message_user(request, f"{n} company(ies) marked eligible.", messages.SUCCESS)
+
+
+@admin.action(description="De-list selected (mark NOT eligible)")
+def mark_margin_ineligible(modeladmin, request, queryset):
+    n = queryset.update(is_eligible=False)
+    _bust_margin_cache()
+    modeladmin.message_user(request, f"{n} company(ies) de-listed.", messages.WARNING)
+
+
+def _bust_margin_cache():
+    from django.core.cache import cache
+    cache.delete("margin_eligible_map:v1")
+
+
+@admin.register(MarginEligibleCompany)
+class MarginEligibleCompanyAdmin(admin.ModelAdmin):
+    """Maintain the margin-eligible list entirely from the admin — add a row,
+    edit margin_rate/sector, or toggle `is_eligible` to (de)list. The search UI
+    and fundamentals panel pick up changes on the next request (cache is busted
+    on save/delete and by the two bulk actions)."""
+    list_display = ("symbol", "company_name", "sector", "is_eligible",
+                    "margin_rate", "risk_category", "updated_at")
+    list_filter = ("is_eligible", "sector", "risk_category")
+    list_editable = ("is_eligible", "margin_rate")
+    search_fields = ("symbol", "company_name", "sector")
+    ordering = ("symbol",)
+    readonly_fields = ("created_at", "updated_at")
+    actions = (mark_margin_eligible, mark_margin_ineligible)
+    fieldsets = (
+        (None, {"fields": ("symbol", "company_name", "sector", "is_eligible")}),
+        ("Margin details", {"fields": ("margin_rate", "risk_category", "effective_date", "source", "notes")}),
+        ("Advanced", {"classes": ("collapse",), "fields": ("metadata", "created_at", "updated_at")}),
+    )
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        _bust_margin_cache()
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+        _bust_margin_cache()

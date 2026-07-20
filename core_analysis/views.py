@@ -25,11 +25,14 @@ from core_analysis.services.IMM import run_imm_scoring_system
 from core_analysis.services.msv_strategy import run_msv_long_only_simulation
 from core_analysis.services.moving_average import run_ema_50_200_long_only_simulation
 from core_analysis.services.RSI_SMA import run_rsi_sma_long_only_simulation
+from core_analysis.services.sop_strategy import (
+    run_sop_simulation, run_sop_combined_simulation, market_regime_series,
+)
 from core_analysis.services.strategy_tester import run_t3ma_macd_ribbon_simulation
 from core_analysis.services.stage_analysis import calculate_stage_analysis
 from core_analysis.services.RGG_Chart import run_rrg_simulation
 from core_analysis.services.RGG_indices import NEPSE_INDEX_LABELS, ordered_nepse_indices, run_rrg_indices_simulation
-from core_analysis.services.seasonal_returns import build_seasonal_payload
+from core_analysis.services.seasonal_returns import build_seasonal_payload, build_market_cycle
 from core_analysis.services.advanced_market_structure import run_advanced_market_structure_analysis
 from core_analysis.services.support_resistance import (
     DEFAULT_LEVEL_FAMILIES,
@@ -128,6 +131,7 @@ def _dashboard_asset_version():
         "core_analysis/css/workbench-layout.css",
         "core_analysis/js/dashboard.js",
         "core_analysis/js/workbench-ajax.js",
+        "core_analysis/js/fundamentals-panel.js",
     ):
         path = finders.find(rel)
         try:
@@ -149,6 +153,36 @@ def stage_sop_view(request):
     return render(
         request,
         "core_analysis/stage_sop.html",
+        {"asset_version": _dashboard_asset_version()},
+    )
+
+
+def seasonal_sop_view(request):
+    """Methodology SOP for the Seasonal Return desk's Accumulation / Distribution
+    strategy (Workbench → Seasonal Return tab).
+
+    Static content — every window-selection rule, formula and assumption is
+    documented in the template itself, so it never touches the analytics engine.
+    The strategy card's help link deep-links here.
+    """
+    return render(
+        request,
+        "core_analysis/seasonal_sop.html",
+        {"asset_version": _dashboard_asset_version()},
+    )
+
+
+def market_cycle_sop_view(request):
+    """SOP for classifying NEPSE's macro market cycle stage (Weinstein 4-stage
+    model, whole-index) — a manual weekly procedure linked beside the Seasonal
+    Return desk. Distinct from stage_sop_view, which classifies a single symbol.
+
+    Static content — the whole procedure, scoring and checklists live in the
+    template, so it never touches the analytics engine.
+    """
+    return render(
+        request,
+        "core_analysis/market_cycle_sop.html",
         {"asset_version": _dashboard_asset_version()},
     )
 
@@ -253,6 +287,14 @@ def _build_standard_dataframe(symbol, start_date, end_date, use_unadjusted_fallb
     """
     symbol = (symbol or "").strip()
     symbol_upper = symbol.upper()
+
+    # Accept "YYYY/MM/DD" (some datepickers emit slashes) as well as ISO
+    # "YYYY-MM-DD". The ORM date fields only validate the ISO form, so
+    # normalize slashes here before any query is built.
+    if isinstance(start_date, str):
+        start_date = start_date.strip().replace("/", "-")
+    if isinstance(end_date, str):
+        end_date = end_date.strip().replace("/", "-")
 
     empty_schema = pd.DataFrame(columns=[
         "business_date", "open_price_adj", "high_price_adj", "low_price_adj",
@@ -537,6 +579,10 @@ def symbol_autocomplete_view(request):
         .order_by("sector_name")[:10]
     )
 
+    # Margin eligibility for every company row (one cached map, O(1) lookups).
+    from core_analysis.services.margin import eligible_margin_map
+    margin_map = eligible_margin_map()
+
     results = []
     seen = set()
 
@@ -549,10 +595,13 @@ def symbol_autocomplete_view(request):
         label = f"{symbol} - {name}" if name else symbol
         latest_close = row.get("latest_close")
         latest_date = row.get("latest_date")
+        m = margin_map.get(symbol)
         results.append({
             "value": symbol,
             "label": label,
             "type": "company",
+            "margin": {"eligible": True, "rate": m["rate"], "category": m["category"]}
+                       if m else {"eligible": False},
             "latest_close": float(latest_close) if latest_close is not None else None,
             "latest_date": latest_date.isoformat() if latest_date else None,
         })
@@ -646,7 +695,12 @@ def build_dashboard_context(request):
     support_resistance_metrics = None
     advanced_market_structure_metrics = None
     institutional_analysis_rows = []
-    completed_trades = ema_completed_trades = cci_completed_trades = rsi_completed_trades = msv_completed_trades = []
+    sop_backtest_metrics = None
+    sop_equity = []
+    sopc_backtest_metrics = None
+    sopc_equity = []
+    sopc_completed_trades = []
+    completed_trades = ema_completed_trades = cci_completed_trades = rsi_completed_trades = msv_completed_trades = sop_completed_trades = []
     msv_indicator_rows = []
     imm_indicator_rows = []
     imm_event_rows = []
@@ -663,12 +717,15 @@ def build_dashboard_context(request):
     rrg_indices_skipped = []
     rrg_indices_benchmark_points = []
     seasonal = None
+    market_cycle = None
     imm_data_upload_date = None
 
     # Per-tab symbols
     selected_symbol     = g.get("backtest_symbol",     "").upper().strip()
     ema_selected_symbol = g.get("ema_backtest_symbol", "").upper().strip()
     cci_selected_symbol = g.get("cci_backtest_symbol", "").upper().strip()
+    sop_selected_symbol = g.get("sop_backtest_symbol", "").upper().strip()
+    sopc_selected_symbol = g.get("sopc_backtest_symbol", "").upper().strip()
     rsi_selected_symbol = g.get("rsi_backtest_symbol", "").upper().strip()
     msv_selected_symbol = g.get("msv_backtest_symbol", "").upper().strip()
     imm_selected_symbol = g.get("imm_backtest_symbol", "").upper().strip()
@@ -706,6 +763,28 @@ def build_dashboard_context(request):
     ema_to   = g.get("ema_to_date",   g.get("to_date",   "")).strip()
     cci_from = g.get("cci_from_date", g.get("from_date", "")).strip()
     cci_to   = g.get("cci_to_date",   g.get("to_date",   "")).strip()
+    sop_from = g.get("sop_from_date", g.get("from_date", "")).strip()
+    sop_to   = g.get("sop_to_date",   g.get("to_date",   "")).strip()
+    sop_indicator = g.get("sop_indicator", "rsi").lower().strip()
+    # Checkbox: when the SOP form is the submission, absence = unchecked = off.
+    # Otherwise (initial load) default the filter ON (it is rendered checked).
+    if active_tab == "sop_backtest":
+        sop_use_regime = "sop_use_regime" in g
+    else:
+        sop_use_regime = True
+
+    # SOP Combined (confluence) tab params.
+    _ALL_SOP_INDICATORS = ["rsi", "bollinger", "volume_breakout", "ema", "macd"]
+    sopc_from = g.get("sopc_from_date", g.get("from_date", "")).strip().replace("/", "-")
+    sopc_to   = g.get("sopc_to_date",   g.get("to_date",   "")).strip().replace("/", "-")
+    sopc_indicators = [i for i in g.getlist("sopc_indicator") if i in _ALL_SOP_INDICATORS]
+    if not sopc_indicators:
+        sopc_indicators = list(_ALL_SOP_INDICATORS)
+    sopc_min_agree = _safe_int(g.get("sopc_min_agree", 1), 1, minimum=1)
+    if active_tab == "sop_combined":
+        sopc_use_regime = "sopc_use_regime" in g
+    else:
+        sopc_use_regime = True
     rsi_from = g.get("rsi_from_date", g.get("from_date", "")).strip()
     rsi_to   = g.get("rsi_to_date",   g.get("to_date",   "")).strip()
     msv_from = g.get("msv_from_date", g.get("from_date", "")).strip()
@@ -814,6 +893,87 @@ def build_dashboard_context(request):
                     cci_trades_df["entry_date"] = pd.to_datetime(cci_trades_df["entry_date"]).dt.strftime("%Y-%m-%d")
                     cci_trades_df["exit_date"]  = pd.to_datetime(cci_trades_df["exit_date"]).dt.strftime("%Y-%m-%d")
                     cci_completed_trades = cci_trades_df.to_dict(orient="records")
+
+    # ── TAB: SOP Multi-Indicator (5 optimized indicators + 200-SMA regime) ────
+    if sop_selected_symbol and active_tab == "sop_backtest":
+        if not (sop_from and sop_to):
+            sop_backtest_metrics = {"error": "Please select both From Date and To Date."}
+        else:
+            df = _build_standard_dataframe(sop_selected_symbol, sop_from, sop_to, use_unadjusted_fallback=True)
+            if df.empty:
+                sop_backtest_metrics = {"error": f"No price data found for '{sop_selected_symbol}' in the selected date range."}
+            else:
+                # Regime frame: NEPSE Index 200-SMA, fetched with a wide history so
+                # the SMA is warm at the window start (aligned by date on merge).
+                regime_frame = None
+                if sop_use_regime:
+                    idx_df = _build_standard_dataframe("NEPSE INDEX", "2000-01-01", sop_to)
+                    regime_frame = market_regime_series(idx_df)
+                sop_backtest_metrics, sop_trades_df, sop_equity_df = run_sop_simulation(
+                    df,
+                    indicator=sop_indicator,
+                    use_regime_filter=sop_use_regime,
+                    regime_df=regime_frame,
+                    cost_bps=_safe_float(g.get("sop_cost_bps", 80), 80.0),
+                )
+                if isinstance(sop_backtest_metrics, dict) and "error" not in sop_backtest_metrics:
+                    if not sop_trades_df.empty:
+                        sop_trades_df["entry_date"] = pd.to_datetime(sop_trades_df["entry_date"]).dt.strftime("%Y-%m-%d")
+                        sop_trades_df["exit_date"]  = pd.to_datetime(sop_trades_df["exit_date"]).dt.strftime("%Y-%m-%d")
+                        sop_completed_trades = sop_trades_df.to_dict(orient="records")
+                    if sop_equity_df is not None and not sop_equity_df.empty:
+                        eq = sop_equity_df.copy()
+                        eq["x"] = (pd.to_datetime(eq["business_date"]).astype("int64") // 1_000_000)
+                        sop_equity = [
+                            {
+                                "x": int(r.x),
+                                "equity": None if pd.isna(r.equity) else float(r.equity),
+                                "buyhold": None if pd.isna(r.buyhold) else float(r.buyhold),
+                                "drawdown": None if pd.isna(r.drawdown_pct) else float(r.drawdown_pct),
+                                "regime": str(r.regime),
+                            }
+                            for r in eq.itertuples(index=False)
+                        ]
+
+    # ── TAB: SOP Combined (confluence of N-of-M optimized indicators) ─────────
+    if sopc_selected_symbol and active_tab == "sop_combined":
+        if not (sopc_from and sopc_to):
+            sopc_backtest_metrics = {"error": "Please select both From Date and To Date."}
+        else:
+            df = _build_standard_dataframe(sopc_selected_symbol, sopc_from, sopc_to, use_unadjusted_fallback=True)
+            if df.empty:
+                sopc_backtest_metrics = {"error": f"No price data found for '{sopc_selected_symbol}' in the selected date range."}
+            else:
+                regime_frame = None
+                if sopc_use_regime:
+                    idx_df = _build_standard_dataframe("NEPSE INDEX", "2000-01-01", sopc_to)
+                    regime_frame = market_regime_series(idx_df)
+                sopc_backtest_metrics, sopc_trades_df, sopc_equity_df = run_sop_combined_simulation(
+                    df,
+                    indicators=sopc_indicators,
+                    min_agree=sopc_min_agree,
+                    use_regime_filter=sopc_use_regime,
+                    regime_df=regime_frame,
+                    cost_bps=_safe_float(g.get("sopc_cost_bps", 80), 80.0),
+                )
+                if isinstance(sopc_backtest_metrics, dict) and "error" not in sopc_backtest_metrics:
+                    if not sopc_trades_df.empty:
+                        sopc_trades_df["entry_date"] = pd.to_datetime(sopc_trades_df["entry_date"]).dt.strftime("%Y-%m-%d")
+                        sopc_trades_df["exit_date"]  = pd.to_datetime(sopc_trades_df["exit_date"]).dt.strftime("%Y-%m-%d")
+                        sopc_completed_trades = sopc_trades_df.to_dict(orient="records")
+                    if sopc_equity_df is not None and not sopc_equity_df.empty:
+                        eqc = sopc_equity_df.copy()
+                        eqc["x"] = (pd.to_datetime(eqc["business_date"]).astype("int64") // 1_000_000)
+                        sopc_equity = [
+                            {
+                                "x": int(r.x),
+                                "equity": None if pd.isna(r.equity) else float(r.equity),
+                                "buyhold": None if pd.isna(r.buyhold) else float(r.buyhold),
+                                "drawdown": None if pd.isna(r.drawdown_pct) else float(r.drawdown_pct),
+                                "regime": str(r.regime),
+                            }
+                            for r in eqc.itertuples(index=False)
+                        ]
 
     # ── TAB 5: RSI/SMA ───────────────────────────────────────────────────────
     if rsi_selected_symbol and active_tab == "rsi_backtest":
@@ -1167,6 +1327,8 @@ def build_dashboard_context(request):
     # pane always has data when switched to from the Raw Inventory Manager.
     if active_tab in _WORKBENCH_DATA_TABS:
         seasonal = build_seasonal_payload()
+        # NEPSE market-cycle chart (Weinstein stages) shown on the Seasonal desk.
+        market_cycle = build_market_cycle()
 
     return {
         "records": queryset,
@@ -1195,6 +1357,32 @@ def build_dashboard_context(request):
         "cci_selected_symbol":  cci_selected_symbol,
         "cci_from_date":        cci_from,
         "cci_to_date":          cci_to,
+
+        "sop_backtest_metrics": sop_backtest_metrics,
+        "sop_completed_trades": sop_completed_trades,
+        "sop_selected_symbol":  sop_selected_symbol,
+        "sop_from_date":        sop_from,
+        "sop_to_date":          sop_to,
+        "sop_indicator":        sop_indicator,
+        "sop_use_regime":       sop_use_regime,
+        "sop_equity":           sop_equity,
+
+        "sopc_backtest_metrics": sopc_backtest_metrics,
+        "sopc_completed_trades": sopc_completed_trades,
+        "sopc_selected_symbol":  sopc_selected_symbol,
+        "sopc_from_date":        sopc_from,
+        "sopc_to_date":          sopc_to,
+        "sopc_indicators":       sopc_indicators,
+        "sopc_min_agree":        sopc_min_agree,
+        "sopc_use_regime":       sopc_use_regime,
+        "sopc_equity":           sopc_equity,
+        "sopc_indicator_choices": [
+            ("rsi", "RSI(25) 30/70"),
+            ("bollinger", "Bollinger 10/±2.0"),
+            ("volume_breakout", "Volume Breakout 40/20/2×"),
+            ("ema", "EMA 20/50 crossover"),
+            ("macd", "MACD 26/45/20"),
+        ],
 
         # RSI
         "rsi_backtest_metrics": rsi_backtest_metrics,
@@ -1277,6 +1465,7 @@ def build_dashboard_context(request):
 
         # RRG Seasonal Return
         "seasonal": seasonal,
+        "market_cycle": market_cycle,
 
         # EMA parameters
         "ema_take_profit_pct": g.get("ema_take_profit_pct", "15"),
@@ -1289,6 +1478,8 @@ def build_dashboard_context(request):
         "cci_adx_threshold": g.get("cci_adx_threshold", "25"),
         "cci_volume_avg_period": g.get("cci_volume_avg_period", "20"),
         "cci_volume_multiplier": g.get("cci_volume_multiplier", "1.5"),
+        "sop_cost_bps":      g.get("sop_cost_bps", "80"),
+        "sopc_cost_bps":     g.get("sopc_cost_bps", "80"),
 
         # RSI parameters
         "rsi_length":     g.get("rsi_length", "14"),
@@ -1323,6 +1514,8 @@ TAB_RESULTS_PARTIALS = {
     "backtest":            "core_analysis/includes/_t3ma_results.html",
     "ema_backtest":        "core_analysis/includes/_ema_results.html",
     "cci_backtest":        "core_analysis/includes/_cci_results.html",
+    "sop_backtest":        "core_analysis/includes/_sop_results.html",
+    "sop_combined":        "core_analysis/includes/_sop_combined_results.html",
     "rsi_backtest":        "core_analysis/includes/_rsi_results.html",
     "msv_backtest":        "core_analysis/includes/_msv_results.html",
     "imm_backtest":        "core_analysis/includes/_imm_results.html",

@@ -25,6 +25,8 @@ from .views import (
     symbol_autocomplete_view,
     trigger_sync_and_calculate,
     stage_sop_view,
+    seasonal_sop_view,
+    market_cycle_sop_view,
 )
 from .insights_views import (
     market_insights_view,
@@ -119,6 +121,10 @@ urlpatterns = [
     path('workbench/', crud_dashboard_view, name='crud_dashboard'),
     # Methodology SOP for the Stage Analysis desk (Technical Analysis tab).
     path('stage/sop/', stage_sop_view, name='stage_sop'),
+    # Methodology SOP for the Seasonal Return desk's Accumulation / Distribution strategy.
+    path('seasonal/sop/', seasonal_sop_view, name='seasonal_sop'),
+    # SOP for NEPSE macro market-cycle stage classification (Weinstein 4-stage, whole index).
+    path('market-cycle/sop/', market_cycle_sop_view, name='market_cycle_sop'),
     # AJAX: run one tab's calculation and return only its results partial.
     path('workbench/calc/', dashboard_tab_calc, name='dashboard_tab_calc'),
     # AJAX: Gemini narrative for the Support & Resistance tab (JSON).
