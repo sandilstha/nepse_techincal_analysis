@@ -2,14 +2,14 @@
 {% load static %}
 
 {% block content %}
-<ul class="nav nav-tabs mb-4 {% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' %}nav-section-strategy{% elif active_tab == 'msv_backtest' or active_tab == 'imm_backtest' or active_tab == 'stage_backtest' or active_tab == 'support_resistance' %}nav-section-advanced{% elif active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}nav-section-rrg{% else %}nav-section-inventory{% endif %}" id="workspaceTabs" role="tablist">
+<ul class="nav nav-tabs mb-4 {% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' or active_tab == 'sop_backtest' or active_tab == 'sop_combined' %}nav-section-strategy{% elif active_tab == 'msv_backtest' or active_tab == 'imm_backtest' or active_tab == 'stage_backtest' or active_tab == 'support_resistance' %}nav-section-advanced{% elif active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}nav-section-rrg{% else %}nav-section-inventory{% endif %}" id="workspaceTabs" role="tablist">
 
     <li class="nav-item primary-menu-item">
       <button type="button"
-              class="primary-menu-tab {% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' %}active{% endif %}"
+              class="primary-menu-tab {% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' or active_tab == 'sop_backtest' or active_tab == 'sop_combined' %}active{% endif %}"
               id="strategyMenuToggle"
               data-primary-section="strategy"
-              aria-expanded="{% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' %}true{% else %}false{% endif %}">
+              aria-expanded="{% if active_tab == 'backtest' or active_tab == 'ema_backtest' or active_tab == 'cci_backtest' or active_tab == 'rsi_backtest' or active_tab == 'sop_backtest' or active_tab == 'sop_combined' %}true{% else %}false{% endif %}">
         <span class="primary-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 7-8"/><path d="M16 4h5v5"/></svg></span>Trading Strategy Simulator
       </button>
     </li>
@@ -67,6 +67,18 @@
               data-bs-toggle="tab" data-bs-target="#rsi-backtest-pane" type="button" role="tab"
               aria-selected="{% if active_tab == 'rsi_backtest' %}true{% else %}false{% endif %}">RSI/SMA Long-Only Desk</button>
     </li>
+    <li class="nav-item workspace-subtab-item strategy-card-item">
+      <button class="nav-link workspace-subtab strategy-card-button {% if active_tab == 'sop_backtest' %}active{% endif %}"
+              data-section="strategy"
+              data-bs-toggle="tab" data-bs-target="#sop-backtest-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'sop_backtest' %}true{% else %}false{% endif %}">SOP Strategy Simulator</button>
+    </li>
+    <li class="nav-item workspace-subtab-item strategy-card-item">
+      <button class="nav-link workspace-subtab strategy-card-button {% if active_tab == 'sop_combined' %}active{% endif %}"
+              data-section="strategy"
+              data-bs-toggle="tab" data-bs-target="#sop-combined-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'sop_combined' %}true{% else %}false{% endif %}">SOP Combined (Confluence)</button>
+    </li>
     <li class="nav-item workspace-subtab-item advanced-tool-item">
       <button class="nav-link workspace-subtab {% if active_tab == 'msv_backtest' %}active{% endif %}"
               data-section="advanced"
@@ -111,6 +123,8 @@
     {% include "core_analysis/includes/_ema_tab.html" %}
     {% include "core_analysis/includes/_cci_tab.html" %}
     {% include "core_analysis/includes/_rsi_tab.html" %}
+    {% include "core_analysis/includes/_sop_tab.html" %}
+    {% include "core_analysis/includes/_sop_combined_tab.html" %}
     {% include "core_analysis/includes/_msv_tab.html" %}
     {% include "core_analysis/includes/_imm_tab.html" %}
     {% include "core_analysis/includes/_stage_tab.html" %}
@@ -119,6 +133,8 @@
     {% include "core_analysis/includes/_rrg_indices_tab.html" %}
     {% include "core_analysis/includes/_rrg_seasonal_tab.html" %}
   </div>{# /tab-content #}
+
+  {% include "core_analysis/includes/_fundamentals_panel.html" %}
 {% endblock %}
 
 {% block extra_js %}
@@ -133,8 +149,11 @@
 
 <script>window.NEPSE_URLS = {
   symbolAutocomplete: "{% url 'symbol_autocomplete' %}",
-  dashboardCalc: "{% url 'dashboard_tab_calc' %}"
+  dashboardCalc: "{% url 'dashboard_tab_calc' %}",
+  fundamentalApi: "{% url 'fundamental_data_api' %}",
+  fundamentalPage: "{% url 'fundamental_analysis' %}"
 };</script>
 <script src="{% static 'core_analysis/js/dashboard.js' %}?v={{ dashboard_asset_version }}"></script>
 <script src="{% static 'core_analysis/js/workbench-ajax.js' %}?v={{ dashboard_asset_version }}"></script>
+<script src="{% static 'core_analysis/js/fundamentals-panel.js' %}?v={{ dashboard_asset_version }}"></script>
 {% endblock %}

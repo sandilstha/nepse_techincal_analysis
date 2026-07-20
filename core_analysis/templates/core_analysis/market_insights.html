@@ -286,6 +286,10 @@
         <div class="mi-card-tools">
           <span class="mi-card-hint" id="heatmap-asof"></span>
           <span class="mi-card-hint">size = turnover · colour = daily change</span>
+          <div class="mi-range" role="group" aria-label="Heatmap tile size">
+            <button type="button" class="mi-range-btn" id="heatmap-zoom-out" aria-label="Smaller tiles" title="Smaller tiles">&minus;</button>
+            <button type="button" class="mi-range-btn" id="heatmap-zoom-in" aria-label="Larger tiles" title="Larger tiles">&plus;</button>
+          </div>
           <select id="heatmap-sector" class="mi-select" aria-label="Filter heatmap by sector">
             <option value="ALL">All sectors</option>
           </select>

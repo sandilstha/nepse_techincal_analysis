@@ -1,7 +1,9 @@
+{% load static %}
 {% comment %}
 RRG → Seasonal Return desk. Monthly seasonality of every NEPSE index, computed
 from the local index table by core_analysis.services.seasonal_returns. Server
-rendered from the `seasonal` context payload (no client fetch).
+rendered from the `seasonal` context payload (no client fetch). The NEPSE
+market-cycle chart rides along on the `market_cycle` payload.
 {% endcomment %}
 <div class="tab-pane fade {% if active_tab == 'rrg_seasonal' %}show active{% endif %}" id="rrg-seasonal-pane" role="tabpanel">
   <style>
@@ -92,15 +94,40 @@ rendered from the `seasonal` context payload (no client fetch).
     .strat-toggle:hover { color: var(--ink-1, #e7eefc); border-color: var(--accent, #4c8dff); }
     .strat-toggle[aria-expanded="true"] { background: var(--accent, #4c8dff); color: #fff; border-color: var(--accent, #4c8dff); }
     .strat-body[hidden] { display: none; }
+    .mc-card { margin-bottom: 20px; }
+    .mc-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; font-size: 11px; color: var(--ink-3, #94a3b8); }
+    .mc-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+    .mc-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   </style>
 
   <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4 season-wrap">
     {% if not seasonal or not seasonal.ok %}
       <div class="season-empty">{{ seasonal.reason|default:"Seasonal data is not available yet." }}</div>
     {% else %}
-    <div class="season-head">
-      <h5>Seasonal Return</h5>
+    <div class="season-head" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <h5 style="margin:0;">Seasonal Return</h5>
+      <a href="{% url 'market_cycle_sop' %}" class="strat-toggle" target="_blank" rel="noopener" title="SOP — NEPSE Market Cycle Stage Classification (Weinstein 4-stage, whole index)" aria-label="NEPSE Market Cycle Stage Classification SOP" style="text-decoration:none; width:auto; padding:2px 10px; border-radius:999px;">Market Cycle SOP</a>
     </div>
+
+    {% if market_cycle and market_cycle.ok %}
+    <div class="season-strat mc-card">
+      <div class="strat-head">
+        <div>
+          <h6>NEPSE Market Cycle — Weinstein Stages</h6>
+          <span class="strat-sub">NEPSE Index close with 50 / 150 (30-week) / 200-day MAs, background shaded by stage · as of {{ market_cycle.as_of }}</span>
+        </div>
+        <span class="phase-chip" style="border:1px solid {{ market_cycle.current.color }}; color:{{ market_cycle.current.color }}; background:transparent;">{{ market_cycle.current.name }}</span>
+      </div>
+      <div id="mcChart" style="width:100%; min-height:380px;"></div>
+      <div class="mc-legend">
+        {% for s in market_cycle.legend %}
+          <span class="mc-legend-item"><span class="mc-dot" style="background:{{ s.color }};"></span>{{ s.name }}</span>
+        {% endfor %}
+        <span class="mc-legend-item"><span class="mc-dot" style="background:#f59e0b;border-radius:2px;"></span>Golden / Death cross</span>
+      </div>
+      {{ market_cycle|json_script:"mc-data" }}
+    </div>
+    {% endif %}
 
     {% with st=seasonal.strategy %}
     {% if st and st.ok %}
@@ -112,6 +139,7 @@ rendered from the `seasonal` context payload (no client fetch).
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="phase-chip phase-{{ st.phase|lower }}">{{ st.phase }}</span>
+          <a href="{% url 'seasonal_sop' %}" class="strat-toggle" target="_blank" rel="noopener" title="Methodology (SOP) — how the Accumulation / Distribution strategy is computed" aria-label="Seasonal strategy methodology (SOP)" style="text-decoration:none;">SOP</a>
           <button type="button" class="strat-toggle" id="stratToggle" aria-expanded="false" aria-controls="stratBody" title="Show seasonal strategy details">?</button>
         </div>
       </div>
@@ -290,10 +318,78 @@ rendered from the `seasonal` context payload (no client fetch).
       </div>
     </div>
 
+    <script src="{% static 'core_analysis/vendor/apexcharts.min.js' %}"></script>
     <script>
       (function () {
         var pane = document.getElementById('rrg-seasonal-pane');
         if (!pane) return;
+
+        // ── NEPSE market-cycle chart (Weinstein stages) ────────────────────
+        // Line chart: close + 50/150/200-day MAs, with the background shaded by
+        // stage (xaxis annotations) and golden/death crosses marked. Rendered
+        // lazily: a chart mounted into a hidden tab pane gets 0 width, so we wait
+        // until the pane is actually visible (now, or on Bootstrap tab-show).
+        var mcRendered = false;
+        function renderMarketCycle() {
+          if (mcRendered) return;
+          var host = document.getElementById('mcChart');
+          var dataEl = document.getElementById('mc-data');
+          if (!host || !dataEl || typeof ApexCharts === 'undefined') return;
+          if (!host.offsetParent && host.offsetWidth === 0) return;  // still hidden
+          var d;
+          try { d = JSON.parse(dataEl.textContent); } catch (e) { return; }
+          if (!d || !d.ok || !d.points || !d.points.length) return;
+          mcRendered = true;
+
+          var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+          var stageColor = {1: '#94a3b8', 2: '#16a34a', 3: '#eab308', 4: '#dc2626'};
+          var mk = function (key) { return d.points.map(function (p) { return [p.x, p[key]]; }); };
+
+          var bandAnns = (d.bands || []).map(function (b) {
+            return { x: b.x, x2: b.x2, fillColor: stageColor[b.s] || '#94a3b8', opacity: isDark ? 0.13 : 0.10 };
+          });
+          var crossAnns = (d.crosses || []).map(function (c) {
+            return { x: c.x, borderColor: '#f59e0b', strokeDashArray: 3,
+              label: { text: c.t === 'golden' ? 'GC' : 'DC', borderColor: '#f59e0b',
+                style: { color: '#111', background: '#f59e0b', fontSize: '9px' }, orientation: 'horizontal' } };
+          });
+
+          var opts = {
+            chart: { type: 'line', height: 400, fontFamily: 'inherit', animations: { enabled: false },
+              toolbar: { show: true, tools: { download: false, selection: true, zoom: true, zoomin: true,
+                zoomout: true, pan: true, reset: true } }, background: 'transparent' },
+            theme: { mode: isDark ? 'dark' : 'light' },
+            series: [
+              { name: 'NEPSE', data: mk('c') },
+              { name: '50D MA', data: mk('m50') },
+              { name: '150D MA (30w)', data: mk('m150') },
+              { name: '200D MA', data: mk('m200') }
+            ],
+            colors: ['#e7eefc', '#4c8dff', '#f59e0b', '#a855f7'],
+            stroke: { width: [2.2, 1.2, 1.4, 1.2], curve: 'straight' },
+            fill: { type: 'solid', opacity: 1 },
+            dataLabels: { enabled: false },
+            markers: { size: 0 },
+            legend: { show: true, position: 'top', horizontalAlign: 'left', fontSize: '11px' },
+            grid: { borderColor: isDark ? 'rgba(148,163,184,.14)' : 'rgba(15,23,42,.08)', strokeDashArray: 3 },
+            xaxis: { type: 'datetime', labels: { datetimeUTC: true } },
+            yaxis: { labels: { formatter: function (v) { return v == null ? '' : Math.round(v).toLocaleString(); } },
+              tickAmount: 5, decimalsInFloat: 0 },
+            tooltip: { shared: true, x: { format: 'dd MMM yyyy' },
+              y: { formatter: function (v) { return v == null ? '—' : v.toLocaleString(undefined, { maximumFractionDigits: 2 }); } } },
+            annotations: { xaxis: bandAnns.concat(crossAnns) }
+          };
+          try { new ApexCharts(host, opts).render(); }
+          catch (e) { mcRendered = false; }
+        }
+
+        // Render now if visible, and again whenever the Seasonal sub-tab is shown.
+        renderMarketCycle();
+        var subBtn = document.querySelector('[data-bs-target="#rrg-seasonal-pane"]');
+        if (subBtn) subBtn.addEventListener('shown.bs.tab', renderMarketCycle);
+        document.addEventListener('shown.bs.tab', function (e) {
+          if (pane.classList.contains('active') || (pane.offsetParent !== null)) renderMarketCycle();
+        });
 
         // Seasonal Strategy card is collapsed by default; the ? toggle on the
         // header expands/collapses the outlook + table + notes.
