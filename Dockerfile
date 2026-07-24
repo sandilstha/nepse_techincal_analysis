@@ -11,7 +11,15 @@ FROM python:3.13-slim-bookworm
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    NUMBA_CACHE_DIR=/tmp/numba_cache
+
+# pandas_ta's numba-jitted helpers (e.g. _math.py) default to caching compiled
+# functions next to the installed source file. That's root-owned site-packages,
+# and the app runs as a non-root user, so numba's cache locator fails outright
+# ("no locator available for file ...") instead of just skipping the cache.
+# Pointing NUMBA_CACHE_DIR at /tmp keeps caching working regardless of which
+# UID the container runs as.
 
 # TA-Lib C library version (installed from the project's prebuilt .deb release).
 ARG TALIB_VERSION=0.6.4

@@ -1,0 +1,34 @@
+name: Deploy
+
+# Runs on the self-hosted runner installed on the VM (see docs/DEPLOY.md-style
+# setup notes in the deploy chat history). If the VM/runner is offline when
+# this push happens, GitHub queues the run and it fires as soon as the runner
+# reconnects — no polling, no inbound access to the VM required.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Only one deploy in flight at a time; a newer push supersedes a queued older one.
+concurrency:
+  group: deploy-vm
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    timeout-minutes: 15
+    steps:
+      - name: Pull latest main and redeploy
+        run: |
+          set -e
+          cd "$DEPLOY_DIR"
+          git fetch origin main
+          git merge --ff-only origin/main
+          docker compose up -d --build
+          docker compose ps
+        env:
+          # Absolute path to the persistent clone on the VM that docker-compose.yml
+          # bind-mounts into the web container. Set as a runner-level env var
+          # (or hardcode it here) — see setup notes.
+          DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
