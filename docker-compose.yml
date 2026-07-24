@@ -4,6 +4,31 @@
 # This spins up MySQL + the Django app. The app container waits for MySQL,
 # runs migrations and collectstatic, then serves via gunicorn (WhiteNoise
 # serves the static assets).
+#
+# ── Auto-deploy via git pull (production/server use) ───────────────────────
+# `web` bind-mounts this repo checkout into the container at /app. On every
+# container start/restart, docker/entrypoint.sh does a fast-forward-only
+# `git pull origin main` against that checkout before starting gunicorn — so
+# redeploying is just:
+#     git -C /path/to/repo fetch && docker compose restart web
+# (or simply `docker compose restart web`, since the entrypoint itself pulls).
+# Rebuild (`docker compose up -d --build`) only when Dockerfile/requirements
+# change, not for ordinary app-code changes.
+#
+# One-time host setup:
+#   1. Clone this repo on the server with a remote git can already push/pull
+#      (SSH deploy key, or an HTTPS URL with an embedded token/credential
+#      helper) — the container reuses whatever remote + credentials are
+#      already configured in the checkout's .git/config.
+#   2. Set DEPLOY_UID / DEPLOY_GID below (put them in a .env next to this
+#      file) to the host user that owns the clone, e.g. `id -u` / `id -g` of
+#      the deploy account — so the container can read/write the bind-mounted
+#      working tree (git pull, collectstatic, etc.) without permission
+#      errors. Defaults to 10001/10001, matching the image's built-in
+#      non-root `appuser`, which is only correct if the clone happens to be
+#      owned by uid/gid 10001 on the host.
+#   3. Your existing Cloudflare tunnel should already point at this
+#      container's published port (8000) — nothing to change there.
 
 services:
   db:
@@ -29,7 +54,20 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # Bind-mount the repo so `git pull` inside the container updates real
+    # files on the host, and vice versa. Comment this out for a pure
+    # build-once/COPY-based deploy (no auto-pull).
+    volumes:
+      - .:/app
+    # Match the host user that owns the checkout above (see the auto-deploy
+    # notes) so the bind mount is writable. Set DEPLOY_UID/DEPLOY_GID in a
+    # .env file next to this compose file to override the defaults.
+    user: "${DEPLOY_UID:-10001}:${DEPLOY_GID:-10001}"
     environment:
+      # ── Auto-deploy ────────────────────────────────────────────────────
+      GIT_AUTO_PULL: "1"
+      GIT_AUTO_PULL_BRANCH: "main"
+
       # ── Database (points at the `db` service above) ──────────────────────
       DB_NAME: nepse_database
       DB_USER: root

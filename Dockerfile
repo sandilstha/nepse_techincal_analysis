@@ -26,11 +26,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         default-libmysqlclient-dev \
         curl \
         ca-certificates \
+        git \
     && curl -fsSL -o /tmp/ta-lib.deb \
         "https://github.com/TA-Lib/ta-lib/releases/download/v${TALIB_VERSION}/ta-lib_${TALIB_VERSION}_amd64.deb" \
     && apt-get install -y --no-install-recommends /tmp/ta-lib.deb \
     && rm -f /tmp/ta-lib.deb \
     && rm -rf /var/lib/apt/lists/*
+
+# Deploy runs with the repo bind-mounted at /app (see docker-compose.yml) so the
+# entrypoint can `git pull` new commits without an image rebuild. A bind-mounted
+# checkout is usually owned by the host deploy user, not root, so git refuses to
+# touch it ("dubious ownership") unless explicitly told it's safe. --system writes
+# to /etc/gitconfig, which applies no matter which UID the container runs as.
+RUN git config --system --add safe.directory /app
 
 WORKDIR /app
 
@@ -44,12 +52,10 @@ RUN pip install -r requirements.txt \
 # ── Application code ────────────────────────────────────────────────────────
 COPY . .
 
-# Normalise line endings and make the entrypoint executable (repo is authored on
-# Windows, so the script may carry CRLF that would break the shebang).
-RUN sed -i 's/\r$//' /app/docker/entrypoint.sh \
-    && chmod +x /app/docker/entrypoint.sh
-
-# Run as a non-root user.
+# Run as a non-root user by default. When deploying with the bind-mount +
+# git-auto-pull setup in docker-compose.yml, override this at runtime with
+# `user: "UID:GID"` set to whoever owns the checkout on the host, so the
+# container can read/write the bind-mounted working tree (including `.git`).
 RUN useradd --create-home --uid 10001 appuser \
     && mkdir -p /app/staticfiles \
     && chown -R appuser:appuser /app
@@ -57,8 +63,19 @@ USER appuser
 
 EXPOSE 8000
 
-# entrypoint waits for the DB, runs migrations + collectstatic, then exec's CMD.
-ENTRYPOINT ["/app/docker/entrypoint.sh"]
+# docker-entrypoint.sh lives outside /app so it survives being shadowed by the
+# bind-mounted repo. It re-applies the CRLF fix + exec bit to docker/entrypoint.sh
+# on every start (a `git pull` can bring in a freshly-checked-out, non-executable,
+# possibly-CRLF copy of that file), then hands off to it.
+COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+USER root
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
+    && chmod +x /usr/local/bin/docker-entrypoint.sh
+USER appuser
+
+# entrypoint pulls the latest code, waits for the DB, runs migrations +
+# collectstatic, then exec's CMD.
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["gunicorn", "nepse_project.wsgi:application", \
      "--bind", "0.0.0.0:8000", \
      "--workers", "1", \
