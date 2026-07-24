@@ -1,9 +1,14 @@
-# Run the whole stack locally with:  docker compose up --build
+# Run the app with:  docker compose up --build
 # App will be at http://localhost:8000
 #
-# This spins up MySQL + the Django app. The app container waits for MySQL,
-# runs migrations and collectstatic, then serves via gunicorn (WhiteNoise
-# serves the static assets).
+# This runs the Django app only — MySQL is external (set DB_HOST/DB_PORT/etc.
+# in .env to point at it). The app container waits for that DB to accept
+# connections, runs migrations and collectstatic, then serves via gunicorn
+# (WhiteNoise serves the static assets). There used to be a bundled `db`
+# service here for local dev; it was removed to stop every build/deploy from
+# pulling a ~1.1 GB mysql image nobody used against the real (external) DB.
+# For local dev against a throwaway MySQL, run one yourself and point DB_HOST
+# at it, e.g.: docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=devpw mysql:8.4
 #
 # ── Auto-deploy via git pull (production/server use) ───────────────────────
 # `web` bind-mounts this repo checkout into the container at /app. On every
@@ -31,29 +36,8 @@
 #      container's published port (8000) — nothing to change there.
 
 services:
-  db:
-    image: mysql:8.4
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    environment:
-      MYSQL_DATABASE: nepse_database
-      MYSQL_ROOT_PASSWORD: nepse_root_pw
-    ports:
-      # Exposed so you can inspect the DB from the host (e.g. MySQL Workbench).
-      - "3307:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pnepse_root_pw"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-    restart: unless-stopped
-
   web:
     build: .
-    depends_on:
-      db:
-        condition: service_healthy
     # Bind-mount the repo so `git pull` inside the container updates real
     # files on the host, and vice versa. Comment this out for a pure
     # build-once/COPY-based deploy (no auto-pull).
@@ -65,8 +49,8 @@ services:
     user: "${DEPLOY_UID:-10001}:${DEPLOY_GID:-10001}"
     # Everything app-specific (DB_*, DJANGO_*, GEMINI_API_KEY, OPENROUTER_API_KEY, ...)
     # comes from your own .env — copy .env.example to .env and fill it in first.
-    # This is what lets DB_HOST point at an external MySQL server (or the bundled
-    # `db` service below, for local dev) without editing this file.
+    # This is what lets DB_HOST point at whichever MySQL server you're using
+    # without editing this file.
     env_file:
       - .env
     environment:
@@ -81,6 +65,3 @@ services:
     ports:
       - "8000:8000"
     restart: unless-stopped
-
-volumes:
-  mysql_data:
