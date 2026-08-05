@@ -221,6 +221,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # NEPSE Data dropdown items for the primary nav (registry only,
+                # no queries) — the nav is included from many views.
+                'core_analysis.context_processors.nepse_data_menu',
+                'core_analysis.context_processors.global_assets',
             ],
         },
     },

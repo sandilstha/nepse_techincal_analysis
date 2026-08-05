@@ -30,10 +30,9 @@
     morningstar: document.getElementById("fa-morningstar"),
     model: document.getElementById("fa-model"),
     // Company Financials matrix controls.
-    fmStatement: document.getElementById("fm-statement"),
+    fmTabs: document.getElementById("fm-tabs"),
     fmVersion: document.getElementById("fm-version"),
-    fmPeriods: document.getElementById("fm-periods"),
-    fmLoad: document.getElementById("fm-load"),
+    fmPills: document.getElementById("fm-pills"),
     fmTable: document.getElementById("fm-table"),
   };
 
@@ -138,6 +137,8 @@
   }
 
   function renderTrend(trend) {
+    // The trend block is optional: a host can render the cards without it.
+    if (!els.trend || !els.trendSection) return;
     els.trend.innerHTML = "";
     if (!trend || !trend.length) {
       els.trendSection.classList.add("fa-hidden");
@@ -468,11 +469,18 @@
     return (a - 1) + "/" + pb;
   }
 
+  // Tab/pill state (replaces the old Statement/Periods dropdowns + Load button —
+  // every control change reloads the table immediately).
+  // Eight quarters is the default depth: two years of comparatives, which is
+  // what the full-width table can show at a readable size. The period pills
+  // widen or narrow it from there.
+  var fmState = { statement: "BS", periods: "8" };
+
   function loadMatrix() {
     if (!state.data) return;
     var url = cfg.matrixUrl + "?symbol=" + encodeURIComponent(state.data.symbol) +
-      "&statement=" + encodeURIComponent(els.fmStatement.value) +
-      "&periods=" + encodeURIComponent(els.fmPeriods.value);
+      "&statement=" + encodeURIComponent(fmState.statement) +
+      "&periods=" + encodeURIComponent(fmState.periods);
     if (els.fmVersion.value) url += "&data_version=" + encodeURIComponent(els.fmVersion.value);
     els.fmTable.innerHTML = '<tbody><tr><td class="fm-empty">Loading…</td></tr></tbody>';
     fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
@@ -522,10 +530,12 @@
     var thead = el("thead");
     var htr = el("tr");
     htr.appendChild(thEl("Financial Year", "fm-firstcol"));
-    m.columns.forEach(function (c) {
-      var th = thEl("", bandByKey[c.key] ? "fm-band" : null);
+    m.columns.forEach(function (c, i) {
+      var cls = (bandByKey[c.key] ? "fm-band" : "") + (i === 0 ? " fm-new" : "");
+      var th = thEl("", cls.trim() || null);
       th.appendChild(el("span", "fm-yr", c.fy));
       th.appendChild(el("span", "fm-q", "Q" + c.quarter));
+      if (i === 0) th.appendChild(el("span", "fm-latest-chip", "Latest"));
       htr.appendChild(th);
     });
     thead.appendChild(htr);
@@ -537,8 +547,16 @@
       var cls = isTotal ? "fm-row-total" : (row.header ? "fm-row-section" : null);
       var tr = el("tr", cls);
       tr.appendChild(tdEl(row.name || row.code, "fm-firstcol"));
-      m.columns.forEach(function (c) {
-        var td = tdEl(fmtCell(row.values[c.key], row.fmt), bandByKey[c.key] ? "fm-band" : null);
+      m.columns.forEach(function (c, i) {
+        var cls = (bandByKey[c.key] ? "fm-band" : "") + (i === 0 ? " fm-new" : "");
+        var td = tdEl(fmtCell(row.values[c.key], row.fmt), cls.trim() || null);
+        // Per-cell QoQ under the value — plain data rows only (section/total rows
+        // get dedicated growth sub-rows below; QoQ of a % metric is confusing).
+        if (!row.header && !isTotal && row.fmt !== "pct") {
+          var nxt = m.columns[i + 1];
+          var g = fmtGrowth(row.values[c.key], nxt ? row.values[nxt.key] : null);
+          if (g.text) td.appendChild(el("span", "fm-cellqoq " + g.cls, g.text));
+        }
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -564,7 +582,7 @@
         prev = row.values[prevFy(c.fy) + "|" + c.quarter];
       }
       var g = fmtGrowth(curr, prev);
-      var td = tdEl(g.text, (bandByKey[c.key] ? "fm-band " : "") + g.cls);
+      var td = tdEl(g.text, (bandByKey[c.key] ? "fm-band " : "") + (i === 0 ? "fm-new " : "") + g.cls);
       tr.appendChild(td);
     });
     return tr;
@@ -583,11 +601,26 @@
     return td;
   }
 
-  if (els.fmStatement) {
-    els.fmStatement.addEventListener("change", loadMatrix);
+  if (els.fmTabs) {
+    els.fmTabs.addEventListener("click", function (e) {
+      var b = e.target.closest(".fm-tab");
+      if (!b || b.dataset.st === fmState.statement) return;
+      fmState.statement = b.dataset.st;
+      [].forEach.call(els.fmTabs.querySelectorAll(".fm-tab"), function (x) {
+        x.classList.toggle("active", x === b);
+      });
+      loadMatrix();
+    });
+    els.fmPills.addEventListener("click", function (e) {
+      var b = e.target.closest(".fm-pill");
+      if (!b || b.dataset.n === fmState.periods) return;
+      fmState.periods = b.dataset.n;
+      [].forEach.call(els.fmPills.querySelectorAll(".fm-pill"), function (x) {
+        x.classList.toggle("active", x === b);
+      });
+      loadMatrix();
+    });
     els.fmVersion.addEventListener("change", loadMatrix);
-    els.fmPeriods.addEventListener("change", loadMatrix);
-    els.fmLoad.addEventListener("click", loadMatrix);
   }
 
   // --- Growth & Value model (Morningstar-style sector scoring) -------------
@@ -977,7 +1010,11 @@
 
   function buildScatter(results, selSymbol) {
     var NS = "http://www.w3.org/2000/svg";
-    var W = 720, H = 380, pad = 52;
+    // 720x290 (was 720x380). Everything below derives from W/H/pad, so the
+    // shorter box just flattens the plot: with a handful of companies the
+    // extra height was empty, and at full column width it pushed the panel
+    // past a screen on its own.
+    var W = 720, H = 290, pad = 52;
     var x0 = pad, x1 = W - 18, y0 = H - pad, y1 = 18;
 
     // Flexible ("auto-zoom") axes: fit the domain to the data so clusters spread
@@ -1138,6 +1175,8 @@
   // --- loading --------------------------------------------------------------
 
   function showStatus(msg) {
+    // Optional shell: a model-only host has no status/content wrapper.
+    if (!els.status || !els.content) return;
     els.status.textContent = msg;
     els.status.classList.remove("fa-hidden");
     els.content.classList.add("fa-hidden");
@@ -1263,6 +1302,10 @@
     load(symbol);
   }
 
+  /* The company picker is optional. Stock 360 hosts these same blocks but does
+   * its own symbol search in the hero, so it renders no picker and the wiring
+   * below simply doesn't run — the module still boots from FA_CONFIG.symbol. */
+  if (els.symbol && els.go) {
   els.go.addEventListener("click", loadFromInput);
   els.symbol.addEventListener("focus", openCompanyMenu);
   els.symbol.addEventListener("input", openCompanyMenu);
@@ -1296,11 +1339,24 @@
       if (!els.companyPicker.contains(e.target)) closeCompanyMenu();
     });
   }
+  }
 
   // --- boot -----------------------------------------------------------------
 
   if (cfg.symbol) {
-    els.symbol.value = cfg.symbol;
+    if (els.symbol) els.symbol.value = cfg.symbol;
     load(cfg.symbol);
+  }
+  /* Without sub-tabs there is nothing to open the Morningstar panel, so a host
+   * that shows it as a plain section asks for it up front.
+   *
+   * A model-only host runs no statements pipeline, so `state.data` is never
+   * populated and loadModel() would fall back to the FIRST sector — which is
+   * how a hydro company came to be scored against Commercial Banks. Seeding the
+   * symbol lets it resolve the right sector. */
+  if (cfg.autoModel && els.model) {
+    var modelSym = cfg.modelSymbol || cfg.symbol;
+    if (!state.data && modelSym) state.data = { symbol: modelSym };
+    loadModel();
   }
 })();

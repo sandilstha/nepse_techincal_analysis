@@ -46,6 +46,10 @@ _ASSET_FILES = (
     "core_analysis/css/portfolio.css",
     "core_analysis/js/portfolio.js",
     "core_analysis/js/fundamentals.js",
+    "core_analysis/css/stock360.css",
+    "core_analysis/js/stock360.js",
+    "core_analysis/css/nepse-data.css",
+    "core_analysis/js/nepse-data.js",
 )
 
 

@@ -35,6 +35,7 @@
     </div>
 
     <div class="mi-controls">
+      {% include "core_analysis/includes/_stock_search.html" %}
       <a href="{% url 'market_insights' %}" class="mi-icon-btn mi-home-link" title="Home" aria-label="Home">Home</a>
       <a href="{% url 'technical_analysis' %}" class="mi-icon-btn" title="Technical Analysis charts" aria-label="Technical Analysis">Charts</a>
       <span class="mi-live-badge" id="mi-live-badge" hidden>LIVE</span>
@@ -199,7 +200,15 @@
     </article>
   </section>
 
-  <!-- ── Gainers / Losers / Most active ───────────────────────────────── -->
+  {% comment %}
+  ── Gainers / Losers / Most active — HIDDEN FOR NOW ──────────────────
+  Temporarily hidden on request. To restore, delete the comment tag above
+  and the matching closing tag below this section. The feed still returns
+  gainers/losers/most_active; insights.js skips these tables when the card
+  isn't in the DOM.
+
+  NOTE: keep any explanation INSIDE this block. Django's {# ... #} comment
+  syntax is single-line only, so a multi-line one leaks onto the page.
   <section class="mi-grid mi-grid-3">
     <article class="mi-card">
       <div class="mi-card-head">
@@ -240,6 +249,7 @@
       </div>
     </article>
   </section>
+  {% endcomment %}
 
   <!-- ── Index Contributors ───────────────────────────────────────────── -->
   <section class="mi-grid mi-grid-1 mi-contrib-section">

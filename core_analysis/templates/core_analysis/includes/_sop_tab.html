@@ -32,11 +32,12 @@
             <div class="col-md-3">
               <label class="form-label text-muted small fw-medium">Indicator (SOP-optimized)</label>
               <select name="sop_indicator" class="form-select form-select-sm">
-                <option value="rsi" {% if sop_indicator == 'rsi' %}selected{% endif %}>RSI(25) 30/70 — primary</option>
-                <option value="bollinger" {% if sop_indicator == 'bollinger' %}selected{% endif %}>Bollinger 10/±2.0</option>
+
                 <option value="volume_breakout" {% if sop_indicator == 'volume_breakout' %}selected{% endif %}>Volume Breakout 40/20/2.0×</option>
                 <option value="ema" {% if sop_indicator == 'ema' %}selected{% endif %}>EMA 20/50 crossover</option>
                 <option value="macd" {% if sop_indicator == 'macd' %}selected{% endif %}>MACD 26/45/20</option>
+                <option value="supertrend" {% if sop_indicator == 'supertrend' %}selected{% endif %}>Supertrend 20/2.0 SD</option>
+                <option value="donchian" {% if sop_indicator == 'donchian' %}selected{% endif %}>Donchian 20/10 breakout</option>
               </select>
             </div>
             <div class="col-md-2">

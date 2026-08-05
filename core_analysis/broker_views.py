@@ -221,6 +221,89 @@ def stock_wise_api(request):
 
 @require_GET
 @_validated_query
+def broker_flow_map_api(request):
+    """Seller -> buyer share flows for one stock, filtered to a time window.
+
+    Params: ``symbol`` (required), ``date`` (defaults to the stock's newest
+    session), ``from``/``to`` as HH:MM[:SS], ``top`` nodes per side, and
+    ``timeline=1`` to include the per-bucket volume strip.
+    """
+    from .services import broker_flow as bf
+
+    symbol = _symbol(request)
+    day = bf._parse_date(request.GET.get("date"))
+    t_from = bf._parse_time(request.GET.get("from"))
+    t_to = bf._parse_time(request.GET.get("to"))
+
+    # Timeframe selection. Absent (or "today") keeps the original single-session
+    # behaviour, so an existing ?date= link still resolves to exactly one day.
+    range_key = (request.GET.get("range") or "").strip().lower()
+    if range_key and range_key not in bf.NAMED_RANGES | {"custom"}:
+        raise QueryValidationError("Unknown timeframe.")
+    start = end = None
+    if range_key == "custom":
+        start = bf._parse_date(request.GET.get("start_date") or request.GET.get("start"))
+        end = bf._parse_date(request.GET.get("end_date") or request.GET.get("end"))
+        if not start or not end:
+            raise QueryValidationError("Custom dates must use YYYY-MM-DD format.")
+        if (max(start, end) - min(start, end)).days + 1 > bf.MAX_RANGE_DAYS:
+            raise QueryValidationError(
+                f"Custom range cannot exceed {bf.MAX_RANGE_DAYS} days."
+            )
+        start, end = start.isoformat(), end.isoformat()
+
+    try:
+        top_n = max(3, min(20, int(request.GET.get("top", bf._DEFAULT_TOP_N))))
+    except (TypeError, ValueError):
+        top_n = bf._DEFAULT_TOP_N
+
+    rng = {"range_key": range_key or None, "start": start, "end": end}
+
+    try:
+        data = bf.broker_flow(symbol, day, t_from, t_to, top_n, **rng)
+    except Exception:  # pragma: no cover - defensive
+        logger.exception("Broker flow map failed for %s", symbol)
+        return JsonResponse({"ok": False, "error": "Unable to build the flow map."}, status=500)
+
+    if not data:
+        scope = "in that period" if range_key and range_key != "today" else "on that session"
+        return JsonResponse(
+            {"ok": False, "error": f"No floorsheet trades for {symbol} {scope}."},
+            status=200,
+        )
+
+    # Bucket width travels with the payload so the timeline's drag-to-select
+    # arithmetic follows the server instead of hardcoding a duplicate constant.
+    data["bucket_minutes"] = bf.BUCKET_MINUTES
+    # Multi-session ranges bucket per trading day, so the client labels and
+    # drag-selects in dates rather than clock times.
+    data["bucket_unit"] = "date" if data["range"]["from"] != data["range"]["to"] else "time"
+
+    if _boolean(request, "timeline"):
+        try:
+            data["timeline"] = bf.flow_timeline(
+                symbol, day or data["date"], **rng
+            )
+        except Exception:  # pragma: no cover - strip is best-effort
+            logger.exception("Flow timeline failed for %s", symbol)
+            data["timeline"] = []
+
+    # Playback frames ship with the same response so the animation never has to
+    # re-query per step.
+    if _boolean(request, "frames"):
+        try:
+            data["frames"] = bf.flow_frames(
+                symbol, day or data["date"], top_n=top_n, t_from=t_from, t_to=t_to, **rng
+            )
+        except Exception:  # pragma: no cover - playback is best-effort
+            logger.exception("Flow frames failed for %s", symbol)
+            data["frames"] = []
+
+    return JsonResponse(data)
+
+
+@require_GET
+@_validated_query
 def net_holding_api(request):
     return _safe(
         ba.net_holding,

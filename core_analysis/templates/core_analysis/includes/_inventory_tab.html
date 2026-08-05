@@ -47,6 +47,9 @@
           </form>
       </div>{# /sync-toolbar #}
 
+      {# Fundamentals Sync — pull latest published quarterly reports into the system. #}
+      {% include "core_analysis/includes/_funda_sync_tab.html" %}
+
       <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
         <h5 class="mb-3" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">Add New Stock Record Coordinates</h5>
         <form method="POST" action="{% url 'crud_operations' %}">

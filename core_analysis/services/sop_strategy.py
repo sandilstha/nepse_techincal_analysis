@@ -20,20 +20,27 @@ import pandas_ta as ta
 
 # SOP-optimized defaults per indicator (Master SOP §3).
 INDICATOR_DEFAULTS = {
-    "rsi": {"rsi_length": 25, "rsi_buy": 30.0, "rsi_sell": 70.0},
-    "bollinger": {"bb_length": 10, "bb_std": 2.0},
     "volume_breakout": {"vb_high_lookback": 40, "vb_low_lookback": 20,
                         "vb_vol_avg": 20, "vb_vol_mult": 2.0},
     "ema": {"ema_fast": 20, "ema_slow": 50},
     "macd": {"macd_fast": 26, "macd_slow": 45, "macd_signal": 20},
+    # Added after a 2003-2026 index backtest (regime-gated, 80bps) in which the
+    # existing RSI and Bollinger defaults lost money while these two beat both
+    # buy & hold and every incumbent on risk-adjusted return.
+    #   Supertrend 20/2.0 : +2,108% | Sharpe 1.12 | MaxDD -31.4% | PF 6.24
+    #   Donchian   20/10  : +1,405% | Sharpe 1.02 | MaxDD -37.9% | Win 56.2%
+    # Supertrend uses a close/stdev band rather than ATR: 63% of NEPSE index bars
+    # carry high == low, which makes true range unusable on index series.
+    "supertrend": {"st_length": 20, "st_mult": 2.0},
+    "donchian": {"dc_entry": 20, "dc_exit": 10},
 }
 
 INDICATOR_LABELS = {
-    "rsi": "RSI(25) 30/70",
-    "bollinger": "Bollinger 10/±2.0",
     "volume_breakout": "Volume Breakout 40/20/2.0×",
     "ema": "EMA 20/50 crossover",
     "macd": "MACD 26/45/20",
+    "supertrend": "Supertrend 20/2.0 SD",
+    "donchian": "Donchian 20/10 breakout",
 }
 
 _TRADING_DAYS = 252  # annualisation factor for the daily-return Sharpe
@@ -75,22 +82,6 @@ def _signals(df, indicator, p):
     """
     close = df["close_price_adj"]
 
-    if indicator == "rsi":
-        rsi = ta.rsi(close, length=p["rsi_length"])
-        prev = rsi.shift(1)
-        buy = (prev <= p["rsi_buy"]) & (rsi > p["rsi_buy"])   # crosses up through 30
-        sell = rsi >= p["rsi_sell"]                            # reaches 70
-        return buy, sell, f"RSI↑{int(p['rsi_buy'])}", f"RSI≥{int(p['rsi_sell'])}"
-
-    if indicator == "bollinger":
-        bb = ta.bbands(close, length=p["bb_length"], std=p["bb_std"])
-        lower = bb.filter(like="BBL_").iloc[:, 0]
-        upper = bb.filter(like="BBU_").iloc[:, 0]
-        prev = close.shift(1)
-        buy = (prev <= lower.shift(1)) & (close > lower)       # back up above lower band
-        sell = close >= upper                                  # reaches upper band
-        return buy, sell, "Cross↑ lower band", "Reach upper band"
-
     if indicator == "volume_breakout":
         vol = pd.to_numeric(df.get("volume"), errors="coerce")
         prior_high = df["high_price_adj"].rolling(p["vb_high_lookback"]).max().shift(1)
@@ -119,20 +110,43 @@ def _signals(df, indicator, p):
         sell = (prev >= 0) & (diff < 0)                        # MACD crosses below signal
         return buy, sell, "MACD↑signal", "MACD↓signal"
 
+    if indicator == "supertrend":
+        # Volatility-adaptive trend band. Deliberately built from a rolling
+        # stdev of CLOSE rather than ATR — 63% of NEPSE index bars have
+        # high == low, so true range collapses to zero and an ATR band would
+        # never widen. Long above the upper band, flat below the lower.
+        mid = close.rolling(p["st_length"]).mean()
+        sd = close.rolling(p["st_length"]).std()
+        upper = mid + p["st_mult"] * sd
+        lower = mid - p["st_mult"] * sd
+        buy = close > upper
+        sell = close < lower
+        return buy, sell, "Close>upper band", "Close<lower band"
+
+    if indicator == "donchian":
+        # Pure-price breakout — the companion to volume_breakout, which also
+        # demands a 2x volume surge. This one fires on breakouts that occur on
+        # ordinary volume, which the volume-gated version never sees.
+        prior_high = close.rolling(p["dc_entry"]).max().shift(1)
+        prior_low = close.rolling(p["dc_exit"]).min().shift(1)
+        buy = close > prior_high
+        sell = close < prior_low
+        return buy, sell, f"{p['dc_entry']}d high break", f"{p['dc_exit']}d low break"
+
     raise ValueError(f"Unknown indicator: {indicator}")
 
 
 def _min_bars(indicator, p):
-    if indicator == "rsi":
-        return p["rsi_length"] * 3
-    if indicator == "bollinger":
-        return p["bb_length"] * 3
     if indicator == "volume_breakout":
         return max(p["vb_high_lookback"], p["vb_low_lookback"], p["vb_vol_avg"]) * 2
     if indicator == "ema":
         return p["ema_slow"] * 2
     if indicator == "macd":
         return p["macd_slow"] * 2
+    if indicator == "supertrend":
+        return p["st_length"] * 3
+    if indicator == "donchian":
+        return max(p["dc_entry"], p["dc_exit"]) * 3
     return 60
 
 
@@ -283,6 +297,11 @@ def run_sop_simulation(
     equity_df = _daily_equity(df, trades, initial_capital, regime)
     metrics = _metrics(df, trades_df, equity_df, initial_capital,
                        indicator, use_regime_filter, regime, cost_bps, blocked_by_regime)
+    # Same live BUY/HOLD/SELL/WAIT read as the confluence model, expressed as a
+    # single-indicator vote so both tabs answer "what do I do today".
+    _st = np.asarray(_indicator_state(df, indicator, p)).reshape(1, -1)
+    metrics["signal"] = _current_signal(df, [indicator], _st, _st[0],
+                                        _st[0].astype(bool), regime, 1, trades)
     return metrics, trades_df, equity_df
 
 
@@ -313,6 +332,8 @@ def run_sop_combined_simulation(
     use_regime_filter: bool = True,
     cost_bps: float = 80.0,
     regime_df=None,
+    regime_mode: str = "strict",
+    bear_min_agree: int = None,
 ):
     """Confluence strategy: go long when at least `min_agree` of the chosen
     indicators are simultaneously in a long state; exit when fewer agree (or the
@@ -324,7 +345,10 @@ def run_sop_combined_simulation(
     indicators = [i for i in indicators if i in INDICATOR_DEFAULTS]
     if not indicators:
         return ({"error": "Select at least one indicator to combine."}, pd.DataFrame(), pd.DataFrame())
-    min_agree = max(1, min(int(min_agree), len(indicators)))
+    # Confluence floor: at least 3 indicators must agree before any BUY. One or
+    # two firing is noise; the 2003-2026 index study put min_agree=3 at the top
+    # (Sharpe 1.30). Still clamped down if fewer than 3 indicators are selected.
+    min_agree = max(min(3, len(indicators)), min(int(min_agree), len(indicators)))
 
     if not isinstance(data_source, pd.DataFrame):
         return ({"error": "SOP engine expects a prepared DataFrame."}, pd.DataFrame(), pd.DataFrame())
@@ -362,8 +386,23 @@ def run_sop_combined_simulation(
     else:
         regime = pd.Series(["Sideways"] * len(df), index=df.index)
 
+    # Regime handling mode:
+    #   strict - no position while the regime is Bear (SOP default, best tested)
+    #   swing  - trade through Bear, but only on `bear_min_agree` agreement
+    #   off    - ignore the regime entirely
+    regime_mode = (regime_mode or "strict").lower()
+    if regime_mode not in ("strict", "swing", "off"):
+        regime_mode = "strict"
+    if bear_min_agree is None:
+        bear_min_agree = min(min_agree + 1, len(indicators))
+    bear_min_agree = max(1, min(int(bear_min_agree), len(indicators)))
+
     cost_frac = max(0.0, float(cost_bps)) / 10000.0
     label = f"Combined · {min_agree} of {len(indicators)}"
+    if regime_mode == "swing":
+        label += f" · swing (bear ≥{bear_min_agree})"
+    elif regime_mode == "off":
+        label += " · regime off"
 
     position = 0
     cash = float(initial_capital)
@@ -379,7 +418,17 @@ def run_sop_combined_simulation(
             continue
         dt = df.loc[i, "business_date"]
         sig = i - 1
-        is_bear = use_regime_filter and (regime.iloc[i] == "Bear")
+        raw_bear = use_regime_filter and (regime.iloc[i] == "Bear")
+        # SWING mode keeps trading through a bear regime, but only on a raised
+        # agreement threshold. Measured cost on 2003-2026 NEPSE index: bear-regime
+        # entries alone run at profit factor 0.44 (3 of 5) down to 0.12 (5 of 5),
+        # so this is opt-in and never the default.
+        if raw_bear and regime_mode == "swing":
+            is_bear = votes[sig] < bear_min_agree
+        elif regime_mode == "off":
+            is_bear = False
+        else:
+            is_bear = raw_bear
 
         if position > 0 and ((not desired_long[sig]) or is_bear):
             proceeds = position * exec_price
@@ -437,7 +486,115 @@ def run_sop_combined_simulation(
     metrics["combined_indicators"] = [INDICATOR_LABELS[i] for i in indicators]
     metrics["min_agree"] = min_agree
     metrics["n_indicators"] = len(indicators)
+    metrics["regime_mode"] = regime_mode
+    metrics["bear_min_agree"] = bear_min_agree
+    metrics["signal"] = _current_signal(df, indicators, states, votes, desired_long,
+                                        regime, min_agree, trades,
+                                        regime_mode=regime_mode,
+                                        bear_min_agree=bear_min_agree)
     return metrics, trades_df, equity_df
+
+
+# ── Live signal ──────────────────────────────────────────────────────────────
+# ACTION CODES
+#   BUY   - confluence met, regime permits, currently flat -> open a position
+#   HOLD  - confluence still met and already long -> stay in
+#   SELL  - was long but confluence lost, or the regime turned bear -> exit
+#   WAIT  - flat and confluence not met -> stand aside
+# The backtest answers "would this have worked"; this answers "what do I do
+# today", which is the only output a trader can act on.
+_ACTION_META = {
+    "BUY":  {"colour": "#16a34a", "tone": "positive"},
+    "HOLD": {"colour": "#2563eb", "tone": "positive"},
+    "SELL": {"colour": "#dc2626", "tone": "negative"},
+    "WAIT": {"colour": "#94a3b8", "tone": "neutral"},
+}
+
+
+def _current_signal(df, indicators, states, votes, desired_long, regime, min_agree, trades,
+                    regime_mode="strict", bear_min_agree=None):
+    """What the model says to do on the LAST bar of the data."""
+    if len(df) == 0:
+        return None
+    i = len(df) - 1
+    cur_regime = str(regime.iloc[i]) if len(regime) else "Sideways"
+    agree = int(votes[i])
+    total = len(indicators)
+    met = bool(desired_long[i])
+    if bear_min_agree is None:
+        bear_min_agree = min(min_agree + 1, total)
+
+    # A bear regime only blocks trading in strict mode. In swing mode it raises
+    # the bar instead; in off mode it is ignored.
+    raw_bear = cur_regime == "Bear"
+    if regime_mode == "off":
+        is_bear = False
+    elif regime_mode == "swing" and raw_bear:
+        is_bear = agree < bear_min_agree
+        met = met and agree >= bear_min_agree
+    else:
+        is_bear = raw_bear
+
+    # Are we in a position right now? Only true if the final trade was closed by
+    # running out of data rather than by a real exit signal.
+    in_position = bool(trades) and trades[-1].get("exit_reason") == "end_of_data"
+
+    if is_bear:
+        action = "SELL" if in_position else "WAIT"
+        if regime_mode == "swing":
+            why = (f"Market regime is BEAR. Swing mode allows trading here, but requires "
+                   f"{bear_min_agree} of {total} agreement and only {agree} agree.")
+        else:
+            why = ("Market regime is BEAR - the SOP rule is to hold cash and exit longs, "
+                   "whatever the indicators say.")
+    elif met and in_position:
+        action, why = "HOLD", f"{agree} of {total} indicators still agree (threshold {min_agree}). Stay in."
+    elif met:
+        action, why = "BUY", f"{agree} of {total} indicators agree (threshold {min_agree}) and the regime permits trading."
+    elif in_position:
+        action, why = "SELL", f"Only {agree} of {total} indicators agree, below the threshold of {min_agree}. Confluence lost."
+    else:
+        action, why = "WAIT", f"Only {agree} of {total} indicators agree; {min_agree} are required. Stand aside."
+
+    # Per-indicator breakdown, so the number is auditable rather than a black box.
+    detail = [{
+        "key": ind,
+        "label": INDICATOR_LABELS.get(ind, ind),
+        "long": bool(states[n][i]),
+        "state": "LONG" if states[n][i] else "flat",
+    } for n, ind in enumerate(indicators)]
+
+    # PURE SIGNAL — the indicators' own verdict, binary, regime ignored.
+    # Requested explicitly: a directional call with no hedging. BUY when the
+    # confluence threshold is met on the raw votes, SELL when it is not. The
+    # regime-aware `action` above stays available as risk context, but it no
+    # longer masks what the indicators are actually saying.
+    pure = "BUY" if int(votes[i]) >= min_agree else "SELL"
+    pure_meta = _ACTION_META["BUY"] if pure == "BUY" else _ACTION_META["SELL"]
+
+    meta = _ACTION_META[action]
+    return {
+        "pure_action": pure,
+        "pure_colour": pure_meta["colour"],
+        "pure_reason": (f"{agree} of {total} indicators are long; threshold is {min_agree}."),
+        "regime_conflict": bool(pure == "BUY" and action in ("WAIT", "SELL")),
+        "action": action,
+        "colour": meta["colour"],
+        "tone": meta["tone"],
+        "reason": why,
+        "agree": agree,
+        "required": min_agree,
+        "total": total,
+        "regime": cur_regime,
+        "regime_mode": regime_mode,
+        "bear_min_agree": bear_min_agree,
+        "bear_override": bool(raw_bear and regime_mode in ("swing", "off") and not is_bear),
+        "in_position": in_position,
+        "as_of": str(df["business_date"].iloc[i].date())
+                 if hasattr(df["business_date"].iloc[i], "date") else str(df["business_date"].iloc[i]),
+        "close": round(float(df["close_price_adj"].iloc[i]), 2),
+        "indicators": detail,
+    }
 
 
 # ── Equity curve & metrics ───────────────────────────────────────────────────

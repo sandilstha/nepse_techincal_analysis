@@ -727,3 +727,78 @@ class MarginEligibleCompany(models.Model):
         self.user.is_active = False
         self.user.save(update_fields=["is_active"])
         self.save(update_fields=["status", "reviewed_by", "review_note", "reviewed_at"])
+
+
+class FundaFundamentalSnapshot(models.Model):
+    """Latest fundamentals synced on demand from funda.aurasrp.com.np.
+
+    We OWN this table (unlike the read-only ``FinancialStatement`` mapping, whose
+    external FK columns make it unsafe to write). A row is the newest published
+    quarter for one symbol — its KeyStats mapped to the canonical keys the Stock
+    360 cards read, plus a small revenue/net-income trend and the raw statements
+    for reference. One row per symbol: a re-sync overwrites in place.
+    """
+    symbol = models.CharField(max_length=20, unique=True, db_index=True)
+    security_name = models.CharField(max_length=255, blank=True, default="")
+    sector = models.CharField(max_length=100, blank=True, default="")
+
+    period = models.CharField(max_length=20, help_text="e.g. '2024/25 Q4'")
+    fiscal_year_ad = models.CharField(max_length=10, blank=True, default="")
+    quarter = models.PositiveSmallIntegerField(default=0)
+
+    ks = models.JSONField(default=dict, help_text="Canonical keystats: eps, pe, roe, …")
+    trend = models.JSONField(default=list, help_text="Annual revenue / net-income points")
+    raw = models.JSONField(default=dict, blank=True, help_text="Full statements payload")
+
+    source = models.CharField(max_length=100, default="funda.aurasrp.com.np")
+    fs_written = models.PositiveSmallIntegerField(
+        default=0, help_text="KeyStats line items pushed into FinancialStatement on last sync"
+    )
+    synced_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["symbol"]
+
+    def __str__(self):
+        return f"{self.symbol} {self.period} (synced {self.synced_at:%Y-%m-%d})"
+
+
+class NepseMarketCapDaily(models.Model):
+    """
+    Table: nepse_market_cap_daily
+
+    Whole-market capitalisation per session, straight from the upstream
+    ``/api/nepse-data/api/market-cap/`` feed.
+
+    This exists because the per-stock ``NepseDailyStockPrice.market_capitalization``
+    column is unreliable — the feed intermittently returns 0 for every scrip on
+    the most recent session(s), which silently zeroes any total summed from it.
+    This endpoint reports the exchange's own published totals and has values for
+    exactly the dates the per-stock column is missing, so it is the authoritative
+    source for market-cap figures and the per-stock column is only used for the
+    per-scrip breakdown.
+
+    It also carries the sensitive / float variants, which cannot be derived from
+    the per-stock table at all.
+    """
+    business_date = models.DateField(unique=True, db_index=True)
+
+    market_capitalization = models.DecimalField(max_digits=22, decimal_places=2, null=True, blank=True)
+    sensitive_market_capitalization = models.DecimalField(max_digits=22, decimal_places=2, null=True, blank=True)
+    float_market_capitalization = models.DecimalField(max_digits=22, decimal_places=2, null=True, blank=True)
+    sensitive_float_market_capitalization = models.DecimalField(max_digits=22, decimal_places=2, null=True, blank=True)
+
+    total_turnover = models.DecimalField(max_digits=22, decimal_places=2, null=True, blank=True)
+    total_traded_shares = models.BigIntegerField(null=True, blank=True)
+    total_transactions = models.BigIntegerField(null=True, blank=True)
+    total_scrips_traded = models.IntegerField(null=True, blank=True)
+
+    synced_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "nepse_market_cap_daily"
+        ordering = ["-business_date"]
+        verbose_name_plural = "Nepse market cap (daily)"
+
+    def __str__(self):
+        return f"{self.business_date} — {self.market_capitalization}"

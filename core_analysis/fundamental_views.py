@@ -24,7 +24,7 @@ import statistics
 
 from django.db.models import Count, Max
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET
 
 from core_analysis.models import CompanyProfile, FinancialStatement, NepseDailyStockPrice
@@ -152,18 +152,21 @@ def _fundamental_tickers():
 
 @require_GET
 def fundamental_analysis_view(request, symbol=None):
-    """Render the Fundamental Analysis desk shell.
+    """Send the old Fundamental Analysis desk to Stock 360.
 
-    The symbol is only the initial ticker — the client validates it against the
-    fundamentals feed and falls back to the first available one if unknown.
+    Stock 360 now hosts every block this page used to own — the ratio cards, the
+    multi-year trend, the statement matrix (versions, period depth, CSV) and the
+    Morningstar model — rendered by the same ``fundamentals.js`` module. Keeping
+    a second page alive would mean two answers to "what is this company worth"
+    on two URLs, which is exactly what the merge set out to remove.
+
+    The route and its ``fundamental_analysis`` name are kept so every existing
+    ``{% url %}`` and bookmark still resolves. The JSON endpoints below are
+    untouched — they are what Stock 360 calls.
     """
     sym = (symbol or request.GET.get("symbol") or "").strip().upper()
-    context = {
-        "symbol": sym,
-        "symbols": _fundamental_tickers(),
-        "asset_version": _asset_version(),
-    }
-    return render(request, "core_analysis/fundamental_analysis.html", context)
+    target = f"/stock/{sym}/#fund" if sym else "/stock/"
+    return redirect(target)
 
 
 @require_GET
@@ -841,6 +844,47 @@ def _ms_value_metrics(d):
     }
 
 
+# Below this many same-period peers, the percentile/fair-value comparison isn't
+# meaningful, so we fall back to each peer's latest reported quarter. This is what
+# lets a freshly-synced company (whose sector peers haven't filed the same quarter
+# yet) still get a populated Morningstar panel.
+_MS_MIN_SAME_PERIOD_PEERS = 5
+
+
+def _latest_ks_by_ticker(sector):
+    """Canonical KS metrics for every ticker in ``sector`` at ITS OWN latest
+    reported (fiscal_year, quarter). Used as the Morningstar peer set when the
+    selected period is too sparse to compare against."""
+    # Latest (fy, quarter) per ticker. fiscal_year_ad strings ("2024/25") sort
+    # correctly alongside the integer quarter, so a tuple max is exact.
+    latest = {}
+    for p in (
+        FinancialStatement.objects.filter(sector=sector, fs_type="KS")
+        .values("ticker", "fiscal_year_ad", "quarter")
+        .distinct()
+    ):
+        t = p["ticker"]
+        key = (p["fiscal_year_ad"], p["quarter"])
+        if t not in latest or key > latest[t]:
+            latest[t] = key
+
+    peer_by = {}
+    for r in (
+        FinancialStatement.objects.filter(sector=sector, fs_type="KS")
+        .values("ticker", "fiscal_year_ad", "quarter", "item_code", "amount")
+    ):
+        t = r["ticker"]
+        if _is_aggregate_ticker(t):
+            continue
+        if (r["fiscal_year_ad"], r["quarter"]) != latest.get(t):
+            continue
+        key = _ks_key(r["item_code"])
+        if not key:
+            continue
+        peer_by.setdefault(t, {})[key] = float(r["amount"]) if r["amount"] is not None else None
+    return peer_by
+
+
 def _morningstar_research(sym, sector, fy, quarter, ks_by_key):
     """Fair value (sector-median P/E × EPS) + percentile ranks vs same-sector
     peers for one company/period. Returns None when the sector is unknown or no
@@ -860,6 +904,15 @@ def _morningstar_research(sym, sector, fy, quarter, ks_by_key):
             continue
         amt = float(r["amount"]) if r["amount"] is not None else None
         peer_by.setdefault(r["ticker"], {})[key] = amt
+
+    # Sparse selected period (e.g. a just-synced company ahead of its peers'
+    # filings) → compare against each peer's latest reported quarter instead.
+    if len(peer_by) < _MS_MIN_SAME_PERIOD_PEERS:
+        fallback = _latest_ks_by_ticker(sector)
+        # Keep the company's own selected-period metrics; peers use their latest.
+        fallback[sym] = ks_by_key
+        if len(fallback) > len(peer_by):
+            peer_by = fallback
 
     metrics_by_ticker = {t: _ms_value_metrics(d) for t, d in peer_by.items()}
     own = _ms_value_metrics(ks_by_key)

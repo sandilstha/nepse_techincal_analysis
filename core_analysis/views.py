@@ -27,12 +27,20 @@ from core_analysis.services.moving_average import run_ema_50_200_long_only_simul
 from core_analysis.services.RSI_SMA import run_rsi_sma_long_only_simulation
 from core_analysis.services.sop_strategy import (
     run_sop_simulation, run_sop_combined_simulation, market_regime_series,
+    INDICATOR_DEFAULTS as _SOP_INDICATOR_DEFAULTS,
+    INDICATOR_LABELS as _SOP_INDICATOR_LABELS,
 )
+
+# Single source of truth for which SOP indicators exist — read from the engine
+# so the view, the dropdown and the confluence checkboxes can never drift out of
+# sync with it when an indicator is added or retired.
+_SOP_INDICATOR_KEYS = tuple(_SOP_INDICATOR_DEFAULTS)
 from core_analysis.services.strategy_tester import run_t3ma_macd_ribbon_simulation
 from core_analysis.services.stage_analysis import calculate_stage_analysis
 from core_analysis.services.RGG_Chart import run_rrg_simulation
 from core_analysis.services.RGG_indices import NEPSE_INDEX_LABELS, ordered_nepse_indices, run_rrg_indices_simulation
 from core_analysis.services.seasonal_returns import build_seasonal_payload, build_market_cycle
+from core_analysis.services.market_regimes import build_market_regimes
 from core_analysis.services.advanced_market_structure import run_advanced_market_structure_analysis
 from core_analysis.services.support_resistance import (
     DEFAULT_LEVEL_FAMILIES,
@@ -718,6 +726,7 @@ def build_dashboard_context(request):
     rrg_indices_benchmark_points = []
     seasonal = None
     market_cycle = None
+    market_regimes = None
     imm_data_upload_date = None
 
     # Per-tab symbols
@@ -765,7 +774,12 @@ def build_dashboard_context(request):
     cci_to   = g.get("cci_to_date",   g.get("to_date",   "")).strip()
     sop_from = g.get("sop_from_date", g.get("from_date", "")).strip()
     sop_to   = g.get("sop_to_date",   g.get("to_date",   "")).strip()
-    sop_indicator = g.get("sop_indicator", "rsi").lower().strip()
+    # Default is the best-performing indicator; a stale value from an old
+    # bookmark (e.g. the removed "rsi"/"bollinger") falls back instead of
+    # raising "Unknown indicator" from the engine.
+    sop_indicator = g.get("sop_indicator", "supertrend").lower().strip()
+    if sop_indicator not in _SOP_INDICATOR_KEYS:
+        sop_indicator = "supertrend"
     # Checkbox: when the SOP form is the submission, absence = unchecked = off.
     # Otherwise (initial load) default the filter ON (it is rendered checked).
     if active_tab == "sop_backtest":
@@ -774,13 +788,23 @@ def build_dashboard_context(request):
         sop_use_regime = True
 
     # SOP Combined (confluence) tab params.
-    _ALL_SOP_INDICATORS = ["rsi", "bollinger", "volume_breakout", "ema", "macd"]
+    _ALL_SOP_INDICATORS = list(_SOP_INDICATOR_KEYS)
     sopc_from = g.get("sopc_from_date", g.get("from_date", "")).strip().replace("/", "-")
     sopc_to   = g.get("sopc_to_date",   g.get("to_date",   "")).strip().replace("/", "-")
     sopc_indicators = [i for i in g.getlist("sopc_indicator") if i in _ALL_SOP_INDICATORS]
     if not sopc_indicators:
         sopc_indicators = list(_ALL_SOP_INDICATORS)
-    sopc_min_agree = _safe_int(g.get("sopc_min_agree", 1), 1, minimum=1)
+    # Confluence floor is 3: a single indicator firing is noise, and the
+    # 2003-2026 index study showed min_agree=3 is the best-performing threshold
+    # (Sharpe 1.30 vs 1.19 at 4). Never let the UI request fewer than 3.
+    sopc_min_agree = _safe_int(g.get("sopc_min_agree", 3), 3, minimum=3)
+    # Bear-regime behaviour: strict (default) / swing / off. Anything unrecognised
+    # falls back to strict, which is the best-tested configuration.
+    sopc_regime_mode = (g.get("sopc_regime_mode", "strict") or "strict").lower().strip()
+    if sopc_regime_mode not in ("strict", "swing", "off"):
+        sopc_regime_mode = "strict"
+    sopc_bear_min_agree = _safe_int(g.get("sopc_bear_min_agree", sopc_min_agree + 1),
+                                    sopc_min_agree + 1, minimum=1)
     if active_tab == "sop_combined":
         sopc_use_regime = "sopc_use_regime" in g
     else:
@@ -951,6 +975,8 @@ def build_dashboard_context(request):
                 sopc_backtest_metrics, sopc_trades_df, sopc_equity_df = run_sop_combined_simulation(
                     df,
                     indicators=sopc_indicators,
+                    regime_mode=sopc_regime_mode,
+                    bear_min_agree=sopc_bear_min_agree,
                     min_agree=sopc_min_agree,
                     use_regime_filter=sopc_use_regime,
                     regime_df=regime_frame,
@@ -1329,6 +1355,10 @@ def build_dashboard_context(request):
         seasonal = build_seasonal_payload()
         # NEPSE market-cycle chart (Weinstein stages) shown on the Seasonal desk.
         market_cycle = build_market_cycle()
+        # Long-horizon bull/bear dating of the same index. Complements the
+        # Weinstein stages, which read the current trend over ~3 years; this
+        # dates the full 29-year cycle history.
+        market_regimes = build_market_regimes()
 
     return {
         "records": queryset,
@@ -1374,14 +1404,14 @@ def build_dashboard_context(request):
         "sopc_to_date":          sopc_to,
         "sopc_indicators":       sopc_indicators,
         "sopc_min_agree":        sopc_min_agree,
+        "sopc_regime_mode":      sopc_regime_mode,
+        "sopc_bear_min_agree":   sopc_bear_min_agree,
         "sopc_use_regime":       sopc_use_regime,
         "sopc_equity":           sopc_equity,
+        # Built from the engine registry, so retiring or adding an indicator
+        # needs no edit here.
         "sopc_indicator_choices": [
-            ("rsi", "RSI(25) 30/70"),
-            ("bollinger", "Bollinger 10/±2.0"),
-            ("volume_breakout", "Volume Breakout 40/20/2×"),
-            ("ema", "EMA 20/50 crossover"),
-            ("macd", "MACD 26/45/20"),
+            (k, _SOP_INDICATOR_LABELS.get(k, k)) for k in _SOP_INDICATOR_KEYS
         ],
 
         # RSI
@@ -1466,6 +1496,7 @@ def build_dashboard_context(request):
         # RRG Seasonal Return
         "seasonal": seasonal,
         "market_cycle": market_cycle,
+        "market_regimes": market_regimes,
 
         # EMA parameters
         "ema_take_profit_pct": g.get("ema_take_profit_pct", "15"),

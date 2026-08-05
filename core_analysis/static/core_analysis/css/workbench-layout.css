@@ -36,7 +36,7 @@
   background: transparent;
   box-shadow: none;
   color: var(--ink-2);
-  font: 600 14px/1 'Manrope', sans-serif;
+  font: 600 0.875rem/1 'Manrope', sans-serif;
   letter-spacing: 0;
   text-transform: none;
   transform: none;
@@ -134,7 +134,7 @@
 
 #stageForm .stage-range-note {
   color: var(--ink-2);
-  font-size: 11px;
+  font-size: 0.6875rem;
   line-height: 1.35;
 }
 
@@ -157,7 +157,7 @@
   border-radius: var(--radius-sm);
   background: var(--bg-raised);
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -206,7 +206,7 @@
 
   #workspaceTabs .workspace-subtab {
     padding: 11px 12px;
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 
   #stageForm .stage-primary-grid,
@@ -244,3 +244,4 @@
     grid-column: auto;
   }
 }
+
