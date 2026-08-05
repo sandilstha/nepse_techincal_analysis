@@ -453,7 +453,37 @@ def _sectors_from_subindices(subidx):
 
 def _market_cap_totals():
     """NEPSE-wide market capitalisation for the latest EOD date and its change
-    versus the prior trading day, summed across every stock."""
+    versus the prior trading day.
+
+    Prefers the exchange's own published totals (``nepse_market_cap_daily``).
+    The per-stock ``market_capitalization`` column cannot be relied on: the feed
+    intermittently returns 0 for every scrip on the newest session(s), which
+    silently summed to "Rs 0" on the dashboard. Falls back to the summed column
+    only when no published total exists.
+    """
+    from core_analysis.models import NepseMarketCapDaily
+
+    official = list(
+        NepseMarketCapDaily.objects
+        .exclude(market_capitalization__isnull=True)
+        .exclude(market_capitalization=0)
+        .order_by("-business_date")
+        .values_list("business_date", "market_capitalization")[:2]
+    )
+    if official:
+        # Already denominated in rupees, unlike the per-stock column (millions).
+        latest = _f(official[0][1])
+        prev = _f(official[1][1]) if len(official) > 1 else None
+        change = pct = None
+        if latest is not None and prev not in (None, 0):
+            change = latest - prev
+            pct = change / prev * 100.0
+        return {
+            "market_cap": round(latest, 2) if latest is not None else None,
+            "market_cap_change": round(change, 2) if change is not None else None,
+            "market_cap_pct": round(pct, 2) if pct is not None else None,
+        }
+
     dates = list(
         NepseDailyStockPrice.objects.order_by("-business_date")
         .values_list("business_date", flat=True)

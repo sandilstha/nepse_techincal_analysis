@@ -208,6 +208,9 @@
 
   function renderRankedTable(tbodyId, rows, kind) {
     var tbody = el(tbodyId);
+    // The host card may be hidden on the page — skip instead of throwing, so a
+    // removed table can't break the renders that follow (contributors, charts).
+    if (!tbody) return;
     if (!rows || !rows.length) {
       tbody.innerHTML = '<tr><td colspan="3" class="mi-empty">No data available</td></tr>';
       return;

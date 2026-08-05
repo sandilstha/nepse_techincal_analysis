@@ -75,6 +75,58 @@
 }
 .dsx-sector { min-width: 160px; }
 
+/* type-to-filter ticker picker (replaces a 900-option native <select>).
+   Built from the same tokens as .dsx-select, so it themes for free. */
+.dsx-combo { position: relative; display: block; }
+/* .dsx-field sets uppercase for its caption; the value must not inherit it. */
+.dsx-combo-input {
+  min-width: 300px; width: 100%; box-sizing: border-box;
+  text-transform: none; letter-spacing: 0;
+}
+.dsx-combo-list {
+  position: absolute;
+  z-index: 40;             /* over the controls row and the cards below it */
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  /* Must be an opaque surface — a floating list that lets the table below show
+     through is unreadable. Same token the cards use. */
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .18);
+}
+.dsx-combo-opt {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 11px;
+  cursor: pointer;
+  font: 500 13px/1.3 'Manrope', sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink-1);
+}
+/* Hover and keyboard-active share one look, so arrowing and pointing agree. */
+.dsx-combo-opt:hover, .dsx-combo-opt.active { background: var(--surface-2); }
+.dsx-combo-opt b { flex: 0 0 auto; font-weight: 700; color: var(--accent); }
+.dsx-combo-opt span {
+  flex: 1 1 auto;
+  color: var(--ink-2);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dsx-combo-empty {
+  padding: 10px 11px;
+  color: var(--ink-3);
+  font: 500 13px/1 'Manrope', sans-serif;
+  text-transform: none;
+}
+
 /* shared date-range panel (Date Range preset + custom start/end + Analyze) */
 .dsx-dr-preset { min-width: 160px; }
 .dsx-date-input {
@@ -519,7 +571,71 @@
 .dsx-table tbody td:first-child,
 .dsx-table tbody td.l { text-align: left; }
 .dsx-table tbody tr:hover { background: var(--surface-2); }
+/* ── Broker Flow Map ─────────────────────────────────────────────────── */
+.dsx-hidden { display: none !important; }
+.dsx-flow-presets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 14px; }
+.dsx-preset {
+  font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; color: inherit;
+  background: transparent; border: 1px solid var(--line, rgba(128,128,128,.3));
+  border-radius: 8px; padding: 6px 12px;
+}
+.dsx-preset:hover { border-color: var(--accent); }
+.dsx-preset.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.dsx-flow-hint { font-size: 11.5px; opacity: .65; margin-left: 4px; }
+
+.dsx-flow-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.dsx-flow-tile {
+  background: var(--surface, rgba(128,128,128,.07));
+  border: 1px solid var(--line, rgba(128,128,128,.2));
+  border-radius: 10px; padding: 10px 13px;
+}
+.dsx-flow-tile .k { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .6; }
+.dsx-flow-tile .v { font-size: 19px; font-weight: 800; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.dsx-flow-tile .s { font-size: 11px; opacity: .6; margin-top: 1px; }
+
+/* Volume-by-time strip: click a bar, or drag across bars, to set the window. */
+/* ~50 bars at 5-minute buckets, so the gap is tight and bars stay slim. */
+.dsx-timeline { display: flex; align-items: flex-end; gap: 1px; height: 74px; padding: 10px 12px; cursor: crosshair; user-select: none; }
+.dsx-tl-bar { flex: 1 1 0; min-width: 1px; background: var(--accent); opacity: .38; border-radius: 2px 2px 0 0; transition: opacity .12s; }
+.dsx-tl-bar:hover { opacity: .8; }
+.dsx-tl-bar.in { opacity: .95; }
+.dsx-tl-empty { padding: 22px 12px; font-size: 12px; opacity: .55; }
+
+/* Playback controls */
+.dsx-play { display: flex; align-items: center; gap: 10px; padding: 10px 12px 2px; flex-wrap: wrap; }
+.dsx-play-btn {
+  font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; color: #fff;
+  background: var(--accent); border: 0; border-radius: 8px; padding: 7px 15px; white-space: nowrap;
+}
+.dsx-play-btn:hover { filter: brightness(1.08); }
+.dsx-play-btn.ghost { background: transparent; color: inherit; border: 1px solid var(--line, rgba(128,128,128,.3)); }
+.dsx-play-btn.ghost:hover { border-color: var(--accent); filter: none; }
+.dsx-scrub { flex: 1; min-width: 160px; accent-color: var(--accent); cursor: pointer; }
+.dsx-play-clock {
+  font-variant-numeric: tabular-nums; font-weight: 800; font-size: 13px;
+  min-width: 118px; text-align: center;
+}
+.dsx-play-speed { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; opacity: .75; }
+.dsx-play-speed .dsx-select { padding: 4px 8px; font-size: 12px; }
+
+.dsx-flow-wrap { overflow: auto; }
+.dsx-flow-svg { display: block; width: 100%; min-height: 420px; }
+/* Playback tweens the geometry of EXISTING elements — hence the transitions. */
+.dsx-flow-svg .anim { transition: d .38s linear, height .38s linear, opacity .28s linear; }
+@media (prefers-reduced-motion: reduce) { .dsx-flow-svg .anim { transition: none; } }
+.dsx-flow-svg .ribbon { fill-opacity: .34; stroke: none; transition: fill-opacity .14s; }
+.dsx-flow-svg .ribbon:hover { fill-opacity: .82; }
+.dsx-flow-svg .ribbon.dim { fill-opacity: .05; }
+.dsx-flow-svg .ribbon.lit { fill-opacity: .72; }
+.dsx-flow-svg .node { cursor: pointer; }
+.dsx-flow-svg .node:hover .node-label { fill: var(--accent); }
+.dsx-flow-svg .node-label { font-size: 11px; font-weight: 800; fill: currentColor; transition: fill .12s; }
+.dsx-flow-svg .node-sub { font-size: 9.5px; fill: currentColor; opacity: .6; }
+.dsx-flow-svg .col-cap { font-size: 10px; font-weight: 800; letter-spacing: .08em; fill: currentColor; opacity: .55; text-transform: uppercase; }
+
 .dsx-table .tkr { color: var(--accent); font-weight: 700; }
+/* Broker code reveals the firm name on hover (native title tooltip). */
+.dsx-table .brk { cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
 .dsx-table .num-pos { color: var(--up); }
 .dsx-table .num-neg { color: var(--down); }
 

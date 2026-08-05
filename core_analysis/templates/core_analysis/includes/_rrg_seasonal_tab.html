@@ -97,6 +97,45 @@ market-cycle chart rides along on the `market_cycle` payload.
     .mc-card { margin-bottom: 20px; }
     .mc-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; font-size: 11px; color: var(--ink-3, #94a3b8); }
     .mc-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+
+    /* Bull / bear market history */
+    .mr-card { margin-bottom: 20px; }
+    .mr-state { margin: 12px 0 14px; }
+    .mr-state-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+    .mr-state-grid > div { padding: 9px 12px; border: 1px solid rgba(128,128,128,.22); border-radius: 9px; }
+    .mr-k { display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .04em; color: #94a3b8; }
+    .mr-v { display: block; font-size: 19px; font-weight: 800; line-height: 1.25; }
+    .mr-sub { display: block; font-size: 11.5px; color: #94a3b8; }
+    .mr-note { margin: 9px 0 0; font-size: 12.5px; line-height: 1.5; color: #94a3b8; }
+    .mr-tabs { display: flex; gap: 6px; margin: 0 0 10px; }
+    .mr-tab { font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; padding: 6px 12px;
+              border: 1px solid rgba(128,128,128,.3); border-radius: 999px; background: transparent; color: inherit; }
+    .mr-tab.active { border-color: #5b8def; color: #5b8def; }
+    .mr-summary { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 9px;
+                  font-size: 12px; color: #94a3b8; }
+    /* Long tables scroll inside the card; the page never scrolls sideways. */
+    .mr-table-wrap { overflow-x: auto; max-height: 420px; overflow-y: auto;
+                     border: 1px solid rgba(128,128,128,.2); border-radius: 10px; }
+    .mr-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .mr-table th, .mr-table td { padding: 8px 11px; text-align: left; white-space: nowrap;
+                                 border-bottom: 1px solid rgba(128,128,128,.14); }
+    .mr-table thead th { position: sticky; top: 0; z-index: 1; background: var(--bg-raised, #10202f);
+                         font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: #94a3b8; }
+    .mr-table td.num, .mr-table th.num { text-align: right; }
+    .mr-table tbody tr:last-child td { border-bottom: none; }
+    .mr-n { color: #94a3b8; }
+    .mr-badge { display: inline-block; padding: 1px 8px; border-radius: 999px; color: #fff;
+                font-size: 10.5px; font-weight: 800; letter-spacing: .03em; }
+    /* "which phase is running today" — the conclusion, so it leads the card */
+    .mr-now { padding: 10px 13px; border-radius: 9px; background: rgba(128,128,128,.07); margin: 12px 0 12px; }
+    .mr-now-line { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+    .mr-now-txt { font-size: 13.5px; line-height: 1.55; }
+    .mr-now-sub { margin: 6px 0 0; font-size: 12px; line-height: 1.5; color: #94a3b8; }
+    /* the open phase is a projection to today, not a closed cycle — shown dashed */
+    .mr-ongoing td { border-top: 1px dashed rgba(128,128,128,.45); background: rgba(128,128,128,.06); }
+    .mr-caveats { margin-top: 10px; font-size: 12px; line-height: 1.55; color: #94a3b8; }
+    .mr-caveats p { margin: 0 0 5px; }
     .mc-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   </style>
 
@@ -126,6 +165,155 @@ market-cycle chart rides along on the `market_cycle` payload.
         <span class="mc-legend-item"><span class="mc-dot" style="background:#f59e0b;border-radius:2px;"></span>Golden / Death cross</span>
       </div>
       {{ market_cycle|json_script:"mc-data" }}
+    </div>
+    {% endif %}
+
+    {% comment %}
+    Bull / Bear market history. Long-horizon companion to the Weinstein chart
+    above: that reads the current trend over ~3 years, this dates every cycle in
+    the full index history. Two datings are shown because they were derived
+    independently and agree on 7 of 9 turning points — Pagan-Sossounov (the
+    standard academic procedure) as the headline, and a daily 20% swing filter
+    for finer resolution.
+    {% endcomment %}
+    {% if market_regimes and market_regimes.ok %}
+    <div class="season-strat mr-card">
+      <div class="strat-head">
+        <div>
+          <h6>Bull &amp; Bear Markets — NEPSE Index</h6>
+          <span class="strat-sub">
+            {{ market_regimes.sessions }} sessions · {{ market_regimes.first_date }} to {{ market_regimes.as_of }} ·
+            Pagan-Sossounov dating ({{ market_regimes.params.amplitude }}% amplitude,
+            ±{{ market_regimes.params.ps_window }}-month window)
+          </span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          {% if market_regimes.state %}
+            <span class="phase-chip"
+                  style="border:1px solid {% if market_regimes.state.confirmed %}{% if market_regimes.state.anchor_kind == 'BULL' %}#dc2626{% else %}#16a34a{% endif %}{% else %}#94a3b8{% endif %};
+                         color:{% if market_regimes.state.confirmed %}{% if market_regimes.state.anchor_kind == 'BULL' %}#dc2626{% else %}#16a34a{% endif %}{% else %}#94a3b8{% endif %};
+                         background:transparent;">{{ market_regimes.state.label }}</span>
+          {% endif %}
+          {# Same convention as Seasonal Strategy below: the long table is #}
+          {# collapsed so it never pushes the seasonality matrices off-screen. #}
+          <button type="button" class="strat-toggle" id="mrToggle" aria-expanded="false"
+                  aria-controls="mrBody" title="Show every bull and bear phase">?</button>
+        </div>
+      </div>
+
+      {% if market_regimes.current_phase %}
+      {% with cp=market_regimes.current_phase %}
+      {# The conclusion the tables cannot give: which phase is running TODAY. #}
+      <div class="mr-now" style="border-left:4px solid {{ cp.color }};">
+        <div class="mr-now-line">
+          <span class="mr-badge" style="background:{{ cp.color }};">{{ cp.kind }} · RUNNING</span>
+          <span class="mr-now-txt">
+            As of <b>{{ cp.as_of_label }}</b>, NEPSE is in a <b>{{ cp.kind|lower }} market that began
+            {{ cp.start_full }}</b> at {{ cp.start_value }} — now in month <b>{{ cp.months|floatformat:0 }}</b>
+            ({{ cp.sessions }} sessions), <b style="color:{{ cp.color }};">{{ cp.pct_label }}</b> to date.
+          </span>
+        </div>
+        <p class="mr-now-sub">
+          Peak so far {{ cp.extreme }} on {{ cp.extreme_label }} ({{ cp.extreme_pct_label }}).
+          {% if not cp.confirmed_end %}
+            That high is <b>not yet a confirmed top</b> — a peak is only dated once a 20% fall follows it,
+            so this phase remains open.
+          {% endif %}
+        </p>
+      </div>
+      {% endwith %}
+      {% endif %}
+
+      {% if market_regimes.state %}
+      {% with s=market_regimes.state %}
+      <div class="mr-state">
+        <div class="mr-state-grid">
+          <div><span class="mr-k">Last confirmed {{ s.anchor_kind|lower }} {% if s.anchor_kind == 'BULL' %}peak{% else %}trough{% endif %}</span>
+               <span class="mr-v">{{ s.anchor_value }}</span><span class="mr-sub">{{ s.since_label }}</span></div>
+          <div><span class="mr-k">Latest close</span>
+               <span class="mr-v">{{ s.current }}</span><span class="mr-sub">{{ s.from_ref_label }} from {% if s.anchor_kind == 'BULL' %}peak{% else %}trough{% endif %}</span></div>
+          <div><span class="mr-k">Deepest move since</span>
+               <span class="mr-v">{{ s.extreme_value }}</span><span class="mr-sub">{{ s.drawdown }}% · {{ s.extreme_date }}</span></div>
+          <div><span class="mr-k">Unconfirmed for</span>
+               <span class="mr-v">{{ s.sessions }}</span><span class="mr-sub">sessions · {{ s.days }} days</span></div>
+        </div>
+        {# The threshold is stated so the reader can see the call is a rule, not a view. #}
+        <p class="mr-note">{{ s.note }}
+           A {% if s.anchor_kind == 'BULL' %}bear{% else %}bull{% endif %} market would be confirmed at
+           <strong>{{ s.trigger }}</strong>.</p>
+      </div>
+      {% endwith %}
+      {% endif %}
+
+      <div class="mr-body" id="mrBody" hidden>
+      <div class="mr-tabs" role="tablist">
+        <button type="button" class="mr-tab active" data-mr="ps" role="tab" aria-selected="true">Major cycles ({{ market_regimes.ps|length }})</button>
+        <button type="button" class="mr-tab" data-mr="swing" role="tab" aria-selected="false">Detailed ({{ market_regimes.swing|length }})</button>
+      </div>
+
+      {% for key, phases, summary in market_regimes.views %}
+      <div class="mr-pane" data-mr-pane="{{ key }}" {% if key != 'ps' %}hidden{% endif %}>
+        {% if summary %}
+        <div class="mr-summary">
+          <span><b>{{ summary.bull_count }}</b> bull{{ summary.bull_count|pluralize }} · median {{ summary.bull_median_months }} months, {{ summary.bull_median_pct }}%</span>
+          <span><b>{{ summary.bear_count }}</b> bear{{ summary.bear_count|pluralize }} · median {{ summary.bear_median_months }} months, {{ summary.bear_median_pct }}%</span>
+          <span>{{ summary.bull_time_pct }}% of time in bull markets</span>
+        </div>
+        {% endif %}
+        <div class="mr-table-wrap">
+          <table class="mr-table">
+            <thead><tr>
+              <th>#</th><th>Phase</th><th>From</th><th>To</th>
+              <th class="num">Start</th><th class="num">End</th><th class="num">Change</th><th class="num">Months</th>
+            </tr></thead>
+            <tbody>
+              {% for p in phases %}
+              <tr>
+                <td class="mr-n">{{ forloop.counter }}</td>
+                <td><span class="mr-badge" style="background:{{ p.color }};">{{ p.kind }}</span></td>
+                <td>{{ p.start_label }}</td>
+                <td>{{ p.end_label }}</td>
+                <td class="num">{{ p.from_value }}</td>
+                <td class="num">{{ p.to_value }}</td>
+                <td class="num" style="color:{{ p.color }}; font-weight:800;">{{ p.pct_label }}</td>
+                <td class="num">{{ p.months }}</td>
+              </tr>
+              {% endfor %}
+              {% if market_regimes.current_phase %}
+              {% with cp=market_regimes.current_phase %}
+              {# Closing row so the table ends at TODAY, not at the last pivot. #}
+              <tr class="mr-ongoing">
+                <td class="mr-n">→</td>
+                <td><span class="mr-badge" style="background:{{ cp.color }};">{{ cp.kind }}</span></td>
+                <td>{{ cp.start_label }}</td>
+                <td><b>Ongoing</b></td>
+                <td class="num">{{ cp.start_value }}</td>
+                <td class="num">{{ cp.current }}</td>
+                <td class="num" style="color:{{ cp.color }}; font-weight:800;">{{ cp.pct_label }}</td>
+                <td class="num">{{ cp.months|floatformat:0 }}</td>
+              </tr>
+              {% endwith %}
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if market_regimes.unclassified_head or market_regimes.closures %}
+      <div class="mr-caveats">
+        {% if market_regimes.unclassified_head %}
+          <p><b>Unclassified:</b> {{ market_regimes.unclassified_head.from }} to {{ market_regimes.unclassified_head.to }} —
+             the index never moved far enough to call a turning point, so this stretch belongs to no phase.</p>
+        {% endif %}
+        {% if market_regimes.closures %}
+          <p><b>Exchange closures inside phases:</b> {{ market_regimes.closures|length }} gaps over 10 days
+             (2015 earthquake, 2020 COVID and others). Calendar durations that span them are true but not
+             comparable — the 2020 bear covers 4 months yet only 17 sessions.</p>
+        {% endif %}
+      </div>
+      {% endif %}
+      </div>{# /mr-body #}
     </div>
     {% endif %}
 
@@ -323,6 +511,38 @@ market-cycle chart rides along on the `market_cycle` payload.
       (function () {
         var pane = document.getElementById('rrg-seasonal-pane');
         if (!pane) return;
+
+        // ── Bull/bear dating: collapse the phase tables by default ─────────
+        var mrToggle = pane.querySelector('#mrToggle'),
+            mrBody = pane.querySelector('#mrBody');
+        if (mrToggle && mrBody) {
+          mrToggle.addEventListener('click', function () {
+            var open = mrBody.hidden;
+            mrBody.hidden = !open;
+            mrToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            mrToggle.setAttribute('title', open ? 'Hide the phase tables' : 'Show every bull and bear phase');
+          });
+        }
+
+        // ── Bull/bear dating: switch between the two datings ───────────────
+        // Both tables are already rendered; this only toggles visibility, so
+        // switching costs nothing and needs no request.
+        var mrTabs = pane.querySelectorAll('.mr-tab');
+        if (mrTabs.length) {
+          mrTabs.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var key = btn.dataset.mr;
+              mrTabs.forEach(function (b) {
+                var on = b === btn;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-selected', on ? 'true' : 'false');
+              });
+              pane.querySelectorAll('[data-mr-pane]').forEach(function (p) {
+                p.hidden = p.dataset.mrPane !== key;
+              });
+            });
+          });
+        }
 
         // ── NEPSE market-cycle chart (Weinstein stages) ────────────────────
         // Line chart: close + 50/150/200-day MAs, with the background shaded by

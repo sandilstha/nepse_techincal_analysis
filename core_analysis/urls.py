@@ -46,6 +46,7 @@ from .broker_views import (
     broker_concentration_api,
     hotstocks_api,
     broker_flow_radar_api,
+    broker_flow_map_api,
 )
 from .udf_views import (
     udf_config,
@@ -55,6 +56,11 @@ from .udf_views import (
     udf_history,
 )
 from .analytics_views import site_stats_view
+from .nepse_data_views import (
+    nepse_data_view,
+    nepse_data_api,
+    nepse_data_symbols_api,
+)
 from .indicator_views import indicator_catalog, indicator_data
 from .fundamental_views import (
     fundamental_analysis_view,
@@ -62,6 +68,12 @@ from .fundamental_views import (
     fundamental_data_api,
     fundamental_matrix_api,
     fundamental_model_api,
+)
+from .stock360_views import (
+    stock360_view, stock360_ai_api, stock360_funda_api, stock360_funda_sync,
+    stock360_funda_recent, stock360_funda_sector, stock360_keyfin_api,
+    stock360_valuation_api, stock360_dividends_api, stock360_flow_series_api,
+    stock360_sop_api, stock_valuation_view,
 )
 
 urlpatterns = [
@@ -71,6 +83,22 @@ urlpatterns = [
     path('insights/', market_insights_view),
     path('insights/api/', market_insights_api, name='market_insights_api'),
     path('insights/subindices/', subindex_comparison_api, name='subindex_comparison_api'),
+
+    # Stock 360 — all-in-one single-stock dashboard (aggregates every desk).
+    path('stock/', stock360_view, name='stock360'),
+    path('stock/api/ai/', stock360_ai_api, name='stock360_ai_api'),
+    path('stock/api/funda/', stock360_funda_api, name='stock360_funda_api'),
+    path('stock/api/funda/sync/', stock360_funda_sync, name='stock360_funda_sync'),
+    path('stock/api/funda/recent/', stock360_funda_recent, name='stock360_funda_recent'),
+    path('stock/api/funda/sector/', stock360_funda_sector, name='stock360_funda_sector'),
+    path('stock/api/keyfin/', stock360_keyfin_api, name='stock360_keyfin_api'),
+    path('stock/api/valuation/', stock360_valuation_api, name='stock360_valuation_api'),
+    path('stock/api/sop/', stock360_sop_api, name='stock360_sop_api'),
+    path('stock/api/dividends/', stock360_dividends_api, name='stock360_dividends_api'),
+    path('stock/api/flow-series/', stock360_flow_series_api, name='stock360_flow_series_api'),
+    # More specific than the catch-all below, so it must come first.
+    path('stock/<str:symbol>/valuation/', stock_valuation_view, name='stock_valuation'),
+    path('stock/<str:symbol>/', stock360_view, name='stock360_symbol'),
 
     # Technical Analysis terminal (Lightweight Charts: price + volume + indicators).
     path('chart/', technical_analysis_view, name='technical_analysis'),
@@ -116,6 +144,7 @@ urlpatterns = [
     path('floorsheet/api/concentration/', broker_concentration_api, name='broker_concentration_api'),
     path('floorsheet/api/hotstocks/', hotstocks_api, name='hotstocks_api'),
     path('floorsheet/api/flow-radar/', broker_flow_radar_api, name='broker_flow_radar_api'),
+    path('floorsheet/api/flow-map/', broker_flow_map_api, name='broker_flow_map_api'),
 
     # Analytics workbench (moved off root to /workbench/)
     path('workbench/', crud_dashboard_view, name='crud_dashboard'),
@@ -139,6 +168,13 @@ urlpatterns = [
 
     # Self-hosted visit analytics — "how many times the site was opened" (staff only).
     path('stats/', site_stats_view, name='site_stats'),
+
+    # ── NEPSE Data — raw exchange reports (one page per report) ──────────
+    path('nepse-data/', nepse_data_view, name='nepse_data'),
+    path('nepse-data/symbols/', nepse_data_symbols_api, name='nepse_data_symbols'),
+    path('nepse-data/api/<slug:slug>/', nepse_data_api, name='nepse_data_api'),
+    # Keep last: a bare <slug> would otherwise swallow the two routes above.
+    path('nepse-data/<slug:slug>/', nepse_data_view, name='nepse_data_report'),
 
     # TradingView Advanced Charts UDF datafeed (no trailing slashes — UDF spec)
     path('insights/udf/config', udf_config, name='udf_config'),

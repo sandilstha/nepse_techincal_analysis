@@ -30,10 +30,10 @@
     morningstar: document.getElementById("fa-morningstar"),
     model: document.getElementById("fa-model"),
     // Company Financials matrix controls.
-    fmStatement: document.getElementById("fm-statement"),
+    fmTabs: document.getElementById("fm-tabs"),
     fmVersion: document.getElementById("fm-version"),
-    fmPeriods: document.getElementById("fm-periods"),
-    fmLoad: document.getElementById("fm-load"),
+    fmPills: document.getElementById("fm-pills"),
+    fmCsv: document.getElementById("fm-csv"),
     fmTable: document.getElementById("fm-table"),
   };
 
@@ -468,11 +468,15 @@
     return (a - 1) + "/" + pb;
   }
 
+  // Tab/pill state (replaces the old Statement/Periods dropdowns + Load button —
+  // every control change reloads the table immediately).
+  var fmState = { statement: "BS", periods: "12" };
+
   function loadMatrix() {
     if (!state.data) return;
     var url = cfg.matrixUrl + "?symbol=" + encodeURIComponent(state.data.symbol) +
-      "&statement=" + encodeURIComponent(els.fmStatement.value) +
-      "&periods=" + encodeURIComponent(els.fmPeriods.value);
+      "&statement=" + encodeURIComponent(fmState.statement) +
+      "&periods=" + encodeURIComponent(fmState.periods);
     if (els.fmVersion.value) url += "&data_version=" + encodeURIComponent(els.fmVersion.value);
     els.fmTable.innerHTML = '<tbody><tr><td class="fm-empty">Loading…</td></tr></tbody>';
     fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
@@ -522,10 +526,12 @@
     var thead = el("thead");
     var htr = el("tr");
     htr.appendChild(thEl("Financial Year", "fm-firstcol"));
-    m.columns.forEach(function (c) {
-      var th = thEl("", bandByKey[c.key] ? "fm-band" : null);
+    m.columns.forEach(function (c, i) {
+      var cls = (bandByKey[c.key] ? "fm-band" : "") + (i === 0 ? " fm-new" : "");
+      var th = thEl("", cls.trim() || null);
       th.appendChild(el("span", "fm-yr", c.fy));
       th.appendChild(el("span", "fm-q", "Q" + c.quarter));
+      if (i === 0) th.appendChild(el("span", "fm-latest-chip", "Latest"));
       htr.appendChild(th);
     });
     thead.appendChild(htr);
@@ -537,8 +543,16 @@
       var cls = isTotal ? "fm-row-total" : (row.header ? "fm-row-section" : null);
       var tr = el("tr", cls);
       tr.appendChild(tdEl(row.name || row.code, "fm-firstcol"));
-      m.columns.forEach(function (c) {
-        var td = tdEl(fmtCell(row.values[c.key], row.fmt), bandByKey[c.key] ? "fm-band" : null);
+      m.columns.forEach(function (c, i) {
+        var cls = (bandByKey[c.key] ? "fm-band" : "") + (i === 0 ? " fm-new" : "");
+        var td = tdEl(fmtCell(row.values[c.key], row.fmt), cls.trim() || null);
+        // Per-cell QoQ under the value — plain data rows only (section/total rows
+        // get dedicated growth sub-rows below; QoQ of a % metric is confusing).
+        if (!row.header && !isTotal && row.fmt !== "pct") {
+          var nxt = m.columns[i + 1];
+          var g = fmtGrowth(row.values[c.key], nxt ? row.values[nxt.key] : null);
+          if (g.text) td.appendChild(el("span", "fm-cellqoq " + g.cls, g.text));
+        }
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -564,10 +578,34 @@
         prev = row.values[prevFy(c.fy) + "|" + c.quarter];
       }
       var g = fmtGrowth(curr, prev);
-      var td = tdEl(g.text, (bandByKey[c.key] ? "fm-band " : "") + g.cls);
+      var td = tdEl(g.text, (bandByKey[c.key] ? "fm-band " : "") + (i === 0 ? "fm-new " : "") + g.cls);
       tr.appendChild(td);
     });
     return tr;
+  }
+
+  // Download the loaded matrix as CSV (raw values, not display formatting).
+  function exportMatrixCsv() {
+    var m = state.matrix;
+    if (!m || !m.columns || !m.columns.length) return;
+    function q(s) { return '"' + String(s == null ? "" : s).replace(/"/g, '""') + '"'; }
+    var lines = [
+      [q("Line item")].concat(m.columns.map(function (c) { return q(c.fy + " Q" + c.quarter); })).join(",")
+    ];
+    m.rows.forEach(function (row) {
+      lines.push([q(row.name || row.code)].concat(m.columns.map(function (c) {
+        var v = row.values[c.key];
+        return v == null || isNaN(v) ? "" : v;
+      })).join(","));
+    });
+    var blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = (state.data ? state.data.symbol : "statement") + "_" +
+      fmState.statement + "_" + fmState.periods + "p.csv";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
   }
 
   function thEl(text, cls) {
@@ -583,11 +621,27 @@
     return td;
   }
 
-  if (els.fmStatement) {
-    els.fmStatement.addEventListener("change", loadMatrix);
+  if (els.fmTabs) {
+    els.fmTabs.addEventListener("click", function (e) {
+      var b = e.target.closest(".fm-tab");
+      if (!b || b.dataset.st === fmState.statement) return;
+      fmState.statement = b.dataset.st;
+      [].forEach.call(els.fmTabs.querySelectorAll(".fm-tab"), function (x) {
+        x.classList.toggle("active", x === b);
+      });
+      loadMatrix();
+    });
+    els.fmPills.addEventListener("click", function (e) {
+      var b = e.target.closest(".fm-pill");
+      if (!b || b.dataset.n === fmState.periods) return;
+      fmState.periods = b.dataset.n;
+      [].forEach.call(els.fmPills.querySelectorAll(".fm-pill"), function (x) {
+        x.classList.toggle("active", x === b);
+      });
+      loadMatrix();
+    });
     els.fmVersion.addEventListener("change", loadMatrix);
-    els.fmPeriods.addEventListener("change", loadMatrix);
-    els.fmLoad.addEventListener("click", loadMatrix);
+    if (els.fmCsv) els.fmCsv.addEventListener("click", exportMatrixCsv);
   }
 
   // --- Growth & Value model (Morningstar-style sector scoring) -------------

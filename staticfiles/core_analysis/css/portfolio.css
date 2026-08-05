@@ -22,14 +22,14 @@
 .mi-controls { gap: .4rem; }
 .mi-icon-btn { padding: .42rem .58rem; }
 .mi-primary-nav {
-  gap: .18rem;
-  padding: .2rem;
+  gap: .25rem;
+  padding: .3rem;
   margin-bottom: .6rem;
 }
 .mi-nav-link {
-  gap: .22rem;
-  padding: .36rem .32rem;
-  font-size: .7rem;
+  gap: .3rem;
+  padding: .5rem .7rem;
+  font-size: .76rem;
 }
 
 /* ── Auth (login / register) ─────────────────────────────────────────────── */

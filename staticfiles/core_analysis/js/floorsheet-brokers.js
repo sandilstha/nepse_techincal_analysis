@@ -44,6 +44,12 @@
   function el(id) { return document.getElementById(id); }
   // Firm name for a broker number (from bootstrap meta), or "" if unmapped.
   function brokerName(b) { return (META.broker_names || {})[String(b)] || ""; }
+  // Broker-code table cell that reveals the firm name on hover (native tooltip).
+  function brokerCell(key) {
+    var nm = brokerName(key);
+    var tip = nm ? "#" + key + " — " + nm : "Broker " + key;
+    return "<td class='l tkr brk' title='" + esc(tip) + "'>" + esc(key) + "</td>";
+  }
 
   var inflight = {};
   function getJSON(path, params, key) {
@@ -97,6 +103,133 @@
       sel.appendChild(o);
     });
   }
+  // ── type-to-filter ticker picker ──────────────────────────────────────
+  // A native <select> holding 900 companies is unusable — you cannot type more
+  // than one letter before the browser's incremental match resets. This wraps
+  // one in a text input + filtered list.
+  //
+  // The <select> stays in the DOM (hidden) and remains the source of truth: the
+  // picker sets `.value` and fires a native `change`, so every existing
+  // `el(id).value` read and change listener keeps working untouched.
+  var COMBO_MAX = 60;
+
+  function symbolCombo(sel, placeholder) {
+    if (!sel || sel.dataset.combo) return;
+    sel.dataset.combo = "1";
+    var items = (META.symbols || []).map(function (s) {
+      return {
+        symbol: s.symbol,
+        name: s.name || s.symbol,
+        label: s.name && s.name !== s.symbol ? s.name + " ( " + s.symbol + " )" : s.symbol
+      };
+    });
+
+    var wrap = document.createElement("div");
+    wrap.className = "dsx-combo";
+    var input = document.createElement("input");
+    input.type = "text";
+    input.className = "dsx-select dsx-combo-input";
+    input.setAttribute("autocomplete", "off");
+    input.setAttribute("role", "combobox");
+    input.setAttribute("aria-expanded", "false");
+    input.placeholder = placeholder || "Type a symbol or company…";
+    var list = document.createElement("div");
+    list.className = "dsx-combo-list dsx-hidden";
+    list.setAttribute("role", "listbox");
+
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.appendChild(input);
+    wrap.appendChild(list);
+    wrap.appendChild(sel);
+    sel.classList.add("dsx-hidden");
+
+    var open = false, active = -1, shown = [];
+
+    function labelFor(v) {
+      for (var i = 0; i < items.length; i++) if (items[i].symbol === v) return items[i].label;
+      return v || "";
+    }
+    function sync() { input.value = labelFor(sel.value); }
+
+    function match(q) {
+      q = q.trim().toUpperCase();
+      if (!q) return items.slice(0, COMBO_MAX);
+      var starts = [], contains = [];
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i], sy = it.symbol.toUpperCase(), nm = it.name.toUpperCase();
+        // Ticker prefix first — typing "NAB" should surface NABIL above any
+        // company whose name merely contains those letters.
+        if (sy.indexOf(q) === 0) starts.push(it);
+        else if (sy.indexOf(q) > -1 || nm.indexOf(q) > -1) contains.push(it);
+      }
+      return starts.concat(contains).slice(0, COMBO_MAX);
+    }
+
+    function render(q) {
+      shown = match(q);
+      if (!shown.length) {
+        list.innerHTML = '<div class="dsx-combo-empty">No match</div>';
+      } else {
+        list.innerHTML = shown.map(function (it, i) {
+          return '<div class="dsx-combo-opt' + (i === active ? " active" : "") +
+            '" role="option" data-v="' + esc(it.symbol) + '" data-i="' + i + '">' +
+            '<b>' + esc(it.symbol) + '</b><span>' + esc(it.name) + '</span></div>';
+        }).join("");
+      }
+    }
+    function show(q) {
+      active = -1;
+      render(q == null ? "" : q);
+      list.classList.remove("dsx-hidden");
+      input.setAttribute("aria-expanded", "true");
+      open = true;
+    }
+    function hide() {
+      list.classList.add("dsx-hidden");
+      input.setAttribute("aria-expanded", "false");
+      open = false;
+      sync();   // discard half-typed text so the box always shows a real pick
+    }
+    function pick(v) {
+      if (!v) return;
+      sel.value = v;
+      hide();
+      // Native event so the tab's own change listener drives the reload.
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    function moveActive(step) {
+      if (!shown.length) return;
+      active = (active + step + shown.length) % shown.length;
+      render(input.value);
+      var node = list.querySelector(".dsx-combo-opt.active");
+      if (node) node.scrollIntoView({ block: "nearest" });
+    }
+
+    input.addEventListener("focus", function () { this.select(); show(""); });
+    input.addEventListener("input", function () { show(this.value); });
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowDown") { e.preventDefault(); if (!open) show(this.value); else moveActive(1); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); moveActive(-1); }
+      else if (e.key === "Enter") {
+        e.preventDefault();
+        // Enter with nothing highlighted takes the top match, so typing a full
+        // ticker and hitting Enter just works.
+        pick((shown[active < 0 ? 0 : active] || {}).symbol);
+      } else if (e.key === "Escape") { hide(); }
+    });
+    list.addEventListener("mousedown", function (e) {
+      var o = e.target.closest(".dsx-combo-opt");
+      if (!o) return;
+      e.preventDefault();          // keep focus so blur-hide doesn't race the click
+      pick(o.dataset.v);
+    });
+    document.addEventListener("mousedown", function (e) {
+      if (open && !wrap.contains(e.target)) hide();
+    });
+
+    sync();
+  }
+
   function fillSectors(sel) {
     sel.innerHTML = '<option value="All">All</option>';
     (META.sectors || []).forEach(function (s) {
@@ -320,7 +453,7 @@
   function buildBrokerTable(table, rows) {
     if (!rows || !rows.length) { empty(table, 5); return; }
     var body = rows.map(function (r) {
-      return "<tr><td class='l tkr'>" + esc(r.key) + "</td><td>" + fmtQty(r.quantity) + "</td><td>" +
+      return "<tr>" + brokerCell(r.key) + "<td>" + fmtQty(r.quantity) + "</td><td>" +
         fmtRs(r.amount) + "</td><td>" + fmtPrice(r.avg_price) + "</td><td>" + fmtPct(r.pct) + "</td></tr>";
     }).join("");
     table.innerHTML = sortableHead(table.id, BROKER_COLS) + "<tbody>" + body + "</tbody>";
@@ -336,7 +469,7 @@
     if (!rows || !rows.length) { empty(table, 4); return; }
     var body = rows.map(function (r) {
       var cls = r.quantity >= 0 ? "num-pos" : "num-neg";
-      return "<tr><td class='l tkr'>" + esc(r.key) + "</td><td class='" + cls + "'>" + fmtQty(r.quantity) +
+      return "<tr>" + brokerCell(r.key) + "<td class='" + cls + "'>" + fmtQty(r.quantity) +
         "</td><td>" + fmtPrice(r.avg_buy) + "</td><td>" + fmtPrice(r.avg_sell) + "</td></tr>";
     }).join("");
     table.innerHTML = sortableHead(table.id, HOLD_COLS) + "<tbody>" + body + "</tbody>";
@@ -770,6 +903,7 @@
   TABS.stockwise = {
     init: function () {
       fillSymbols(el("sw-symbol"));
+      symbolCombo(el("sw-symbol"));
       swState.symbol = el("sw-symbol").value || ((META.symbols || [])[0] || {}).symbol;
       el("sw-symbol").addEventListener("change", function () { swState.symbol = this.value; TABS.stockwise.load(); });
       swState.dr = dateRange("sw", function () { TABS.stockwise.load(); });
@@ -784,6 +918,732 @@
           showTable(el("sw-hold"), d.holdings, buildHoldTable);
         })
         .catch(function (err) { if (isAbort(err)) return; empty(el("sw-buy"), 5, "Error"); empty(el("sw-sell"), 5, "Error"); empty(el("sw-hold"), 4, "Error"); });
+    }
+  };
+
+  // ─── Broker Flow Map ─────────────────────────────────────────────────
+  // Sellers (left) → buyers (right) for ONE stock in ONE time window. The
+  // floorsheet carries both counterparties per trade, so grouping by
+  // (seller, buyer) yields the real transfer of shares between desks; ribbon
+  // width is the value moved. Time filtering is the study: the strip shows
+  // where the session's volume sat, and clicking/dragging it sets the window.
+  var fmState = { symbol: null, date: null, from: "", to: "", data: null, focus: null,
+                  range: "today", start: "", end: "" };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function svgEl(tag, attrs) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) if (attrs.hasOwnProperty(k)) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  /* ── Categorical palette ───────────────────────────────────────────────
+   * A fixed 8-hue categorical set, not generated hues. Hashing a broker
+   * number to an arbitrary HSL angle (the first cut) produced clashing,
+   * muddy neighbours and pairs no colourblind reader could separate.
+   * These eight are validated: worst adjacent CVD deltaE 9.1 light / 8.4
+   * dark (>=8 target) and worst normal-vision deltaE 19.6 / 19.3 (>=15
+   * floor), measured against this page's own surfaces (#ffffff / #07142e).
+   * Aqua, yellow and magenta sit under 3:1 on white — permitted here because
+   * every node carries a direct label and the flows table repeats the data.
+   * "Other" is deliberately a neutral grey: it is a pool, not an identity. */
+  var CAT_LIGHT = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100",
+                   "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
+  var CAT_DARK  = ["#3987e5", "#d95926", "#199e70", "#c98500",
+                   "#d55181", "#008300", "#9085e9", "#e66767"];
+  var OTHER_LIGHT = "#8b97a6", OTHER_DARK = "#6b7684";
+
+  function isDarkTheme() {
+    var t = document.documentElement.getAttribute("data-theme");
+    if (t === "light") return false;
+    if (t === "dark") return true;
+    return !(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches);
+  }
+
+  // Slots are allocated PER COLUMN. Both sides can show 8 desks each, so up to
+  // 16 nodes compete for 8 hues — allocating from one shared pool would silently
+  // hand two brokers in the SAME column the same colour, which is the one
+  // ambiguity that actually misleads. Per-column allocation guarantees every
+  // node in a column is distinct; a hue repeating across the gap is unambiguous
+  // because the columns are far apart and every node is labelled.
+  // A broker's preferred slot comes from its own number, so a desk tends to keep
+  // its colour across stocks and time windows, and a broker that both buys and
+  // sells is given the same colour on both sides where the slot is free.
+  var fmColors = { L: {}, R: {} };
+  function assignColors(d) {
+    var dark = isDarkTheme();
+    var pal = dark ? CAT_DARK : CAT_LIGHT;
+    var other = dark ? OTHER_DARK : OTHER_LIGHT;
+
+    function prefSlot(k) {
+      var num = parseInt(k, 10);
+      return (isNaN(num) ? String(k).length : num) % pal.length;
+    }
+    // Allocate within one column: preferred slot, else the next free one.
+    function allocate(nodes, pinned) {
+      var used = {}, out = {};
+      // Honour cross-side pins first so a two-way broker keeps one identity.
+      (nodes || []).forEach(function (n) {
+        if (n.key === "Other") return;
+        var want = pinned && pinned[n.key];
+        if (want == null) return;
+        if (!used[want]) { used[want] = 1; out[n.key] = want; }
+      });
+      (nodes || []).forEach(function (n) {
+        if (n.key === "Other" || out[n.key] != null) return;
+        var slot = prefSlot(n.key);
+        for (var i = 0; i < pal.length && used[slot]; i++) slot = (slot + 1) % pal.length;
+        used[slot] = 1;
+        out[n.key] = slot;
+      });
+      return out;
+    }
+
+    var lSlots = allocate(d.sellers, null);
+    var rSlots = allocate(d.buyers, lSlots);
+
+    function toHex(slots) {
+      var m = {};
+      Object.keys(slots).forEach(function (k) { m[k] = pal[slots[k]]; });
+      m["Other"] = other;
+      return m;
+    }
+    fmColors = { L: toHex(lSlots), R: toHex(rSlots) };
+  }
+
+  function brokerColor(key, side) {
+    var m = fmColors[side === "R" ? "R" : "L"] || {};
+    return m[key] || (isDarkTheme() ? OTHER_DARK : OTHER_LIGHT);
+  }
+  // Chart labels stay as bare broker numbers — firm names are long enough to
+  // clip the column and crowd the ribbons. The full name lives in the tooltip
+  // (fmFull) and in the flows table.
+  function fmLabel(key) {
+    return key === "Other" ? "Other" : String(key);
+  }
+  function fmFull(key) {
+    if (key === "Other") return "Other brokers";
+    var nm = brokerName(key);
+    return nm ? "#" + key + " " + nm : "Broker " + key;
+  }
+
+  function renderFlowTiles(d) {
+    var box = el("fm-tiles"); if (!box) return;
+    var t = d.totals || {};
+    function tile(k, v, s) {
+      return '<div class="dsx-flow-tile"><div class="k">' + k + '</div><div class="v">' + v +
+        '</div><div class="s">' + (s || "") + "</div></div>";
+    }
+    var win = (d.window && (d.window.from || d.window.to))
+      ? ((d.window.from || d.session.first) + " – " + (d.window.to || d.session.last))
+      : "full session " + d.session.first + " – " + d.session.last;
+    box.innerHTML =
+      tile("Turnover", fmtRsCompact(t.amount), win) +
+      tile("Shares", fmtQty(t.quantity), (t.trades || 0) + " trades") +
+      tile("Selling desks", (d.sellers || []).length, "top brokers + Other") +
+      tile("Buying desks", (d.buyers || []).length, "top brokers + Other") +
+      tile("Flows", (d.pairs || d.links || []).length, "seller → buyer pairs");
+  }
+
+  // Volume-by-time strip. Click one bar = that bucket; drag = a range.
+  function renderTimeline(d) {
+    var box = el("fm-timeline"); if (!box) return;
+    var tl = d.timeline || [];
+    if (!tl.length) { box.innerHTML = '<div class="dsx-tl-empty">No volume in this window.</div>'; return; }
+    // Buckets are 5-minute clock slots for one session, trading days for a range.
+    var byDate = d.bucket_unit === "date";
+    var max = tl.reduce(function (m, b) { return Math.max(m, b.amount || 0); }, 0) || 1;
+    box.innerHTML = tl.map(function (b) {
+      var h = Math.max(3, Math.round(52 * (b.amount || 0) / max));
+      var inWin = byDate
+        ? (!fmState.start || b.start >= fmState.start) && (!fmState.end || b.start <= fmState.end)
+        : (!fmState.from || b.start >= fmState.from.slice(0, 5)) &&
+          (!fmState.to || b.start <= fmState.to.slice(0, 5));
+      return '<div class="dsx-tl-bar' + (inWin ? " in" : "") + '" data-start="' + b.start +
+        '" style="height:' + h + 'px" title="' + b.start + " · " + fmtRsCompact(b.amount) +
+        " · " + b.trades + ' trades"></div>';
+    }).join("");
+
+    // Drag across bars to select a window; a plain click picks one bucket.
+    var dragFrom = null;
+    box.onmousedown = function (e) {
+      var bar = e.target.closest(".dsx-tl-bar");
+      if (bar) dragFrom = bar.dataset.start;
+    };
+    box.onmouseup = function (e) {
+      var bar = e.target.closest(".dsx-tl-bar");
+      if (!bar || !dragFrom) { dragFrom = null; return; }
+      var a = dragFrom, b = bar.dataset.start;
+      if (a > b) { var t2 = a; a = b; b = t2; }
+      if (byDate) {
+        // Dragging days narrows the DATE range and leaves the intraday window
+        // alone, so "opening 30m" survives a zoom into a shorter span.
+        fmState.range = "custom";
+        fmState.start = a;
+        fmState.end = b;
+        el("fm-range").value = "custom";
+        el("fm-start").value = a;
+        el("fm-end").value = b;
+        syncRangeInputs();
+      } else {
+        // End of the last selected bucket. Width comes from the response, so this
+        // stays correct if the server's BUCKET_MINUTES ever changes.
+        var width = (fmState.data && fmState.data.bucket_minutes) || 5;
+        var tot = parseInt(b.slice(0, 2), 10) * 60 + parseInt(b.slice(3), 10) + width;
+        var hh = Math.floor(tot / 60), mm = tot % 60;
+        fmState.from = a + ":00";
+        fmState.to = ("0" + hh).slice(-2) + ":" + ("0" + mm).slice(-2) + ":00";
+        el("fm-from").value = fmState.from;
+        el("fm-to").value = fmState.to;
+        setPreset(null);
+      }
+      dragFrom = null;
+      TABS.flowmap.load();
+    };
+  }
+
+  // `override` (playback) supplies the links accumulated so far. Node geometry
+  // always comes from the full-session totals so the columns hold still while
+  // the ribbons grow — a per-frame layout would make brokers jump every step.
+  // The map is BUILT once per dataset and then UPDATED in place for playback.
+  // Re-creating the SVG every frame (the first cut of this) meant CSS could
+  // never transition anything, so the animation read as a static picture.
+  var fmSvg = null;   // { geom, ribbons: {key: path}, bars: {side|key: rect}, order: [] }
+
+  function sankeyGeometry(d) {
+    var svg = el("fm-svg");
+    var sellers = d.sellers || [], buyers = d.buyers || [];
+    var W = svg.clientWidth || svg.parentNode.clientWidth || 900;
+    // colInset only has to clear a broker number now, not a firm name.
+    var padT = 34, padB = 18, gap = 4, nodeW = 14, colInset = 48;
+    var MIN_H = 15;                       // enough to seat a label legibly
+    var rows = Math.max(sellers.length, buyers.length);
+    // Height must fit every node at MIN_H, otherwise the small desks collapse
+    // into each other and their labels overlap into an unreadable pile.
+    var H = Math.max(460, rows * (MIN_H + gap) + padT + padB, rows * 34 + padT + padB);
+    var usable = H - padT - padB;
+
+    // Proportional heights, but nothing smaller than MIN_H. The shortfall that
+    // creates is taken back from the nodes that are above the floor, in
+    // proportion to their size, so the column still totals the same height.
+    function layout(nodes) {
+      var total = nodes.reduce(function (s, n) { return s + (n.amount || 0); }, 0) || 1;
+      var free = usable - gap * Math.max(0, nodes.length - 1);
+      var raw = nodes.map(function (n) { return free * (n.amount || 0) / total; });
+
+      var deficit = 0, flexTotal = 0;
+      raw.forEach(function (h) {
+        if (h < MIN_H) deficit += MIN_H - h;
+        else flexTotal += h - MIN_H;
+      });
+      var out = {}, y = padT;
+      nodes.forEach(function (n, i) {
+        var h = raw[i];
+        if (h < MIN_H) h = MIN_H;
+        else if (flexTotal > 0) h -= (h - MIN_H) / flexTotal * deficit;
+        out[n.key] = { y: y, h: Math.max(MIN_H, h), node: n };
+        y += out[n.key].h + gap;
+      });
+      return out;
+    }
+    return {
+      W: W, H: H, nodeW: nodeW,
+      xL: colInset, xR: W - colInset - nodeW,
+      L: layout(sellers), R: layout(buyers)
+    };
+  }
+
+  function ribbonPath(g, y0, y1, ah, bh) {
+    var x0 = g.xL + g.nodeW, x1 = g.xR, cx = (x0 + x1) / 2;
+    return "M" + x0 + "," + y0 +
+      "C" + cx + "," + y0 + " " + cx + "," + y1 + " " + x1 + "," + y1 +
+      "L" + x1 + "," + (y1 + bh) +
+      "C" + cx + "," + (y1 + bh) + " " + cx + "," + (y0 + ah) + " " + x0 + "," + (y0 + ah) + "Z";
+  }
+
+  // Recompute ribbon + bar geometry for whatever slice of flow is showing.
+  // Slots stay put (full-session share) while bars FILL and ribbons THICKEN,
+  // so the columns never jump between frames.
+  function updateSankey(links) {
+    if (!fmSvg || !fmState.data) return;
+    var g = fmSvg.geom, d = fmState.data;
+    var sellFull = {}, buyFull = {};
+    (d.sellers || []).forEach(function (n) { sellFull[n.key] = n.amount || 0; });
+    (d.buyers || []).forEach(function (n) { buyFull[n.key] = n.amount || 0; });
+
+    var sellNow = {}, buyNow = {};
+    links.forEach(function (l) {
+      sellNow[l.seller] = (sellNow[l.seller] || 0) + l.amount;
+      buyNow[l.buyer] = (buyNow[l.buyer] || 0) + l.amount;
+    });
+
+    // Bars fill from the top of their slot in proportion to volume traded so far.
+    Object.keys(g.L).forEach(function (k) {
+      var r = fmSvg.bars["L|" + k]; if (!r) return;
+      var frac = Math.min(1, (sellNow[k] || 0) / (sellFull[k] || 1));
+      r.setAttribute("height", Math.max(0.5, g.L[k].h * frac));
+    });
+    Object.keys(g.R).forEach(function (k) {
+      var r = fmSvg.bars["R|" + k]; if (!r) return;
+      var frac = Math.min(1, (buyNow[k] || 0) / (buyFull[k] || 1));
+      r.setAttribute("height", Math.max(0.5, g.R[k].h * frac));
+    });
+
+    var cursorL = {}, cursorR = {};
+    Object.keys(g.L).forEach(function (k) { cursorL[k] = g.L[k].y; });
+    Object.keys(g.R).forEach(function (k) { cursorR[k] = g.R[k].y; });
+
+    var byKey = {};
+    links.forEach(function (l) { byKey[l.seller + "|" + l.buyer] = l; });
+
+    // Walk in creation order so ribbon stacking stays stable across frames.
+    fmSvg.order.forEach(function (key) {
+      var path = fmSvg.ribbons[key];
+      if (!path) return;
+      var lk = byKey[key];
+      if (!lk || !lk.amount) { path.setAttribute("opacity", 0); return; }
+      var s = lk.seller, b = lk.buyer;
+      if (!g.L[s] || !g.R[b]) return;
+      var ah = g.L[s].h * (lk.amount / (sellFull[s] || 1));
+      var bh = g.R[b].h * (lk.amount / (buyFull[b] || 1));
+      var y0 = cursorL[s], y1 = cursorR[b];
+      cursorL[s] += ah; cursorR[b] += bh;
+      path.setAttribute("opacity", 1);
+      path.setAttribute("d", ribbonPath(g, y0, y1, ah, bh));
+      var t = path.firstChild;
+      if (t) {
+        t.textContent = fmFull(s) + "  →  " + fmFull(b) +
+          "\n" + fmtQty(lk.quantity) + " sh · " + fmtRsCompact(lk.amount) +
+          " · avg Rs " + (lk.avg_rate == null ? "—" : lk.avg_rate) +
+          " · " + lk.trades + " trades";
+      }
+    });
+  }
+
+  function renderSankey(d, override) {
+    var svg = el("fm-svg"); if (!svg) return;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    fmSvg = null;
+
+    var sellers = d.sellers || [], buyers = d.buyers || [], all = d.links || [];
+    if (!sellers.length || !buyers.length) {
+      var t0 = svgEl("text", { x: 20, y: 40, "class": "node-sub" });
+      t0.textContent = "No flows in this window.";
+      svg.appendChild(t0);
+      return;
+    }
+
+    assignColors(d);
+    var g = sankeyGeometry(d);
+    svg.setAttribute("viewBox", "0 0 " + g.W + " " + g.H);
+    svg.setAttribute("height", g.H);
+
+    var ordered = all.slice().sort(function (a, b) { return b.amount - a.amount; });
+    var refs = { geom: g, ribbons: {}, bars: {}, order: [] };
+
+    // Each ribbon fades from its seller's colour into its buyer's, so you can
+    // read both ends of a flow without tracing the whole curve.
+    var defs = svgEl("defs");
+    svg.appendChild(defs);
+
+    // One path per session flow, created up-front so playback only mutates
+    // attributes — that is what lets the CSS transition actually animate.
+    ordered.forEach(function (lk) {
+      if (!g.L[lk.seller] || !g.R[lk.buyer]) return;
+      var key = lk.seller + "|" + lk.buyer;
+      if (refs.ribbons[key]) return;
+
+      var gid = "fmg-" + String(lk.seller).replace(/\W/g, "") + "-" + String(lk.buyer).replace(/\W/g, "");
+      var grad = svgEl("linearGradient", {
+        id: gid, x1: "0%", x2: "100%", y1: "0%", y2: "0%"
+      });
+      grad.appendChild(svgEl("stop", { offset: "0%", "stop-color": brokerColor(lk.seller, "L") }));
+      grad.appendChild(svgEl("stop", { offset: "100%", "stop-color": brokerColor(lk.buyer, "R") }));
+      defs.appendChild(grad);
+
+      var p = svgEl("path", { "class": "ribbon anim", fill: "url(#" + gid + ")", opacity: 0, d: "" });
+      p.appendChild(svgEl("title"));
+      svg.appendChild(p);
+      refs.ribbons[key] = p;
+      refs.order.push(key);
+    });
+
+    function drawCol(map, x, side) {
+      Object.keys(map).forEach(function (key) {
+        var s = map[key], n = s.node;
+        var grp = svgEl("g", { "class": "node" });
+        // Faint full-session outline behind the filling bar, so you can see how
+        // much of each desk's day has happened at any point in the playback.
+        grp.appendChild(svgEl("rect", {
+          x: x, y: s.y, width: g.nodeW, height: s.h, rx: 3,
+          fill: brokerColor(key, side), "fill-opacity": 0.18
+        }));
+        var bar = svgEl("rect", {
+          x: x, y: s.y, width: g.nodeW, height: s.h, rx: 3,
+          fill: brokerColor(key, side), "class": "anim"
+        });
+        grp.appendChild(bar);
+        refs.bars[side + "|" + key] = bar;
+
+        // Label is the broker number only — avg price and turnover live in the
+        // hover tooltip and the flows table, so the columns stay uncluttered.
+        var tx = side === "L" ? x - 8 : x + g.nodeW + 8;
+        var anchor = side === "L" ? "end" : "start";
+        var t1 = svgEl("text", { x: tx, y: s.y + s.h / 2 + 4, "text-anchor": anchor, "class": "node-label" });
+        t1.textContent = fmLabel(key);
+        grp.appendChild(t1);
+        var gt = svgEl("title");
+        gt.textContent = fmFull(key) + "\n" + fmtQty(n.quantity) + " sh · " + fmtRsCompact(n.amount) +
+          " · avg Rs " + (n.avg_rate == null ? "—" : n.avg_rate) + " · " + n.trades + " trades";
+        grp.appendChild(gt);
+
+        function spotlight(on) {
+          refs.order.forEach(function (k2) {
+            var parts = k2.split("|");
+            var hit = side === "L" ? parts[0] === String(key) : parts[1] === String(key);
+            refs.ribbons[k2].classList.toggle("dim", on && !hit);
+            refs.ribbons[k2].classList.toggle("lit", on && hit);
+          });
+        }
+        // Hover previews a desk's flows; click pins it so you can move the
+        // mouse away and still read the highlighted paths.
+        grp.addEventListener("mouseenter", function () { if (!fmState.focus) spotlight(true); });
+        grp.addEventListener("mouseleave", function () { if (!fmState.focus) spotlight(false); });
+        grp.addEventListener("click", function () {
+          var want = side + ":" + key;
+          if (fmState.focus === want) { fmState.focus = null; spotlight(false); }
+          else { fmState.focus = want; spotlight(true); }
+        });
+        svg.appendChild(grp);
+      });
+    }
+    drawCol(g.L, g.xL, "L");
+    drawCol(g.R, g.xR, "R");
+
+    var capL = svgEl("text", { x: g.xL + g.nodeW, y: 18, "text-anchor": "end", "class": "col-cap" });
+    capL.textContent = "Sellers";
+    svg.appendChild(capL);
+    var capR = svgEl("text", { x: g.xR, y: 18, "class": "col-cap" });
+    capR.textContent = "Buyers";
+    svg.appendChild(capR);
+
+    fmSvg = refs;
+    updateSankey(override || all);
+  }
+
+  var FLOW_LINK_COLS = [
+    { label: "Seller", key: "seller", type: "str", cls: "l" },
+    { label: "Buyer", key: "buyer", type: "str", cls: "l" },
+    { label: "Shares", key: "quantity", type: "num" },
+    { label: "Value (Rs)", key: "amount", type: "num" },
+    { label: "Avg Price", key: "avg_rate", type: "num" },
+    { label: "Trades", key: "trades", type: "num" }
+  ];
+  // Volume leaderboards. Ranked by shares, real broker numbers only — these are
+  // independent of the diagram's turnover-ranked, "Other"-pooled nodes.
+  var FLOW_RANK_COLS = [
+    { label: "#", key: "rank", type: "num", cls: "l" },
+    { label: "Broker", key: "key", type: "str", cls: "l" },
+    { label: "Shares", key: "quantity", type: "num" },
+    { label: "% of vol", key: "pct", type: "num" },
+    { label: "Value (Rs)", key: "amount", type: "num" },
+    { label: "Avg Price", key: "avg_rate", type: "num" },
+    { label: "Trades", key: "trades", type: "num" }
+  ];
+  function buildFlowRankTable(table, rows) {
+    if (!rows || !rows.length) { empty(table, 7); return; }
+    var body = rows.map(function (r) {
+      return "<tr><td class='l'>" + r.rank +
+        "</td><td class='l tkr brk' title='" + esc(fmFull(r.key)) + "'>" + esc(r.key) +
+        "</td><td>" + fmtQty(r.quantity) +
+        "</td><td>" + (r.pct == null ? "—" : r.pct + "%") +
+        "</td><td>" + fmtRs(r.amount) +
+        "</td><td>" + (r.avg_rate == null ? "—" : r.avg_rate) +
+        "</td><td>" + r.trades + "</td></tr>";
+    }).join("");
+    table.innerHTML = sortableHead(table.id, FLOW_RANK_COLS) + "<tbody>" + body + "</tbody>";
+  }
+
+  function buildFlowLinkTable(table, rows) {
+    if (!rows || !rows.length) { empty(table, 6); return; }
+    // Real broker numbers, not the chart's pooled "Other" — so the cap has to be
+    // high enough to cover a busy stock's full pair list.
+    var body = rows.slice(0, 300).map(function (r) {
+      return "<tr><td class='l tkr brk' title='" + esc(fmFull(r.seller)) + "'>" + esc(r.seller) +
+        "</td><td class='l tkr brk' title='" + esc(fmFull(r.buyer)) + "'>" + esc(r.buyer) +
+        "</td><td>" + fmtQty(r.quantity) + "</td><td>" + fmtRs(r.amount) +
+        "</td><td>" + (r.avg_rate == null ? "—" : r.avg_rate) + "</td><td>" + r.trades + "</td></tr>";
+    }).join("");
+    table.innerHTML = sortableHead(table.id, FLOW_LINK_COLS) + "<tbody>" + body + "</tbody>";
+  }
+
+  /* ── Playback: step through the session, ribbons accumulating ──────────
+   * Frames arrive with the main response, so stepping is pure client work —
+   * no request per frame. Links are summed from frame 0 up to the current
+   * index, giving "who had bought from whom by HH:MM". */
+  var fmPlay = { frames: [], idx: 0, timer: null };
+
+  function cumulativeLinks(upto) {
+    var agg = {};
+    for (var i = 0; i <= upto && i < fmPlay.frames.length; i++) {
+      var fr = fmPlay.frames[i];
+      for (var j = 0; j < fr.links.length; j++) {
+        var l = fr.links[j], k = l.seller + "|" + l.buyer;
+        var slot = agg[k] || (agg[k] = {
+          seller: l.seller, buyer: l.buyer, quantity: 0, amount: 0, trades: 0
+        });
+        slot.quantity += l.quantity; slot.amount += l.amount; slot.trades += l.trades;
+      }
+    }
+    return Object.keys(agg).map(function (k) {
+      var v = agg[k];
+      v.avg_rate = v.quantity ? Math.round(v.amount / v.quantity * 100) / 100 : null;
+      return v;
+    });
+  }
+
+  function showFrame(i) {
+    if (!fmState.data || !fmPlay.frames.length) return;
+    fmPlay.idx = Math.max(0, Math.min(i, fmPlay.frames.length - 1));
+    var fr = fmPlay.frames[fmPlay.idx];
+    var links = cumulativeLinks(fmPlay.idx);
+    var qty = 0, amt = 0;
+    links.forEach(function (l) { qty += l.quantity; amt += l.amount; });
+    var pct = Math.round(100 * amt / (fmState.data.totals.amount || 1));
+
+    el("fm-scrub").value = fmPlay.idx;
+    // Clock carries the traded volume so far, not just the time.
+    el("fm-clock").textContent = fr.end + " · " + fmtQty(qty) + " sh · " + pct + "%";
+    // Tween the existing SVG rather than rebuilding it, so the bars fill and
+    // the ribbons thicken smoothly instead of snapping.
+    updateSankey(links);
+
+    // Mark elapsed buckets on the volume strip.
+    var bars = el("fm-timeline").querySelectorAll(".dsx-tl-bar");
+    [].forEach.call(bars, function (b, bi) { b.classList.toggle("in", bi <= fmPlay.idx); });
+  }
+
+  function stopPlay() {
+    if (fmPlay.timer) { clearInterval(fmPlay.timer); fmPlay.timer = null; }
+    var b = el("fm-play"); if (b) b.textContent = "▶ Play";
+  }
+
+  function startPlay() {
+    if (!fmPlay.frames.length) return;
+    stopPlay();
+    if (fmPlay.idx >= fmPlay.frames.length - 1) fmPlay.idx = -1;   // replay from open
+    var speed = parseInt(el("fm-speed").value, 10) || 450;
+    el("fm-play").textContent = "⏸ Pause";
+    fmPlay.timer = setInterval(function () {
+      if (fmPlay.idx >= fmPlay.frames.length - 1) { stopPlay(); return; }
+      showFrame(fmPlay.idx + 1);
+    }, speed);
+  }
+
+  function resetPlay() {
+    stopPlay();
+    if (!fmState.data) return;
+    fmPlay.idx = fmPlay.frames.length ? fmPlay.frames.length - 1 : 0;
+    el("fm-scrub").value = fmPlay.idx;
+    el("fm-clock").textContent = fmSpanLabel();
+    renderSankey(fmState.data);
+    renderTimeline(fmState.data);
+  }
+
+  // "full session" is wrong once a range can span months.
+  function fmSpanLabel() {
+    var d = fmState.data;
+    if (d && d.bucket_unit === "date") {
+      return "all " + ((d.range && d.range.sessions) || 0) + " sessions";
+    }
+    return "full session";
+  }
+
+  function setPreset(name) {
+    var box = el("fm-presets"); if (!box) return;
+    [].forEach.call(box.querySelectorAll(".dsx-preset"), function (b) {
+      b.classList.toggle("active", b.dataset.preset === name);
+    });
+  }
+
+  // The Session picker only means something for a single session; custom needs a
+  // start/end pair. Show exactly the inputs the current timeframe uses.
+  function syncRangeInputs() {
+    var rk = fmState.range || "today";
+    el("fm-date-wrap").classList.toggle("dsx-hidden", rk !== "today");
+    el("fm-start-wrap").classList.toggle("dsx-hidden", rk !== "custom");
+    el("fm-end-wrap").classList.toggle("dsx-hidden", rk !== "custom");
+  }
+
+  TABS.flowmap = {
+    init: function () {
+      fillSymbols(el("fm-symbol"));
+      symbolCombo(el("fm-symbol"));
+      fmState.symbol = el("fm-symbol").value || ((META.symbols || [])[0] || {}).symbol;
+      if (META.latest_date) el("fm-date").value = META.latest_date;
+
+      el("fm-symbol").addEventListener("change", function () {
+        fmState.symbol = this.value; TABS.flowmap.load();
+      });
+      el("fm-date").addEventListener("change", function () {
+        fmState.date = this.value; TABS.flowmap.load();
+      });
+
+      syncRangeInputs();
+      el("fm-range").addEventListener("change", function () {
+        fmState.range = this.value;
+        syncRangeInputs();
+        if (this.value === "custom") {
+          // Seed a sensible span so the first custom pick isn't two blank boxes.
+          var last = (fmState.data && fmState.data.range && fmState.data.range.last) ||
+            el("fm-date").value || META.latest_date;
+          if (last && !el("fm-end").value) el("fm-end").value = last;
+          if (last && !el("fm-start").value) {
+            var dt = new Date(last + "T00:00:00");
+            dt.setDate(dt.getDate() - 29);
+            el("fm-start").value = dt.toISOString().slice(0, 10);
+          }
+          fmState.start = el("fm-start").value;
+          fmState.end = el("fm-end").value;
+        }
+        TABS.flowmap.load();
+      });
+      el("fm-start").addEventListener("change", function () {
+        fmState.start = this.value; TABS.flowmap.load();
+      });
+      el("fm-end").addEventListener("change", function () {
+        fmState.end = this.value; TABS.flowmap.load();
+      });
+      el("fm-run").addEventListener("click", function () {
+        fmState.from = el("fm-from").value;
+        fmState.to = el("fm-to").value;
+        setPreset(null);
+        TABS.flowmap.load();
+      });
+
+      el("fm-presets").addEventListener("click", function (e) {
+        var b = e.target.closest(".dsx-preset"); if (!b) return;
+        var p = b.dataset.preset, d = fmState.data;
+        var first = (d && d.session && d.session.first) || "10:30:00";
+        var last = (d && d.session && d.session.last) || "15:00:00";
+        function shift(hhmmss, mins) {
+          var pr = hhmmss.split(":"), tot = (+pr[0]) * 60 + (+pr[1]) + mins;
+          var hh = Math.max(0, Math.floor(tot / 60)), mm = ((tot % 60) + 60) % 60;
+          return ("0" + hh).slice(-2) + ":" + ("0" + mm).slice(-2) + ":00";
+        }
+        if (p === "full") { fmState.from = ""; fmState.to = ""; }
+        else if (p === "open") { fmState.from = first; fmState.to = shift(first, 30); }
+        else if (p === "morning") { fmState.from = first; fmState.to = "12:00:00"; }
+        else if (p === "afternoon") { fmState.from = "12:00:00"; fmState.to = last; }
+        else if (p === "close") { fmState.from = shift(last, -30); fmState.to = last; }
+        el("fm-from").value = fmState.from;
+        el("fm-to").value = fmState.to;
+        setPreset(p);
+        TABS.flowmap.load();
+      });
+
+      el("fm-play").addEventListener("click", function () {
+        if (fmPlay.timer) stopPlay(); else startPlay();
+      });
+      el("fm-reset").addEventListener("click", resetPlay);
+      el("fm-scrub").addEventListener("input", function () {
+        stopPlay();
+        showFrame(parseInt(this.value, 10) || 0);
+      });
+      el("fm-speed").addEventListener("change", function () {
+        if (fmPlay.timer) startPlay();          // restart at the new cadence
+      });
+
+      window.addEventListener("resize", function () {
+        clearTimeout(window.__fmR);
+        window.__fmR = setTimeout(function () {
+          if (!fmState.data) return;
+          renderSankey(fmState.data, fmPlay.timer ? cumulativeLinks(fmPlay.idx) : null);
+        }, 180);
+      });
+
+      // The two palettes are stepped for their own surface, so a theme flip has
+      // to repaint — the dark steps are not legible on the light surface.
+      new MutationObserver(function () {
+        if (!fmState.data) return;
+        renderSankey(fmState.data, fmPlay.frames.length ? cumulativeLinks(fmPlay.idx) : null);
+      }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    },
+
+    load: function () {
+      if (!fmState.symbol) { el("fm-hint").textContent = "No symbols available."; return; }
+      stopPlay();
+      var params = { symbol: fmState.symbol, timeline: 1, frames: 1 };
+      var rk = fmState.range || "today";
+      if (rk === "custom") {
+        // Incomplete custom dates would 400; wait for both before querying.
+        if (!fmState.start || !fmState.end) {
+          el("fm-hint").textContent = "Pick a start and end date.";
+          return;
+        }
+        params.range = "custom";
+        params.start_date = fmState.start;
+        params.end_date = fmState.end;
+      } else if (rk !== "today") {
+        params.range = rk;
+      } else if (fmState.date) {
+        params.date = fmState.date;
+      }
+      if (fmState.from) params.from = fmState.from;
+      if (fmState.to) params.to = fmState.to;
+
+      el("fm-hint").textContent = "Loading…";
+      loading(el("fm-links"), 6);
+      loading(el("fm-top-sell"), 7);
+      loading(el("fm-top-buy"), 7);
+
+      getJSON("flow-map/", params, "flowmap")
+        .then(function (d) {
+          if (!d || !d.ok) {
+            el("fm-hint").textContent = (d && d.error) || "No data.";
+            el("fm-tiles").innerHTML = "";
+            empty(el("fm-links"), 6, "No flows");
+            empty(el("fm-top-sell"), 7, "No flows");
+            empty(el("fm-top-buy"), 7, "No flows");
+            var s = el("fm-svg"); while (s.firstChild) s.removeChild(s.firstChild);
+            return;
+          }
+          fmState.data = d;
+          fmState.focus = null;
+          if (!el("fm-date").value) el("fm-date").value = d.date;
+          var r = d.range || {};
+          // One session reads as a date + clock window; a range reads as the
+          // span and how many sessions actually traded inside it.
+          el("fm-hint").textContent = d.bucket_unit === "date"
+            ? d.symbol + " · " + r.first + " → " + r.last + " · " + r.sessions +
+              " session" + (r.sessions === 1 ? "" : "s")
+            : d.symbol + " · " + d.date + " · session " + d.session.first + "–" + d.session.last;
+          el("fm-tl-head").textContent = d.bucket_unit === "date"
+            ? "TRADED VALUE BY DAY — click or drag a range to filter"
+            : "TRADED VALUE BY TIME — click or drag a range to filter";
+          renderFlowTiles(d);
+          renderTimeline(d);
+          renderSankey(d);
+          showTable(el("fm-links"), d.pairs || d.links, buildFlowLinkTable);
+          showTable(el("fm-top-sell"), d.top_sellers, buildFlowRankTable);
+          showTable(el("fm-top-buy"), d.top_buyers, buildFlowRankTable);
+
+          // Arm playback with this session's frames.
+          fmPlay.frames = d.frames || [];
+          fmPlay.idx = Math.max(0, fmPlay.frames.length - 1);
+          var scrub = el("fm-scrub");
+          scrub.max = Math.max(0, fmPlay.frames.length - 1);
+          scrub.value = fmPlay.idx;
+          scrub.disabled = !fmPlay.frames.length;
+          el("fm-play").disabled = !fmPlay.frames.length;
+          el("fm-clock").textContent = fmPlay.frames.length ? fmSpanLabel() : "no frames";
+        })
+        .catch(function (err) {
+          if (isAbort(err)) return;
+          el("fm-hint").textContent = "Could not load the flow map.";
+          empty(el("fm-links"), 6, "Error");
+          empty(el("fm-top-sell"), 7, "Error");
+          empty(el("fm-top-buy"), 7, "Error");
+        });
     }
   };
 

@@ -497,32 +497,41 @@ def _company_names():
     cached = cache.get("fs_company_names")
     if cached is not None:
         return cached
-    names = {row["symbol"]: row["name"] for row in _company_meta()["symbols"]}
+    names = dict(_company_meta()["names"])
     cache.set("fs_company_names", names, META_TTL)
     return names
 
 
 def _company_meta():
     """Company symbols/sectors from local DB, used as instant dropdown fallback."""
-    cached = cache.get("fs_company_meta")
+    cached = cache.get("fs_company_meta_v2")
     if cached is not None:
         return cached
-    symbols, sectors = [], set()
+    # ``symbols`` (the dropdown list) holds ACTIVE companies only — delisted /
+    # suspended tickers and their promoter-share twins would otherwise flood the
+    # picker. ``names`` keeps every symbol so historical floorsheet rows for
+    # since-delisted names still resolve to a company name.
+    symbols, sectors, names = [], set(), {}
     try:
         from core_analysis.models import CompanyProfile
 
-        rows = CompanyProfile.objects.values_list("symbol", "security_name", "sector_name")
-        for symbol, name, sector in rows:
+        rows = CompanyProfile.objects.values_list(
+            "symbol", "security_name", "sector_name", "status"
+        )
+        for symbol, name, sector, status in rows:
             if not symbol:
+                continue
+            names[symbol] = name or symbol
+            if (status or "").strip().lower() != "active":
                 continue
             symbols.append({"symbol": symbol, "name": name or symbol})
             if sector:
                 sectors.add(sector)
     except Exception:  # pragma: no cover - DB optional for this overlay
-        symbols = []
+        symbols, names = [], {}
     symbols.sort(key=lambda row: row["symbol"])
-    out = {"symbols": symbols, "sectors": sorted(sectors)}
-    cache.set("fs_company_meta", out, META_TTL)
+    out = {"symbols": symbols, "sectors": sorted(sectors), "names": names}
+    cache.set("fs_company_meta_v2", out, META_TTL)
     return out
 
 
@@ -580,7 +589,7 @@ def _build_meta(latest, agg=None):
         sectors.update(v for v in agg["sector"].values() if v)
 
     company_meta = _company_meta()
-    names = {row["symbol"]: row["name"] for row in company_meta["symbols"]}
+    names = company_meta["names"]
     bnames = broker_names()
     if not symbols:
         return {

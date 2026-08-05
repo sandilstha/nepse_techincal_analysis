@@ -51,9 +51,9 @@
               Confluence — minimum indicators that must agree to go long:
               <strong id="sopcMinAgreeLabel" class="text-primary">{{ sopc_min_agree }}</strong> of 5
             </label>
-            <input type="range" class="form-range" min="1" max="5" step="1" name="sopc_min_agree" id="sopcMinAgree" value="{{ sopc_min_agree }}"
+            <input type="range" class="form-range" min="3" max="5" step="1" name="sopc_min_agree" id="sopcMinAgree" value="{{ sopc_min_agree }}"
                    oninput="var l=document.getElementById('sopcMinAgreeLabel'); if(l) l.textContent=this.value;">
-            <div class="small text-muted">1 = long if ANY of the selected indicators is long (union) · 5 = ALL must agree. Clamped to the number of indicators you tick.</div>
+            <div class="small text-muted">Minimum is 3 — one or two indicators firing is noise, and 3 tested best (Sharpe 1.30). 5 = ALL must agree. Clamped to the number of indicators you tick.</div>
           </div>
 
           <div class="row g-3 align-items-center mt-1">
@@ -61,8 +61,36 @@
               <div class="form-check">
                 <input class="form-check-input" type="checkbox" name="sopc_use_regime" value="1" id="sopcUseRegime" {% if sopc_use_regime %}checked{% endif %}>
                 <label class="form-check-label text-muted small" for="sopcUseRegime">
-                  Apply mandatory 200-SMA market-regime filter (bear → hold cash / exit longs)
+                  Apply 200-SMA market-regime filter
                 </label>
+              </div>
+            </div>
+          </div>
+
+          {% comment %}
+            Bear-regime behaviour. Default stays strict; the measured cost of the
+            other two modes is printed so the choice is informed, not blind.
+          {% endcomment %}
+          <div class="row g-3 align-items-end mt-1">
+            <div class="col-md-4">
+              <label class="form-label text-muted small fw-medium">Bear-regime behaviour</label>
+              <select name="sopc_regime_mode" class="form-select form-select-sm" id="sopcRegimeMode">
+                <option value="strict" {% if sopc_regime_mode == 'strict' %}selected{% endif %}>Strict &mdash; hold cash in bear (recommended)</option>
+                <option value="swing" {% if sopc_regime_mode == 'swing' %}selected{% endif %}>Swing &mdash; trade in bear on higher agreement</option>
+                <option value="off" {% if sopc_regime_mode == 'off' %}selected{% endif %}>Off &mdash; ignore the regime entirely</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-muted small fw-medium">Bear agreement (swing mode)</label>
+              <input type="number" min="1" max="5" step="1" name="sopc_bear_min_agree"
+                     class="form-control form-control-sm" value="{{ sopc_bear_min_agree }}">
+            </div>
+            <div class="col-md-5">
+              <div class="small text-muted" style="line-height:1.45;">
+                <strong class="text-warning">Measured on NEPSE 2003&ndash;2026:</strong>
+                bear-regime entries alone run at profit factor <strong>0.44</strong> (3 of 5) down to
+                <strong>0.12</strong> (5 of 5). Strict beat both alternatives on total return, Sharpe,
+                drawdown and PF. Use swing mode deliberately.
               </div>
             </div>
           </div>

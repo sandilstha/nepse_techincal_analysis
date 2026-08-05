@@ -19,6 +19,36 @@
             </div>
           </div>
 
+          {% comment %}Live action for today, above the historical metric cards.{% endcomment %}
+          {% with sig=sop_backtest_metrics.signal %}
+          {% if sig %}
+          <div class="card border-0 shadow-sm rounded-3 mb-3" style="border-left:6px solid {{ sig.pure_colour }} !important;">
+            <div class="card-body py-3">
+              <div class="d-flex flex-wrap align-items-center gap-3">
+                <span class="badge rounded-pill px-4 py-2"
+                      style="background:{{ sig.pure_colour }}; font-size:22px; font-weight:800; letter-spacing:.06em;">{{ sig.pure_action }}</span>
+                <div class="flex-grow-1" style="min-width:220px;">
+                  <div style="font-size:14px; font-weight:600; color:var(--ink-1,#e8eef7);">
+                    Indicator is {% if sig.indicators.0.long %}LONG{% else %}FLAT{% endif %}.
+                  </div>
+                  <div class="small text-muted mt-1">
+                    {{ sop_selected_symbol }} &middot; as of {{ sig.as_of }} &middot; close {{ sig.close }}
+                  </div>
+                </div>
+              </div>
+              <div class="d-flex flex-wrap align-items-center gap-2 mt-3 pt-3"
+                   style="border-top:1px solid rgba(128,128,128,.22);">
+                <span class="small text-muted">Risk context:</span>
+                <span class="badge rounded-pill" style="background:{{ sig.colour }};">{{ sig.action }}</span>
+                <span class="badge rounded-pill
+                  {% if sig.regime == 'Bull' %}bg-success{% elif sig.regime == 'Bear' %}bg-danger{% else %}bg-secondary{% endif %}">{{ sig.regime }} regime</span>
+                <span class="badge rounded-pill bg-dark border">{% if sig.in_position %}holding{% else %}flat{% endif %}</span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% endwith %}
+
           <div class="row g-3 mb-4">
             <div class="col-md-2 col-6">
               <div class="card p-3 border-0 text-white {% if sop_backtest_metrics.total_return >= 0 %}bg-success{% else %}bg-danger{% endif %} shadow-sm rounded-3 h-100">
@@ -93,7 +123,7 @@
           {% if sop_equity %}
           <div class="panel-outer mb-3">
             <div class="p-3 bg-raised border-bottom">
-              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Equity Curve — Strategy vs Buy &amp; Hold <span class="text-muted" style="text-transform:none; font-weight:500;">(shaded = bear regime → cash)</span></h6>
+              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Equity Curve — Strategy vs Buy &amp; Hold</h6>
             </div>
             <div class="p-2">
               <div id="sopEquityChart" style="min-height:360px;"></div>

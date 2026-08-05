@@ -20,6 +20,60 @@
           </div>
           <div class="small text-muted mb-3">Combining: {% for lbl in sopc_backtest_metrics.combined_indicators %}<span class="badge bg-dark border me-1">{{ lbl }}</span>{% endfor %}</div>
 
+          {% comment %}
+          Live BUY / HOLD / SELL / WAIT. The metric cards below are a historical
+          record; this is the only part of the tab that says what to do today, so
+          it sits above them.
+          {% endcomment %}
+          {% with sig=sopc_backtest_metrics.signal %}
+          {% if sig %}
+          <div class="card border-0 shadow-sm rounded-3 mb-3" style="border-left:6px solid {{ sig.pure_colour }} !important;">
+            <div class="card-body py-3">
+              {% comment %}
+                PURE SIGNAL leads: binary, indicators only, no hedging. The
+                regime-aware action follows as risk context beneath it.
+              {% endcomment %}
+              <div class="d-flex flex-wrap align-items-center gap-3">
+                <span class="badge rounded-pill px-4 py-2"
+                      style="background:{{ sig.pure_colour }}; font-size:22px; font-weight:800; letter-spacing:.06em;">{{ sig.pure_action }}</span>
+                <div class="flex-grow-1" style="min-width:220px;">
+                  <div style="font-size:14px; font-weight:600; color:var(--ink-1,#e8eef7);">{{ sig.pure_reason }}</div>
+                  <div class="small text-muted mt-1">
+                    {{ sopc_selected_symbol }} &middot; as of {{ sig.as_of }} &middot; close {{ sig.close }} &middot;
+                    <strong>{{ sig.agree }} of {{ sig.total }}</strong> long (need {{ sig.required }})
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap align-items-center gap-2 mt-3 pt-3"
+                   style="border-top:1px solid rgba(128,128,128,.22);">
+                <span class="small text-muted">Risk context:</span>
+                <span class="badge rounded-pill" style="background:{{ sig.colour }};">{{ sig.action }}</span>
+                <span class="badge rounded-pill
+                  {% if sig.regime == 'Bull' %}bg-success{% elif sig.regime == 'Bear' %}bg-danger{% else %}bg-secondary{% endif %}">{{ sig.regime }} regime</span>
+                <span class="badge rounded-pill bg-dark border">{% if sig.in_position %}holding{% else %}flat{% endif %}</span>
+                {% if sig.regime_conflict %}
+                  <span class="small" style="color:#eab308;">
+                    &#9888; Indicators say BUY but the {{ sig.regime_mode }} regime rule says {{ sig.action }} &mdash; overriding it cost
+                    ~570 points of return in testing.
+                  </span>
+                {% endif %}
+              </div>
+              <div class="mt-3 d-flex flex-wrap gap-2">
+                {% for d in sig.indicators %}
+                  <span class="badge rounded-pill {% if d.long %}bg-success{% else %}bg-secondary{% endif %}"
+                        style="font-weight:600;">{% if d.long %}&#10003;{% else %}&times;{% endif %} {{ d.label }}</span>
+                {% endfor %}
+              </div>
+              <div class="small text-muted mt-2" style="font-size:11.5px;">
+                Signal is read on the last available close and would be acted on at the next session's open,
+                matching how the backtest above fills. Not investment advice.
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% endwith %}
+
           <div class="row g-3 mb-3">
             <div class="col-md-3 col-6">
               <div class="card p-3 border-0 text-white {% if sopc_backtest_metrics.total_return >= 0 %}bg-success{% else %}bg-danger{% endif %} shadow-sm rounded-3 h-100">
@@ -89,22 +143,6 @@
               </div>
             </div>
           </div>
-
-          <div class="small text-muted mb-3" style="border-left:3px solid var(--accent, #4c8dff); padding:6px 11px; background: var(--bg-raised, rgba(128,128,128,.06)); border-radius:0 6px 6px 0;">
-            <strong>NEPSE trading rules applied:</strong> long-only (no short-selling) · signals fill at the <strong>next session's open (T+1)</strong>, so no same-day round-trips · sessions come from the real NEPSE calendar (no synthetic weekend bars) · in a bear regime the book moves to cash.
-          </div>
-
-          {% if sopc_equity %}
-          <div class="panel-outer mb-3">
-            <div class="p-3 bg-raised border-bottom">
-              <h6 class="m-0 text-muted" style="font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em;">Equity Curve — Strategy vs Buy &amp; Hold <span class="text-muted" style="text-transform:none; font-weight:500;">(shaded = bear regime → cash)</span></h6>
-            </div>
-            <div class="p-2">
-              <div id="sopcEquityChart" style="min-height:360px;"></div>
-            </div>
-          </div>
-          {{ sopc_equity|json_script:"sopc-equity-data" }}
-          {% endif %}
 
           <div class="panel-outer">
             <div class="p-3 bg-raised border-bottom">
