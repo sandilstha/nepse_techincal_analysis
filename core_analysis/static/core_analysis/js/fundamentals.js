@@ -519,6 +519,8 @@
       return;
     }
 
+    sizeMatrix(m.columns.length);
+
     // Alternate a subtle band per fiscal-year group of columns.
     var bandByKey = {}, fyOrder = [];
     m.columns.forEach(function (c) {
@@ -568,6 +570,35 @@
       }
     });
     els.fmTable.appendChild(tbody);
+  }
+
+  // Column geometry follows the period count, so 5 quarters don't sit marooned
+  // in huge gaps and 24 don't crush into unreadable slivers. A <colgroup> with a
+  // fixed first column plus `table-layout: fixed` makes the browser split the
+  // remaining width EVENLY — auto layout sized columns by their content, which
+  // is what produced the ragged gaps. `minWidth` is the floor below which the
+  // wrap scrolls horizontally instead of squeezing further.
+  var FM_DENSITY = [
+    { max: 6,       den: "roomy",  first: 270, cell: 132 },
+    { max: 9,       den: "normal", first: 245, cell: 112 },
+    { max: 13,      den: "tight",  first: 215, cell: 92 },
+    { max: Infinity, den: "micro", first: 190, cell: 78 },
+  ];
+
+  function sizeMatrix(n) {
+    var d = FM_DENSITY.find(function (x) { return n <= x.max; });
+    els.fmTable.dataset.den = d.den;
+    els.fmTable.style.minWidth = (d.first + n * d.cell) + "px";
+    // …and a ceiling, so five quarters on the 1860px Stock 360 shell don't
+    // simply inherit the old marooned-in-whitespace look at a larger scale.
+    els.fmTable.style.maxWidth = (d.first + n * d.cell * 1.9) + "px";
+
+    var cg = el("colgroup");
+    var c0 = document.createElement("col");
+    c0.style.width = d.first + "px";
+    cg.appendChild(c0);
+    for (var i = 0; i < n; i++) cg.appendChild(document.createElement("col"));
+    els.fmTable.appendChild(cg);
   }
 
   function growthRow(row, columns, bandByKey, label, mode) {

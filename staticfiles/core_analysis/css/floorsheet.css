@@ -4,7 +4,7 @@
    ========================================================================== */
 
 .fs-updated {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--ink-3);
   font-family: 'Manrope', system-ui, sans-serif;
   margin-right: 6px;
@@ -25,7 +25,7 @@
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--ink-2);
-  font: 600 14px/1 'Manrope', sans-serif;
+  font: 600 0.875rem/1 'Manrope', sans-serif;
   padding: 12px 16px;
   cursor: pointer;
   transition: color .15s, border-color .15s;
@@ -40,7 +40,7 @@
   border-radius: var(--radius-sm);
   padding: 10px 14px;
   margin-bottom: 14px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 /* ── panels ──────────────────────────────────────────────────────────── */
@@ -59,7 +59,7 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
-  font: 600 11px/1 'Manrope', sans-serif;
+  font: 600 0.6875rem/1 'Manrope', sans-serif;
   letter-spacing: .04em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -71,7 +71,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: 8px 12px;
-  font: 500 14px/1 'Manrope', sans-serif;
+  font: 500 0.875rem/1 'Manrope', sans-serif;
 }
 .dsx-sector { min-width: 160px; }
 
@@ -104,7 +104,7 @@
   gap: 8px;
   padding: 7px 11px;
   cursor: pointer;
-  font: 500 13px/1.3 'Manrope', sans-serif;
+  font: 500 0.8125rem/1.3 'Manrope', sans-serif;
   text-transform: none;
   letter-spacing: 0;
   color: var(--ink-1);
@@ -115,7 +115,7 @@
 .dsx-combo-opt span {
   flex: 1 1 auto;
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: 0.75rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -123,7 +123,7 @@
 .dsx-combo-empty {
   padding: 10px 11px;
   color: var(--ink-3);
-  font: 500 13px/1 'Manrope', sans-serif;
+  font: 500 0.8125rem/1 'Manrope', sans-serif;
   text-transform: none;
 }
 
@@ -136,7 +136,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: 7px 12px;
-  font: 500 14px/1 'Manrope', sans-serif;
+  font: 500 0.875rem/1 'Manrope', sans-serif;
   color-scheme: dark light;
 }
 .dsx-date-input:hover:not(:disabled) { border-color: var(--accent); }
@@ -155,7 +155,7 @@
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
   padding: 9px 26px;
-  font: 700 13px/1 'Manrope', sans-serif;
+  font: 700 0.8125rem/1 'Manrope', sans-serif;
   letter-spacing: .02em;
   cursor: pointer;
   transition: filter .15s;
@@ -173,7 +173,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: 8px 12px;
-  font: 500 14px/1 'Manrope', sans-serif;
+  font: 500 0.875rem/1 'Manrope', sans-serif;
   cursor: pointer;
 }
 .dsx-multi-btn:hover { border-color: var(--accent); }
@@ -196,7 +196,7 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 7px 10px;
-  font: 500 13px/1 'Manrope', sans-serif;
+  font: 500 0.8125rem/1 'Manrope', sans-serif;
   margin-bottom: 8px;
 }
 .dsx-multi-actions { display: flex; gap: 8px; margin-bottom: 8px; }
@@ -207,12 +207,12 @@
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 5px 0;
-  font: 600 12px/1 'Manrope', sans-serif;
+  font: 600 0.75rem/1 'Manrope', sans-serif;
   cursor: pointer;
 }
 .dsx-multi-actions button:hover { color: var(--accent); border-color: var(--accent); }
 .dsx-multi-count {
-  font: 600 11px/1 'Manrope', sans-serif;
+  font: 600 0.6875rem/1 'Manrope', sans-serif;
   color: var(--ink-3); letter-spacing: .02em;
   margin-bottom: 8px;
 }
@@ -227,7 +227,7 @@
   border: 1px solid var(--line);
   border-radius: 7px;
   padding: 8px 0;
-  font: 600 12.5px/1 'Manrope', system-ui, sans-serif;
+  font: 600 0.7812rem/1 'Manrope', system-ui, sans-serif;
   text-align: center; cursor: pointer;
   transition: background .12s, color .12s, border-color .12s;
 }
@@ -237,7 +237,7 @@
 }
 .dsx-multi-none {
   grid-column: 1 / -1; text-align: center; padding: 14px 0;
-  color: var(--ink-3); font: 500 12px/1 'Manrope', sans-serif;
+  color: var(--ink-3); font: 500 0.75rem/1 'Manrope', sans-serif;
 }
 /* selected-broker chips (shown under the button, each removable via ×) */
 .dsx-multi-chips {
@@ -250,7 +250,7 @@
   background: var(--accent-soft); color: var(--accent);
   border: 1px solid var(--accent);
   border-radius: 999px; padding: 3px 4px 3px 9px;
-  font: 600 12px/1 'Manrope', system-ui, sans-serif;
+  font: 600 0.75rem/1 'Manrope', system-ui, sans-serif;
 }
 .dsx-sel-chip b { font-weight: 700; }
 /* collapsed "All N brokers" pill shown when many are selected */
@@ -261,21 +261,21 @@
 .dsx-sel-x {
   appearance: none; border: none; cursor: pointer;
   background: transparent; color: inherit;
-  font: 700 14px/1 'Manrope', sans-serif;
+  font: 700 0.875rem/1 'Manrope', sans-serif;
   width: 16px; height: 16px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
   opacity: .7; transition: opacity .12s, background .12s;
 }
 .dsx-sel-x:hover { opacity: 1; background: rgba(0,0,0,.15); }
-.dsx-blurb { font-size: 13px; color: var(--ink-2); }
+.dsx-blurb { font-size: 0.8125rem; color: var(--ink-2); }
 .dsx-check {
   display: flex; align-items: center; gap: 7px;
-  font-size: 13px; color: var(--ink-2); cursor: pointer; user-select: none;
+  font-size: 0.8125rem; color: var(--ink-2); cursor: pointer; user-select: none;
 }
 
 .dsx-seg { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .dsx-seg-label {
-  font: 600 11px/1 'Manrope', sans-serif;
+  font: 600 0.6875rem/1 'Manrope', sans-serif;
   letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
   margin-right: 2px;
 }
@@ -286,7 +286,7 @@
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 7px 14px;
-  font: 600 12.5px/1 'Manrope', sans-serif;
+  font: 600 0.7812rem/1 'Manrope', sans-serif;
   cursor: pointer;
   transition: all .15s;
 }
@@ -317,17 +317,17 @@
   gap: 6px;
 }
 .dsx-kpi-label {
-  font: 600 10.5px/1 'Manrope', sans-serif;
+  font: 600 0.6562rem/1 'Manrope', sans-serif;
   letter-spacing: .05em;
   text-transform: uppercase;
   color: var(--ink-3);
 }
 .dsx-kpi-val {
-  font: 700 19px/1.1 'Manrope', system-ui, sans-serif;
+  font: 700 1.1875rem/1.1 'Manrope', system-ui, sans-serif;
   color: var(--ink-1);
 }
 .dsx-kpi-sub {
-  font: 500 11px/1.2 'Manrope', sans-serif;
+  font: 500 0.6875rem/1.2 'Manrope', sans-serif;
   color: var(--ink-3);
 }
 .dsx-kpi-val.num-pos { color: var(--up); }
@@ -339,7 +339,7 @@
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
 }
 .dsx-ad-sub {
-  font: 500 11px/1 'Manrope', sans-serif;
+  font: 500 0.6875rem/1 'Manrope', sans-serif;
   text-transform: none; letter-spacing: 0; color: var(--ink-3);
 }
 .dsx-ad-filter {
@@ -347,7 +347,7 @@
   padding: 10px 16px 0;
 }
 .dsx-ad-filter label {
-  font: 600 10.5px/1 'Manrope', sans-serif;
+  font: 600 0.6562rem/1 'Manrope', sans-serif;
   letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3);
 }
 .dsx-mini-select {
@@ -356,7 +356,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: 6px 10px;
-  font: 500 13px/1 'Manrope', sans-serif;
+  font: 500 0.8125rem/1 'Manrope', sans-serif;
 }
 .dsx-mini-select:hover { border-color: var(--accent); }
 /* column-title row, aligned to the .dsx-ad-row grid below it */
@@ -366,7 +366,7 @@
   align-items: center;
   gap: 12px;
   padding: 10px 16px 6px;
-  font: 600 10px/1.2 'Manrope', sans-serif;
+  font: 600 0.625rem/1.2 'Manrope', sans-serif;
   letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
   border-bottom: 1px solid var(--line);
 }
@@ -375,8 +375,8 @@
 .dsx-ad-cols .sortable { cursor: pointer; user-select: none; transition: color .12s; }
 .dsx-ad-cols .sortable:hover { color: var(--ink-1); }
 .dsx-ad-cols .sorted-asc, .dsx-ad-cols .sorted-desc { color: var(--accent); }
-.dsx-ad-cols .sorted-asc::after { content: " ▲"; font-size: 8px; }
-.dsx-ad-cols .sorted-desc::after { content: " ▼"; font-size: 8px; }
+.dsx-ad-cols .sorted-asc::after { content: " ▲"; font-size: 0.5rem; }
+.dsx-ad-cols .sorted-desc::after { content: " ▼"; font-size: 0.5rem; }
 @media (max-width: 700px) {
   .dsx-ad-cols { grid-template-columns: 54px 52px 1fr 78px; }
   .dsx-ad-cols > :last-child { display: none; }
@@ -392,12 +392,12 @@
 @media (max-width: 700px) { .dsx-ad-row { grid-template-columns: 54px 52px 1fr 78px; } .dsx-ad-row .dsx-hhi { display: none; } }
 .dsx-ad-row:hover { background: var(--surface-2); }
 .dsx-ad-sym {
-  font: 700 13px/1 'Manrope', system-ui, sans-serif;
+  font: 700 0.8125rem/1 'Manrope', system-ui, sans-serif;
   color: var(--accent);
 }
 /* conviction streak badge (consecutive same-side sessions) */
 .dsx-streak {
-  font: 700 11px/1 'Manrope', system-ui, sans-serif;
+  font: 700 0.6875rem/1 'Manrope', system-ui, sans-serif;
   text-align: center;
   padding: 3px 0; border-radius: 5px;
   border: 1px solid var(--line);
@@ -407,7 +407,7 @@
 .dsx-streak.flat { color: var(--ink-3); }
 /* concentration (HHI) chip, coloured by risk band */
 .dsx-hhi {
-  font: 700 11px/1 'Manrope', system-ui, sans-serif;
+  font: 700 0.6875rem/1 'Manrope', system-ui, sans-serif;
   text-align: center;
   padding: 3px 4px; border-radius: 5px;
   cursor: help;
@@ -421,11 +421,11 @@
 .dsx-sig { padding: 6px 14px 12px; max-height: 320px; overflow: auto; }
 .dsx-sig-tbl {
   width: 100%; border-collapse: collapse;
-  font: 500 12.5px/1.2 'Manrope', system-ui, sans-serif;
+  font: 500 0.7812rem/1.2 'Manrope', system-ui, sans-serif;
 }
 .dsx-sig-tbl thead th {
   position: sticky; top: 0; background: var(--surface);
-  color: var(--ink-3); font: 600 10px/1.3 'Manrope', sans-serif;
+  color: var(--ink-3); font: 600 0.625rem/1.3 'Manrope', sans-serif;
   text-transform: uppercase; letter-spacing: .03em;
   padding: 7px 8px; text-align: right; border-bottom: 1px solid var(--line);
 }
@@ -442,7 +442,7 @@
 /* divergence direction tag */
 .dsx-tag {
   display: inline-block; padding: 2px 7px; border-radius: 5px;
-  font: 700 10px/1.4 'Manrope', sans-serif; letter-spacing: .02em;
+  font: 700 0.625rem/1.4 'Manrope', sans-serif; letter-spacing: .02em;
 }
 .dsx-tag.buy  { color: var(--up);   background: var(--up-soft); }
 .dsx-tag.sell { color: var(--down); background: var(--down-soft); }
@@ -453,7 +453,7 @@
   align-items: center; gap: 10px; padding: 5px 0;
 }
 .dsx-sec-name {
-  font: 600 12px/1.2 'Manrope', sans-serif; color: var(--ink-1);
+  font: 600 0.75rem/1.2 'Manrope', sans-serif; color: var(--ink-1);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
@@ -468,7 +468,7 @@
 .dsx-churn {
   display: inline-block; padding: 2px 7px; border-radius: 5px;
   background: rgba(216,148,31,.14); color: #d8941f;
-  font: 700 11px/1.4 'Manrope', system-ui, sans-serif; cursor: help;
+  font: 700 0.6875rem/1.4 'Manrope', system-ui, sans-serif; cursor: help;
 }
 .dsx-ad-track {
   position: relative;
@@ -489,7 +489,7 @@
 .dsx-ad-fill.sell { right: 50%; background: linear-gradient(90deg, #ff6e72, #e0575b); }
 .dsx-ad-net {
   text-align: right;
-  font: 700 13px/1 'Manrope', system-ui, sans-serif;
+  font: 700 0.8125rem/1 'Manrope', system-ui, sans-serif;
 }
 .dsx-ad-net.num-pos { color: var(--up); }
 .dsx-ad-net.num-neg { color: var(--down); }
@@ -517,7 +517,7 @@
 }
 .dsx-card-head {
   padding: 11px 16px;
-  font: 700 13px/1 'Manrope', sans-serif;
+  font: 700 0.8125rem/1 'Manrope', sans-serif;
   letter-spacing: .03em;
   color: #fff;
   text-align: right;
@@ -533,7 +533,7 @@
   gap: 16px;
 }
 .dsx-flow-head span:last-child {
-  font: 500 11px/1.35 'Manrope', sans-serif;
+  font: 500 0.6875rem/1.35 'Manrope', sans-serif;
   color: var(--ink-3);
   letter-spacing: 0;
   text-transform: none;
@@ -546,13 +546,13 @@
 .dsx-table {
   width: 100%;
   border-collapse: collapse;
-  font: 500 13px/1.2 'Manrope', system-ui, sans-serif;
+  font: 500 0.8125rem/1.2 'Manrope', system-ui, sans-serif;
 }
 .dsx-table thead th {
   position: sticky; top: 0;
   background: var(--surface-2);
   color: var(--ink-3);
-  font: 600 11px/1.3 'Manrope', sans-serif;
+  font: 600 0.6875rem/1.3 'Manrope', sans-serif;
   text-transform: uppercase; letter-spacing: .03em;
   padding: 10px 12px;
   text-align: right;
@@ -575,13 +575,13 @@
 .dsx-hidden { display: none !important; }
 .dsx-flow-presets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 14px; }
 .dsx-preset {
-  font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; color: inherit;
+  font: inherit; font-size: 0.75rem; font-weight: 700; cursor: pointer; color: inherit;
   background: transparent; border: 1px solid var(--line, rgba(128,128,128,.3));
   border-radius: 8px; padding: 6px 12px;
 }
 .dsx-preset:hover { border-color: var(--accent); }
 .dsx-preset.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-.dsx-flow-hint { font-size: 11.5px; opacity: .65; margin-left: 4px; }
+.dsx-flow-hint { font-size: 0.7188rem; opacity: .65; margin-left: 4px; }
 
 .dsx-flow-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
 .dsx-flow-tile {
@@ -589,9 +589,9 @@
   border: 1px solid var(--line, rgba(128,128,128,.2));
   border-radius: 10px; padding: 10px 13px;
 }
-.dsx-flow-tile .k { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .6; }
-.dsx-flow-tile .v { font-size: 19px; font-weight: 800; margin-top: 3px; font-variant-numeric: tabular-nums; }
-.dsx-flow-tile .s { font-size: 11px; opacity: .6; margin-top: 1px; }
+.dsx-flow-tile .k { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .6; }
+.dsx-flow-tile .v { font-size: 1.1875rem; font-weight: 800; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.dsx-flow-tile .s { font-size: 0.6875rem; opacity: .6; margin-top: 1px; }
 
 /* Volume-by-time strip: click a bar, or drag across bars, to set the window. */
 /* ~50 bars at 5-minute buckets, so the gap is tight and bars stay slim. */
@@ -599,12 +599,12 @@
 .dsx-tl-bar { flex: 1 1 0; min-width: 1px; background: var(--accent); opacity: .38; border-radius: 2px 2px 0 0; transition: opacity .12s; }
 .dsx-tl-bar:hover { opacity: .8; }
 .dsx-tl-bar.in { opacity: .95; }
-.dsx-tl-empty { padding: 22px 12px; font-size: 12px; opacity: .55; }
+.dsx-tl-empty { padding: 22px 12px; font-size: 0.75rem; opacity: .55; }
 
 /* Playback controls */
 .dsx-play { display: flex; align-items: center; gap: 10px; padding: 10px 12px 2px; flex-wrap: wrap; }
 .dsx-play-btn {
-  font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; color: #fff;
+  font: inherit; font-size: 0.7812rem; font-weight: 800; cursor: pointer; color: #fff;
   background: var(--accent); border: 0; border-radius: 8px; padding: 7px 15px; white-space: nowrap;
 }
 .dsx-play-btn:hover { filter: brightness(1.08); }
@@ -612,11 +612,11 @@
 .dsx-play-btn.ghost:hover { border-color: var(--accent); filter: none; }
 .dsx-scrub { flex: 1; min-width: 160px; accent-color: var(--accent); cursor: pointer; }
 .dsx-play-clock {
-  font-variant-numeric: tabular-nums; font-weight: 800; font-size: 13px;
+  font-variant-numeric: tabular-nums; font-weight: 800; font-size: 0.8125rem;
   min-width: 118px; text-align: center;
 }
-.dsx-play-speed { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; opacity: .75; }
-.dsx-play-speed .dsx-select { padding: 4px 8px; font-size: 12px; }
+.dsx-play-speed { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7188rem; opacity: .75; }
+.dsx-play-speed .dsx-select { padding: 4px 8px; font-size: 0.75rem; }
 
 .dsx-flow-wrap { overflow: auto; }
 .dsx-flow-svg { display: block; width: 100%; min-height: 420px; }
@@ -629,9 +629,9 @@
 .dsx-flow-svg .ribbon.lit { fill-opacity: .72; }
 .dsx-flow-svg .node { cursor: pointer; }
 .dsx-flow-svg .node:hover .node-label { fill: var(--accent); }
-.dsx-flow-svg .node-label { font-size: 11px; font-weight: 800; fill: currentColor; transition: fill .12s; }
-.dsx-flow-svg .node-sub { font-size: 9.5px; fill: currentColor; opacity: .6; }
-.dsx-flow-svg .col-cap { font-size: 10px; font-weight: 800; letter-spacing: .08em; fill: currentColor; opacity: .55; text-transform: uppercase; }
+.dsx-flow-svg .node-label { font-size: 0.6875rem; font-weight: 800; fill: currentColor; transition: fill .12s; }
+.dsx-flow-svg .node-sub { font-size: 0.5938rem; fill: currentColor; opacity: .6; }
+.dsx-flow-svg .col-cap { font-size: 0.625rem; font-weight: 800; letter-spacing: .08em; fill: currentColor; opacity: .55; text-transform: uppercase; }
 
 .dsx-table .tkr { color: var(--accent); font-weight: 700; }
 /* Broker code reveals the firm name on hover (native title tooltip). */
@@ -642,10 +642,10 @@
 /* The 3-up grid (Script Deep Dive: Buy / Sell / Holdings) packs 4–5 numeric
    columns into a narrow card. Compact font + padding so every column fits and
    the table no longer needs horizontal scrolling. */
-.dsx-grid-3 .dsx-table { font-size: 12px; }
+.dsx-grid-3 .dsx-table { font-size: 0.75rem; }
 .dsx-grid-3 .dsx-table thead th {
   padding: 9px 6px;
-  font-size: 10px;
+  font-size: 0.625rem;
   letter-spacing: .01em;
 }
 .dsx-grid-3 .dsx-table tbody td { padding: 8px 6px; }
@@ -658,7 +658,7 @@
 }
 .dsx-table thead th.sortable:hover { color: var(--ink-1); background: var(--surface); }
 .dsx-table thead th.sorted { color: var(--accent); }
-.dsx-table thead th .dsx-arrow { font-size: 9px; }
+.dsx-table thead th .dsx-arrow { font-size: 0.5625rem; }
 .dsx-empty { padding: 28px; text-align: center; color: var(--ink-3); font-family: 'Manrope', sans-serif; }
 
 /* concentration heat cells */
@@ -667,7 +667,7 @@
 .dsx-conc .grp { border-left: 1px solid var(--line); }
 
 /* ── treemap ─────────────────────────────────────────────────────────── */
-.dsx-legend { display: flex; gap: 18px; margin-bottom: 10px; font-size: 13px; color: var(--ink-2); }
+.dsx-legend { display: flex; gap: 18px; margin-bottom: 10px; font-size: 0.8125rem; color: var(--ink-2); }
 .dsx-legend .dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
 .dsx-legend .dot.buy  { background: #58c98f; }
 .dsx-legend .dot.sell { background: #e06b6e; }
@@ -686,7 +686,7 @@
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
   color: #0b1d12;
-  font: 700 12px/1.1 'Manrope', sans-serif;
+  font: 700 0.75rem/1.1 'Manrope', sans-serif;
   text-align: center;
   padding: 2px;
   transition: filter .12s;
@@ -707,12 +707,12 @@
   border-radius: 9px;
   box-shadow: var(--shadow);
   padding: 9px 11px;
-  font: 600 12px/1.35 'Manrope', sans-serif;
+  font: 600 0.75rem/1.35 'Manrope', sans-serif;
   color: var(--ink-1);
 }
 .dsx-tm-tip[hidden] { display: none; }
 .dsx-tm-tip-sym {
-  font: 800 13px/1 'Manrope', sans-serif;
+  font: 800 0.8125rem/1 'Manrope', sans-serif;
   color: var(--accent);
   margin-bottom: 5px;
 }
@@ -731,7 +731,7 @@
   align-self: center;
   display: inline-flex; align-items: center; justify-content: center;
   width: 20px; height: 20px; margin-right: 4px; border-radius: 50%;
-  font: 800 12px/1 'Manrope', sans-serif; text-decoration: none;
+  font: 800 0.75rem/1 'Manrope', sans-serif; text-decoration: none;
   color: var(--ink-3); border: 1px solid var(--line);
   background: var(--surface-2); flex: 0 0 auto;
   transition: color .15s, border-color .15s, background .15s;

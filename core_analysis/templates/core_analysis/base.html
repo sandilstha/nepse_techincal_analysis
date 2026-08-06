@@ -26,6 +26,9 @@
   <link rel="stylesheet" href="{% static 'core_analysis/css/tokens.css' %}?v={{ dashboard_asset_version|default:1 }}">
   <link rel="stylesheet" href="{% static 'core_analysis/css/dashboard.css' %}?v={{ dashboard_asset_version|default:1 }}">
   <link rel="stylesheet" href="{% static 'core_analysis/css/workbench-layout.css' %}?v={{ dashboard_asset_version|default:1 }}">
+  {# Shared mobile layer, loaded LAST so its @media overrides win. #}
+  {# Every rule inside is gated behind a max-width query: desktop untouched. #}
+  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ dashboard_asset_version|default:1 }}">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -128,6 +131,7 @@
   });
 
 </script>
+<script defer src="{% static 'core_analysis/js/responsive.js' %}?v={{ dashboard_asset_version|default:1 }}"></script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

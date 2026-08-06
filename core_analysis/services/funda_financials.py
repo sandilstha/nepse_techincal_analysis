@@ -173,6 +173,17 @@ def _upsert_one_statement(sym, sector, fs_type, columns, entry):
     template rows consumed in order, which also disambiguates repeated labels like
     "Margin (MRQ) %"). FK-safe: item_id and fiscal_year_bs are reused from real
     rows. Returns ``(written, note)``.
+
+    Every mapped column is written, including the ones the source reports as
+    ``null`` (stored as 0). Skipping them used to leave whatever row already sat
+    on that period — including rows an earlier, mis-aligned mapping had written —
+    so a section's sub-items no longer added up to its total. Writing the full
+    column set makes a period's rows a pure function of the current payload.
+
+    Section totals the source omits (e.g. "Operating Expenses", "Income Tax") are
+    derived from their sub-items, which the sorting_code carries: "420.1".."420.3"
+    are the children of "420". Without that they rendered as 0 above non-zero
+    children — the other half of the parts-vs-total mismatch.
     """
     from collections import defaultdict, deque
 
@@ -210,21 +221,38 @@ def _upsert_one_statement(sym, sector, fs_type, columns, entry):
 
     queues = defaultdict(deque)
     for r in sorted(by_code.values(), key=_sort_val):
-        queues[r["item_name"]].append(r)
+        queues[(r["item_name"] or "").strip()].append(r)   # spec labels carry stray spaces
 
-    now = timezone.now()
-    written = 0
+    # Pass 1 — resolve every column to a template row and its reported value.
+    picked = []                    # [(row, value_or_None)] in spec order
     for col in columns:
         name, label = col.get("name"), col.get("label")
         if not name or not label:
             continue
-        q = queues.get(label)
+        q = queues.get((label or "").strip())
         if not q:
             continue
         row = q.popleft()          # consume in order (handles duplicate labels)
-        value = _num(entry.get(name))
-        if value is None:
-            continue
+        picked.append((row, _num(entry.get(name))))
+
+    # Pass 2 — fill omitted section totals from their sub-items ("420" <- "420.x").
+    child_sums = defaultdict(float)
+    have_children = set()
+    for row, value in picked:
+        parent, _, frac = (row["sorting_code"] or "").partition(".")
+        if frac and value is not None:
+            child_sums[parent] += value
+            have_children.add(parent)
+    derived = set()
+    for idx, (row, value) in enumerate(picked):
+        code = row["sorting_code"] or ""
+        if value is None and "." not in code and code in have_children:
+            picked[idx] = (row, child_sums[code])
+            derived.add(row["item_code"])
+
+    now = timezone.now()
+    written = 0
+    for row, value in picked:
         FS.objects.update_or_create(
             sector=sector,
             fiscal_year_ad=fy,
@@ -237,10 +265,10 @@ def _upsert_one_statement(sym, sector, fs_type, columns, entry):
                 "item_name": row["item_name"],
                 "sorting_code": row["sorting_code"],
                 "unit": row["unit"],
-                "amount": value,
+                "amount": 0.0 if value is None else value,   # null = not reported
                 "fiscal_year_bs": fybs,
                 "item": row["item"],
-                "remarks": "",
+                "remarks": "derived from sub-items" if row["item_code"] in derived else "",
                 "created_at": now,
             },
         )

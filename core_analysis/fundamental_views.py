@@ -112,11 +112,18 @@ def _sort_code_key(sc):
     """Order sorting_codes numerically when they are numeric.
 
     The source mixes 3- and 5-digit codes ('100' … '10105'), so a plain string
-    sort puts '10000' before '999'. Non-numeric codes sort after numeric ones,
-    alphabetically.
+    sort puts '10000' before '999'. Sub-items are decimals off their section code
+    ('320.1' … '320.3' under '320'), so the parse must be float, not int — as
+    ``isdigit()`` they read as non-numeric and used to sort into the trailing
+    alphabetical bucket, which stranded every sub-item (Retained Earnings, Loans
+    to Customers, …) at the bottom of the statement instead of under its section.
+    Genuinely non-numeric codes still sort last, alphabetically.
     """
-    sc = sc or ""
-    return (0, int(sc), "") if sc.isdigit() else (1, 0, sc)
+    sc = (sc or "").strip()
+    try:
+        return (0, float(sc), "")
+    except ValueError:
+        return (1, 0.0, sc)
 
 
 def _fundamental_tickers():

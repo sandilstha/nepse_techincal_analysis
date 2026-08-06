@@ -3,89 +3,10 @@
    Dark is the default theme; [data-theme="light"] overrides the palette.
    ========================================================================== */
 
-:root,
-[data-theme="dark"] {
-  --bg:          #020b1f;
-  --bg-grad-a:   rgba(33, 88, 255, 0.16);
-  --bg-grad-b:   rgba(18, 211, 154, 0.10);
-  --surface:     #07142e;
-  --surface-2:   #0b1d3f;
-  --raised:      #0e2348;
-  --line:        #17345c;
-  --line-soft:   rgba(92, 179, 255, 0.10);
+/* Design tokens now live in tokens.css so the workbench and Stock 360 —
+   which do not load this sheet — can share them. Single source of truth. */
+@import url('tokens.css');
 
-  --ink-1:       #edf4ff;
-  --ink-2:       #a9bedf;
-  --ink-3:       #6f88ad;
-
-  --accent:      #12d39a;
-  --accent-soft: rgba(18, 211, 154, 0.16);
-
-  --up:          #14e7a0;
-  --up-soft:     rgba(20, 231, 160, 0.14);
-  --down:        #ff6e72;
-  --down-soft:   rgba(255, 110, 114, 0.14);
-  --flat:        #9bb0d3;
-  --flat-soft:   rgba(155, 176, 211, 0.14);
-
-  --shadow:      0 18px 44px -22px rgba(0, 0, 0, 0.72);
-  --radius:      18px;
-  --radius-sm:   11px;
-}
-
-[data-theme="light"] {
-  --bg:          #eef2f9;
-  --bg-grad-a:   rgba(33, 88, 255, 0.10);
-  --bg-grad-b:   rgba(18, 159, 117, 0.08);
-  --surface:     #ffffff;
-  --surface-2:   #f5f8fd;
-  --raised:      #ffffff;
-  --line:        #d7e0ee;
-  --line-soft:   rgba(20, 50, 100, 0.08);
-
-  --ink-1:       #0e1b33;
-  --ink-2:       #41587c;
-  --ink-3:       #7186a4;
-
-  --accent:      #0c9c72;
-  --accent-soft: rgba(12, 156, 114, 0.12);
-
-  --up:          #0ba36e;
-  --up-soft:     rgba(11, 163, 110, 0.12);
-  --down:        #e0414b;
-  --down-soft:   rgba(224, 65, 75, 0.12);
-  --flat:        #6b7d99;
-  --flat-soft:   rgba(107, 125, 153, 0.12);
-
-  --shadow:      0 12px 30px -18px rgba(20, 40, 80, 0.45);
-}
-
-/* ── Design scale ─────────────────────────────────────────────────────────
-   Type and space tokens. Before this existed the sheet carried 27 distinct
-   font sizes (ten of them inside a 2.5px band, so they read as identical
-   while making everything feel cramped) and 21 padding values. Everything
-   below maps onto these; do not introduce a one-off value — pick the nearest
-   token. SVG <text> in the fear/greed gauge is exempt: those px are viewBox
-   units that scale with the graphic, not screen pixels.
-   ------------------------------------------------------------------------ */
-:root {
-  /* type — ~1.25 ratio, each step actually distinguishable from the next */
-  --fs-xs:   0.75rem;    /* 12px — micro-labels, badges, table meta */
-  --fs-sm:   0.875rem;   /* 14px — body copy, table cells           */
-  --fs-base: 1rem;       /* 16px — default                          */
-  --fs-lg:   1.25rem;    /* 20px — card titles                      */
-  --fs-xl:   1.75rem;    /* 28px — stat values                      */
-  --fs-2xl:  2.5rem;     /* 40px — page title                       */
-
-  /* space — 4px base; no in-between values */
-  --sp-1: 0.25rem;   /*  4px */
-  --sp-2: 0.5rem;    /*  8px */
-  --sp-3: 0.75rem;   /* 12px */
-  --sp-4: 1rem;      /* 16px */
-  --sp-5: 1.25rem;   /* 20px */
-  --sp-6: 1.5rem;    /* 24px */
-  --sp-8: 2rem;      /* 32px */
-}
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -108,15 +29,32 @@ body {
 }
 
 .mi-shell {
-  /* 1480px of 12px text read as a spreadsheet; a tighter measure with the
-     larger type scale reads as a designed page. */
-  max-width: 1280px;
+  /* Scales with the viewport instead of stopping dead at a fixed width. A hard
+     1280px cap left ~640px of empty margin on a 1920px monitor, which reads as
+     a cramped column rather than a product. The 94vw term keeps a comfortable
+     gutter on any screen; the 1720px ceiling stops the KPI row and tables
+     stretching to an unreadable measure on ultrawides. Below ~1360px this is
+     identical to the old behaviour, so laptops are unaffected. */
+  max-width: var(--shell-max);
   margin: 0 auto;
-  padding: var(--sp-8) clamp(16px, 2.6vw, 40px) 3.4rem;
+  padding: var(--sp-8) clamp(16px, 2.2vw, 44px) 3.4rem;
+}
+
+/* Large monitors get proportionally more air, so widening does not just make
+   the same elements look thin and far apart. */
+@media (min-width: 1500px) {
+  .mi-shell { padding-top: var(--sp-10); }
+  .mi-grid  { gap: var(--sp-8); }
 }
 
 /* ── Top bar ──────────────────────────────────────────────────────────── */
 .mi-topbar {
+  /* Sticky: the index value, As-of date and Refresh were scrolling away, which
+     is the one row you want visible while reading anything below it. */
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -378,7 +316,7 @@ body {
 .flat { color: var(--flat); }
 
 /* ── Card grids ───────────────────────────────────────────────────────── */
-.mi-grid { display: grid; gap: var(--sp-6); margin-bottom: var(--sp-6); }
+.mi-grid { display: grid; gap: var(--sp-6); margin-bottom: var(--sp-section); }
 .mi-grid-1    { grid-template-columns: 1fr; }
 .mi-grid-3    { grid-template-columns: repeat(3, 1fr); }
 .mi-grid-2-1  { grid-template-columns: 2fr 1fr; }

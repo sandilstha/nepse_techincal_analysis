@@ -441,10 +441,18 @@ footer{max-width:var(--shell-max);margin:0 auto;padding:8px 22px 40px;color:var(
    The matrix was sized for a cramped standalone page (12.5px body, 10px period
    sublabels). This section spans the full 1860px shell, so the constraint is
    legibility, not fit — the numbers are the point of the block. */
-#statements table.fm-table{font-size:0.875rem}
-#statements .fm-table th,#statements .fm-table td{padding:7px 12px}
+   The `:not([data-den])` guard hands sizing back to the density tiers in
+   fundamentals-desk.css once a period count is active — an id selector would
+   otherwise out-specify them and every tier would render identically. */
+#statements table.fm-table:not([data-den]){font-size:0.875rem}
+#statements .fm-table:not([data-den]) th,#statements .fm-table:not([data-den]) td{padding:7px 12px}
 #statements .fm-table .fm-q{font-size:0.6875rem}
-#statements .fm-table tr.fm-growth td{font-size:0.75rem}
+#statements .fm-table:not([data-den]) tr.fm-growth td{font-size:0.75rem}
+/* Full-width shell: one step roomier than the standalone page at every tier. */
+#statements .fm-table[data-den="roomy"] th,#statements .fm-table[data-den="roomy"] td{padding:9px 20px;font-size:0.9375rem}
+#statements .fm-table[data-den="normal"] th,#statements .fm-table[data-den="normal"] td{padding:8px 15px;font-size:0.875rem}
+#statements .fm-table[data-den="tight"] th,#statements .fm-table[data-den="tight"] td{padding:7px 11px;font-size:0.8125rem}
+#statements .fm-table[data-den="micro"] th,#statements .fm-table[data-den="micro"] td{padding:6px 8px;font-size:0.75rem}
 #statements .fm-tab,#statements .fm-pill{font-size:0.8125rem}
 
 /* ===== SOP Confluence signal ===== */
