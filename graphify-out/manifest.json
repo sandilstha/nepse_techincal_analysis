@@ -390,8 +390,8 @@
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/fundamentals.js": {
-    "mtime": 1785926887.7651677,
-    "ast_hash": "1d75345e7aebf80fc3875beb788e1770",
+    "mtime": 1785993079.4693718,
+    "ast_hash": "aec8d8d74c8afa723b51b886db81688b",
     "semantic_hash": ""
   },
   "core_analysis/migrations/0009_holdingcost.py": {
@@ -890,8 +890,8 @@
     "semantic_hash": ""
   },
   "staticfiles/core_analysis/js/floorsheet-brokers.js": {
-    "mtime": 1785754560.8606553,
-    "ast_hash": "af27088b4d8a1c5d39cf2f634bbadd11",
+    "mtime": 1785993090.8952858,
+    "ast_hash": "c49bbf1561590104589f1049efcfa1cb",
     "semantic_hash": ""
   },
   "staticfiles/core_analysis/js/fundamentals-panel.js": {
@@ -900,8 +900,8 @@
     "semantic_hash": ""
   },
   "staticfiles/core_analysis/js/fundamentals.js": {
-    "mtime": 1785754560.861657,
-    "ast_hash": "2012d5844fcd307be12a4100a0675752",
+    "mtime": 1785993090.8962858,
+    "ast_hash": "aec8d8d74c8afa723b51b886db81688b",
     "semantic_hash": ""
   },
   "staticfiles/core_analysis/js/insights.js": {
@@ -1200,13 +1200,13 @@
     "semantic_hash": ""
   },
   "staticfiles/core_analysis/js/nepse-data.js": {
-    "mtime": 1785754560.8636558,
-    "ast_hash": "27e6ff20e5ebbc6fab6fbb4270c471f1",
+    "mtime": 1785993090.8972852,
+    "ast_hash": "e46918a39b9bb3e7031c51bd540526de",
     "semantic_hash": ""
   },
   "staticfiles/core_analysis/js/stock360.js": {
-    "mtime": 1785754560.8636558,
-    "ast_hash": "a8e1d5c361d0887faed004c881930309",
+    "mtime": 1785993090.898285,
+    "ast_hash": "86ea435e1a18b7b2f9e125809c23ded1",
     "semantic_hash": ""
   },
   "whole_history_backtest.py": {
@@ -1236,6 +1236,21 @@
   },
   "core_analysis/static/core_analysis/js/valuation.js": {
     "mtime": 1785926887.764168,
+    "ast_hash": "b9fcdff6d3762ef73afc9cdff9d5ea77",
+    "semantic_hash": ""
+  },
+  "core_analysis/static/core_analysis/js/responsive.js": {
+    "mtime": 1785994989.5224056,
+    "ast_hash": "9447148a007111341b52e58b73c46aaf",
+    "semantic_hash": ""
+  },
+  "staticfiles/core_analysis/js/responsive.js": {
+    "mtime": 1785995033.7460947,
+    "ast_hash": "9447148a007111341b52e58b73c46aaf",
+    "semantic_hash": ""
+  },
+  "staticfiles/core_analysis/js/valuation.js": {
+    "mtime": 1785993090.898285,
     "ast_hash": "b9fcdff6d3762ef73afc9cdff9d5ea77",
     "semantic_hash": ""
   }

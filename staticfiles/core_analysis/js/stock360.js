@@ -25,22 +25,6 @@
     return Number(v).toLocaleString("en-US", { minimumFractionDigits: dp || 0, maximumFractionDigits: dp || 0 });
   }
   function pct(v, dp) { return v == null || isNaN(v) ? "—" : Number(v).toFixed(dp == null ? 1 : dp) + "%"; }
-  // Rs '000 → human units (South Asian: 1 Cr = 1e7, 1 Ar = 1e9).
-  function rs000(v) {
-    if (v == null || isNaN(v)) return "—";
-    var rs = v * 1000;
-    if (Math.abs(rs) >= 1e9) return (rs / 1e9).toFixed(2) + " Ar";
-    if (Math.abs(rs) >= 1e7) return (rs / 1e7).toFixed(2) + " Cr";
-    if (Math.abs(rs) >= 1e5) return (rs / 1e5).toFixed(2) + " L";
-    return num(rs, 0);
-  }
-  function fmtHead(item) {
-    var v = item.value;
-    if (v == null) return "—";
-    if (item.fmt === "pct") return pct(v * 100, 1);
-    if (item.fmt === "rs000") return rs000(v);
-    return num(v, 2);
-  }
   function getJSON(url) {
     return fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); });
@@ -54,8 +38,6 @@
       var n = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
       document.documentElement.setAttribute("data-theme", n);
       try { localStorage.setItem("mi-theme", n); } catch (e) {}
-      drawChart();
-      if (typeof drawOvChart === "function") drawOvChart();
     });
   })();
 
@@ -126,45 +108,6 @@
     secs.forEach(function (s) { obs.observe(s); });
   })();
 
-  /* ---------- price chart (canvas area line, adjusted closes) ---------- */
-  var SPARK = null;
-  try { SPARK = JSON.parse(($("spark-data") || {}).textContent || "null"); } catch (e) {}
-  function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
-  function rgba(color, a) {
-    var d = document.createElement("div"); d.style.color = color; document.body.appendChild(d);
-    var rgb = getComputedStyle(d).color; document.body.removeChild(d);
-    var m = rgb.match(/\d+/g);
-    return m ? "rgba(" + m[0] + "," + m[1] + "," + m[2] + "," + a + ")" : color;
-  }
-  function drawChart() {
-    var c = $("priceChart");
-    if (!c || !SPARK || SPARK.length < 2) return;
-    var data = SPARK, dpr = window.devicePixelRatio || 1;
-    var W = c.clientWidth || 700, H = 200;
-    c.width = W * dpr; c.height = H * dpr;
-    var ctx = c.getContext("2d"); ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, W, H);
-    var lo = Math.min.apply(null, data), hi = Math.max.apply(null, data), rng = hi - lo || 1;
-    var line = data[data.length - 1] >= data[0] ? css("--pos") : css("--neg");
-    var pad = 6;
-    function X(i) { return pad + (W - 2 * pad) * i / (data.length - 1); }
-    function Y(v) { return H - pad - (H - 2 * pad) * (v - lo) / rng; }
-    ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
-    for (var g = 1; g < 4; g++) { var y = H * g / 4; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-    var grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, rgba(line, 0.26)); grad.addColorStop(1, rgba(line, 0));
-    ctx.beginPath(); ctx.moveTo(X(0), Y(data[0]));
-    data.forEach(function (v, i) { ctx.lineTo(X(i), Y(v)); });
-    ctx.lineTo(X(data.length - 1), H - pad); ctx.lineTo(X(0), H - pad); ctx.closePath();
-    ctx.fillStyle = grad; ctx.fill();
-    ctx.beginPath(); ctx.moveTo(X(0), Y(data[0]));
-    data.forEach(function (v, i) { ctx.lineTo(X(i), Y(v)); });
-    ctx.strokeStyle = line; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.stroke();
-    ctx.beginPath(); ctx.arc(X(data.length - 1), Y(data[data.length - 1]), 3.5, 0, 7); ctx.fillStyle = line; ctx.fill();
-  }
-  window.addEventListener("resize", function () { clearTimeout(window.__s360r); window.__s360r = setTimeout(drawChart, 150); });
-  drawChart();
-
   /* ================= OVERVIEW (photo layout) ================= *
    * Market + Key Ratios + Investment Style cards and a timeframe-toggled price
    * chart. Price-derived numbers (60d avg, market cap, beta) come from the
@@ -187,7 +130,11 @@
     var pb = safeDiv(price, bvps);
     var rows =
       kvRow("60 Days Average", num(S.avg60, 2)) +
-      kvRow("Market Cap (Millions)", num(S.marketCapM, 2)) +
+      // A rebased cap is flagged rather than passed off as the exchange's own
+      // print — hover carries the basis and the session it came from.
+      kvRow("Market Cap (Millions)" + (S.marketCapNote ? " *" : ""),
+            '<span' + (S.marketCapNote ? ' title="' + esc(S.marketCapNote) + '"' : "") + ">" +
+            num(S.marketCapM, 2) + "</span>") +
       kvRow("Book Value Per Share", num(bvps, 2)) +
       kvRow("Price/Earnings", num(pe, 2)) +
       kvRow("Price/Book", num(pb, 2)) +
@@ -228,136 +175,15 @@
 
   // Investment style box: size from market cap (NEPSE-scaled millions), style
   // from a P/B + revenue-growth heuristic. Both are coarse buckets, deliberately.
-  function renderStyle(pb, revG) {
-    var grid = $("styleGrid"); if (!grid) return;
-    var cap = S.marketCapM;
-    var row = cap == null ? null : (cap >= 40000 ? 0 : cap >= 10000 ? 1 : 2); // Large/Mid/Small
-    var col = null;
-    if (pb != null || revG != null) {
-      var growthy = (pb != null && pb > 3) || (revG != null && revG > 15);
-      var valuey = (pb != null && pb < 2) && (revG == null || revG < 5);
-      col = growthy ? 2 : valuey ? 0 : 1; // Growth / Value / Core
-    }
-    var cells = grid.querySelectorAll("span");
-    [].forEach.call(cells, function (c) { c.classList.remove("on"); });
-    if (row != null && col != null) {
-      var idx = row * 3 + col;
-      if (cells[idx]) cells[idx].classList.add("on");
-    }
-  }
-
   function renderOverview(d) {
     var m = renderMarketCard(d && d.ks);
     var r = renderRatioCard(d);
-    renderStyle(m.pb, r.revG);
   }
 
   // Paint the price-derived Market card and the size axis immediately from the
   // server payload, so a slow or failed fundamentals fetch can never leave these
   // stuck on "Loading…". The fundamentals fetch below re-renders with the ratios.
   renderMarketCard(null);
-  renderStyle(null, null);
-
-  // Single source of truth for the ratio cards is our local FinancialStatement,
-  // served by /fundamentals/api/. The sync button writes the latest quarter into
-  // that table; this just re-reads it. (The initial read happens in the
-  // FUNDAMENTALS block below, which also fills the desk panel.)
-  function reloadFund() {
-    return getJSON("/fundamentals/api/?symbol=" + encodeURIComponent(SYM))
-      .then(function (d) { if (d && d.ok) renderOverview(d); })
-      .catch(function () {});
-  }
-
-  /* ---------- sync latest published report (funda.aurasrp.com.np → our DB) ---------- */
-  (function fundaSync() {
-    var btn = $("syncFundaBtn"), note = $("syncFundaNote");
-    if (!btn) return;
-    btn.addEventListener("click", function () {
-      btn.disabled = true;
-      var label = btn.textContent;
-      btn.textContent = "⟳ Syncing…";
-      if (note) { note.textContent = "Pulling " + SYM + "'s latest report…"; note.className = "s360-syncnote"; }
-      getJSON("/stock/api/funda/sync/?symbol=" + encodeURIComponent(SYM)).then(function (r) {
-        if (r && r.ok) {
-          if (note) {
-            var extra = r.fs_written ? " · " + r.fs_written + " items → Financial Statement" : "";
-            note.textContent = "✓ Synced " + (r.period || "latest") + extra;
-            note.className = "s360-syncnote ok";
-          }
-          btn.textContent = "⟳ Re-sync";
-          reloadFund();  // re-render cards from the freshly updated Financial Statement
-        } else {
-          if (note) { note.textContent = (r && r.error) || "Sync failed."; note.className = "s360-syncnote err"; }
-          btn.textContent = label;
-        }
-        btn.disabled = false;
-      }).catch(function () {
-        if (note) { note.textContent = "Could not reach the sync service."; note.className = "s360-syncnote err"; }
-        btn.textContent = label; btn.disabled = false;
-      });
-    });
-  })();
-
-  /* ---------- overview price chart with timeframe toggles ---------- */
-  var CHART = [];
-  try { CHART = JSON.parse(($("chart-data") || {}).textContent || "[]") || []; } catch (e) {}
-  var TF_DAYS = { "5Y": 1826, "1Y": 365, "6M": 182, "3M": 91, "1M": 31, "1W": 7 };
-  var curTf = "1Y";
-
-  function sliceTf(tf) {
-    if (!CHART.length) return [];
-    var days = TF_DAYS[tf] || 365;
-    var lastMs = Date.parse(CHART[CHART.length - 1][0]);
-    if (isNaN(lastMs)) return CHART.map(function (p) { return p[1]; });
-    var cutoff = lastMs - days * 864e5;
-    var out = [];
-    for (var i = 0; i < CHART.length; i++) {
-      var t = Date.parse(CHART[i][0]);
-      if (!isNaN(t) && t >= cutoff) out.push(CHART[i][1]);
-    }
-    if (out.length < 2) out = CHART.slice(-2).map(function (p) { return p[1]; });
-    return out;
-  }
-
-  function drawOvChart() {
-    var c = $("ovChart");
-    if (!c) return;
-    var data = sliceTf(curTf);
-    if (data.length < 2) { c.getContext("2d").clearRect(0, 0, c.width, c.height); return; }
-    var dpr = window.devicePixelRatio || 1;
-    var W = c.clientWidth || 460, H = c.clientHeight || 220;
-    c.width = W * dpr; c.height = H * dpr;
-    var ctx = c.getContext("2d"); ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, W, H);
-    var lo = Math.min.apply(null, data), hi = Math.max.apply(null, data), rng = hi - lo || 1;
-    var line = data[data.length - 1] >= data[0] ? css("--pos") : css("--neg");
-    var pad = 6;
-    function X(i) { return pad + (W - 2 * pad) * i / (data.length - 1); }
-    function Y(v) { return H - pad - (H - 2 * pad) * (v - lo) / rng; }
-    ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
-    for (var g = 1; g < 4; g++) { var y = H * g / 4; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-    var grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, rgba(line, 0.24)); grad.addColorStop(1, rgba(line, 0));
-    ctx.beginPath(); ctx.moveTo(X(0), Y(data[0]));
-    data.forEach(function (v, i) { ctx.lineTo(X(i), Y(v)); });
-    ctx.lineTo(X(data.length - 1), H - pad); ctx.lineTo(X(0), H - pad); ctx.closePath();
-    ctx.fillStyle = grad; ctx.fill();
-    ctx.beginPath(); ctx.moveTo(X(0), Y(data[0]));
-    data.forEach(function (v, i) { ctx.lineTo(X(i), Y(v)); });
-    ctx.strokeStyle = line; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.stroke();
-  }
-
-  (function tfToggle() {
-    var row = $("tfRow"); if (!row) return;
-    row.addEventListener("click", function (e) {
-      var b = e.target.closest(".tf"); if (!b) return;
-      curTf = b.dataset.tf;
-      [].forEach.call(row.querySelectorAll(".tf"), function (x) { x.classList.toggle("active", x === b); });
-      drawOvChart();
-    });
-  })();
-  window.addEventListener("resize", function () { clearTimeout(window.__s360ov); window.__s360ov = setTimeout(drawOvChart, 150); });
-  drawOvChart();
 
   /* ---------- risk & opportunity roll-up ---------- */
   var risks = [], opps = [];
@@ -389,45 +215,28 @@
     if (stripe) stripe.style.background = "var(--" + (tone === "pos" ? "pos" : tone === "neg" ? "neg" : tone === "warn" ? "warn" : "neutral") + ")";
   }
 
-  /* ---------- ③ FUNDAMENTALS ---------- */
-  getJSON("/fundamentals/api/?symbol=" + encodeURIComponent(SYM)).then(function (d) {
+  /* ---------- ③ FUNDAMENTALS ----------
+   * One fetch, two consumers: the ratio cards here and the RELATIVE half of the
+   * valuation block below. Sharing the promise keeps them from disagreeing and
+   * saves a round trip. */
+  var FUNDA_READY = getJSON("/fundamentals/api/?symbol=" + encodeURIComponent(SYM))
+    .catch(function () { return null; });
+
+  FUNDA_READY.then(function (d) {
     if (!d || !d.ok) throw 0;
     renderOverview(d);
-    var body = $("fundBody"); body.innerHTML = "";
-    var grid = el("div", "mgrid");
-    (d.headline || []).forEach(function (h) {
-      grid.appendChild(el("div", "mcard",
-        '<div class="k">' + esc(h.label) + '</div><div class="v num">' + fmtHead(h) + "</div>"));
-    });
-    body.appendChild(grid);
+    // The headline ratio cards used to be rebuilt here from the same payload the
+    // fundamentals module renders into #fa-cards. One renderer owns them now;
+    // this block only clears its placeholder.
+    $("fundBody").innerHTML = "";
 
+    /* The fair-value verdict and the peer percentiles used to be drawn here as
+     * well. They now live once, in Valuation & Peers — two valuation verdicts
+     * on one screen, built from different models, read as a contradiction
+     * rather than as the two views they are. This section keeps the ratios. */
     var ms = d.morningstar;
     if (ms && ms.fair_value) {
-      var fv = ms.fair_value, v = fv.verdict || "";
-      var tone = /under/i.test(v) ? "pos" : /over/i.test(v) ? "neg" : "warn";
-      var wrap = el("div"); wrap.style.cssText = "display:grid;grid-template-columns:180px 1fr;gap:18px;margin-top:16px";
-      wrap.appendChild(el("div", null,
-        '<div style="background:var(--' + tone + '-weak);border:1px solid var(--line);border-radius:9px;padding:13px;text-align:center">' +
-        '<div class="eyebrow">Fair Value</div>' +
-        '<div class="num ' + tone + '" style="font-size:22px;font-weight:800;margin-top:6px">' + esc(v) + "</div>" +
-        (fv.estimate ? '<div class="num" style="font-size:13px;color:var(--ink-2);margin-top:4px">est. Rs ' + num(fv.estimate, 0) +
-          (fv.ratio ? " · " + Number(fv.ratio).toFixed(2) + "×" : "") + "</div>" : "") +
-        '<div class="fresh" style="margin-top:6px">sector-median P/E × EPS</div></div>'));
-      var ranks = el("div");
-      ranks.appendChild(el("div", "eyebrow", "Peer percentile — " + esc(ms.sector || "sector")));
-      var peer = el("div", "peer");
-      (ms.ranks || []).forEach(function (r) {
-        var p = r.percentile == null ? 0 : Math.round(r.percentile);
-        var tn = p >= 60 ? "pos" : p >= 40 ? "warn" : "neg";
-        peer.appendChild(el("div", "row",
-          "<span>" + esc(r.label) + '</span><div class="track"><span class="fill" style="width:' + p +
-          "%;background:var(--" + tn + ')"></span><span class="med" style="left:50%"></span></div>' +
-          '<span class="pv num ' + tn + '">' + p + "th</span>"));
-      });
-      ranks.appendChild(peer);
-      wrap.appendChild(ranks);
-      body.appendChild(wrap);
-
+      var v = ms.fair_value.verdict || "";
       var ps = (ms.ranks || []).map(function (r) { return r.percentile; }).filter(function (x) { return x != null; });
       var score = ps.length ? Math.round(ps.reduce(function (a, b) { return a + b; }, 0) / ps.length) : 50;
       var stone = score >= 60 ? "pos" : score >= 45 ? "warn" : "neg";
@@ -435,12 +244,8 @@
       $("fundScore").className = "desk-score sc-" + stone;
       setVerdict("fund", score, v || "—", stone);
 
-      if (/under/i.test(v)) opps.push({ cls: "good", ic: "↑", text: "<b>Undervalued</b> at " + (fv.ratio ? Number(fv.ratio).toFixed(2) + "× fair value" : "vs sector") + (fv.estimate ? " (est. Rs " + num(fv.estimate, 0) + ")" : "") + ".", src: "morningstar.fair_value" });
-      if (/over/i.test(v)) risks.push({ cls: "bad", ic: "↓", text: "<b>Overvalued</b> vs sector-median P/E.", src: "morningstar.fair_value" });
-      (ms.ranks || []).forEach(function (r) {
-        if (r.percentile != null && r.percentile >= 80)
-          opps.push({ cls: "good", ic: "★", text: "<b>" + esc(r.label) + "</b> in top " + (100 - Math.round(r.percentile)) + "% of " + esc(ms.sector || "sector") + ".", src: "morningstar.ranks" });
-      });
+      // Valuation chips are pushed by the valuation block, which owns both the
+      // relative and the absolute read — one claim per rail, not two.
       flushRO();
     } else {
       $("fundScore").textContent = "no research";
@@ -457,17 +262,42 @@
    * positions (holdings). Market-wide buy always equals sell, so there is no
    * "net market position" — the honest metrics are broker accumulation and
    * side concentration, which is exactly what we show. */
-  Promise.all([
-    getJSON("/floorsheet/api/stockwise/?symbol=" + encodeURIComponent(SYM) + "&range=1m&view=shares"),
-    getJSON("/floorsheet/api/meta/").catch(function () { return null; })
-  ]).then(function (res) {
-    var d = res[0], meta = res[1];
-    if (!d || !d.ok) throw 0;
-    var names = (meta && meta.broker_names) || {};
-    function bname(key) {
-      var n = names[key] || names[String(key)];
-      return n ? "#" + key + " " + n : "Broker " + key;
+  var FLOW_WIN = "1m";                     // current floorsheet window
+  var WIN_LABEL = { "1w": "1 week", "1m": "1 month", "3m": "3 months", "1y": "1 year" };
+  /* Broker numbers are meaningless on their own, and all three floorsheet views
+   * need the same lookup. Fetch it ONCE and have every view wait on the same
+   * promise — otherwise the net-buy legend and the flow map race the fetch and
+   * render "Broker 92" where the name was already on its way. */
+  var BROKER_NAMES = null;
+  var NAMES_READY = getJSON("/floorsheet/api/meta/")
+    .then(function (m) { BROKER_NAMES = (m && m.broker_names) || {}; })
+    .catch(function () { BROKER_NAMES = {}; });
+
+  function bname(key) {
+    var names = BROKER_NAMES || {};
+    var n = names[key] || names[String(key)];
+    return n ? "#" + key + " " + n : "Broker " + key;
+  }
+
+  /* Reloading a window must not stack duplicate chips — drop this block's
+   * previous contributions before it pushes new ones. */
+  function dropFlowChips() {
+    function keep(list) {
+      return list.filter(function (c) { return String(c.src || "").indexOf("stock_wise") !== 0; });
     }
+    risks = keep(risks); opps = keep(opps);
+  }
+
+  function loadFlow(win) {
+    FLOW_WIN = win;
+    $("flowBody").innerHTML = '<div class="loading">Loading broker activity…</div>';
+    Promise.all([
+    getJSON("/floorsheet/api/stockwise/?symbol=" + encodeURIComponent(SYM) + "&range=" + win + "&view=shares"),
+    NAMES_READY
+  ]).then(function (res) {
+    var d = res[0];
+    if (!d || !d.ok) throw 0;
+    dropFlowChips();
 
     var body = $("flowBody"); body.innerHTML = "";
     var buy = d.buy || [], sell = d.sell || [], holds = d.holdings || [];
@@ -477,7 +307,7 @@
 
     var summary = el("div", "mgrid"); summary.style.marginBottom = "14px";
     summary.innerHTML =
-      '<div class="mcard"><div class="k">Broker Accumulation (1M)</div><div class="v num pos">' + num(accQty, 0) + '</div><div class="sub">' + holds.length + " net-long brokers (top 10)</div></div>" +
+      '<div class="mcard"><div class="k">Broker Accumulation (' + esc(WIN_LABEL[FLOW_WIN] || FLOW_WIN) + ')</div><div class="v num pos">' + num(accQty, 0) + '</div><div class="sub">' + holds.length + " net-long brokers (top 10)</div></div>" +
       '<div class="mcard"><div class="k">Top Buyer</div><div class="v num pos">' + (buy[0] ? pct(buy[0].pct, 1) : "—") + '</div><div class="sub">' + (buy[0] ? esc(bname(buy[0].key)) : "no activity") + "</div></div>" +
       '<div class="mcard"><div class="k">Top Seller</div><div class="v num neg">' + (sell[0] ? pct(sell[0].pct, 1) : "—") + '</div><div class="sub">' + (sell[0] ? esc(bname(sell[0].key)) : "no activity") + "</div></div>" +
       '<div class="mcard"><div class="k">Top-3 Concentration</div><div class="v num">' + pct(top3buy, 0) + " / " + pct(top3sell, 0) + '</div><div class="sub">buy side / sell side</div></div>';
@@ -501,7 +331,7 @@
     bt.appendChild(col("Top Selling Brokers", sell, "neg", "% of sell side"));
     body.appendChild(bt);
     body.appendChild(el("div", "fresh",
-      "Window: 1 month · shares · top-10 brokers per side. Buy and sell totals always match market-wide; read conviction from concentration and per-broker accumulation."));
+      "Window: " + esc(WIN_LABEL[FLOW_WIN] || FLOW_WIN) + " · shares · top-10 brokers per side. Buy and sell totals always match market-wide; read conviction from concentration and per-broker accumulation."));
 
     // Verdict: which side is more concentrated = which side has conviction.
     var diff = top3buy - top3sell;
@@ -514,133 +344,35 @@
     if (top3sell >= 50) risks.push({ cls: "warnc", ic: "≈", text: "Selling concentrated — top 3 brokers hold " + pct(top3sell, 0) + " of the sell side.", src: "stock_wise sell concentration" });
     if (top3buy >= 50) opps.push({ cls: "good", ic: "◆", text: "Concentrated accumulation — top 3 brokers take " + pct(top3buy, 0) + " of the buy side.", src: "stock_wise buy concentration" });
     flushRO();
-  }).catch(function () {
-    $("flowBody").innerHTML = '<div class="notice">No floorsheet activity for <b>' + esc(SYM) + "</b> in this window.</div>";
-    $("flowScore").textContent = "n/a"; setVerdict("flow", "n/a", "no data", "neu");
-  });
-
-  /* ---------- ④ FINANCIAL STATEMENTS (all reported quarters) ----------
-   * Rows are the line items that matter for this company's SECTOR (BFIs get
-   * equity/loans/NII/impairment/distributable profit/NPL…, other sectors their
-   * own headline metrics); columns are every quarter on file, newest first. */
-  (function statements() {
-    var tabsBox = $("kfTabs"), table = $("kfTable"), meta = $("kfMeta"), note = $("kfNote");
-    if (!table) return;
-
-    /* Wide tables (a company can have 50+ quarters) are panned by dragging —
-     * hunting for a horizontal scrollbar under a 60vh box is painful with a
-     * mouse. Shift+wheel scrolls horizontally too. */
-    (function dragToPan() {
-      var wrap = table.parentNode;
-      if (!wrap || !wrap.classList.contains("kf-wrap")) return;
-      var down = false, startX = 0, startY = 0, startL = 0, startT = 0, moved = false;
-
-      wrap.addEventListener("mousedown", function (e) {
-        if (e.button !== 0) return;
-        down = true; moved = false;
-        startX = e.pageX; startY = e.pageY;
-        startL = wrap.scrollLeft; startT = wrap.scrollTop;
-        wrap.classList.add("kf-dragging");
-      });
-      window.addEventListener("mousemove", function (e) {
-        if (!down) return;
-        var dx = e.pageX - startX, dy = e.pageY - startY;
-        if (!moved && Math.abs(dx) + Math.abs(dy) < 3) return;  // let real clicks through
-        moved = true;
-        e.preventDefault();
-        wrap.scrollLeft = startL - dx;
-        wrap.scrollTop = startT - dy;
-      });
-      window.addEventListener("mouseup", function () {
-        down = false;
-        wrap.classList.remove("kf-dragging");
-      });
-      wrap.addEventListener("wheel", function (e) {
-        if (!e.shiftKey || !e.deltaY) return;
-        wrap.scrollLeft += e.deltaY;
-        e.preventDefault();
-      }, { passive: false });
-    })();
-
-    function fmtVal(v, fmt) {
-      if (v == null || isNaN(v)) return "—";
-      if (fmt === "pct") return (v * 100).toFixed(2) + "%";
-      if (fmt === "rs000") return Math.round(v).toLocaleString();
-      return Number(v).toLocaleString(undefined, { maximumFractionDigits: 2 });
-    }
-
-    table.innerHTML = '<tbody><tr><td class="kf-empty">Loading statements…</td></tr></tbody>';
-
-    // Distinguish "the desk has no data" from "the request failed" — reporting a
-    // network/404 as "nothing stored" sends you looking in the wrong place.
-    function fail(msg) {
-      if (tabsBox) tabsBox.style.display = "none";
-      table.innerHTML = '<tbody><tr><td class="kf-empty">' + esc(msg) + "</td></tr></tbody>";
-      if (meta) { meta.textContent = "n/a"; meta.className = "desk-score sc-neu"; }
-      if (note) note.textContent = "";
-    }
-
-    getJSON("/stock/api/keyfin/?symbol=" + encodeURIComponent(SYM)).then(function (d) {
-      if (!d || !d.ok || !d.groups || !d.groups.length) {
-        fail((d && d.error) ||
-          ("No financial statements stored for " + SYM + ". Sync this company from the Workbench to populate them."));
-        return;
-      }
-
-      if (tabsBox) tabsBox.style.display = "";
-      var periods = d.periods || [];
-      if (meta) {
-        meta.textContent = periods.length + " quarters";
-        meta.className = "desk-score sc-neu";
-      }
-      if (note) {
-        note.textContent = "Sector: " + d.sector +
-          (d.curated ? " · sector-specific line items" : " · top-level statement rows") +
-          " · amounts in Rs '000 unless shown as a ratio. Newest quarter first" +
-          (periods.length > 6 ? " — drag the table sideways to see older quarters." : ".");
-      }
-
-      function render(group) {
-        var head = '<thead><tr><th class="kf-first">' + esc(group.title) + "</th>" +
-          periods.map(function (p, i) {
-            return '<th class="' + (i === 0 ? "kf-new" : "") + '"><span class="kf-yr">' +
-              esc(p.fy) + '</span><span class="kf-q">Q' + p.quarter + "</span>" +
-              (i === 0 ? '<span class="kf-new-chip">Latest</span>' : "") + "</th>";
-          }).join("") + "</tr></thead>";
-
-        var body = group.rows.map(function (r) {
-          return "<tr><td class=\"kf-first\">" + esc(r.label) + "</td>" +
-            periods.map(function (p, i) {
-              var v = r.values[p.key];
-              var neg = (v != null && !isNaN(v) && v < 0) ? " kf-neg" : "";
-              return '<td class="' + (i === 0 ? "kf-new" : "") + neg + '">' +
-                fmtVal(v, r.fmt) + "</td>";
-            }).join("") + "</tr>";
-        }).join("");
-
-        table.innerHTML = head + "<tbody>" + body + "</tbody>";
-      }
-
-      // One tab per available statement; first is shown by default.
-      tabsBox.innerHTML = "";
-      d.groups.forEach(function (g, i) {
-        var b = el("button", "kf-tab" + (i === 0 ? " active" : ""), esc(g.title));
-        b.type = "button";
-        b.addEventListener("click", function () {
-          [].forEach.call(tabsBox.querySelectorAll(".kf-tab"), function (x) {
-            x.classList.toggle("active", x === b);
-          });
-          render(g);
-        });
-        tabsBox.appendChild(b);
-      });
-      render(d.groups[0]);
-    }).catch(function (err) {
-      // A rejected fetch means the request itself failed (offline, 404, 500) —
-      // or a stale page calling an endpoint this server build doesn't have.
-      fail("Couldn't load statements for " + SYM +
-        (err ? " (request failed: " + err + ")" : "") + ". Reload the page and try again.");
+    }).catch(function () {
+      $("flowBody").innerHTML = '<div class="notice">No floorsheet activity for <b>' + esc(SYM) + "</b> in this window.</div>";
+      $("flowScore").textContent = "n/a"; setVerdict("flow", "n/a", "no data", "neu");
     });
+  }
+
+  /* ---------- ⑤b SELLER → BUYER FLOW MAP ----------
+   * Not drawn here. The broker desk's Flow Map tab already does this with an
+   * intraday time window, session playback and the uncollapsed pair table; the
+   * link below just carries the symbol and window over to it. */
+  function updateFlowLink(win) {
+    var a = $("flowMapLink");
+    if (a) a.href = "/floorsheet/?tab=flowmap&symbol=" + encodeURIComponent(SYM) + "&range=" + win;
+  }
+
+  /* One window selector drives all three floorsheet views. */
+  (function flowWindow() {
+    var row = $("flowWin");
+    function load(w) { loadFlow(w); updateFlowLink(w); }
+    if (row) {
+      row.addEventListener("click", function (e) {
+        var b = e.target.closest("button[data-w]");
+        if (!b || b.classList.contains("active")) return;
+        [].forEach.call(row.querySelectorAll("button"), function (x) { x.classList.remove("active"); });
+        b.classList.add("active");
+        load(b.dataset.w);
+      });
+    }
+    load("1m");
   })();
 
   /* ---------- AI Narrative (Gemini, on-demand, server-cached) ---------- */
@@ -667,5 +399,116 @@
         btn.textContent = "✨ Generate"; btn.disabled = false;
       });
     });
+  })();
+
+  /* ================= SOP COMBINED (CONFLUENCE) =================
+   * The Strategy Simulator's confluence engine, run for this symbol with the
+   * desk's own defaults. Two calls are shown deliberately:
+   *   pure   — what the indicators say on their own
+   *   action — the tradeable instruction after the NEPSE regime filter
+   * They part company exactly when the setup is good but the market is not,
+   * which is the single most useful thing this block can tell you. */
+  (function sopSignal() {
+    var body = $("sopBody"), score = $("sopScore");
+    if (!body) return;
+
+    function tone(action) {
+      if (action === "BUY" || action === "HOLD") return "pos";
+      if (action === "SELL") return "neg";
+      return "warn";                       // WAIT
+    }
+
+    getJSON("/stock/api/sop/?symbol=" + encodeURIComponent(SYM))
+      .then(function (d) {
+        if (!d || !d.ok || !d.signal) throw 0;
+        var s = d.signal, b = d.backtest || {}, st = d.setup || {};
+        var act = s.action, pure = s.pure_action;
+
+        score.textContent = act;
+        score.className = "desk-score sc-" + tone(act);
+
+        var votes = (s.indicators || []).map(function (i) {
+          return '<span class="sop-ind ' + (i.long ? "on" : "off") + '">' + esc(i.label) + "</span>";
+        }).join("");
+
+        body.innerHTML =
+          '<div class="sop-calls">' +
+            '<div class="sop-call ' + tone(pure) + '"><div class="k">Indicators</div>' +
+              '<div class="v">' + esc(pure) + '</div><div class="sub">' + esc(s.pure_reason || "") + "</div></div>" +
+            '<div class="sop-call ' + tone(act) + '"><div class="k">After regime</div>' +
+              '<div class="v">' + esc(act) + '</div><div class="sub">' + esc(s.regime || "") + " market</div></div>" +
+          "</div>" +
+          (s.regime_conflict
+            ? '<div class="sop-conflict">The setup is there — ' + s.agree + " of " + s.total +
+              " indicators are long — but the NEPSE regime is " + esc(s.regime) +
+              ", and the SOP rule stands aside in a bear market.</div>"
+            : "") +
+          '<div class="sop-why">' + esc(s.reason || "") + "</div>" +
+          '<div class="eyebrow" style="margin:12px 0 6px">Agreement · ' + s.agree + " of " + s.total +
+            " (needs " + s.required + ")</div>" +
+          '<div class="sop-inds">' + votes + "</div>" +
+          '<div class="eyebrow" style="margin:12px 0 6px">Same rule, backtested</div>' +
+          '<div class="sop-bt">' +
+            row("Trades", num(b.trades, 0)) +
+            row("Win rate", b.win_rate == null ? "—" : num(b.win_rate, 1) + "%") +
+            row("Strategy", signed(b.strategy_return)) +
+            row("Buy &amp; hold", signed(b.buyhold_return)) +
+            row("Max drawdown", b.max_drawdown == null ? "—" : num(b.max_drawdown, 1) + "%") +
+            row("Time in market", b.time_in_market == null ? "—" : num(b.time_in_market, 0) + "%") +
+          "</div>" +
+          '<div class="fresh">' + esc((st.indicators || []).length ? st.indicators.join(" · ") : "") +
+            " · signal as of " + esc(s.as_of || "—") + ".</div>";
+      })
+      .catch(function () {
+        body.innerHTML = '<div class="notice">Could not run the SOP model for <b>' + esc(SYM) + "</b>.</div>";
+        score.textContent = "n/a"; score.className = "desk-score sc-neu";
+      });
+
+    function row(k, v) {
+      return '<div class="sop-row"><span>' + k + '</span><span class="num">' + v + "</span></div>";
+    }
+    function signed(v) {
+      if (v == null) return "—";
+      return '<span class="' + (v >= 0 ? "pos" : "neg") + '">' + (v >= 0 ? "+" : "") + num(v, 1) + "%</span>";
+    }
+  })();
+
+  /* ================= DIVIDEND CARD =================
+   * Capacity vs habit: the latest declared payout, the five-year average, and
+   * how often the company has paid at all. DPS on a Rs 100 face value doubles
+   * as percent of face value, which is how NEPSE quotes it. */
+  (function dividendCard() {
+    var box = $("divCard");
+    if (!box) return;
+    getJSON("/stock/api/dividends/?symbol=" + encodeURIComponent(SYM))
+      .then(function (d) {
+        if (!d || !d.ok || !d.available) {
+          box.innerHTML = '<div class="kv-loading">' + esc((d && d.note) || "No dividend history.") + "</div>";
+          return;
+        }
+        var p = $("divPeriod"); if (p) p.textContent = d.paid_years + " of " + d.years + " years paid";
+        var latest = d.latest || {};
+        var hist = (d.history || []).slice(-6);
+        var max = Math.max.apply(null, hist.map(function (h) { return h.dps; }).concat([1]));
+
+        var bars = hist.map(function (h) {
+          return '<span class="dv-bar" title="FY ' + esc(h.fy) + ": " + num(h.dps, 2) + '">' +
+            '<i style="height:' + Math.max(3, (h.dps / max) * 100) + '%"></i>' +
+            "<em>" + esc(String(h.fy).slice(-2)) + "</em></span>";
+        }).join("");
+
+        box.innerHTML =
+          '<div class="dv-top"><div><div class="dv-k">Declared (FY ' + esc(latest.fy || "—") + ")</div>" +
+          '<div class="dv-v num">' + num(latest.dps, 2) + "%</div></div>" +
+          '<div><div class="dv-k">5-year average</div><div class="dv-v num">' + num(d.avg_5y, 2) + "%</div></div>" +
+          '<div><div class="dv-k">Consistency</div><div class="dv-v num">' + num(d.consistency, 0) + "%</div></div></div>" +
+          '<div class="dv-bars">' + bars + "</div>" +
+          '<div class="dv-note">' +
+          (d.pending_fy ? "FY " + esc(d.pending_fy) + " is still in progress — not yet declared, and excluded from the average. " : "") +
+          "Percent of Rs 100 face value. Cash and bonus are not split by the source.</div>";
+      })
+      .catch(function () {
+        box.innerHTML = '<div class="kv-loading">Dividend history unavailable.</div>';
+      });
   })();
 })();

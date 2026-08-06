@@ -2,7 +2,7 @@
  *
  * One implementation drives all nine reports. `window.ND` carries the column
  * spec and which filter controls the page rendered; everything else (sorting,
- * row filtering, CSV, formatting) is column-type driven, so a new report needs
+ * row filtering, formatting) is column-type driven, so a new report needs
  * no JavaScript at all.
  */
 (function () {
@@ -255,30 +255,6 @@
       });
   }
 
-  // ── CSV ────────────────────────────────────────────────────────────────
-  function csv() {
-    var rows = visibleRows();
-    // Export the RAW values, not the display strings: "1.23 Cr" is useless in a
-    // spreadsheet, and the compacted forms lose precision.
-    var lines = [ND.columns.map(function (c) { return '"' + c.label.replace(/"/g, '""') + '"'; }).join(",")];
-    rows.forEach(function (r) {
-      lines.push(ND.columns.map(function (c) {
-        var v = r[c.key];
-        if (v == null) return "";
-        return typeof v === "number" ? v : '"' + String(v).replace(/"/g, '""') + '"';
-      }).join(","));
-    });
-    var blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    var m = state.meta || {};
-    a.download = ND.slug + (m.date ? "-" + m.date : "") + (m.symbol ? "-" + m.symbol : "") + ".csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
-  }
-
   // ── symbol picker (type-to-filter; 500+ options is unusable as a select) ──
   var ALL_LABEL = "— All symbols —";
 
@@ -467,8 +443,6 @@
       else render();
       el("nd-table").scrollIntoView({ block: "start" });
     });
-    var btn = el("nd-csv");
-    if (btn) btn.addEventListener("click", csv);
 
     el("nd-table").addEventListener("click", function (e) {
       var th = e.target.closest("th[data-k]");

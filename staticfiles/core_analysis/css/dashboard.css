@@ -209,11 +209,11 @@
     }
     .workspace-title {
       font-family: 'Manrope', system-ui, sans-serif;
-      font-size: 26px; font-weight: 800; margin: 0;
+      font-size: 1.625rem; font-weight: 800; margin: 0;
       color: var(--ink-1); letter-spacing: -0.02em;
     }
     .workspace-title span { color: var(--amber); }
-    .workspace-sub { font-size: 13.5px; color: var(--ink-2); margin: 6px 0 0; font-weight: 500; letter-spacing: 0.02em; }
+    .workspace-sub { font-size: 0.8438rem; color: var(--ink-2); margin: 6px 0 0; font-weight: 500; letter-spacing: 0.02em; }
 
     /* ── Nav Tabs ──────────────────────────────────────────────────── */
     .nav-tabs {
@@ -290,7 +290,7 @@
     .nav-tabs .nav-link {
       border: 1px solid transparent;
       color: var(--ink-2);
-      font-size: 13px;
+      font-size: 0.8125rem;
       font-weight: 600;
       font-family: 'Manrope', system-ui, sans-serif;
       padding: 12px 24px;
@@ -346,7 +346,7 @@
       color: var(--amber);
       font-family: 'Manrope', system-ui, sans-serif;
       /* Main-tab hierarchy: larger, bolder, more spacing than the sub-tab decks */
-      font-size: 14px;
+      font-size: 0.875rem;
       font-weight: 800;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -367,7 +367,7 @@
     }
     /* Keep the inventory tab (which also carries .nav-link) on the main-tab scale */
     .nav-tabs .primary-menu-tab {
-      font-size: 14px;
+      font-size: 0.875rem;
       font-weight: 800;
       letter-spacing: 0.1em;
     }
@@ -442,7 +442,7 @@
       justify-content: center;
       border-radius: var(--radius-sm) !important;
       margin-bottom: 0;
-      font-size: 13px;
+      font-size: 0.8125rem;
       font-weight: 600;
       letter-spacing: 0.02em;
       text-transform: none;
@@ -461,7 +461,7 @@
       border-radius: var(--radius-sm) !important;
       margin-bottom: 0;
       /* Sub-tab hierarchy: smaller, lighter, subtler, sentence case */
-      font-size: 11.5px;
+      font-size: 0.7188rem;
       font-weight: 500;
       letter-spacing: 0.01em;
       text-transform: none;
@@ -475,7 +475,7 @@
     /* RRG sub-tabs stand alone in RRG view (section row is hidden), so size them
        a touch larger/clearer than the dense Advanced desk list. */
     .rrg-tool-item .nav-link {
-      font-size: 13px;
+      font-size: 0.8125rem;
       font-weight: 600;
       letter-spacing: 0.02em;
       padding: 9px 20px;
@@ -548,7 +548,7 @@
       box-shadow: 0 8px 24px -8px rgba(18,211,154,0.32);
     }
     .metrics-card-label {
-      font-size: 10px; text-transform: uppercase;
+      font-size: 0.625rem; text-transform: uppercase;
       letter-spacing: 0.1em; font-weight: 700;
       color: var(--ink-2);
       font-family: 'Manrope', system-ui, sans-serif;
@@ -574,7 +574,7 @@
       border-radius: var(--radius-sm);
       border: 1px solid var(--line);
       padding: 0.45rem 0.75rem;
-      font-size: 13.5px;
+      font-size: 0.8438rem;
       background: var(--bg-input);
       color: var(--ink-1);
       box-shadow: none;
@@ -590,7 +590,7 @@
       color: var(--ink-1);
     }
     select.form-control option { background: var(--bg-surface); color: var(--ink-1); }
-    .form-label { font-family: 'Manrope', system-ui, sans-serif; font-weight: 700; color: var(--ink-2); margin-bottom: 0.35rem; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .form-label { font-family: 'Manrope', system-ui, sans-serif; font-weight: 700; color: var(--ink-2); margin-bottom: 0.35rem; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; }
 
     /* ── Buttons ───────────────────────────────────────────────────── */
     .btn { border-radius: var(--radius-sm); font-weight: 700; transition: all 0.18s; letter-spacing: 0.03em; font-family: 'Manrope', system-ui, sans-serif; }
@@ -611,17 +611,17 @@
       background: var(--bg-surface);
       border: 1px solid var(--line);
       color: var(--ink-2);
-      font-size: 11px !important;
+      font-size: 0.6875rem !important;
     }
     .btn-outline-secondary:hover { border-color: var(--amber); color: var(--amber); background: rgba(18,211,154,0.08); }
 
     /* ── Tables ────────────────────────────────────────────────────── */
-    .minimal-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 13px; }
+    .minimal-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 0.8125rem; }
     .minimal-table thead tr { background: var(--bg-raised); border-bottom: 1px solid var(--line); }
     .minimal-table thead th {
       padding: 11px 14px;
       font-weight: 700;
-      font-size: 10px;
+      font-size: 0.625rem;
       color: var(--ink-2);
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -632,18 +632,18 @@
     .minimal-table tbody tr { border-bottom: 1px solid rgba(42,52,68,0.7); transition: background 0.1s; }
     .minimal-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.012); }
     .minimal-table tbody tr:hover { background: rgba(18,211,154,0.08); }
-    .minimal-table td { padding: 11px 14px; vertical-align: middle; color: var(--ink-1); font-size: 13px; }
+    .minimal-table td { padding: 11px 14px; vertical-align: middle; color: var(--ink-1); font-size: 0.8125rem; }
 
     /* Table specifics */
     .td-num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; font-family: 'Manrope', system-ui, sans-serif; }
-    .td-date { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; font-family: 'Manrope', system-ui, sans-serif; }
+    .td-date { font-size: 0.75rem; color: var(--ink-2); font-variant-numeric: tabular-nums; font-family: 'Manrope', system-ui, sans-serif; }
     .td-ticker {
       font-weight: 700; color: #93c8ff;
       background: rgba(92,179,255,0.14);
       border: 1px solid rgba(92,179,255,0.3);
       padding: 3px 8px; border-radius: 5px;
       font-family: 'Manrope', system-ui, sans-serif;
-      font-size: 12px;
+      font-size: 0.75rem;
     }
     .text-success-custom { color: var(--bull) !important; font-weight: 700; font-family: 'Manrope', system-ui, sans-serif; }
     .text-danger-custom  { color: var(--bear) !important; font-weight: 700; font-family: 'Manrope', system-ui, sans-serif; }
@@ -662,7 +662,7 @@
       border: 1px solid var(--line);
       border-radius: 6px;
       padding: 5px 8px;
-      font-size: 12px;
+      font-size: 0.75rem;
       width: 110px;
       text-align: right;
       outline: none;
@@ -674,7 +674,7 @@
     .input-close:focus { border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-glow); }
 
     .btn-action-update {
-      font-size: 11px; font-weight: 700; padding: 6px 12px;
+      font-size: 0.6875rem; font-weight: 700; padding: 6px 12px;
       border-radius: 6px; border: 1px solid var(--line);
       background: var(--bg-raised); color: var(--ink-2);
       cursor: pointer; transition: all 0.15s;
@@ -683,7 +683,7 @@
     .btn-action-update:hover { background: var(--bg-input); border-color: var(--amber); color: var(--amber); }
 
     .btn-action-del {
-      font-size: 11px; font-weight: 700; padding: 6px 11px;
+      font-size: 0.6875rem; font-weight: 700; padding: 6px 11px;
       border-radius: 6px; border: 1px solid var(--bear-dim);
       background: transparent; color: var(--bear);
       cursor: pointer; display: inline-block; transition: all 0.15s;
@@ -704,7 +704,7 @@
       border-radius: var(--radius-sm);
       background: rgba(18,211,154,0.07);
       color: var(--ink-2);
-      font-size: 12px;
+      font-size: 0.75rem;
       line-height: 1.5;
       padding: 9px 12px;
       margin: 0 0 14px;
@@ -728,7 +728,7 @@
     }
     .sr-pill {
       display: inline-block;
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-weight: 800;
       line-height: 1.25;
       letter-spacing: 0.02em;
@@ -764,19 +764,19 @@
     .sr-distance {
       display: block;
       color: var(--ink-3);
-      font-size: 10px;
+      font-size: 0.625rem;
       font-weight: 600;
       margin-top: 2px;
     }
     .sr-summary-value {
       font-family: 'Manrope', system-ui, sans-serif;
-      font-size: 20px;
+      font-size: 1.25rem;
       font-weight: 800;
       margin: 7px 0 0;
     }
     .sr-summary-meta {
       color: var(--ink-2);
-      font-size: 11px;
+      font-size: 0.6875rem;
       margin-top: 4px;
     }
     .sr-tools-row {
@@ -795,7 +795,7 @@
       align-items: center;
       gap: 6px;
       color: var(--ink-2);
-      font-size: 12px;
+      font-size: 0.75rem;
       font-weight: 700;
       margin: 0;
       white-space: nowrap;
@@ -811,13 +811,13 @@
       border-color: var(--amber);
     }
     .sr-side-panel .minimal-table td {
-      font-size: 12px;
+      font-size: 0.75rem;
       vertical-align: top;
     }
     .sr-side-level {
       color: var(--amber);
       font-family: 'Manrope', system-ui, sans-serif;
-      font-size: 11px;
+      font-size: 0.6875rem;
       line-height: 1.35;
       white-space: normal;
     }
@@ -844,7 +844,7 @@
       gap: 14px;
       flex-wrap: wrap;
       align-items: center;
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-weight: 600;
       color: #334155;
       background: rgba(255, 255, 255, 0.88);
@@ -875,7 +875,7 @@
       border-radius: 50%;
       background: rgba(18,211,154,0.1);
       color: var(--amber);
-      font-size: 12px;
+      font-size: 0.75rem;
       font-weight: 900;
       line-height: 1;
       vertical-align: middle;
@@ -904,7 +904,7 @@
       color: var(--amber);
       font-weight: 800;
       font-family: 'Manrope', system-ui, sans-serif;
-      font-size: 12px;
+      font-size: 0.75rem;
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
@@ -922,7 +922,7 @@
     }
     .institutional-rule-title {
       color: var(--ink-1);
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.06em;
@@ -933,7 +933,7 @@
       margin: 0;
       padding-left: 16px;
       color: var(--ink-2);
-      font-size: 12px;
+      font-size: 0.75rem;
       line-height: 1.45;
     }
     .institutional-code {
@@ -944,7 +944,7 @@
       background: var(--bg-base);
       color: var(--ink-1);
       font-family: 'Manrope', system-ui, sans-serif;
-      font-size: 12px;
+      font-size: 0.75rem;
       line-height: 1.5;
       white-space: pre-wrap;
     }
@@ -962,7 +962,7 @@
     }
     .autocomplete-dropdown.show { display: block; }
     .autocomplete-item {
-      padding: 10px 14px; cursor: pointer; font-size: 13px;
+      padding: 10px 14px; cursor: pointer; font-size: 0.8125rem;
       border-bottom: 1px solid var(--line);
       transition: background 0.12s;
     }
@@ -971,7 +971,7 @@
       display: inline-block;
       margin-left: 8px;
       padding: 1px 7px;
-      font-size: 10px;
+      font-size: 0.625rem;
       font-weight: 800;
       letter-spacing: 0.02em;
       vertical-align: middle;
@@ -980,16 +980,16 @@
       background: var(--bull-bg, rgba(20,231,160,0.12));
       border: 1px solid var(--bull, #14e7a0);
     }
-    .autocomplete-item-sub { font-size: 11px; color: var(--ink-2); line-height: 1.3; margin-top: 3px; }
+    .autocomplete-item-sub { font-size: 0.6875rem; color: var(--ink-2); line-height: 1.3; margin-top: 3px; }
     .autocomplete-item:hover, .autocomplete-item.active { background: rgba(18,211,154,0.12); }
     .autocomplete-item:last-child { border-bottom: none; }
-    .autocomplete-hint { padding: 12px 16px; font-size: 12px; color: var(--ink-3); text-align: center; font-style: italic; }
-    .autocomplete-loading { padding: 14px; text-align: center; font-size: 12px; color: var(--ink-2); }
-    .autocomplete-selected-meta { margin-top: 6px; font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; font-family: 'Manrope', system-ui, sans-serif; }
+    .autocomplete-hint { padding: 12px 16px; font-size: 0.75rem; color: var(--ink-3); text-align: center; font-style: italic; }
+    .autocomplete-loading { padding: 14px; text-align: center; font-size: 0.75rem; color: var(--ink-2); }
+    .autocomplete-selected-meta { margin-top: 6px; font-size: 0.6875rem; color: var(--ink-2); font-variant-numeric: tabular-nums; font-family: 'Manrope', system-ui, sans-serif; }
 
     /* ── Volume status badges ──────────────────────────────────────── */
     .volume-status {
-      font-size: 11.5px; font-weight: 700; padding: 5px 12px;
+      font-size: 0.7188rem; font-weight: 700; padding: 5px 12px;
       border-radius: 999px; display: inline-flex; align-items: center;
       letter-spacing: 0.05em; font-family: 'Manrope', system-ui, sans-serif;
     }
@@ -1015,7 +1015,7 @@
       background: var(--bg-surface);
       border-bottom: 1px solid var(--line);
       color: var(--ink-2);
-      font-size: 12px;
+      font-size: 0.75rem;
     }
     .table-page-toolbar label {
       display: inline-flex;
@@ -1065,7 +1065,7 @@
     .table-page-status {
       color: var(--ink-3);
       font-family: 'Manrope', system-ui, sans-serif;
-      font-size: 11px;
+      font-size: 0.6875rem;
       white-space: nowrap;
     }
     .table-page-nav:disabled {
@@ -1082,7 +1082,7 @@
     }
     .sync-row-label {
       font-family: 'Manrope', system-ui, sans-serif;
-      font-size: 10px;
+      font-size: 0.625rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -1092,23 +1092,23 @@
     }
     .sync-sep {
       color: var(--ink-3);
-      font-size: 12px;
+      font-size: 0.75rem;
       font-family: 'Manrope', system-ui, sans-serif;
     }
     .sync-date-input {
       width: 118px !important;
       min-width: 0 !important;
-      font-size: 12px !important;
+      font-size: 0.75rem !important;
       padding: 4px 8px !important;
     }
     .sync-scope-input {
       width: 130px !important;
       min-width: 0 !important;
-      font-size: 12px !important;
+      font-size: 0.75rem !important;
       padding: 4px 8px !important;
     }
     .sync-btn {
-      font-size: 12px !important;
+      font-size: 0.75rem !important;
       padding: 5px 14px !important;
       white-space: nowrap;
     }
@@ -1147,11 +1147,11 @@
         margin-bottom: 1.5rem;
       }
       .workspace-title {
-        font-size: 21px;
+        font-size: 1.3125rem;
         line-height: 1.25;
       }
       .workspace-sub {
-        font-size: 12px;
+        font-size: 0.75rem;
       }
       .sync-toolbar,
       .sync-toolbar form {
@@ -1230,8 +1230,8 @@
     .rrg-blink { transform-box: fill-box; transform-origin: center; animation: rrgBlinkPulse 1.4s ease-out infinite; pointer-events: none; }
     @keyframes rrgBlinkPulse { 0% { transform: scale(1); opacity: 0.9; } 70% { transform: scale(2.6); opacity: 0; } 100% { transform: scale(2.6); opacity: 0; } }
     @media (prefers-reduced-motion: reduce) { .rrg-blink { animation: none; opacity: 0.6; } }
-    .rrg-chart-empty { display: grid; height: 100%; place-items: center; color: #6b7280; font-size: 13px; }
-    .rrg-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #6b7280; }
+    .rrg-chart-empty { display: grid; height: 100%; place-items: center; color: #6b7280; font-size: 0.8125rem; }
+    .rrg-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.75rem; color: #6b7280; }
     .rrg-legend-item::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
     .rrg-leading::before { background: #16a34a; }
     .rrg-weakening::before { background: #f59e0b; }
@@ -1282,7 +1282,7 @@
       padding: 0 14px;
       color: #ffffff;
       background: #6e7f93;
-      font-size: 14px;
+      font-size: 0.875rem;
       font-weight: 700;
       line-height: 38px;
     }
@@ -1295,7 +1295,7 @@
       padding: 0;
       color: #596b7e;
       background: transparent;
-      font-size: 20px;
+      font-size: 1.25rem;
       line-height: 32px;
     }
     .rrg-tail-control {
@@ -1308,7 +1308,7 @@
     .rrg-tail-label {
       grid-column: 1 / -1;
       color: #596b7e;
-      font-size: 12px;
+      font-size: 0.75rem;
       font-weight: 700;
       text-align: center;
       line-height: 1;
@@ -1324,7 +1324,7 @@
       border-radius: 4px;
       color: #5b6b7f;
       background: #ffffff;
-      font-size: 14px;
+      font-size: 0.875rem;
       font-weight: 600;
       text-align: center;
     }
@@ -1333,7 +1333,7 @@
       align-items: center;
       gap: 6px;
       color: #596b7e;
-      font-size: 18px;
+      font-size: 1.125rem;
       white-space: nowrap;
     }
     .rrg-arrow-mode input {
@@ -1357,7 +1357,7 @@
     }
     .rrg-index-picker-title {
       color: var(--ink-2);
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-weight: 800;
       letter-spacing: 0.07em;
       text-transform: uppercase;
@@ -1371,7 +1371,7 @@
     }
     .rrg-index-count {
       color: var(--ink-2);
-      font-size: 12px;
+      font-size: 0.75rem;
       font-family: 'Manrope', system-ui, sans-serif;
     }
     .rrg-index-choice-grid {
@@ -1406,7 +1406,7 @@
     .rrg-index-choice-main {
       display: block;
       color: var(--ink-1);
-      font-size: 12px;
+      font-size: 0.75rem;
       font-weight: 800;
       line-height: 1.2;
       font-family: 'Manrope', system-ui, sans-serif;
@@ -1414,7 +1414,7 @@
     .rrg-index-choice-sub {
       display: block;
       color: var(--ink-3);
-      font-size: 10px;
+      font-size: 0.625rem;
       line-height: 1.35;
       margin-top: 2px;
     }
@@ -1426,7 +1426,7 @@
       border-radius: 999px;
       background: rgba(15,23,42,0.05);
       color: #0f172a;
-      font-size: 12px;
+      font-size: 0.75rem;
       font-weight: 700;
       font-family: 'Manrope', system-ui, sans-serif;
     }
@@ -1456,9 +1456,14 @@
 
     .workspace-wrap {
       width: 100%;
-      max-width: none;
+      /* Was max-width:none with 108-192px side padding, so the workbench sat at
+         a different measure from every other page (and grew unbounded on
+         ultrawides). Now shares --shell-max with .mi-shell / .fa-main / .wrap. */
+      max-width: var(--shell-max);
+      margin-left: auto;
+      margin-right: auto;
       min-height: 100vh;
-      padding: 6px clamp(108px, 7.2vw, 192px) 10px;
+      padding: 6px var(--shell-pad) 10px;
       display: flex;
       flex-direction: column;
       gap: clamp(7px, 0.6vw, 12px);
@@ -1833,11 +1838,11 @@
 
 .sr-ai-content {
   color: var(--ink-1, #edf4ff);
-  font-size: 13.5px;
+  font-size: 0.8438rem;
   line-height: 1.6;
 }
 .sr-ai-content .sr-ai-h {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -1868,7 +1873,7 @@
   z-index: 1045;
   display: flex;
   align-items: stretch;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 /* The always-visible handle sits on the left of the body and pokes out past
    the right edge when collapsed. */
@@ -1891,7 +1896,7 @@
 .funda-handle:hover { background: var(--neutral-bg, rgba(92,179,255,0.12)); color: var(--neutral, #5cb3ff); }
 .funda-handle-icon {
   font-weight: 700;
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1;
   color: var(--neutral, #5cb3ff);
 }
@@ -1900,7 +1905,7 @@
   text-orientation: mixed;
   transform: rotate(180deg);
   letter-spacing: 0.08em;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -1939,19 +1944,19 @@
 }
 .funda-head-titles { display: flex; flex-direction: column; }
 .funda-title {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--ink-2, #a9bedf);
 }
-.funda-period { font-size: 11px; color: var(--ink-3, #6f88ad); margin-top: 2px; }
+.funda-period { font-size: 0.6875rem; color: var(--ink-3, #6f88ad); margin-top: 2px; }
 .funda-head-actions { display: flex; gap: 4px; }
 .funda-icon-btn {
   border: none;
   background: transparent;
   color: var(--ink-3, #6f88ad);
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1;
   padding: 2px 6px;
   border-radius: 6px;
@@ -1967,9 +1972,9 @@
   margin-bottom: 8px;
   border-bottom: 1px solid var(--line, #17345c);
 }
-.funda-symbol { font-size: 18px; font-weight: 800; color: var(--ink-1, #edf4ff); }
+.funda-symbol { font-size: 1.125rem; font-weight: 800; color: var(--ink-1, #edf4ff); }
 .funda-name {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--ink-3, #6f88ad);
   white-space: nowrap;
   overflow: hidden;
@@ -1983,7 +1988,7 @@
   padding: 8px 10px;
   margin-bottom: 10px;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 .funda-margin .funda-margin-dot {
@@ -2019,13 +2024,13 @@
   padding: 18px 4px;
   text-align: center;
   color: var(--ink-3, #6f88ad);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .funda-more {
   display: inline-block;
   margin-top: 12px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--neutral, #5cb3ff);
   text-decoration: none;

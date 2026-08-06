@@ -33,7 +33,6 @@
     fmTabs: document.getElementById("fm-tabs"),
     fmVersion: document.getElementById("fm-version"),
     fmPills: document.getElementById("fm-pills"),
-    fmCsv: document.getElementById("fm-csv"),
     fmTable: document.getElementById("fm-table"),
   };
 
@@ -138,6 +137,8 @@
   }
 
   function renderTrend(trend) {
+    // The trend block is optional: a host can render the cards without it.
+    if (!els.trend || !els.trendSection) return;
     els.trend.innerHTML = "";
     if (!trend || !trend.length) {
       els.trendSection.classList.add("fa-hidden");
@@ -470,7 +471,10 @@
 
   // Tab/pill state (replaces the old Statement/Periods dropdowns + Load button —
   // every control change reloads the table immediately).
-  var fmState = { statement: "BS", periods: "12" };
+  // Eight quarters is the default depth: two years of comparatives, which is
+  // what the full-width table can show at a readable size. The period pills
+  // widen or narrow it from there.
+  var fmState = { statement: "BS", periods: "8" };
 
   function loadMatrix() {
     if (!state.data) return;
@@ -514,6 +518,8 @@
       els.fmTable.innerHTML = '<tbody><tr><td class="fm-empty">No line items.</td></tr></tbody>';
       return;
     }
+
+    sizeMatrix(m.columns.length);
 
     // Alternate a subtle band per fiscal-year group of columns.
     var bandByKey = {}, fyOrder = [];
@@ -566,6 +572,35 @@
     els.fmTable.appendChild(tbody);
   }
 
+  // Column geometry follows the period count, so 5 quarters don't sit marooned
+  // in huge gaps and 24 don't crush into unreadable slivers. A <colgroup> with a
+  // fixed first column plus `table-layout: fixed` makes the browser split the
+  // remaining width EVENLY — auto layout sized columns by their content, which
+  // is what produced the ragged gaps. `minWidth` is the floor below which the
+  // wrap scrolls horizontally instead of squeezing further.
+  var FM_DENSITY = [
+    { max: 6,       den: "roomy",  first: 270, cell: 132 },
+    { max: 9,       den: "normal", first: 245, cell: 112 },
+    { max: 13,      den: "tight",  first: 215, cell: 92 },
+    { max: Infinity, den: "micro", first: 190, cell: 78 },
+  ];
+
+  function sizeMatrix(n) {
+    var d = FM_DENSITY.find(function (x) { return n <= x.max; });
+    els.fmTable.dataset.den = d.den;
+    els.fmTable.style.minWidth = (d.first + n * d.cell) + "px";
+    // …and a ceiling, so five quarters on the 1860px Stock 360 shell don't
+    // simply inherit the old marooned-in-whitespace look at a larger scale.
+    els.fmTable.style.maxWidth = (d.first + n * d.cell * 1.9) + "px";
+
+    var cg = el("colgroup");
+    var c0 = document.createElement("col");
+    c0.style.width = d.first + "px";
+    cg.appendChild(c0);
+    for (var i = 0; i < n; i++) cg.appendChild(document.createElement("col"));
+    els.fmTable.appendChild(cg);
+  }
+
   function growthRow(row, columns, bandByKey, label, mode) {
     var tr = el("tr", "fm-growth");
     tr.appendChild(tdEl(label, "fm-firstcol"));
@@ -582,30 +617,6 @@
       tr.appendChild(td);
     });
     return tr;
-  }
-
-  // Download the loaded matrix as CSV (raw values, not display formatting).
-  function exportMatrixCsv() {
-    var m = state.matrix;
-    if (!m || !m.columns || !m.columns.length) return;
-    function q(s) { return '"' + String(s == null ? "" : s).replace(/"/g, '""') + '"'; }
-    var lines = [
-      [q("Line item")].concat(m.columns.map(function (c) { return q(c.fy + " Q" + c.quarter); })).join(",")
-    ];
-    m.rows.forEach(function (row) {
-      lines.push([q(row.name || row.code)].concat(m.columns.map(function (c) {
-        var v = row.values[c.key];
-        return v == null || isNaN(v) ? "" : v;
-      })).join(","));
-    });
-    var blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = (state.data ? state.data.symbol : "statement") + "_" +
-      fmState.statement + "_" + fmState.periods + "p.csv";
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
   }
 
   function thEl(text, cls) {
@@ -641,7 +652,6 @@
       loadMatrix();
     });
     els.fmVersion.addEventListener("change", loadMatrix);
-    if (els.fmCsv) els.fmCsv.addEventListener("click", exportMatrixCsv);
   }
 
   // --- Growth & Value model (Morningstar-style sector scoring) -------------
@@ -1031,7 +1041,11 @@
 
   function buildScatter(results, selSymbol) {
     var NS = "http://www.w3.org/2000/svg";
-    var W = 720, H = 380, pad = 52;
+    // 720x290 (was 720x380). Everything below derives from W/H/pad, so the
+    // shorter box just flattens the plot: with a handful of companies the
+    // extra height was empty, and at full column width it pushed the panel
+    // past a screen on its own.
+    var W = 720, H = 290, pad = 52;
     var x0 = pad, x1 = W - 18, y0 = H - pad, y1 = 18;
 
     // Flexible ("auto-zoom") axes: fit the domain to the data so clusters spread
@@ -1192,6 +1206,8 @@
   // --- loading --------------------------------------------------------------
 
   function showStatus(msg) {
+    // Optional shell: a model-only host has no status/content wrapper.
+    if (!els.status || !els.content) return;
     els.status.textContent = msg;
     els.status.classList.remove("fa-hidden");
     els.content.classList.add("fa-hidden");
@@ -1317,6 +1333,10 @@
     load(symbol);
   }
 
+  /* The company picker is optional. Stock 360 hosts these same blocks but does
+   * its own symbol search in the hero, so it renders no picker and the wiring
+   * below simply doesn't run — the module still boots from FA_CONFIG.symbol. */
+  if (els.symbol && els.go) {
   els.go.addEventListener("click", loadFromInput);
   els.symbol.addEventListener("focus", openCompanyMenu);
   els.symbol.addEventListener("input", openCompanyMenu);
@@ -1350,11 +1370,24 @@
       if (!els.companyPicker.contains(e.target)) closeCompanyMenu();
     });
   }
+  }
 
   // --- boot -----------------------------------------------------------------
 
   if (cfg.symbol) {
-    els.symbol.value = cfg.symbol;
+    if (els.symbol) els.symbol.value = cfg.symbol;
     load(cfg.symbol);
+  }
+  /* Without sub-tabs there is nothing to open the Morningstar panel, so a host
+   * that shows it as a plain section asks for it up front.
+   *
+   * A model-only host runs no statements pipeline, so `state.data` is never
+   * populated and loadModel() would fall back to the FIRST sector — which is
+   * how a hydro company came to be scored against Commercial Banks. Seeding the
+   * symbol lets it resolve the right sector. */
+  if (cfg.autoModel && els.model) {
+    var modelSym = cfg.modelSymbol || cfg.symbol;
+    if (!state.data && modelSym) state.data = { symbol: modelSym };
+    loadModel();
   }
 })();

@@ -150,6 +150,9 @@
       return v || "";
     }
     function sync() { input.value = labelFor(sel.value); }
+    // Programmatic callers (deep links) set sel.value directly; without this the
+    // native select is right while the visible input still shows the old pick.
+    sel.comboSync = sync;
 
     function match(q) {
       q = q.trim().toUpperCase();
@@ -339,7 +342,7 @@
 
   // ── tab switching ─────────────────────────────────────────────────────
   var loaded = {};
-  function activateTab(name) {
+  function activateTab(name, afterInit) {
     document.querySelectorAll(".dsx-tab").forEach(function (t) {
       t.classList.toggle("active", t.dataset.tab === name);
     });
@@ -347,6 +350,10 @@
       p.classList.toggle("active", p.id === "panel-" + name);
     });
     if (TABS[name] && !loaded[name]) { loaded[name] = true; TABS[name].init(); }
+    // Runs AFTER init (which fills the selects and seeds state from them) and
+    // BEFORE load, so a deep link's symbol survives instead of being overwritten
+    // by the tab's own defaults — and still costs only one fetch.
+    if (afterInit) afterInit();
     if (TABS[name]) TABS[name].load();
   }
 
@@ -1888,12 +1895,49 @@
     t.addEventListener("click", function () { activateTab(t.dataset.tab); });
   });
 
+  /* Deep links: ?tab=&symbol=&range= — so other desks (Stock 360) can hand a
+   * symbol straight to the right tab instead of dropping the reader on the
+   * default one with nothing selected. The tab must exist and the symbol is set
+   * BEFORE init reads the select, since init seeds its state from that value. */
+  function readDeepLink() {
+    var q = new URLSearchParams(window.location.search);
+    var tab = (q.get("tab") || "").replace(/[^a-z]/gi, "");
+    if (!tab || !document.querySelector('.dsx-tab[data-tab="' + tab + '"]')) return null;
+    return {
+      tab: tab,
+      symbol: (q.get("symbol") || "").trim().toUpperCase(),
+      range: (q.get("range") || "").trim().toLowerCase()
+    };
+  }
+
+  function applyDeepLink(dl) {
+    if (dl.tab !== "flowmap") return;
+    var sel = el("fm-symbol"), rng = el("fm-range");
+    if (dl.symbol && sel) {
+      sel.value = dl.symbol;
+      // A symbol the floorsheet does not carry leaves the select unchanged;
+      // don't push a state the control cannot show.
+      if (sel.value === dl.symbol) {
+        fmState.symbol = dl.symbol;
+        if (sel.comboSync) sel.comboSync();
+      }
+    }
+    if (dl.range && rng) {
+      // Only honour a range the control actually offers — an unknown key would
+      // leave the select showing one window while state held another.
+      var ok = [].some.call(rng.options, function (o) { return o.value === dl.range; });
+      if (ok) { rng.value = dl.range; fmState.range = dl.range; }
+    }
+  }
+
   function start() {
     var upd = el("fs-updated");
     if (upd && META.latest_date) upd.textContent = "Last Updated On " + META.latest_date;
     var banner = el("dsx-banner");
     if (banner && META.ok) banner.hidden = true;
-    activateTab("flowradar");
+    var dl = readDeepLink();
+    activateTab(dl ? dl.tab : "flowradar",
+                dl ? function () { applyDeepLink(dl); } : null);
   }
 
   // If the page was served before today's aggregate was built (cache cold), the

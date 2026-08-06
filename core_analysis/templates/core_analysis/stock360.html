@@ -21,6 +21,9 @@
   <link rel="stylesheet" href="{% static 'core_analysis/css/stock360.css' %}?v={{ asset_version|default:1 }}">
   {# The fundamentals desk blocks (cards, trend, statement matrix, Morningstar model) are hosted on this page and bring their own styling. #}
   <link rel="stylesheet" href="{% static 'core_analysis/css/fundamentals-desk.css' %}?v={{ asset_version|default:1 }}">
+  {# Shared mobile layer, loaded LAST so its @media overrides win. #}
+  {# Every rule inside is gated behind a max-width query: desktop untouched. #}
+  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ asset_version|default:1 }}">
 </head>
 <body>
 
@@ -310,5 +313,6 @@
   };
 </script>
 <script defer src="{% static 'core_analysis/js/fundamentals.js' %}?v={{ asset_version|default:1 }}"></script>
+<script defer src="{% static 'core_analysis/js/responsive.js' %}?v={{ asset_version|default:1 }}"></script>
 </body>
 </html>

@@ -9,6 +9,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
   <link rel="stylesheet" href="{% static 'core_analysis/css/portfolio.css' %}?v={{ asset_version }}">
+  {# Shared mobile layer, loaded LAST so its @media overrides win. #}
+  {# Every rule inside is gated behind a max-width query: desktop untouched. #}
+  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ asset_version|default:1 }}">
 </head>
 <body>
 <div class="mi-shell">
@@ -410,5 +413,6 @@
   window.PF_APPROVAL_ACTION_URL = "{% url 'portfolio_approval_action' %}";
 </script>
 <script src="{% static 'core_analysis/js/portfolio.js' %}?v={{ asset_version }}"></script>
+<script defer src="{% static 'core_analysis/js/responsive.js' %}?v={{ asset_version|default:1 }}"></script>
 </body>
 </html>
