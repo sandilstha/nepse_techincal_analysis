@@ -22,6 +22,7 @@ from .views import (
     crud_delete_handler,
     trigger_daily_api_sync_view,
     trigger_floorsheet_sync_view,
+    trigger_proposed_dividend_sync_view,
     symbol_autocomplete_view,
     trigger_sync_and_calculate,
     stage_sop_view,
@@ -32,6 +33,7 @@ from .insights_views import (
     market_insights_view,
     market_insights_api,
     subindex_comparison_api,
+    sector_turnover_api,
     technical_analysis_view,
 )
 from .broker_views import (
@@ -83,6 +85,7 @@ urlpatterns = [
     path('insights/', market_insights_view),
     path('insights/api/', market_insights_api, name='market_insights_api'),
     path('insights/subindices/', subindex_comparison_api, name='subindex_comparison_api'),
+    path('insights/sector-turnover/', sector_turnover_api, name='sector_turnover_api'),
 
     # Stock 360 — all-in-one single-stock dashboard (aggregates every desk).
     path('stock/', stock360_view, name='stock360'),
@@ -162,6 +165,7 @@ urlpatterns = [
     path('dashboard/delete/<int:pk>/', crud_delete_handler, name='crud_delete'),
     path('dashboard/sync/', trigger_daily_api_sync_view, name='trigger_daily_sync'),
     path('dashboard/sync-floorsheet/', trigger_floorsheet_sync_view, name='trigger_floorsheet_sync'),
+    path('dashboard/sync-proposed-dividend/', trigger_proposed_dividend_sync_view, name='trigger_proposed_dividend_sync'),
     path('dashboard/sync-calculate/', trigger_sync_and_calculate, name='trigger_sync_and_calculate'),
     # NEW — lightweight autocomplete endpoint for symbol search boxes
     path('dashboard/symbols/', symbol_autocomplete_view, name='symbol_autocomplete'),

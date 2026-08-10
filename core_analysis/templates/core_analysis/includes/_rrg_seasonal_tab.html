@@ -328,11 +328,11 @@ market-cycle chart rides along on the `market_cycle` payload.
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="phase-chip phase-{{ st.phase|lower }}">{{ st.phase }}</span>
           <a href="{% url 'seasonal_sop' %}" class="strat-toggle" target="_blank" rel="noopener" title="Methodology (SOP) — how the Accumulation / Distribution strategy is computed" aria-label="Seasonal strategy methodology (SOP)" style="text-decoration:none;">SOP</a>
-          <button type="button" class="strat-toggle" id="stratToggle" aria-expanded="false" aria-controls="stratBody" title="Show seasonal strategy details">?</button>
+          <button type="button" class="strat-toggle" id="stratToggle" aria-expanded="true" aria-controls="stratBody" title="Hide seasonal strategy details">?</button>
         </div>
       </div>
 
-      <div class="strat-body" id="stratBody" hidden>
+      <div class="strat-body" id="stratBody">
       <div class="strat-outlook">
         <div class="strat-outlook-k">Seasonal Market Outlook{% if st.horizon %} · {{ st.horizon }}{% endif %}</div>
         <p>{{ st.outlook }}</p>

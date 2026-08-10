@@ -41,6 +41,7 @@ from core_analysis.services.RGG_Chart import run_rrg_simulation
 from core_analysis.services.RGG_indices import NEPSE_INDEX_LABELS, ordered_nepse_indices, run_rrg_indices_simulation
 from core_analysis.services.seasonal_returns import build_seasonal_payload, build_market_cycle
 from core_analysis.services.market_regimes import build_market_regimes
+from core_analysis.services import proposed_dividend
 from core_analysis.services.advanced_market_structure import run_advanced_market_structure_analysis
 from core_analysis.services.support_resistance import (
     DEFAULT_LEVEL_FAMILIES,
@@ -640,6 +641,10 @@ PUBLIC_WORKBENCH_TABS = set()
 # Inventory Manager, so its payload is built for either of those tabs — the two
 # share a sub-tab bar and switching between them is client-side.
 _WORKBENCH_DATA_TABS = {"inventory", "rrg_seasonal"}
+
+# The company RRG desk and the index RRG desk share one tab (stacked, but fully
+# independent). Either key means "the RRG tab", so both desks are built.
+RRG_TABS = {"rrg_backtest", "rrg_indices"}
 
 
 def _staff_or_public_tab(view):
@@ -1280,7 +1285,12 @@ def build_dashboard_context(request):
                 )
 
     # TAB 10: RRG (Relative Rotation Graph)
-    if rrg_selected_symbol and active_tab == "rrg_backtest":
+    # The RRG tab stacks two independent desks (companies above, indices below),
+    # so a full-page load of either tab key builds BOTH — otherwise whichever
+    # desk did not match the key would render empty. They read separate GET
+    # params (rrg_* vs rrg_indices_*), so neither can affect the other.
+    # The AJAX calc endpoint still renders one desk's partial at a time.
+    if rrg_selected_symbol and active_tab in RRG_TABS:
         if not (rrg_from and rrg_to):
             rrg_backtest_metrics = {"error": "Please select both From Date and To Date."}
         else:
@@ -1332,7 +1342,7 @@ def build_dashboard_context(request):
                     rrg_indicator_rows = rrg_df.tail(150).iloc[::-1].to_dict(orient="records")
 
     # TAB 11: RRG Indices
-    if active_tab == "rrg_indices":
+    if active_tab in RRG_TABS:
         if not (rrg_indices_from and rrg_indices_to):
             rrg_indices_metrics = {"error": "Please select both From Date and To Date."}
         else:
@@ -1742,6 +1752,49 @@ def trigger_daily_api_sync_view(request):
     except Exception as e:
         messages.error(request, f"Price sync failed: {str(e)}")
 
+    return redirect("crud_dashboard")
+
+
+@staff_member_required
+@require_POST
+def trigger_proposed_dividend_sync_view(request):
+    """On-demand proposed-dividend scrape (ShareSansar), POST-only.
+
+    Normally this rides along with the daily price sync, refreshing the two
+    newest fiscal years. This endpoint exists for the cases that schedule does
+    not cover: a first-time backfill of the whole history, or re-pulling one
+    closed year after the source corrects it.
+    """
+    scope = (request.POST.get("scope") or "recent").strip()
+    year = (request.POST.get("year") or "").strip()
+
+    kwargs = {}
+    if year:
+        kwargs["year"] = year
+    elif scope == "all":
+        kwargs["all"] = True
+    else:
+        kwargs["years"] = 2
+
+    try:
+        stats = proposed_dividend.sync(
+            years=kwargs.get("years", 2),
+            all_years=kwargs.get("all", False),
+            year=kwargs.get("year", ""),
+        )
+    except Exception as e:
+        # The only sync here that leaves the local network — surface why.
+        messages.error(request, f"Proposed dividend sync failed: {e}")
+        return redirect("crud_dashboard")
+
+    note = ""
+    if stats["failed_years"]:
+        note = f" Skipped: {', '.join(stats['failed_years'])}."
+    messages.success(
+        request,
+        f"Proposed dividends synced — {stats['upserted']} row(s) upserted across "
+        f"{len(stats['years'])} fiscal year(s); table now holds {stats['total_rows']}.{note}",
+    )
     return redirect("crud_dashboard")
 
 

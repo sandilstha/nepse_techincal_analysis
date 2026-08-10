@@ -1341,6 +1341,22 @@
       height: 18px;
       accent-color: #0b559a;
     }
+    /* The RRG tab stacks two independent desks; this separates them visually so
+       it is obvious which form drives which chart. */
+    .rrg-desk-section + .rrg-desk-section {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 2px solid var(--line);
+    }
+    .rrg-desk-heading {
+      font-family: 'Manrope', system-ui, sans-serif;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-2);
+      margin-bottom: 10px;
+    }
     .rrg-index-picker {
       border: 1px solid var(--line);
       border-radius: var(--radius-md);

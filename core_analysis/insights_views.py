@@ -21,7 +21,11 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
 
-from core_analysis.services.market_insights import build_payload, subindex_comparison
+from core_analysis.services.market_insights import (
+    build_payload,
+    sector_turnover_window,
+    subindex_comparison,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -185,6 +189,28 @@ def subindex_comparison_api(request):
         logger.exception("Sub-index comparison build failed")
         return JsonResponse(
             {"ok": False, "error": "Unable to load sub-index data right now."}, status=500
+        )
+
+
+@require_GET
+def sector_turnover_api(request):
+    """JSON feed for the Sector Turnover card's period selector.
+
+    ?period=1D|1W|1M|1Q|6M|1Y, or period=custom with ?from=YYYY-MM-DD&to=YYYY-MM-DD.
+    Served separately from the polled dashboard payload so switching the window
+    never forces a full snapshot rebuild.
+    """
+    try:
+        data = sector_turnover_window(
+            request.GET.get("period"),
+            request.GET.get("from"),
+            request.GET.get("to"),
+        )
+        return JsonResponse(data)
+    except Exception:  # pragma: no cover - defensive
+        logger.exception("Sector turnover window build failed")
+        return JsonResponse(
+            {"ok": False, "error": "Unable to load sector turnover right now."}, status=500
         )
 
 

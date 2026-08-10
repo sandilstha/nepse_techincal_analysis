@@ -78,6 +78,11 @@ class Command(BaseCommand):
             action="store_true",
             help="Download and validate data without writing to the database.",
         )
+        parser.add_argument(
+            "--no-dividends",
+            action="store_true",
+            help="Skip the proposed-dividend refresh that normally follows the price sync.",
+        )
 
     def handle(self, *args, **options):
         from_date = options.get("from_date")
@@ -128,6 +133,34 @@ class Command(BaseCommand):
                         f"Backfilled {len(created)} new company profile(s): {', '.join(created)}"
                     )
                 )
+
+        # Proposed dividends ride along with the daily sync. Only the newest two
+        # fiscal years are refreshed — closed years never change, and the current
+        # one keeps filling in book-closure / distribution dates on dividends
+        # already announced. Use `sync_proposed_dividend --all` for a backfill.
+        if not dry_run and not options.get("no_dividends"):
+            self._sync_proposed_dividends()
+
+    def _sync_proposed_dividends(self):
+        """Refresh proposed dividends. Never fails the price sync.
+
+        This one reaches a third-party website rather than the NEPSE relay, so
+        it is the most likely step to break (layout change, rate limit, site
+        down). Prices are the point of this command — a dividend failure is
+        reported and swallowed.
+        """
+        from core_analysis.services import proposed_dividend
+
+        self.stdout.write(self.style.SUCCESS("Syncing proposed dividends..."))
+        try:
+            stats = proposed_dividend.sync(years=2)
+        except Exception as exc:
+            self.stdout.write(self.style.WARNING(f"Proposed dividend sync failed (prices are unaffected): {exc}"))
+            return
+        self.stdout.write(self.style.SUCCESS(
+            f"Proposed dividends: {stats['upserted']} upserted, {stats['total_rows']} total"
+            + (f" (skipped {', '.join(stats['failed_years'])})" if stats["failed_years"] else "")
+        ))
 
     def _sync_stocks(self, session, api_base_url, from_date, to_date, batch_size, max_pages, dry_run):
         stock_url = _build_url(

@@ -1,8 +1,15 @@
-    <div class="tab-pane fade {% if active_tab == 'rrg_backtest' %}show active{% endif %}" id="rrg-backtest-pane" role="tabpanel">
+    {% comment %}
+      UPPER SECTION — individual companies / scripts.
+
+      Fully independent of the Indices RRG below it: its own form, params
+      (rrg_*), results container, chart and toolbar. The two only share the page.
+    {% endcomment %}
+    <section class="rrg-desk-section" id="rrg-backtest-pane">
+      <div class="rrg-desk-heading">Individual Company / Script RRG</div>
       <div class="card card-body mb-4 border-0 shadow-sm rounded-3 p-4">
         <h5 class="mb-2" style="font-size: 14px; font-weight: 700; color: var(--ink-1);">Relative Rotation Graph (RRG) Parameters</h5>
         <div class="sop-note"><strong>SOP:</strong> Select one target symbol, set the benchmark index, date range, and lookback, then generate RRG. Use the quadrant, RS-Ratio, RS-Momentum, and trail direction to compare rotation versus the benchmark.</div>
-        <form method="GET" action="." id="rrgForm">
+        <form method="GET" action="." id="rrgForm" data-results="rrg_backtestResults">
           <input type="hidden" name="active_tab" value="rrg_backtest">
           <input type="hidden" name="rrg_backtest_symbol" id="rrgSymbolHidden" value="{{ rrg_selected_symbol }}">
           
@@ -41,4 +48,4 @@
       <div class="tab-ajax-results" id="rrg_backtestResults" data-tab-key="rrg_backtest">
         {% include "core_analysis/includes/_rrg_results.html" %}
       </div>
-    </div>
+    </section>

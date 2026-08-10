@@ -197,7 +197,23 @@
     <article class="mi-card mi-sector-card">
       <div class="mi-card-head">
         <h2 class="mi-card-title">Sector Turnover</h2>
-        <span class="mi-card-hint">column = turnover share</span>
+        <span class="mi-card-hint" id="sector-turnover-hint">column = turnover share</span>
+      </div>
+      <div class="mi-card-tools">
+        <div class="mi-range" id="sector-range" role="group" aria-label="Sector turnover period">
+          <button type="button" class="mi-range-btn is-active" data-period="1D">Daily</button>
+          <button type="button" class="mi-range-btn" data-period="1W">Weekly</button>
+          <button type="button" class="mi-range-btn" data-period="1M">Monthly</button>
+          <button type="button" class="mi-range-btn" data-period="1Q">Quarterly</button>
+          <button type="button" class="mi-range-btn" data-period="6M">Semi-annual</button>
+          <button type="button" class="mi-range-btn" data-period="1Y">Yearly</button>
+          <button type="button" class="mi-range-btn" data-period="CUSTOM">Custom</button>
+        </div>
+        <div class="mi-range-custom" id="sector-range-custom" hidden>
+          <label>From <input type="date" id="sector-from"></label>
+          <label>To <input type="date" id="sector-to"></label>
+          <button type="button" class="mi-range-btn" id="sector-apply">Apply</button>
+        </div>
       </div>
       <div class="mi-chart" id="chart-sectors"></div>
     </article>

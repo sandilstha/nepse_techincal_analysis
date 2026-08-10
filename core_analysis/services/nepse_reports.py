@@ -820,6 +820,7 @@ def _floor_sheet(p):
         "qty": int(r["quantity"] or 0),
         "rate": _f(r["rate"]),
         "amount": _f(r["amount"]),
+        "time": r["trade_time"].strftime("%H:%M:%S") if r["trade_time"] else "",
     } for i, r in enumerate(page_rows, 1)]
 
     has_next = len(rows) > page_size
@@ -1025,6 +1026,7 @@ REPORTS = {
             {"key": "qty", "label": "Quantity", "type": "int"},
             {"key": "rate", "label": "Rate", "type": "num"},
             {"key": "amount", "label": "Amount", "type": "rs"},
+            {"key": "time", "label": "Time", "type": "str"},
         ],
     },
     "margin-trade": {

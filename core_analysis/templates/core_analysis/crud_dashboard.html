@@ -104,16 +104,10 @@
               aria-selected="{% if active_tab == 'support_resistance' %}true{% else %}false{% endif %}">Support &amp; Resistance</button>
     </li>
     <li class="nav-item workspace-subtab-item rrg-tool-item">
-      <button class="nav-link workspace-subtab {% if active_tab == 'rrg_backtest' %}active{% endif %}"
+      <button class="nav-link workspace-subtab {% if active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}active{% endif %}"
               data-section="rrg"
-              data-bs-toggle="tab" data-bs-target="#rrg-backtest-pane" type="button" role="tab"
-              aria-selected="{% if active_tab == 'rrg_backtest' %}true{% else %}false{% endif %}">Stocks vs NEPSE</button>
-    </li>
-    <li class="nav-item workspace-subtab-item rrg-tool-item">
-      <button class="nav-link workspace-subtab {% if active_tab == 'rrg_indices' %}active{% endif %}"
-              data-section="rrg"
-              data-bs-toggle="tab" data-bs-target="#rrg-indices-pane" type="button" role="tab"
-              aria-selected="{% if active_tab == 'rrg_indices' %}true{% else %}false{% endif %}">Indices vs NEPSE</button>
+              data-bs-toggle="tab" data-bs-target="#rrg-pane" type="button" role="tab"
+              aria-selected="{% if active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}true{% else %}false{% endif %}">RRG vs NEPSE</button>
     </li>
   </ul>
 
@@ -129,8 +123,16 @@
     {% include "core_analysis/includes/_imm_tab.html" %}
     {% include "core_analysis/includes/_stage_tab.html" %}
     {% include "core_analysis/includes/_support_resistance_tab.html" %}
-    {% include "core_analysis/includes/_rrg_tab.html" %}
-    {% include "core_analysis/includes/_rrg_indices_tab.html" %}
+    {% comment %}
+      One RRG tab holding TWO independent desks, stacked: individual companies /
+      scripts on top, market indices below. They share nothing but the page —
+      separate forms, GET params, results containers, charts and toolbars — so
+      running one never disturbs the other.
+    {% endcomment %}
+    <div class="tab-pane fade {% if active_tab == 'rrg_backtest' or active_tab == 'rrg_indices' %}show active{% endif %}" id="rrg-pane" role="tabpanel">
+      {% include "core_analysis/includes/_rrg_tab.html" %}
+      {% include "core_analysis/includes/_rrg_indices_tab.html" %}
+    </div>
     {% include "core_analysis/includes/_rrg_seasonal_tab.html" %}
   </div>{# /tab-content #}
 

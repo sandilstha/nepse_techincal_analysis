@@ -1265,3 +1265,145 @@ def build_payload(force=False, cache_only=False, fast=False):
 def invalidate_cache():
     cache.delete(CACHE_KEY)
     cache.delete(FAST_CACHE_KEY)
+
+
+# ── Sector turnover over a window ──────────────────────────────────────────
+#
+# The Sector Turnover card defaults to "today", but the desk wants to see where
+# money flowed over a week / month / quarter / half-year, or across an arbitrary
+# date range. No new table is needed: NepseMarketIndex already stores one row per
+# (business_date, sector index) with that day's turnover_values, so a window is a
+# plain SUM over the sector sub-index rows in the range. Macro gauges (NEPSE /
+# Sensitive / Float) are excluded by SECTOR_INDEX_NAMES, so nothing double-counts.
+
+# period key -> (label, trading sessions counted back from the latest EOD date)
+SECTOR_TURNOVER_PERIODS = {
+    "1D": ("Today", 1),
+    "1W": ("This week", 5),
+    "1M": ("1 month", 22),
+    "1Q": ("1 quarter", 66),
+    "6M": ("6 months", 132),
+    "1Y": ("1 year", 250),
+}
+SECTOR_TURNOVER_DEFAULT = "1D"
+SECTOR_TURNOVER_MAX_SESSIONS = 1500
+SECTOR_TURNOVER_CACHE_TTL = 300
+
+
+def _sector_sessions(limit=None):
+    """Distinct business dates that have sector sub-index rows, newest first."""
+    qs = (
+        NepseMarketIndex.objects.filter(sector_name__in=SECTOR_INDEX_NAMES)
+        .order_by("-business_date")
+        .values_list("business_date", flat=True)
+        .distinct()
+    )
+    return list(qs[:limit] if limit else qs[:SECTOR_TURNOVER_MAX_SESSIONS])
+
+
+def _sector_turnover_rows(start, end):
+    """{sector_name: turnover} summed over [start, end] inclusive."""
+    if not start or not end:
+        return {}
+    rows = (
+        NepseMarketIndex.objects.filter(
+            sector_name__in=SECTOR_INDEX_NAMES,
+            business_date__gte=start,
+            business_date__lte=end,
+        )
+        .values("sector_name")
+        .annotate(total=Sum("turnover_values"))
+    )
+    # The DB collation matches sector_name case-insensitively, so older history
+    # can come back in a different casing than SECTOR_INDEX_NAMES. Key on the
+    # upper-cased name (and merge casings) so lookups never silently miss.
+    totals = {}
+    for r in rows:
+        key = (r["sector_name"] or "").upper()
+        totals[key] = totals.get(key, 0.0) + (_f(r["total"]) or 0.0)
+    return totals
+
+
+def _parse_date(value):
+    try:
+        return datetime.strptime((value or "").strip(), "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        return None
+
+
+def sector_turnover_window(period=SECTOR_TURNOVER_DEFAULT, date_from=None, date_to=None):
+    """Sector turnover aggregated over a preset window or a custom date range.
+
+    Returns the per-sector totals for the window, each sector's share of it, and
+    the change versus the immediately preceding window of equal session length
+    (that comparison is what shows whether money is rotating in or out).
+    """
+    period = (period or SECTOR_TURNOVER_DEFAULT).upper()
+    custom_from, custom_to = _parse_date(date_from), _parse_date(date_to)
+    is_custom = period == "CUSTOM" and custom_from and custom_to
+    if is_custom and custom_from > custom_to:
+        custom_from, custom_to = custom_to, custom_from
+    if not is_custom and period not in SECTOR_TURNOVER_PERIODS:
+        period = SECTOR_TURNOVER_DEFAULT
+
+    cache_key = "market_insights_sector_turnover:%s:%s:%s" % (
+        "CUSTOM" if is_custom else period, custom_from or "", custom_to or "")
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
+    sessions = _sector_sessions()
+    if not sessions:
+        return {"ok": True, "period": period, "sectors": [], "sessions": 0,
+                "total": 0.0, "from": None, "to": None, "label": "No data"}
+
+    if is_custom:
+        window = [d for d in sessions if custom_from <= d <= custom_to]
+        label = "Custom range"
+        # Previous window = the same number of sessions immediately before it.
+        prior = [d for d in sessions if window and d < window[-1]][:len(window)]
+    else:
+        label, count = SECTOR_TURNOVER_PERIODS[period]
+        window = sessions[:count]
+        prior = sessions[count:count * 2]
+
+    if not window:
+        return {"ok": True, "period": period, "sectors": [], "sessions": 0,
+                "total": 0.0, "from": None, "to": None, "label": label}
+
+    start, end = window[-1], window[0]
+    current = _sector_turnover_rows(start, end)
+    previous = _sector_turnover_rows(prior[-1], prior[0]) if prior else {}
+
+    total = sum(current.values())
+    sectors = []
+    for name in SECTOR_INDEX_NAMES:
+        value = current.get(name, 0.0)
+        if value <= 0:
+            continue
+        prev = previous.get(name)
+        sectors.append({
+            "sector": SECTOR_LABELS.get(name, name.title()),
+            "raw": name,
+            "turnover": round(value, 2),
+            "share": _round(value / total * 100.0) if total else None,
+            "avg_per_session": round(value / len(window), 2),
+            "prev_turnover": _round(prev),
+            # None when there is no comparable prior window (start of history).
+            "change_pct": _round((value - prev) / prev * 100.0) if prev else None,
+        })
+    sectors.sort(key=lambda s: s["turnover"], reverse=True)
+
+    data = {
+        "ok": True,
+        "period": "CUSTOM" if is_custom else period,
+        "label": label,
+        "sessions": len(window),
+        "prior_sessions": len(prior),
+        "from": start.isoformat(),
+        "to": end.isoformat(),
+        "total": round(total, 2),
+        "sectors": sectors,
+    }
+    cache.set(cache_key, data, SECTOR_TURNOVER_CACHE_TTL)
+    return data
