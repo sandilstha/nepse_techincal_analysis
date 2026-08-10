@@ -54,8 +54,9 @@
               <button type="button" id="rrgIndicesLockBtn" class="rrg-toolbar-btn rrg-toolbar-icon-btn" aria-label="Lock scale" title="Lock scale">&#128275;</button>
               <div class="rrg-tail-control">
                 <span class="rrg-tail-label">Tail Length</span>
-                <input type="range" id="rrgIndicesTailSlider" class="rrg-tail-slider" min="1" max="{{ rrg_indices_tail_length }}" value="{{ rrg_indices_tail_length }}">
-                <input type="number" id="rrgIndicesTailNumber" class="rrg-tail-number" min="1" step="1" value="{{ rrg_indices_tail_length }}">
+                {# Opens at 1 (latest dot only); max stays the fetched trail depth. #}
+                <input type="range" id="rrgIndicesTailSlider" class="rrg-tail-slider" min="1" max="{{ rrg_indices_tail_length }}" value="1">
+                <input type="number" id="rrgIndicesTailNumber" class="rrg-tail-number" min="1" step="1" value="1">
               </div>
               <label class="rrg-arrow-mode">
                 <input type="checkbox" id="rrgIndicesArrowMode">

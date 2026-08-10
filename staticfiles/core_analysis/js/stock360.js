@@ -477,13 +477,57 @@
    * Capacity vs habit: the latest declared payout, the five-year average, and
    * how often the company has paid at all. DPS on a Rs 100 face value doubles
    * as percent of face value, which is how NEPSE quotes it. */
+  /* Board-proposed dividends, from the ShareSansar sync. Rendered above the paid
+     history because it is the forward-looking half: the newest proposal in full
+     (bonus / cash split plus its dates), then earlier proposals as one line
+     each. Blank dates are real — a fresh announcement has no book-closure or
+     distribution date until the AGM sets them, so they show as "—" rather than
+     being hidden. */
+  function renderProposed(rows) {
+    if (!rows || !rows.length) return "";
+    var top = rows[0];
+    var dash = function (v) { return v ? esc(v) : "—"; };
+    // A cash-only dividend has no bonus at all; render that as "—", not "—%".
+    var pctOr = function (v) { return v == null || isNaN(v) ? "—" : num(v, 2) + "%"; };
+    var bookclose = top.bookclose
+      ? esc(top.bookclose) + (top.bookclose_status ? " (" + esc(top.bookclose_status) + ")" : "")
+      : "—";
+
+    var earlier = rows.slice(1).map(function (r) {
+      return '<li><b>FY ' + esc(r.fy) + "</b> " + pctOr(r.total) + " " +
+        "<span>(bonus " + pctOr(r.bonus) + " · cash " + pctOr(r.cash) + ")</span> " +
+        "<em>" + dash(r.announced) + "</em></li>";
+    }).join("");
+
+    return '<div class="dv-proposed">' +
+      '<div class="dv-prop-head">Proposed · FY ' + esc(top.fy) + "</div>" +
+      '<div class="dv-prop-grid">' +
+      '<div><div class="dv-k">Bonus</div><div class="dv-v num">' + pctOr(top.bonus) + "</div></div>" +
+      '<div><div class="dv-k">Cash</div><div class="dv-v num">' + pctOr(top.cash) + "</div></div>" +
+      '<div><div class="dv-k">Total</div><div class="dv-v num">' + pctOr(top.total) + "</div></div>" +
+      "</div>" +
+      '<div class="dv-prop-dates">' +
+      "<span>Announced <b>" + dash(top.announced) + "</b></span>" +
+      "<span>Book closure <b>" + bookclose + "</b></span>" +
+      "<span>Distribution <b>" + dash(top.distribution) + "</b></span>" +
+      "<span>Bonus listing <b>" + dash(top.bonus_listing) + "</b></span>" +
+      "</div>" +
+      (earlier ? '<ul class="dv-prop-earlier">' + earlier + "</ul>" : "") +
+      '<div class="dv-note">Board-proposed — not necessarily approved at the AGM or distributed yet.</div>' +
+      "</div>";
+  }
+
   (function dividendCard() {
     var box = $("divCard");
     if (!box) return;
     getJSON("/stock/api/dividends/?symbol=" + encodeURIComponent(SYM))
       .then(function (d) {
+        var proposedHtml = renderProposed((d && d.proposed) || []);
         if (!d || !d.ok || !d.available) {
-          box.innerHTML = '<div class="kv-loading">' + esc((d && d.note) || "No dividend history.") + "</div>";
+          // A company can have a board-proposed dividend and no fundamentals at
+          // all — show the proposal and keep the missing-history note under it.
+          box.innerHTML = proposedHtml +
+            '<div class="kv-loading">' + esc((d && d.note) || "No dividend history.") + "</div>";
           return;
         }
         var p = $("divPeriod"); if (p) p.textContent = d.paid_years + " of " + d.years + " years paid";
@@ -497,7 +541,7 @@
             "<em>" + esc(String(h.fy).slice(-2)) + "</em></span>";
         }).join("");
 
-        box.innerHTML =
+        box.innerHTML = proposedHtml +
           '<div class="dv-top"><div><div class="dv-k">Declared (FY ' + esc(latest.fy || "—") + ")</div>" +
           '<div class="dv-v num">' + num(latest.dps, 2) + "%</div></div>" +
           '<div><div class="dv-k">5-year average</div><div class="dv-v num">' + num(d.avg_5y, 2) + "%</div></div>" +

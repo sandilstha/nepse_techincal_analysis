@@ -29,6 +29,12 @@
   }
 
   function resultsContainer(form) {
+    // A pane can hold more than one independent desk (the RRG tab stacks the
+    // company desk above the index desk), and querySelector would hand both
+    // forms the FIRST container in the pane — so running the index RRG would
+    // overwrite the company RRG's results. An explicit data-results wins.
+    var explicit = form.getAttribute('data-results');
+    if (explicit) return document.getElementById(explicit);
     var pane = form.closest('.tab-pane');
     return pane ? pane.querySelector('.tab-ajax-results') : null;
   }

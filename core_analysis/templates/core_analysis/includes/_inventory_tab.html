@@ -45,6 +45,26 @@
               Sync Floorsheet
             </button>
           </form>
+          {% comment %}
+            Row 4: Proposed dividends (ShareSansar scrape). This already rides
+            along with the daily price sync for the two newest fiscal years —
+            this row is for the cases that does not cover: the first full
+            backfill, or re-pulling one closed year after the source amends it.
+          {% endcomment %}
+          <form method="POST" action="{% url 'trigger_proposed_dividend_sync' %}" class="d-flex align-items-center gap-2 sync-form">
+            {% csrf_token %}
+            <span class="sync-row-label">Proposed Dividend</span>
+            <select name="scope" class="form-control form-control-sm sync-scope-input">
+              <option value="recent">2 newest fiscal years</option>
+              <option value="all">Full history (all years)</option>
+            </select>
+            <span class="sync-sep">or</span>
+            <input type="text" name="year" class="form-control form-control-sm sync-date-input"
+                   placeholder="One year e.g. 2081/2082" autocomplete="off">
+            <button type="submit" class="btn btn-warning btn-sm sync-btn" data-loading-label="Scraping...">
+              Sync Dividends
+            </button>
+          </form>
       </div>{# /sync-toolbar #}
 
       {# Fundamentals Sync — pull latest published quarterly reports into the system. #}

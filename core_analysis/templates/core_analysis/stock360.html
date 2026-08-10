@@ -153,41 +153,33 @@
           </div>
         </div>
       </section>
-      <!-- ⑦ FLOORSHEET (hydrated) — concentration, per-broker accumulation and
-           the seller→buyer flow map, all for the selected window. -->
-      <section id="flow" class="panel">
-        <div class="phead"><h2>Floorsheet · Broker Conviction</h2>
-          <span class="desk-score sc-neu" id="flowScore">loading…</span>
-          <div class="win-row" id="flowWin" role="tablist" aria-label="Floorsheet window">
-            <button type="button" class="tf" data-w="1w">1W</button>
-            <button type="button" class="tf active" data-w="1m">1M</button>
-            <button type="button" class="tf" data-w="3m">3M</button>
-            <button type="button" class="tf" data-w="1y">1Y</button>
+    <!-- ⑤ FINANCIAL STATEMENTS — newest 5 reported quarters by default; the
+         period pills widen the window. -->
+    <section id="statements" class="panel">
+      <div class="phead"><h2>Financial Statements · last 8 quarters</h2>
+        <a class="link" href="#fund">Ratios &amp; trend ↑</a></div>
+      <div class="pbody">
+        <div id="stmt-full">
+          <div class="fm-controls">
+            <div class="fm-tabs" id="fm-tabs" role="tablist" aria-label="Statement">
+              <button type="button" class="fm-tab active" data-st="BS" role="tab">Balance Sheet</button>
+              <button type="button" class="fm-tab" data-st="IS" role="tab">Income Statement</button>
+              <button type="button" class="fm-tab" data-st="KS" role="tab">Key Statistics</button>
+            </div>
+            <div class="fm-side">
+              <select id="fm-version" class="fa-select fm-version" aria-label="Data version"></select>
+              <div class="fm-pills" id="fm-pills" role="group" aria-label="Periods">
+                <button type="button" class="fm-pill" data-n="5">5</button>
+                <button type="button" class="fm-pill active" data-n="8">8</button>
+                <button type="button" class="fm-pill" data-n="12">12</button>
+                <button type="button" class="fm-pill" data-n="24">24</button>
+              </div>
+            </div>
           </div>
-          <a class="link" href="/floorsheet/">Open floorsheet ↗</a></div>
-        <div class="pbody" id="flowBody"><div class="loading">Loading broker activity…</div></div>
-
-        {# Seller→buyer flow lives on the broker desk (time slider, playback, full pair table) — link there rather than keep a thinner copy. #}
-        <div class="pbody flow-extra">
-          <a class="flow-link" id="flowMapLink" href="/floorsheet/?tab=flowmap&symbol={{ symbol }}&range=1m">
-            <span class="fl-ic">⇄</span>
-            <span>
-              <b>Seller → buyer flow map</b>
-              <em>Open the broker desk's flow map for {{ symbol }} — ribbon widths, intraday
-                time window, session playback and the full pair table.</em>
-            </span>
-            <span class="fl-go">↗</span>
-          </a>
+          <div class="fm-wrap"><table class="fm-table" id="fm-table"></table></div>
         </div>
-      </section>
-      <!-- AI NARRATIVE (Gemini, on-demand) -->
-      <section id="ai" class="panel">
-        <div class="phead"><h2>AI Narrative Analysis · Gemini</h2>
-          <button class="s360-btn" id="aiGenBtn" type="button">✨ Generate</button></div>
-        <div class="pbody" id="aiNarrative">
-          <div class="notice">Generate a Gemini read of <b>{{ symbol }}</b>’s support/resistance structure, momentum and recent price path. Runs on demand (signed-in users); the result is cached for the trading day.</div>
-        </div>
-      </section>
+      </div>
+    </section>
       </main>
 
       <aside class="rail rail-r">
@@ -255,33 +247,42 @@
       </aside>
     </div>
 
-    <!-- ⑤ FINANCIAL STATEMENTS — newest 5 reported quarters by default; the
-         period pills widen the window. -->
-    <section id="statements" class="panel">
-      <div class="phead"><h2>Financial Statements · last 8 quarters</h2>
-        <a class="link" href="#fund">Ratios &amp; trend ↑</a></div>
-      <div class="pbody">
-        <div id="stmt-full">
-          <div class="fm-controls">
-            <div class="fm-tabs" id="fm-tabs" role="tablist" aria-label="Statement">
-              <button type="button" class="fm-tab active" data-st="BS" role="tab">Balance Sheet</button>
-              <button type="button" class="fm-tab" data-st="IS" role="tab">Income Statement</button>
-              <button type="button" class="fm-tab" data-st="KS" role="tab">Key Statistics</button>
-            </div>
-            <div class="fm-side">
-              <select id="fm-version" class="fa-select fm-version" aria-label="Data version"></select>
-              <div class="fm-pills" id="fm-pills" role="group" aria-label="Periods">
-                <button type="button" class="fm-pill" data-n="5">5</button>
-                <button type="button" class="fm-pill active" data-n="8">8</button>
-                <button type="button" class="fm-pill" data-n="12">12</button>
-                <button type="button" class="fm-pill" data-n="24">24</button>
-              </div>
-            </div>
+      <!-- ⑦ FLOORSHEET (hydrated) — concentration, per-broker accumulation and
+           the seller→buyer flow map, all for the selected window. -->
+      <section id="flow" class="panel">
+        <div class="phead"><h2>Floorsheet · Broker Conviction</h2>
+          <span class="desk-score sc-neu" id="flowScore">loading…</span>
+          <div class="win-row" id="flowWin" role="tablist" aria-label="Floorsheet window">
+            <button type="button" class="tf" data-w="1w">1W</button>
+            <button type="button" class="tf active" data-w="1m">1M</button>
+            <button type="button" class="tf" data-w="3m">3M</button>
+            <button type="button" class="tf" data-w="1y">1Y</button>
           </div>
-          <div class="fm-wrap"><table class="fm-table" id="fm-table"></table></div>
+          <a class="link" href="/floorsheet/">Open floorsheet ↗</a></div>
+        <div class="pbody" id="flowBody"><div class="loading">Loading broker activity…</div></div>
+
+        {# Seller→buyer flow lives on the broker desk (time slider, playback, full pair table) — link there rather than keep a thinner copy. #}
+        <div class="pbody flow-extra">
+          <a class="flow-link" id="flowMapLink" href="/floorsheet/?tab=flowmap&symbol={{ symbol }}&range=1m">
+            <span class="fl-ic">⇄</span>
+            <span>
+              <b>Seller → buyer flow map</b>
+              <em>Open the broker desk's flow map for {{ symbol }} — ribbon widths, intraday
+                time window, session playback and the full pair table.</em>
+            </span>
+            <span class="fl-go">↗</span>
+          </a>
         </div>
-      </div>
-    </section>
+      </section>
+      <!-- AI NARRATIVE (Gemini, on-demand) -->
+      <section id="ai" class="panel">
+        <div class="phead"><h2>AI Narrative Analysis · Gemini</h2>
+          <button class="s360-btn" id="aiGenBtn" type="button">✨ Generate</button></div>
+        <div class="pbody" id="aiNarrative">
+          <div class="notice">Generate a Gemini read of <b>{{ symbol }}</b>’s support/resistance structure, momentum and recent price path. Runs on demand (signed-in users); the result is cached for the trading day.</div>
+        </div>
+      </section>
+
 
 
 

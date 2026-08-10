@@ -27,6 +27,9 @@
   // Endpoint for the sub-index comparison chart (independent of the polled
   // dashboard payload so its heavy historical series isn't re-fetched every tick).
   var COMPARE_URL = "/insights/subindices/";
+  // Windowed sector turnover (weekly / monthly / quarterly / custom range).
+  var SECTOR_URL = "/insights/sector-turnover/";
+  var LS_SECTOR_PERIOD = "mi.sectorPeriod";
   var COMPARE_DEFAULT_DAYS = 250;
   // One distinct colour per series, in the backend's order: NEPSE first (drawn
   // emphasised below), then the aggregate indices, then the 13 sector sub-indices.
@@ -44,7 +47,10 @@
     charts: {},
     heatmapSector: "ALL",
     heatmapZoom: 1,
-    compare: { days: COMPARE_DEFAULT_DAYS, data: null, inFlight: false }
+    compare: { days: COMPARE_DEFAULT_DAYS, data: null, inFlight: false },
+    // Sector turnover card: "1D" paints straight from the polled payload; every
+    // other period is served by SECTOR_URL and cached here.
+    sector: { period: "1D", today: [], data: null, inFlight: false }
   };
 
   // ── Formatting helpers ─────────────────────────────────────────────────
@@ -559,15 +565,28 @@
   // Sector turnover share — where the money flowed today (complements the
   // Sector Performance list, which shows daily % change).
   function renderSectorChart(sectors) {
+    if (sectors) state.sector.today = sectors;
+    // Anything but "Daily" is painted from the windowed feed once it lands.
+    var windowed = state.sector.period !== "1D" ? state.sector.data : null;
+    var source = windowed ? windowed.sectors : state.sector.today;
+    updateSectorHint(windowed);
+
     var t = baseChartOpts();
-    var rows = (sectors || []).filter(function (s) { return isNum(s.turnover) && s.turnover > 0; });
+    var rows = (source || []).filter(function (s) { return isNum(s.turnover) && s.turnover > 0; });
     rows.sort(function (a, b) { return b.turnover - a.turnover; });
     var labels = rows.map(function (s) { return s.sector; });
     var data = rows.map(function (s) { return Math.round(s.turnover); });
     var total = data.reduce(function (sum, v) { return sum + v; }, 0);
 
     var opts = {
-      chart: { type: "bar", height: "100%", toolbar: { show: false }, fontFamily: "Manrope, sans-serif" },
+      chart: {
+        type: "bar", height: "100%", toolbar: { show: false }, fontFamily: "Manrope, sans-serif",
+        events: {
+          mounted: shrinkSectorAmountLabels,
+          updated: shrinkSectorAmountLabels,
+          animationEnd: shrinkSectorAmountLabels
+        }
+      },
       series: [{ name: "Turnover", data: data }],
       colors: SECTOR_COLORS.slice(0, Math.max(data.length, 1)),
       legend: { show: false },
@@ -583,10 +602,12 @@
       },
       dataLabels: {
         enabled: true,
+        // An array makes Apex render one tspan per line: the raw turnover on
+        // top (shrunk by shrinkSectorAmountLabels once painted), share below.
         formatter: function (v) {
-          return total ? (v / total * 100).toFixed(1) + "%" : "";
+          return [fmtCompact(v), total ? (v / total * 100).toFixed(1) + "%" : ""];
         },
-        offsetY: -14,
+        offsetY: -22,
         style: { fontSize: "11px", fontWeight: 700, colors: [t.foreColor] },
         background: { enabled: false },
         dropShadow: { enabled: false }
@@ -611,10 +632,115 @@
         }
       },
       grid: { borderColor: t.grid, strokeDashArray: 3, xaxis: { lines: { show: false } }, yaxis: { lines: { show: true } } },
-      tooltip: { theme: themeName(), y: { formatter: function (v) { return fmtMoney(v); } } },
+      tooltip: {
+        theme: themeName(),
+        custom: function (op) {
+          var r = rows[op.dataPointIndex] || {};
+          var html = '<div style="padding:6px 10px;font-family:Manrope">' +
+            "<strong>" + escapeHtml(r.sector || "") + "</strong><br/>" +
+            "Turnover: " + fmtMoney(r.turnover) + "<br/>" +
+            "Share: " + (total ? (r.turnover / total * 100).toFixed(1) + "%" : "—");
+          if (isNum(r.avg_per_session)) html += "<br/>Avg / session: " + fmtMoney(r.avg_per_session);
+          if (isNum(r.change_pct)) html += "<br/>vs prev period: " + fmtPct(r.change_pct);
+          return html + "</div>";
+        }
+      },
       noData: { text: "No sector turnover available", style: { color: t.foreColor } }
     };
     mountChart("chart-sectors", "sectors", opts);
+  }
+
+  // Apex applies one style to a whole data label, so the second line (the
+  // turnover amount) is shrunk here after paint. Purely cosmetic and fully
+  // guarded — if Apex ever changes its label markup the labels just stay
+  // uniform rather than throwing mid-render.
+  function shrinkSectorAmountLabels() {
+    var host = el("chart-sectors");
+    if (!host) return;
+    try {
+      var labels = host.querySelectorAll(".apexcharts-datalabels text");
+      Array.prototype.forEach.call(labels, function (text) {
+        var lines = text.querySelectorAll("tspan");
+        if (lines.length < 2) return;
+        var amount = lines[0];
+        amount.style.fontSize = "9px";
+        amount.style.fontWeight = "600";
+        amount.style.opacity = "0.72";
+      });
+    } catch (e) { /* cosmetic only */ }
+  }
+
+  // Card subtitle doubles as the window read-out: which dates the columns cover.
+  function updateSectorHint(windowed) {
+    var node = el("sector-turnover-hint");
+    if (!node) return;
+    if (!windowed) { node.textContent = "column = turnover share · today"; return; }
+    node.textContent = "column = turnover share · " + windowed.from + " → " + windowed.to +
+      " (" + windowed.sessions + " session" + (windowed.sessions === 1 ? "" : "s") + ")";
+  }
+
+  function fetchSectorTurnover(period, from, to) {
+    state.sector.period = period;
+    if (period === "1D") { state.sector.data = null; renderSectorChart(null); return; }
+    if (state.sector.inFlight) return;
+    state.sector.inFlight = true;
+    var url = SECTOR_URL + "?period=" + encodeURIComponent(period);
+    if (period === "CUSTOM") {
+      url += "&from=" + encodeURIComponent(from || "") + "&to=" + encodeURIComponent(to || "");
+    }
+    fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" }, credentials: "same-origin" })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (d) {
+        if (d.ok === false) throw new Error(d.error || "Service error");
+        state.sector.data = d;
+        renderSectorChart(null);
+      })
+      .catch(function (err) {
+        if (window.console) console.warn("Sector turnover fetch failed:", err.message);
+      })
+      .finally(function () { state.sector.inFlight = false; });
+  }
+
+  function initSectorRange() {
+    var box = el("sector-range");
+    if (!box) return;
+    var customBox = el("sector-range-custom");
+    var btns = box.querySelectorAll(".mi-range-btn");
+    var saved;
+    try { saved = localStorage.getItem(LS_SECTOR_PERIOD); } catch (e) {}
+    // A saved CUSTOM range isn't restorable without its dates — fall back to Daily.
+    if (saved && saved !== "CUSTOM") state.sector.period = saved;
+
+    function paintActive() {
+      btns.forEach(function (b) {
+        b.classList.toggle("is-active", b.getAttribute("data-period") === state.sector.period);
+      });
+      if (customBox) customBox.hidden = state.sector.period !== "CUSTOM";
+    }
+
+    btns.forEach(function (b) {
+      b.addEventListener("click", function () {
+        var period = b.getAttribute("data-period");
+        state.sector.period = period;
+        paintActive();
+        try { localStorage.setItem(LS_SECTOR_PERIOD, period); } catch (e) {}
+        // CUSTOM waits for Apply — there are no dates to query yet.
+        if (period !== "CUSTOM") fetchSectorTurnover(period);
+      });
+    });
+
+    var apply = el("sector-apply");
+    if (apply) {
+      apply.addEventListener("click", function () {
+        var from = (el("sector-from") || {}).value;
+        var to = (el("sector-to") || {}).value;
+        if (!from || !to) return;
+        fetchSectorTurnover("CUSTOM", from, to);
+      });
+    }
+
+    paintActive();
+    if (state.sector.period !== "1D") fetchSectorTurnover(state.sector.period);
   }
 
   function pctColor(pct) {
@@ -957,6 +1083,9 @@
         });
       });
     }
+
+    // Sector turnover period buttons (Daily … Yearly + custom date range).
+    initSectorRange();
 
     // Resume promptly when the tab regains focus.
     document.addEventListener("visibilitychange", function () {

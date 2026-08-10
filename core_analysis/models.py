@@ -398,6 +398,61 @@ class HoldingCost(models.Model):
         return f"{self.symbol} @ {self.wacc_rate}"
 
 
+class PortfolioSnapshot(models.Model):
+    """
+    Table: portfolio_snapshot
+    What one portfolio was actually worth at the close of one session.
+
+    Why this exists: ``Holding`` keeps only the CURRENT quantity, and its
+    ``updated_at`` is ``auto_now`` — so it is overwritten on every sync and the
+    portfolio has no memory of itself. Every metric in ``portfolio_analytics``
+    therefore reconstructs history by applying TODAY's weights backwards over
+    past prices, which answers "how would this basket have behaved" rather than
+    "how did my portfolio behave". A name bought last week inherits its full
+    two-year drawdown. Risk numbers survive that simplification; performance
+    numbers (equity curve, Sharpe, tracking error) do not, which is why they
+    were never built.
+
+    One row per portfolio per session, written by the EOD price sync. ``weights``
+    stores the per-symbol {symbol: {"qty", "price", "value"}} breakdown, so a
+    later reconstruction can recompute true historical weights without needing
+    a row per holding per day.
+    """
+    portfolio = models.ForeignKey(
+        Portfolio, on_delete=models.CASCADE, related_name="snapshots"
+    )
+    # The NEPSE trading session this values against — NOT the write time, so a
+    # late or re-run sync lands on the session it priced, and re-running is an
+    # idempotent overwrite rather than a duplicate.
+    business_date = models.DateField(db_index=True)
+    total_value = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    total_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
+    holdings_count = models.PositiveIntegerField(default=0)
+    # {symbol: {"qty": float, "price": float, "value": float}}
+    weights = models.JSONField(default=dict, blank=True)
+    # "sync" when written by the EOD hook, "ledger" when reconstructed from an
+    # imported broker statement — reconstructed history is an inference and a
+    # chart should be able to say so.
+    SOURCE_SYNC = "sync"
+    SOURCE_LEDGER = "ledger"
+    SOURCE_CHOICES = ((SOURCE_SYNC, "EOD sync"), (SOURCE_LEDGER, "Ledger reconstruction"))
+    source = models.CharField(
+        max_length=12, choices=SOURCE_CHOICES, default=SOURCE_SYNC, db_index=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "portfolio_snapshot"
+        ordering = ["-business_date"]
+        unique_together = (("portfolio", "business_date"),)
+        indexes = [
+            models.Index(fields=["portfolio", "business_date"]),
+        ]
+
+    def __str__(self):
+        return f"{self.portfolio_id} @ {self.business_date}: {self.total_value}"
+
+
 class BrokerLedgerImport(models.Model):
     """One uploaded broker account-statement file and its import audit trail."""
 
@@ -802,3 +857,57 @@ class NepseMarketCapDaily(models.Model):
 
     def __str__(self):
         return f"{self.business_date} — {self.market_capitalization}"
+
+
+class ProposedDividend(models.Model):
+    """
+    Table: proposed_dividends
+
+    Board-proposed dividends (bonus + cash) per company per fiscal year, scraped
+    from ShareSansar's /proposed-dividend DataTables feed.
+
+    "Proposed" means announced by the board but not necessarily approved at the
+    AGM or distributed yet — that is exactly why the dates are nullable: a fresh
+    announcement has no book-closure, distribution or bonus-listing date, and
+    they fill in over the following weeks. Re-syncing updates the same row
+    (keyed on the upstream ``source_id``) as those dates land.
+
+    ``ltp`` / ``price_as_of`` are the upstream's own price snapshot at scrape
+    time — kept for provenance only. Never use them for analytics: the local
+    NepseDailyStockPrice table is the price source and is split/bonus adjusted.
+    """
+    source_id = models.IntegerField(unique=True, help_text="ShareSansar row id")
+
+    symbol = models.CharField(max_length=20, db_index=True)
+    company_name = models.CharField(max_length=255, blank=True, default="")
+    fiscal_year = models.CharField(max_length=20, db_index=True, help_text="BS, e.g. 2081/2082")
+
+    # Percent of paid-up capital. Cash covers the tax-on-bonus portion too, which
+    # is how the exchange publishes it.
+    bonus_percent = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+    cash_percent = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+    total_percent = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+
+    announcement_date = models.DateField(null=True, blank=True, db_index=True)
+    bookclose_date = models.DateField(null=True, blank=True)
+    # Upstream ships book closure as "2025-08-11 [Closed]" — the bracketed state
+    # is split out here so the date stays a real date.
+    bookclose_status = models.CharField(max_length=40, blank=True, default="")
+    distribution_date = models.DateField(null=True, blank=True)
+    bonus_listing_date = models.DateField(null=True, blank=True)
+
+    ltp = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    price_as_of = models.DateField(null=True, blank=True)
+
+    synced_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "proposed_dividends"
+        ordering = ["-announcement_date", "symbol"]
+        indexes = [
+            models.Index(fields=["symbol", "fiscal_year"]),
+            models.Index(fields=["fiscal_year", "-announcement_date"]),
+        ]
+
+    def __str__(self):
+        return f"{self.symbol} {self.fiscal_year} — {self.total_percent}%"

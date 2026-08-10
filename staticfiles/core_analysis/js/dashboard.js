@@ -1441,7 +1441,9 @@
       const arrowMode = document.getElementById('rrgArrowMode');
       if (!chartCard || !animateBtn || !fitBtn || !maxBtn || !centerBtn || !lockBtn || !slider || !number || !arrowMode) return;
 
-      syncRrgTailControls(getRrgMaxTail());   // default: show the full trail
+      // Default to the latest dot only. The full trail is 50 bars of crossing
+      // lines, which reads as a tangle; the slider and Animate reveal the path.
+      syncRrgTailControls(1);
       centerBtn.classList.add('active');
 
       const refreshScaleButtons = () => {
@@ -1555,7 +1557,6 @@
       const normalized = Math.max(1, Math.min(Number(value) || maxTail, maxTail));
       const slider = document.getElementById('rrgIndicesTailSlider');
       const number = document.getElementById('rrgIndicesTailNumber');
-      const hidden = document.getElementById('rrgIndicesTailLengthInput');
       if (slider) {
         slider.max = String(maxTail);
         slider.value = String(normalized);
@@ -1564,7 +1565,10 @@
         number.max = String(maxTail);
         number.value = String(normalized);
       }
-      if (hidden) hidden.value = String(normalized);
+      // The form's hidden tail field is deliberately NOT written here. It is how
+      // many trail bars the server SENDS; this toolbar only shortens what has
+      // already arrived. Syncing it would pin the next request to the current
+      // view — and with the new default of 1, the trail could never grow back.
       return normalized;
     };
 
@@ -1580,7 +1584,8 @@
       const arrowMode = document.getElementById('rrgIndicesArrowMode');
       if (!chartCard || !animateBtn || !fitBtn || !maxBtn || !centerBtn || !lockBtn || !slider || !number || !arrowMode) return;
 
-      syncRrgIndicesTailControls(number.value || slider.value || 30);
+      // Latest dot only on open, matching the company RRG above it.
+      syncRrgIndicesTailControls(1);
       centerBtn.classList.add('active');
 
       const refreshScaleButtons = () => {

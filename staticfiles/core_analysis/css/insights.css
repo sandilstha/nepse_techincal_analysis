@@ -380,6 +380,23 @@ body {
 .mi-range-btn:hover { color: var(--ink-1); background: var(--line-soft); }
 .mi-range-btn.is-active { color: #021018; background: var(--accent); border-color: var(--accent); }
 
+/* Custom date range, revealed only when the "Custom" period is picked. */
+.mi-range-custom { display: inline-flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.mi-range-custom[hidden] { display: none; }
+.mi-range-custom label {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--fs-xs); font-weight: 600; color: var(--ink-3);
+}
+.mi-range-custom input[type="date"] {
+  font: inherit; font-size: var(--fs-xs); color: var(--ink-1);
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 6px; padding: 3px 6px;
+}
+.mi-range-custom .mi-range-btn { border-color: var(--line); }
+
+/* Sector Turnover card: period toolbar sits between the head and the chart. */
+.mi-sector-card .mi-card-tools { justify-content: flex-start; margin-bottom: var(--sp-2); }
+
 /* ── Index OHLC (Lightweight Charts) card ─────────────────────────────── */
 .mi-ohlc-card { display: flex; flex-direction: column; }
 .mi-draw-toolbar {

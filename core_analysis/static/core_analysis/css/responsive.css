@@ -108,6 +108,25 @@
   }
   .rx-scroll > table thead th:first-child { z-index: 4; }
 
+  /* Tables that already ship their own scrolling wrapper are skipped by
+     responsive.js (nesting a second one would break their sticky headers), so
+     they need the pinned label column applied directly. Without this they
+     scroll sideways with nothing to anchor the row you are reading. */
+  .pf-table-wrap .pf-table th:first-child,
+  .pf-table-wrap .pf-table td:first-child,
+  .pf-mini-table-wrap .pf-mini-table th:first-child,
+  .pf-mini-table-wrap .pf-mini-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--surface-2, var(--bg-raised, #0d1117));
+    box-shadow: 1px 0 0 var(--line, rgba(128, 128, 128, .3));
+  }
+  /* The header's own `position: sticky; top: 0` and this rule meet in the
+     top-left cell, which must outrank both to avoid being scrolled over. */
+  .pf-table-wrap .pf-table thead th:first-child,
+  .pf-mini-table-wrap .pf-mini-table thead th:first-child { z-index: 4; }
+
   /* Charts: canvases sized for a desk are the main source of sideways scroll. */
   canvas, svg.dsx-flow-svg, .chart-wrap, .mi-chart {
     max-width: 100% !important;
@@ -128,8 +147,25 @@
   .fm-tabs, .fm-pills, .fm-controls, .fm-side { flex-wrap: wrap; }
   .fm-side { width: 100%; }
 
-  /* Two-up rows that still read at 480px; anything narrower stacks. */
-  .pf-sec-row, .peer .row, .pf-fac-srow {
-    grid-template-columns: minmax(0, 1fr) auto !important;
+  /* NOTE: .pf-sec-row / .pf-fac-srow / .peer .row are deliberately NOT touched.
+     They look like they need collapsing but do not: their fixed tracks total
+     ~290px, ~200px and ~205px, so they already fit at 390px. Forcing them to two
+     columns re-flowed their 3-4 children onto two rows and split each bar from
+     its own percentage — worse than leaving them alone. Only the label track is
+     trimmed, so a long sector name gives the bar more room. */
+  .pf-sec-row { grid-template-columns: 104px minmax(0, 1fr) 52px 68px; }
+  .pf-fac-srow { grid-template-columns: 104px minmax(0, 1fr) 48px; }
+
+  /* Genuinely too wide: six tracks (name + meta + four buttons) totalling well
+     over 500px, so the archived-portfolio row overflowed the viewport. Stack the
+     labels and let the four actions share a row of their own. */
+  .pf-archived-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+  .pf-archived-row .pf-archived-name,
+  .pf-archived-row .pf-archived-meta { grid-column: 1 / -1; }
+  .pf-archived-row .pf-btn { min-height: 36px; padding-left: 4px; padding-right: 4px; }
+
+  /* Name + type + submit on one row leaves the button ~30px at this width. */
+  .pf-manager-form { grid-template-columns: minmax(0, 1fr); }
 }

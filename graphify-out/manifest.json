@@ -55,8 +55,8 @@
     "semantic_hash": "71e15a286b4cf4f6c11d9dfeb50aa086"
   },
   "core_analysis/insights_views.py": {
-    "mtime": 1785478618.5787494,
-    "ast_hash": "7d1e722a8ef74e87ad8a6383c005f36e",
+    "mtime": 1786333564.7936006,
+    "ast_hash": "6ddef11941f80c735e9831a21b56d2de",
     "semantic_hash": ""
   },
   "core_analysis/management/commands/sync_and_calculate.py": {
@@ -70,8 +70,8 @@
     "semantic_hash": ""
   },
   "core_analysis/management/commands/sync_nepse_data.py": {
-    "mtime": 1782383318.540115,
-    "ast_hash": "8cfcfcf237615d59eb0f2e45724a9024",
+    "mtime": 1786335232.3435543,
+    "ast_hash": "2525b2d1d81c0af18c8370f0fcce3de3",
     "semantic_hash": ""
   },
   "core_analysis/migrations/0001_initial.py": {
@@ -100,8 +100,8 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "core_analysis/models.py": {
-    "mtime": 1785479497.0764182,
-    "ast_hash": "a5b27befbd4c0b4d422e06b6fc6ea593",
+    "mtime": 1786334681.2274768,
+    "ast_hash": "97cf87bfc99768fcccd9331063bebe78",
     "semantic_hash": ""
   },
   "core_analysis/serializers.py": {
@@ -125,8 +125,8 @@
     "semantic_hash": ""
   },
   "core_analysis/services/RGG_indices.py": {
-    "mtime": 1783331074.547892,
-    "ast_hash": "017801d9e2fe79d52b2398016c3dc0da",
+    "mtime": 1786341116.2919314,
+    "ast_hash": "81941ac4d5a3dbad2409101ea9e7c106",
     "semantic_hash": ""
   },
   "core_analysis/services/RSI_SMA.py": {
@@ -165,8 +165,8 @@
     "semantic_hash": "a696b07ac5b1787314b9da914e0e0cfb"
   },
   "core_analysis/services/market_insights.py": {
-    "mtime": 1785817040.8199537,
-    "ast_hash": "bb3cadad2fd84b8dfaae6878b7dc84c6",
+    "mtime": 1786333687.9535608,
+    "ast_hash": "d1e8771a01a8f23b881bee046b4da591",
     "semantic_hash": ""
   },
   "core_analysis/services/moving_average.py": {
@@ -215,8 +215,8 @@
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/dashboard.js": {
-    "mtime": 1784275194.4260614,
-    "ast_hash": "0ab29c251397315757a827f98fbf8701",
+    "mtime": 1786344258.3472185,
+    "ast_hash": "2175463ebe81504c35aebe2e829da95a",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/floorsheet-brokers.js": {
@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/insights.js": {
-    "mtime": 1785229869.1833258,
-    "ast_hash": "479ecfb63750b29f028d9423ed0b3312",
+    "mtime": 1786334270.8875246,
+    "ast_hash": "0d80e76432b5a59bf9a78649d29c3820",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/ohlc-chart.js": {
@@ -245,8 +245,8 @@
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/workbench-ajax.js": {
-    "mtime": 1784201069.5235288,
-    "ast_hash": "1740541d8a2cbc6b83221e2c128fd49b",
+    "mtime": 1786341207.1042192,
+    "ast_hash": "23b798bdfe951512b83cb8714e8130b1",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/vendor/apexcharts.min.js": {
@@ -270,13 +270,13 @@
     "semantic_hash": ""
   },
   "core_analysis/urls.py": {
-    "mtime": 1785926679.7242289,
-    "ast_hash": "12299773817c378bf49d1b8287145f1a",
+    "mtime": 1786333576.1394522,
+    "ast_hash": "544f92d6365dfbea1bd731a9673c381d",
     "semantic_hash": ""
   },
   "core_analysis/views.py": {
-    "mtime": 1785815842.7179193,
-    "ast_hash": "0a5fe638694d6a5fae75bf664286c567",
+    "mtime": 1786341234.844457,
+    "ast_hash": "1d4e2d99dac04a1d73c74261c5e87559",
     "semantic_hash": ""
   },
   "manage.py": {
@@ -885,8 +885,8 @@
     "semantic_hash": ""
   },
   "staticfiles/core_analysis/js/dashboard.js": {
-    "mtime": 1784277655.523046,
-    "ast_hash": "0ab29c251397315757a827f98fbf8701",
+    "mtime": 1786344280.32379,
+    "ast_hash": "2175463ebe81504c35aebe2e829da95a",
     "semantic_hash": ""
   },
   "staticfiles/core_analysis/js/floorsheet-brokers.js": {
@@ -905,8 +905,8 @@
     "semantic_hash": ""
   },
   "staticfiles/core_analysis/js/insights.js": {
-    "mtime": 1785754560.8626559,
-    "ast_hash": "479ecfb63750b29f028d9423ed0b3312",
+    "mtime": 1786334278.8934052,
+    "ast_hash": "0d80e76432b5a59bf9a78649d29c3820",
     "semantic_hash": ""
   },
   "staticfiles/core_analysis/js/ohlc-chart.js": {
@@ -930,8 +930,8 @@
     "semantic_hash": ""
   },
   "staticfiles/core_analysis/js/workbench-ajax.js": {
-    "mtime": 1784273647.555459,
-    "ast_hash": "1740541d8a2cbc6b83221e2c128fd49b",
+    "mtime": 1786341299.7906184,
+    "ast_hash": "23b798bdfe951512b83cb8714e8130b1",
     "semantic_hash": ""
   },
   "staticfiles/core_analysis/vendor/apexcharts.min.js": {
@@ -1120,13 +1120,13 @@
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/stock360.js": {
-    "mtime": 1785926597.7975607,
-    "ast_hash": "86ea435e1a18b7b2f9e125809c23ded1",
+    "mtime": 1786335498.7737403,
+    "ast_hash": "573a263004a0e0ca7e482301f513a0b4",
     "semantic_hash": ""
   },
   "core_analysis/stock360_views.py": {
-    "mtime": 1785926679.7242289,
-    "ast_hash": "6c7f548923eaf4ab566f876c7e6e3c4e",
+    "mtime": 1786334400.8527305,
+    "ast_hash": "2e599bb88f75b54c126c1e65ff209c5e",
     "semantic_hash": ""
   },
   "core_analysis/services/funda_financials.py": {
@@ -1170,8 +1170,8 @@
     "semantic_hash": ""
   },
   "core_analysis/services/nepse_reports.py": {
-    "mtime": 1785926013.0687306,
-    "ast_hash": "803d55695f9d63b895ebb1b27b1fdc41",
+    "mtime": 1786014625.081738,
+    "ast_hash": "f0e1249e31bb3ac1d8eea2a22a9e9138",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/nepse-data.js": {
@@ -1205,8 +1205,8 @@
     "semantic_hash": ""
   },
   "staticfiles/core_analysis/js/stock360.js": {
-    "mtime": 1785993090.898285,
-    "ast_hash": "86ea435e1a18b7b2f9e125809c23ded1",
+    "mtime": 1786335507.085924,
+    "ast_hash": "573a263004a0e0ca7e482301f513a0b4",
     "semantic_hash": ""
   },
   "whole_history_backtest.py": {
@@ -1230,8 +1230,8 @@
     "semantic_hash": ""
   },
   "core_analysis/services/stock360_analytics.py": {
-    "mtime": 1785923190.3206866,
-    "ast_hash": "94c93e21de375746f2d2ca7ca16d3bf7",
+    "mtime": 1786335410.343408,
+    "ast_hash": "bd3c414077ef148c126ab52b87ef660e",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/valuation.js": {
@@ -1252,6 +1252,26 @@
   "staticfiles/core_analysis/js/valuation.js": {
     "mtime": 1785993090.898285,
     "ast_hash": "b9fcdff6d3762ef73afc9cdff9d5ea77",
+    "semantic_hash": ""
+  },
+  "core_analysis/management/commands/sync_proposed_dividend.py": {
+    "mtime": 1786335207.3075283,
+    "ast_hash": "0a527bad305ac59039090885715fa995",
+    "semantic_hash": ""
+  },
+  "core_analysis/migrations/0017_proposeddividend.py": {
+    "mtime": 1786334767.0766644,
+    "ast_hash": "c00b0db9cad00bfe6a6f8cc0cedcaa21",
+    "semantic_hash": ""
+  },
+  "core_analysis/migrations/0018_portfoliosnapshot.py": {
+    "mtime": 1786334767.0766644,
+    "ast_hash": "15bf4deaf58484d0730021b965c636a1",
+    "semantic_hash": ""
+  },
+  "core_analysis/services/proposed_dividend.py": {
+    "mtime": 1786335196.9676738,
+    "ast_hash": "b15c0ab05b20eb2e884b2c5cb25f0cb8",
     "semantic_hash": ""
   }
 }

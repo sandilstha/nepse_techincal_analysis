@@ -472,19 +472,60 @@ def _peer_rank(snap, pb, pe, roe):
 # Dividends
 # --------------------------------------------------------------------------- #
 
+def proposed_dividends(symbol, limit=6):
+    """Board-proposed dividends for one symbol, newest announcement first.
+
+    Distinct from the paid history below: these are announced but not
+    necessarily approved at the AGM or distributed yet, which is why the later
+    dates are often empty. This is also the only source that splits bonus from
+    cash — the statements feed reports a single DividendPerShare.
+    """
+    from django.db.models import F
+
+    from core_analysis.models import ProposedDividend
+
+    sym = (symbol or "").strip().upper()
+    rows = ProposedDividend.objects.filter(symbol=sym).order_by(
+        F("announcement_date").desc(nulls_last=True), "-fiscal_year"
+    )[:limit]
+    return [
+        {
+            "fy": r.fiscal_year,
+            "bonus": _f(r.bonus_percent),
+            "cash": _f(r.cash_percent),
+            "total": _f(r.total_percent),
+            "announced": r.announcement_date.isoformat() if r.announcement_date else None,
+            "bookclose": r.bookclose_date.isoformat() if r.bookclose_date else None,
+            "bookclose_status": r.bookclose_status,
+            "distribution": r.distribution_date.isoformat() if r.distribution_date else None,
+            "bonus_listing": r.bonus_listing_date.isoformat() if r.bonus_listing_date else None,
+        }
+        for r in rows
+    ]
+
+
 def dividends(symbol):
     """Per-year dividend history from the stored KeyStats rows.
 
     The source reports ``DividendPerShare`` on each quarterly row; the fiscal
     year's declared payout is the largest value seen in that year (Q4 usually
     carries it, but a company that reports it earlier is still picked up).
+
+    The ``proposed`` block rides along independently: a company can have a
+    board-proposed dividend with no fundamentals synced at all, so the card must
+    still have something to show when ``available`` is False.
     """
     from core_analysis.models import FundaFundamentalSnapshot as Snap
 
     sym = (symbol or "").strip().upper()
+    proposed = proposed_dividends(sym)
     snap = Snap.objects.filter(symbol=sym).first()
     if not snap:
-        return {"available": False, "note": f"No fundamentals synced for {sym}."}
+        return {
+            "available": False,
+            "proposed": proposed,
+            "note": f"No fundamentals synced for {sym}.",
+        }
 
     rows = ((snap.raw or {}).get("keyStats")
             or ((snap.raw or {}).get("statements") or {}).get("keyStats")
@@ -504,6 +545,7 @@ def dividends(symbol):
     if not history:
         return {
             "available": False,
+            "proposed": proposed,
             "note": "No dividend line on the stored statements for this company.",
         }
 
@@ -526,6 +568,7 @@ def dividends(symbol):
 
     return {
         "available": True,
+        "proposed": proposed,
         "period": snap.period,
         "history": history,
         "latest": latest,

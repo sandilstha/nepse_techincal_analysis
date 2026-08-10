@@ -39,6 +39,11 @@ _SYMBOL_RE = re.compile(r"^[A-Z0-9._-]{1,50}$")
 # with frequent holidays — deliberately conservative).
 _WINDOWS = (("1W", 5), ("1M", 22), ("3M", 66), ("1Y", 246))
 
+# Symbol Stock 360 / the valuation workspace open on when none is requested.
+# Previously they fell through to "whatever sorted first on the latest business
+# date", which landed on an arbitrary scrip with no fundamentals synced.
+DEFAULT_SYMBOL = "GBIME"
+
 _PAGE_CACHE_TTL = 30 * 60        # perf + S&R payload
 _AI_CACHE_TTL = 6 * 60 * 60      # Gemini narrative — one spend per symbol/day-ish
 
@@ -66,6 +71,17 @@ def _rs_h(v):
 def _valid_symbol(raw):
     sym = (raw or "").strip().upper()
     return sym if _SYMBOL_RE.match(sym) else ""
+
+
+def _default_symbol():
+    """DEFAULT_SYMBOL, or the latest-traded name if it has no local history."""
+    if NepseDailyStockPrice.objects.filter(symbol=DEFAULT_SYMBOL).exists():
+        return DEFAULT_SYMBOL
+    return (
+        NepseDailyStockPrice.objects.order_by("-business_date")
+        .values_list("symbol", flat=True)
+        .first()
+    ) or "NABIL"
 
 
 def _quote(symbol):
@@ -388,11 +404,7 @@ def stock360_view(request, symbol=None):
     """Render Stock 360 for one symbol (falls back to the latest-traded name)."""
     sym = _valid_symbol(symbol or request.GET.get("symbol"))
     if not sym:
-        sym = (
-            NepseDailyStockPrice.objects.order_by("-business_date")
-            .values_list("symbol", flat=True)
-            .first()
-        ) or "NABIL"
+        sym = _default_symbol()
 
     payload = _page_payload(sym) or {}
     context = {
@@ -559,11 +571,7 @@ def stock_valuation_view(request, symbol=None):
     """
     sym = _valid_symbol(symbol or request.GET.get("symbol"))
     if not sym:
-        sym = (
-            NepseDailyStockPrice.objects.order_by("-business_date")
-            .values_list("symbol", flat=True)
-            .first()
-        ) or "NABIL"
+        sym = _default_symbol()
     quote = _quote(sym) or {}
     return render(request, "core_analysis/stock_valuation.html", {
         "symbol": sym,
