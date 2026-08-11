@@ -602,12 +602,18 @@
 @media (max-width: 560px)  { .pf-sum-tiles { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* ── Cards / grid ────────────────────────────────────────────────────────── */
-.pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+/* align-items:start — grid items stretch to the tallest sibling by default, so
+   a short card sitting beside a long one was padded out with dead space (the
+   VaR & Drawdown card carried ~170px of it, and the row above ~150px). Each
+   card is now only as tall as its own content; rows end ragged rather than
+   padded, which is the honest read of "this card has less to say". */
+.pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
+  align-items: start; }
 @media (max-width: 1000px) { .pf-grid { grid-template-columns: 1fr; } }
 .pf-risk-attribution-grid { grid-template-columns: minmax(320px, .8fr) minmax(0, 1.2fr); }
 @media (max-width: 1180px) { .pf-risk-attribution-grid { grid-template-columns: 1fr; } }
-.pf-risk-market-grid { align-items: stretch; }
-.pf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+.pf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px;
+  align-items: start; }
 @media (max-width: 1100px) { .pf-grid-3 { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 720px)  { .pf-grid-3 { grid-template-columns: 1fr; } }
 .pf-card {
@@ -824,6 +830,41 @@
 .pf-sec-pct { font: 700 0.75rem/1 'Manrope', sans-serif; color: var(--ink-1); text-align: right; }
 .pf-sec-val { font: 500 0.6875rem/1 'Manrope', sans-serif; color: var(--ink-3); text-align: right; }
 
+/* ── Capital donut ‖ risk bars ───────────────────────────────────────────────
+   Two halves of the same question: where the money is vs where the risk is.
+   Collapses to one column on narrow screens — a 250px-wide donut beside a
+   250px-wide bar list is unreadable. */
+.pf-sec-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0; align-items: start; }
+.pf-sec-split .pf-sec-col { min-width: 0; }
+.pf-sec-split .pf-sec-col + .pf-sec-col { border-left: 1px solid var(--line); }
+@media (max-width: 1180px) {
+  .pf-sec-split { grid-template-columns: 1fr; }
+  .pf-sec-split .pf-sec-col + .pf-sec-col { border-left: 0; }
+}
+.pf-sec-donut { padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.pf-donut-svg { width: 100%; max-width: 168px; height: auto; display: block; }
+.pf-donut-svg circle { transition: opacity .15s ease; }
+.pf-donut-svg:hover circle { opacity: .55; }
+.pf-donut-svg circle:hover { opacity: 1; }
+.pf-donut-v { font: 800 0.875rem/1 'Manrope', sans-serif; fill: var(--ink-1); }
+.pf-donut-k {
+  font: 700 0.5rem/1 'Manrope', sans-serif; fill: var(--ink-3);
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.pf-donut-legend { width: 100%; display: flex; flex-direction: column; gap: 5px; }
+.pf-donut-li { display: grid; grid-template-columns: 9px 1fr auto auto; align-items: center; gap: 7px; }
+.pf-donut-li i { width: 9px; height: 9px; border-radius: 2px; display: block; }
+.pf-donut-name {
+  font: 600 0.6875rem/1.2 'Manrope', sans-serif; color: var(--ink-1);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pf-donut-pct { font: 700 0.6875rem/1 'Manrope', sans-serif; color: var(--ink-1); text-align: right; }
+.pf-donut-val { font: 500 0.625rem/1 'Manrope', sans-serif; color: var(--ink-3); text-align: right; min-width: 52px; }
+.pf-sec-bars { padding: 12px; display: flex; flex-direction: column; gap: 7px; }
+/* Narrower name column than the full-width list it replaced — the bars now
+   live in half a card, so the label has to give up room to stay legible. */
+.pf-sec-bars .pf-fac-srow { grid-template-columns: 92px 1fr 46px; }
+
 /* ── Concentration card ──────────────────────────────────────────────────── */
 .pf-conc { padding: 10px 12px; }
 .pf-conc-summary { display: flex; gap: 18px; margin-bottom: 10px; }
@@ -885,6 +926,89 @@
 .pf-var-val { font: 700 0.875rem/1 'Manrope', system-ui, sans-serif; text-align: right; }
 .num-pos { color: var(--up); }
 .num-neg { color: var(--down); }
+
+/* ── Profit & Loss snapshot ──────────────────────────────────────────────── */
+.pf-snapshot { padding: 0 0 10px; }
+.pf-snap-tops {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  padding: 12px; background: var(--surface-2); border-bottom: 1px solid var(--line);
+}
+.pf-snap-side { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* Hollow ring, matching the broker convention the layout came from. */
+.pf-snap-ring {
+  width: 16px; height: 16px; border-radius: 50%; flex: 0 0 16px;
+  border: 3px solid currentColor;
+}
+.pf-snap-head { font: 700 0.8125rem/1.2 'Manrope', sans-serif; color: var(--ink-1); }
+.pf-snap-sum { display: flex; gap: 12px; margin-top: 3px; font: 700 0.75rem/1 'Manrope', sans-serif; }
+.pf-snap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 12px; }
+@media (max-width: 900px) {
+  .pf-snap-tops, .pf-snap-grid { grid-template-columns: 1fr; }
+}
+.pf-snap-col { min-width: 0; }
+.pf-snap-col-h {
+  font: 700 0.6875rem/1 'Manrope', sans-serif; color: var(--ink-2);
+  letter-spacing: .04em; margin-bottom: 8px;
+}
+/* One holding per line, stacked vertically. Side-by-side cards were only
+   ~148px wide, so "Rs -92,670" and "-Rs 2.44 L" wrapped onto two lines and the
+   two columns never lined up. A vertical list gives each number the width it
+   needs and keeps both columns on the same baseline. */
+.pf-snap-cards { display: flex; flex-direction: column; gap: 6px; }
+.pf-snap-card {
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface); padding: 7px 10px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center;
+  column-gap: 14px;
+}
+.pf-snap-r1 {
+  display: flex; align-items: baseline; gap: 8px;
+  font: 700 0.75rem/1.2 'Manrope', sans-serif; color: var(--ink-1); min-width: 0;
+}
+.pf-snap-r1 span { font-weight: 600; color: var(--ink-3); }
+.pf-snap-r2, .pf-snap-r4 {
+  display: flex; align-items: baseline; justify-content: flex-end; gap: 8px;
+  font: 700 0.75rem/1 'Manrope', sans-serif; white-space: nowrap;
+}
+/* The "Gain/Loss" caption is redundant once each row reads left-to-right, but
+   it is the only thing labelling the last pair of numbers — so clip it out of
+   the visual line rather than display:none, which would drop it from the
+   accessibility tree as well. Absolute takes it out of the grid flow. */
+.pf-snap-r3 {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+.pf-snap-r2 { color: var(--ink-2); }
+.pf-snap-r4 { min-width: 168px; }
+.pf-snap-empty { padding: 10px 0; }
+.pf-snapshot .pf-var-note { padding: 0 12px; }
+
+/* Sector P/L: diverging bars around a centre zero line. */
+.pf-plbars { display: flex; flex-direction: column; gap: 6px; }
+.pf-plbar-row {
+  display: grid; grid-template-columns: minmax(0, 118px) 1fr 84px 62px;
+  align-items: center; gap: 10px;
+}
+.pf-plbar-name {
+  font: 600 0.75rem/1.2 'Manrope', sans-serif; color: var(--ink-1);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pf-plbar-track {
+  position: relative; height: 14px; border-radius: 4px;
+  background: var(--surface-2); overflow: hidden;
+}
+.pf-plbar-track i { position: absolute; top: 2px; bottom: 2px; border-radius: 3px; }
+.pf-plbar-track i.pos { background: var(--up); }
+.pf-plbar-track i.neg { background: var(--down); }
+/* Zero axis sits above the bars so the split point stays visible even when a
+   bar runs right up to it. */
+.pf-plbar-zero {
+  position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+  background: var(--ink-3); opacity: .55;
+}
+.pf-plbar-val, .pf-plbar-pct {
+  font: 700 0.75rem/1 'Manrope', sans-serif; text-align: right; white-space: nowrap;
+}
 .pf-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 8px 0 2px; }
 .pf-stat {
   background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm);
@@ -896,6 +1020,15 @@
 .pf-var-note, .pf-stress .pf-var-note {
   font: 500 0.6875rem/1.45 'Manrope', sans-serif; color: var(--ink-3); margin-top: 7px;
 }
+/* Caveat that changes how a number should be read (e.g. Sharpe below the
+   risk-free rate), so it must not look like ordinary footnote text. */
+.pf-warn-note {
+  color: var(--ink-2); background: var(--warn-soft, rgba(230, 176, 74, .12));
+  border-left: 3px solid var(--warn, #e6b04a);
+  border-radius: 0 6px 6px 0; padding: 7px 10px;
+}
+/* Correlation card: keep the pair bars readable when many rows stack up. */
+.pf-corr .pf-fac-srow .pf-sec-name { font-variant-numeric: tabular-nums; }
 
 /* ── Stress scenarios card ───────────────────────────────────────────────── */
 .pf-stress { padding: 10px 12px; }

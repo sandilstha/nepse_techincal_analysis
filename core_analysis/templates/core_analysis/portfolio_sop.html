@@ -92,7 +92,10 @@
       <a href="#sectors">13. Sector-weight methodology</a>
       <a href="#concentration">14. Concentration &amp; Diversification</a>
       <h6>Appendix</h6>
-      <a href="#limitations">15. Interpretation guide &amp; limitations</a>
+      <a href="#pl-snapshot">14b. Profit &amp; loss snapshot</a>
+      <a href="#performance">15. Risk-adjusted performance</a>
+      <a href="#correlation">16. Correlation &amp; diversification ratio</a>
+      <a href="#limitations">17. Interpretation guide &amp; limitations</a>
     </nav>
 
     <!-- ── Document ──────────────────────────────────────────────────── -->
@@ -617,9 +620,106 @@ risk contributionᵢ = RCᵢ ÷ portfolio factor variance × 100       (RCᵢ fr
           missing prints contribute zero under the same convention as portfolio VaR.</p>
       </section>
 
+      <!-- 14b ───────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="pl-snapshot">
+        <p class="sop-kicker">Section 14b</p>
+        <h3>Profit &amp; Loss Snapshot</h3>
+        <p><b>Purpose.</b> The first question anyone asks of a portfolio: what is up, what is
+          down, and by how much. Counts winners and losers on <b>unrealised</b> P/L and shows the
+          best and worst holdings.</p>
+        <span class="sop-formula">holding P/L      = market value − (WACC × quantity)
+holding P/L %    = P/L ÷ cost value × 100
+side total       = Σ P/L over that side
+side %           = Σ P/L ÷ Σ cost value        (cost-weighted, not an average of percentages)</span>
+        <div class="sop-facts">
+          <div class="sop-fact"><b>Requires</b><span>WACC cost basis (My WACC import)</span></div>
+          <div class="sop-fact"><b>Ranked by</b><span>Percentage, not rupees</span></div>
+          <div class="sop-fact"><b>Shown</b><span>Top 4 each side</span></div>
+          <div class="sop-fact"><b>Excluded</b><span>Holdings with no cost basis</span></div>
+        </div>
+        <p><b>Why percentage, not rupees.</b> The biggest rupee gain is almost always simply the
+          biggest position — it describes position sizing rather than the holding. Percentage
+          answers "which decision worked", which is the useful read. Side totals stay in rupees
+          because that is the money actually at stake.</p>
+        <p class="sop-note"><b>Par-priced lots distort the percentage.</b> The broker's WACC report
+          assigns a cost of Rs 100 to bonus and IPO lots. Their percentage gain is arithmetically
+          correct against that basis but can look extreme (a scrip trading in the thousands against
+          a Rs 100 basis shows a four-figure percentage). Read those against the rupee column.
+          This is unrealised P/L only — realised gains live in the Broker Ledger.</p>
+      </section>
+
       <!-- 15 ────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="performance">
+        <p class="sop-kicker">Section 15</p>
+        <h3>Risk-Adjusted Performance</h3>
+        <p><b>Purpose.</b> Every other card asks how much risk the book carries. This one asks
+          whether that risk was <i>paid for</i>, by comparing the portfolio against the NEPSE Index
+          and against the risk-free rate.</p>
+        <span class="sop-formula">Sharpe            = (R_p − R_f) / σ_p                    total risk
+Treynor           = (R_p − R_f) / β_p                    systematic risk
+M²                = (R_p − R_f) × (σ_m / σ_p) + R_f      re-levered to NEPSE volatility
+M² alpha          = M² − R_m
+Jensen's alpha    = R_p − [R_f + β_p × (R_m − R_f)]      vs the CAPM required return
+tracking error    = stdev(r_p − r_m) × √52               annualised
+information ratio = (R_p − R_m) / tracking error</span>
+        <div class="sop-facts">
+          <div class="sop-fact"><b>Frequency</b><span>Weekly returns, annualised ×52 / ×√52</span></div>
+          <div class="sop-fact"><b>Risk-free</b><span>6% p.a. (≈ 91-day T-bill)</span></div>
+          <div class="sop-fact"><b>Benchmark</b><span>NEPSE Index</span></div>
+          <div class="sop-fact"><b>Minimum history</b><span>26 shared weeks</span></div>
+        </div>
+        <p><b>Why weekly.</b> Beta is estimated on weekly returns (<a href="#beta">§4</a>) because
+          NEPSE names trade thinly and daily betas are biased toward zero. Treynor and Jensen's
+          alpha divide by that beta, so the return and volatility feeding them are sampled weekly
+          too. Mixing a weekly beta with a daily sigma would misstate every ratio on this card.</p>
+        <p><b>Which measure to read.</b> Sharpe and M² use <i>total</i> risk — the right choice when
+          this portfolio is effectively the investor's whole wealth. Treynor and Jensen's alpha use
+          <i>systematic</i> risk — the right choice when it is one sleeve of an already diversified
+          pot. The two can rank the same portfolios differently, and neither ranking is wrong; they
+          answer different questions.</p>
+        <p><b>When the ratios invert.</b> Sharpe and Treynor need a positive numerator to mean
+          anything. Below the risk-free rate a <i>riskier</i> portfolio produces a <i>less</i>
+          negative ratio, so the ranking reverses. The card flags this case explicitly and directs
+          you to alpha and active return instead.</p>
+        <p class="sop-note"><b>Not realised performance.</b> The return series applies
+          <b>current weights to past prices</b> (the same series as portfolio VaR, <a
+          href="#var-historical">§5.1</a>). It answers “how would today's book have scored over this
+          window”, not “what did this investor actually earn”. True money-weighted performance needs
+          a stored holdings history, which the desk does not yet keep.</p>
+      </section>
+
+      <!-- 16 ────────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="correlation">
+        <p class="sop-kicker">Section 16</p>
+        <h3>Correlation &amp; Diversification Ratio</h3>
+        <p><b>Purpose.</b> Effective holdings (<a href="#concentration">§14</a>) counts names.
+          This measures whether those names actually move apart. Ten NEPSE banks score well on
+          count and badly here — and the second reading is the one that matters.</p>
+        <span class="sop-formula">ρ(a,b)                = Pearson correlation of weekly returns over shared weeks
+average correlation   = mean of all measurable pairs
+diversification ratio = σ_portfolio / average σ_holding × 100      lower is better</span>
+        <div class="sop-facts">
+          <div class="sop-fact"><b>Low</b><span>avg ρ &lt; 0.50 — genuinely useful</span></div>
+          <div class="sop-fact"><b>Moderate</b><span>0.50 – 0.75</span></div>
+          <div class="sop-fact"><b>High</b><span>≥ 0.75 — little benefit left</span></div>
+          <div class="sop-fact"><b>Minimum overlap</b><span>26 shared weeks per pair</span></div>
+        </div>
+        <p><b>Interpretation.</b> A diversification ratio of 100% means the portfolio is exactly as
+          volatile as the average holding — combining the names bought nothing. The lower the ratio,
+          the more the holdings offset one another. Both numerator and denominator are computed from
+          the same weekly series so the ratio is not comparing two sampling frequencies.</p>
+        <p><b>The point.</b> Adding more holdings does not diversify a portfolio; adding holdings
+          that behave <i>differently</i> does. Pairs are listed most- and least-correlated so it is
+          visible which positions are duplicating an existing exposure and which are doing the real
+          work.</p>
+        <p class="sop-note">Pairs without 26 shared weeks are skipped rather than estimated, so a
+          recently listed or very thin name may not appear. The average is over measurable pairs
+          only, and is unweighted — it describes the holdings, not the capital behind them.</p>
+      </section>
+
+      <!-- 17 ────────────────────────────────────────────────────────── -->
       <section class="sop-sec" id="limitations">
-        <p class="sop-kicker">Section 15 · Appendix</p>
+        <p class="sop-kicker">Section 17 · Appendix</p>
         <h3>Interpretation guide &amp; limitations</h3>
         <ul>
           <li><b>Everything is end-of-day.</b> Intraday moves, and anything after the last sync,
