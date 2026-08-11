@@ -209,6 +209,18 @@
     <small class="pf-section-meta" id="pf-asof"></small></div>
   <div class="pf-kpis pf-overview-strip" id="pf-kpis"></div>
 
+  {% comment %}
+    Winners/losers snapshot. Sits directly under the KPI strip because it is the
+    first question anyone asks of a portfolio ("what's up, what's down") and it
+    needs no scrolling to answer. Requires the WACC cost basis; renders a prompt
+    to import it rather than an empty card when cost is missing.
+  {% endcomment %}
+  <div class="pf-card pf-snapshot-card" id="pf-snapshot-card">
+    <div class="pf-card-head">Profit &amp; Loss Snapshot
+      <a class="pf-help" href="{% url 'portfolio_sop' %}#pl-snapshot" title="Winners vs losers on unrealised P/L, and the best and worst holdings by percentage">?</a></div>
+    <div class="pf-snapshot" id="pf-snapshot"></div>
+  </div>
+
   <!-- ══ Portfolio Summary ════════════════════════════════════════════ -->
   <div class="pf-section pf-broker-section"><span>Stock Holdings
     <a class="pf-help" href="{% url 'portfolio_sop' %}#portfolio-summary" title="Portfolio Summary desk — full methodology">?</a></span></div>
@@ -314,21 +326,13 @@
   <div class="pf-section"><span>Risk &amp; Allocation
     <a class="pf-help" href="{% url 'portfolio_sop' %}#var" title="Risk methodology — VaR, stress, factor model, liquidity">?</a></span></div>
 
-  <!-- Row 1: Compliance · Value at Risk -->
+  <!-- Row 1: Value at Risk · Compliance — both are "where do we stand"
+       summaries, and they finish at similar heights (424 / 462). -->
   <div class="pf-grid pf-risk-market-grid">
     <div class="pf-card">
       <div class="pf-card-head">Value at Risk &amp; Drawdown</div>
       <div class="pf-var" id="pf-var"></div>
     </div>
-    <div class="pf-card">
-      <div class="pf-card-head">Stress Scenarios
-        <a class="pf-help" href="{% url 'portfolio_sop' %}#stress" title="Stress scenarios — beta-propagated market shocks">?</a></div>
-      <div class="pf-stress" id="pf-stress"></div>
-    </div>
-  </div>
-
-  <!-- Row 2: Compliance · Liquidity -->
-  <div class="pf-grid">
     <div class="pf-card">
       <div class="pf-card-head pf-compliance-head">
         <span>Compliance &amp; Risk Limits
@@ -336,6 +340,16 @@
         <span class="pf-compliance-summary" id="pf-compliance-summary"></span>
       </div>
       <div class="pf-compliance" id="pf-compliance"></div>
+    </div>
+  </div>
+
+  <!-- Row 2: the two stress tests — market shock beside liquidation
+       capacity (576 / 632). -->
+  <div class="pf-grid">
+    <div class="pf-card">
+      <div class="pf-card-head">Stress Scenarios
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#stress" title="Stress scenarios — beta-propagated market shocks">?</a></div>
+      <div class="pf-stress" id="pf-stress"></div>
     </div>
     <div class="pf-card">
       <div class="pf-card-head">Liquidity Stress Test
@@ -364,15 +378,49 @@
         <a class="pf-help" href="{% url 'portfolio_sop' %}#factor-model" title="Factor risk contribution compared with invested capital by sector">?</a></div>
       <div class="pf-risk-sector-subhead">Factor-model risk contribution</div>
       <div class="pf-factors" id="pf-factors"></div>
-      <div class="pf-risk-sector-subhead">Invested capital by sector
-        <a class="pf-help" href="{% url 'portfolio_sop' %}#sectors" title="Sector weights based on current market value">?</a></div>
-      <div class="pf-sectors" id="pf-sectors"></div>
+      {% comment %}
+        Capital and risk side by side, not stacked. The same sectors used to be
+        listed twice (once per measure), which made the card tall and buried the
+        comparison that matters: a sector can be a small share of invested
+        capital and a large share of risk.
+      {% endcomment %}
+      <div class="pf-sec-split">
+        <div class="pf-sec-col">
+          <div class="pf-risk-sector-subhead">Invested capital by sector
+            <a class="pf-help" href="{% url 'portfolio_sop' %}#sectors" title="Sector weights based on current market value">?</a></div>
+          <div class="pf-sec-donut" id="pf-sector-donut"></div>
+        </div>
+        <div class="pf-sec-col">
+          <div class="pf-risk-sector-subhead">Risk contribution by sector
+            <a class="pf-help" href="{% url 'portfolio_sop' %}#factor-model" title="Share of total portfolio variance contributed by each sector">?</a></div>
+          <div class="pf-sec-bars" id="pf-sector-risk"></div>
+        </div>
+      </div>
     </div>
     <div class="pf-card pf-concentration-reconciliation-card" id="pf-concentration-reconciliation">
       <div class="pf-card-head">Concentration &amp; Attribution
         <a class="pf-help" href="{% url 'portfolio_sop' %}#concentration" title="Top holdings, cumulative concentration and return/risk attribution">?</a></div>
       <div class="pf-conc" id="pf-conc"></div>
       {% include "core_analysis/_portfolio_reconciliation.html" %}
+    </div>
+  </div>
+
+  {% comment %}
+    Row 4: was the volume's biggest gap — the desk measured risk exhaustively
+    but never asked whether the risk was PAID FOR. Left card answers that
+    (Sharpe / Treynor / M² / alpha vs NEPSE); right card asks whether the
+    holdings actually move apart, which a holdings count cannot tell you.
+  {% endcomment %}
+  <div class="pf-grid pf-risk-attribution-grid">
+    <div class="pf-card" id="pf-performance-card">
+      <div class="pf-card-head">Risk-Adjusted Performance
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#performance" title="Sharpe, Treynor, M-squared, Jensen's alpha, tracking error and information ratio versus the NEPSE index">?</a></div>
+      <div class="pf-perf" id="pf-performance"></div>
+    </div>
+    <div class="pf-card" id="pf-correlation-card">
+      <div class="pf-card-head">Correlation &amp; Diversification
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#correlation" title="Average pairwise correlation between holdings and the diversification ratio">?</a></div>
+      <div class="pf-corr" id="pf-correlation"></div>
     </div>
   </div>
 

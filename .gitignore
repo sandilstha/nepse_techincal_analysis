@@ -135,3 +135,43 @@ Thumbs.db
 venv
 venv/
 graphify-out/
+
+# ---------------------------------------------------------------------------
+# Project-specific
+# ---------------------------------------------------------------------------
+
+# Headless-browser profile written by the breadth/screenshot tooling. This is a
+# full Chromium profile (cache, cookies, history, service-worker databases) and
+# has no business in the repo.
+.tmp-breadth-profile/
+
+# Scratch + temp files
+*.tmp
+*.bak
+*.orig
+*.rej
+_sop_head.tmp
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (only if a front-end toolchain is ever added)
+node_modules/
+
+# Claude Code: the committed CLAUDE.md and skills stay tracked; only the
+# machine-local settings and scratch state are ignored.
+.claude/settings.local.json
+.claude/.session*
+
+# Database dumps / backups
+*.sql
+*.sql.gz
+*.dump
+*.bak.sql
+
+# Local env variants beyond the plain .env already ignored above
+.env.*
+!.env.example

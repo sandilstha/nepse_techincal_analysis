@@ -60,8 +60,14 @@ LIQUIDITY_RISK_LABELS = {
     "illiquid": "High",
     "untradeable": "Very High",
 }
+# Annual risk-free rate used by every risk-adjusted performance measure
+# (Sharpe / Treynor / M² / Jensen's alpha). 6% ≈ the 91-day T-bill; Stock 360
+# carries the same figure as DEFAULT_RISK_FREE. If one moves, move both — a
+# mismatch would make the same book score differently on two pages.
+RISK_FREE_ANNUAL = 0.06
+
 CACHE_TTL = 180
-PAYLOAD_VERSION = 6
+PAYLOAD_VERSION = 8   # 7: performance + correlation · 8: pl_snapshot + per-sector P/L
 
 # Default investment-policy limits monitored on every portfolio. "warn" raises a
 # watch, "breach" a violation. Sensible institutional defaults tuned for a
@@ -357,6 +363,59 @@ def _nepse_index_level():
     }
 
 
+def _pl_snapshot(rows, top_n=4):
+    """Winners vs losers on unrealised P/L, plus the best/worst by percentage.
+
+    Needs a WACC cost basis, so it is empty until the user imports the broker's
+    "My WACC" report — position risk elsewhere on the desk works without it.
+
+    Ranked by PERCENT, not rupees, deliberately: the rupee leader is usually
+    just the biggest position, which says more about sizing than about the
+    holding. Totals stay in rupees because that is the money at stake.
+    """
+    costed = [r for r in rows if r.get("pl") is not None and r.get("cost_value")]
+    if not costed:
+        return {"ok": False, "reason": "Import the WACC report to see unrealised P/L."}
+
+    winners = [r for r in costed if r["pl"] > 0]
+    losers = [r for r in costed if r["pl"] < 0]
+    flat = [r for r in costed if r["pl"] == 0]
+
+    def _side(group):
+        pl = sum(r["pl"] for r in group)
+        cost = sum(r["cost_value"] for r in group)
+        return {
+            "count": len(group),
+            "pl": round(pl, 2),
+            "pl_pct": round(100.0 * pl / cost, 2) if cost else None,
+        }
+
+    def _card(r):
+        return {
+            "symbol": r["symbol"],
+            "price": r.get("price"),
+            "day_change": r.get("day_change"),
+            "day_change_pct": r.get("day_change_pct"),
+            "pl": r.get("pl"),
+            "pl_pct": r.get("pl_pct"),
+            "quantity": r.get("quantity"),
+            "weight": r.get("weight"),
+        }
+
+    ranked = sorted(costed, key=lambda r: (r.get("pl_pct") is None, -(r.get("pl_pct") or 0)))
+    return {
+        "ok": True,
+        "total": len(costed),
+        "uncosted": len(rows) - len(costed),
+        "winners": _side(winners),
+        "losers": _side(losers),
+        "flat_count": len(flat),
+        "net_pl": round(sum(r["pl"] for r in costed), 2),
+        "top_gainers": [_card(r) for r in ranked if (r.get("pl_pct") or 0) > 0][:top_n],
+        "top_losers": [_card(r) for r in reversed(ranked) if (r.get("pl_pct") or 0) < 0][:top_n],
+    }
+
+
 def _cost_summary(rows):
     """Book value & paper P/L over the holdings that carry a WACC cost basis.
 
@@ -624,6 +683,180 @@ def _risk_block(weight_frac, total_value, port_beta, stock_ret, index_info=None,
 # ─────────────────────────────────────────────────────────────────────────────
 # Factor risk decomposition (single-factor: NEPSE market + stock-specific)
 # ─────────────────────────────────────────────────────────────────────────────
+def _corr(xs, ys):
+    """Pearson correlation of two equal-length sequences, or None if undefined."""
+    n = len(xs)
+    if n < 2:
+        return None
+    mx, my = sum(xs) / n, sum(ys) / n
+    sx = math.sqrt(sum((x - mx) ** 2 for x in xs))
+    sy = math.sqrt(sum((y - my) ** 2 for y in ys))
+    if not sx or not sy:
+        return None
+    return sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / (sx * sy)
+
+
+def _annualise(rets, periods_year=WEEKS_YEAR):
+    """(geometric annual return, annualised stdev) from a period return list."""
+    n = len(rets)
+    if n < 2:
+        return None, None
+    growth = 1.0
+    for r in rets:
+        growth *= (1.0 + r)
+    if growth <= 0:
+        return None, None                       # total wipe-out: CAGR undefined
+    ann_ret = growth ** (periods_year / n) - 1.0
+    sd = _stdev(rets)
+    return ann_ret, (sd * math.sqrt(periods_year) if sd is not None else None)
+
+
+def _performance_block(weight_frac, stock_wret, index_wret, port_beta):
+    """Risk-adjusted performance vs the NEPSE index: Sharpe, Treynor, M²,
+    Jensen's alpha, tracking error and information ratio.
+
+    WEEKLY throughout, deliberately. Beta is estimated on weekly returns (see the
+    module docstring), and Treynor/alpha divide by that beta — pairing it with a
+    daily sigma would mix two different sampling frequencies and silently
+    misstate every ratio. Volatility and VaR stay daily elsewhere; this block is
+    self-contained and internally consistent.
+
+    IMPORTANT — what these numbers are: the return series is the CURRENT weights
+    applied to past prices (rₜ = Σ wᵢ·rᵢ,ₜ), the same series the VaR block uses.
+    So this answers "how would today's book have scored over the window", not
+    "what did the user actually earn". Realised, money-weighted performance needs
+    a holdings history (PortfolioSnapshot), which is not populated yet.
+    """
+    if not weight_frac or not index_wret:
+        return {"ok": False, "reason": "No benchmark history available."}
+
+    port = _portfolio_returns(weight_frac, stock_wret)
+    weeks = sorted(w for w in port if w in index_wret)
+    if len(weeks) < MIN_WEEKLY_RETURNS:
+        return {"ok": False,
+                "reason": (f"Not enough shared history (need {MIN_WEEKLY_RETURNS}+ "
+                           f"weeks, have {len(weeks)}).")}
+
+    pr = [port[w] for w in weeks]
+    br = [index_wret[w] for w in weeks]
+
+    p_ret, p_vol = _annualise(pr)
+    b_ret, b_vol = _annualise(br)
+    if p_ret is None or p_vol is None or b_ret is None:
+        return {"ok": False, "reason": "Return series could not be annualised."}
+
+    rf = RISK_FREE_ANNUAL
+    excess = p_ret - rf
+
+    sharpe = (excess / p_vol) if p_vol else None
+    treynor = (excess / port_beta) if port_beta else None
+    # M²: lever/de-lever the book to the benchmark's volatility, then compare.
+    m2 = (excess * (b_vol / p_vol) + rf) if (p_vol and b_vol) else None
+    m2_alpha = (m2 - b_ret) if m2 is not None else None
+    jensen = p_ret - (rf + port_beta * (b_ret - rf)) if port_beta is not None else None
+
+    active = [p - b for p, b in zip(pr, br)]
+    te_sd = _stdev(active)
+    te = te_sd * math.sqrt(WEEKS_YEAR) if te_sd is not None else None
+    active_ret = p_ret - b_ret
+    info_ratio = (active_ret / te) if te else None
+
+    pct = lambda v: round(v * 100.0, 2) if v is not None else None
+    num = lambda v: round(v, 3) if v is not None else None
+    return {
+        "ok": True,
+        "basis": "weekly",
+        "weeks": len(weeks),
+        "risk_free_pct": round(rf * 100.0, 2),
+        "portfolio_return_pct": pct(p_ret),
+        "portfolio_vol_pct": pct(p_vol),
+        "benchmark_return_pct": pct(b_ret),
+        "benchmark_vol_pct": pct(b_vol),
+        "beta_used": port_beta,
+        "sharpe": num(sharpe),
+        "treynor": num(treynor),
+        "m2_pct": pct(m2),
+        "m2_alpha_pct": pct(m2_alpha),
+        "jensen_alpha_pct": pct(jensen),
+        "tracking_error_pct": pct(te),
+        "active_return_pct": pct(active_ret),
+        "information_ratio": num(info_ratio),
+        # Sharpe and Treynor invert when excess return is negative: a riskier
+        # book then scores a *less* negative ratio. Flag it rather than let the
+        # ranking be read the wrong way round.
+        "excess_negative": excess < 0,
+        "note": ("Current weights applied to the last "
+                 f"{len(weeks)} weeks of prices — not realised performance."),
+    }
+
+
+def _correlation_block(rows, stock_wret, port_vol_pct=None):
+    """Pairwise correlation across holdings + the diversification ratio.
+
+    Effective-holdings counts names; this measures whether they actually move
+    apart. Ten NEPSE banks score well on count and badly here, which is the
+    distinction that matters for real diversification.
+
+    Diversification ratio follows the CFA curriculum's definition — portfolio
+    volatility divided by the AVERAGE single-holding volatility, so LOWER is
+    better and 100% means diversification bought nothing.
+    """
+    syms = [r["symbol"] for r in rows if r["symbol"] in stock_wret]
+    if len(syms) < 2:
+        return {"ok": False, "reason": "Need at least two priced holdings."}
+
+    pairs, seen = [], {}
+    for i, a in enumerate(syms):
+        for b in syms[i + 1:]:
+            common = sorted(set(stock_wret[a]) & set(stock_wret[b]))
+            if len(common) < MIN_WEEKLY_RETURNS:
+                continue
+            c = _corr([stock_wret[a][w] for w in common],
+                      [stock_wret[b][w] for w in common])
+            if c is None:
+                continue
+            pairs.append({"a": a, "b": b, "corr": round(c, 3), "weeks": len(common)})
+            seen.setdefault(a, []).append(c)
+            seen.setdefault(b, []).append(c)
+
+    if not pairs:
+        return {"ok": False, "reason": "Not enough overlapping history between holdings."}
+
+    corrs = [p["corr"] for p in pairs]
+    avg = sum(corrs) / len(corrs)
+    ranked = sorted(pairs, key=lambda p: p["corr"], reverse=True)
+
+    # Guide's ratio: portfolio vol ÷ average individual vol. The per-holding
+    # `vol` column on rows is DAILY-annualised, while port_vol_pct arrives from
+    # the weekly performance block — dividing one by the other would compare two
+    # sampling frequencies. Re-derive each holding's vol from the same weekly
+    # series so numerator and denominator agree.
+    vols = []
+    for sym in syms:
+        sd = _stdev(list(stock_wret[sym].values()))
+        if sd:
+            vols.append(sd * math.sqrt(WEEKS_YEAR) * 100.0)
+    avg_vol = (sum(vols) / len(vols)) if vols else None
+    div_ratio = (round(100.0 * port_vol_pct / avg_vol, 1)
+                 if (port_vol_pct and avg_vol) else None)
+
+    return {
+        "ok": True,
+        "pairs_measured": len(pairs),
+        "avg_correlation": round(avg, 3),
+        "max_correlation": ranked[0],
+        "min_correlation": ranked[-1],
+        "most_correlated": ranked[:5],
+        "least_correlated": ranked[-5:][::-1],
+        "avg_holding_vol_pct": round(avg_vol, 2) if avg_vol else None,
+        "portfolio_vol_pct": round(port_vol_pct, 2) if port_vol_pct else None,
+        "diversification_ratio_pct": div_ratio,
+        # Same bands the curriculum uses when judging whether a correlation is
+        # high enough to negate the benefit of holding both names.
+        "band": ("high" if avg >= 0.75 else "moderate" if avg >= 0.50 else "low"),
+    }
+
+
 def _factor_decomposition(rows, stats, index_wret):
     """Split portfolio risk into systematic (market) vs idiosyncratic, and
     attribute it by sector and by name — the institutional "where does my risk
@@ -963,6 +1196,10 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
             "wacc": round(wacc, 2) if wacc is not None else None,
             "cost_value": cost_value,
             "pl": pl,
+            # Unrealised P/L as a % of what was paid — the ranking key for the
+            # winners/losers snapshot. None without a WACC cost basis.
+            "pl_pct": (round(100.0 * pl / cost_value, 2)
+                       if (pl is not None and cost_value) else None),
             "var_1w_pct": round(-v1w * 100, 2) if v1w is not None else None,
             "loss_1w": round(-v1w * value, 2) if v1w is not None else None,
             "var_1m_pct": round(-v1m * 100, 2) if v1m is not None else None,
@@ -995,13 +1232,24 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
     # Sector exposure.
     sec = {}
     for r in rows:
-        s = sec.setdefault(r["sector"], {"sector": r["sector"], "value": 0.0, "count": 0})
+        s = sec.setdefault(r["sector"], {"sector": r["sector"], "value": 0.0, "count": 0,
+                                         "cost_value": 0.0, "pl": 0.0, "costed_count": 0})
         s["value"] += r["value"]
         s["count"] += 1
+        # Unrealised P/L rolled up per sector, over the costed subset only so a
+        # partial WACC import can't drag a sector's return toward zero.
+        if r.get("pl") is not None and r.get("cost_value"):
+            s["cost_value"] += r["cost_value"]
+            s["pl"] += r["pl"]
+            s["costed_count"] += 1
     sectors = sorted(sec.values(), key=lambda s: s["value"], reverse=True)
     for s in sectors:
         s["value"] = round(s["value"], 2)
         s["weight"] = round(100.0 * s["value"] / total, 2) if total else 0.0
+        has_cost = s["costed_count"] > 0 and s["cost_value"] > 0
+        s["cost_value"] = round(s["cost_value"], 2) if has_cost else None
+        s["pl"] = round(s["pl"], 2) if has_cost else None
+        s["pl_pct"] = (round(100.0 * s["pl"] / s["cost_value"], 2) if has_cost else None)
 
     # Liquidity: how much of the book can be unwound in 1 / 5 sessions, and the
     # least-liquid names. Fraction of a position sellable in D days = min(1, D/dtl).
@@ -1060,6 +1308,25 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
     except Exception:  # pragma: no cover - never let the risk overlay break valuation
         logger.exception("portfolio VaR/stress failed")
         risk = {"ok": False, "reason": "Risk engine error."}
+
+    # Risk-adjusted performance vs NEPSE, and how correlated the book really is.
+    # Both are best-effort overlays: a failure here must never cost the user
+    # their valuation, so each degrades to an ok:False block.
+    try:
+        performance = _performance_block(weight_frac, stock_wret, index_wret, port_beta)
+    except Exception:  # pragma: no cover - defensive
+        logger.exception("portfolio performance ratios failed")
+        performance = {"ok": False, "reason": "Performance engine error."}
+
+    try:
+        correlation = _correlation_block(
+            rows, stock_wret,
+            port_vol_pct=(performance.get("portfolio_vol_pct")
+                          if performance.get("ok") else None),
+        )
+    except Exception:  # pragma: no cover - defensive
+        logger.exception("portfolio correlation failed")
+        correlation = {"ok": False, "reason": "Correlation engine error."}
 
     try:
         factors = _factor_decomposition(rows, stats, index_wret)
@@ -1146,9 +1413,12 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
         "beta_coverage_pct": beta_coverage_pct,
         "nepse_index": index_info,
         "cost": cost_summary,
+        "pl_snapshot": _pl_snapshot(rows),
         "accounting": accounting,
         "snapshot_count": sum(1 for r in rows if r["price_source"] == "snapshot"),
         "risk": risk,
+        "performance": performance,
+        "correlation": correlation,
         "liquidity": liquidity,
         "compliance": compliance,
         "factors": factors,

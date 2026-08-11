@@ -300,12 +300,16 @@
       return;
     }
     renderKpis(d);
+    renderSnapshot(d.pl_snapshot, d.sectors || []);
     renderSummaryDesk(d);
     renderCompliance(d.compliance);
     renderRisk(d.risk, d.nepse_index);
     renderFactors(d.factors);
+    renderPerformance(d.performance);
+    renderCorrelation(d.correlation);
     renderLiquidity(d.liquidity);
-    renderSectors(d.sectors || []);
+    renderSectorAllocation(d.sectors || [], d.total_value);
+    renderSectorRisk(d.factors);
     renderConc(d);
     if (el("pf-asof")) el("pf-asof").textContent = d.as_of ? "Priced at " + d.as_of + " close" : "";
   }
@@ -749,18 +753,157 @@
     bindSummaryHeaderSort(t);
   }
 
-  function renderSectors(sectors) {
-    var box = el("pf-sectors");
+  /* Winners vs losers, and the best/worst holdings by percentage. Ranked on
+     PERCENT rather than rupees — the rupee leader is normally just the largest
+     position, which describes sizing rather than the holding. */
+  function renderSnapshot(s, sectors) {
+    var box = el("pf-snapshot");
     if (!box) return;
-    if (!sectors.length) { box.innerHTML = "<div class='pf-muted'>No sector data</div>"; return; }
-    var max = sectors.reduce(function (m, s) { return Math.max(m, s.weight || 0); }, 0) || 1;
-    box.innerHTML = sectors.map(function (s) {
-      var w = (100 * (s.weight || 0) / max).toFixed(1);
-      return "<div class='pf-sec-row'>" +
+    if (!s || !s.ok) {
+      box.innerHTML = "<div class='pf-muted'>" + esc((s && s.reason) || "Unrealised P/L unavailable.") + "</div>";
+      return;
+    }
+    var arrow = function (v) { return v == null ? "" : (v >= 0 ? " ▲" : " ▼"); };
+    var cls = function (v) { return v == null ? "" : (v >= 0 ? "num-pos" : "num-neg"); };
+    var sPct = function (v) { return v == null ? "—" : (v >= 0 ? "+" : "") + v.toFixed(2) + "%"; };
+
+    var side = function (label, o, tone) {
+      return "<div class='pf-snap-side'>" +
+        "<span class='pf-snap-ring " + tone + "'></span>" +
+        "<div><div class='pf-snap-head'>" + o.count + " of " + s.total + " " + label + "</div>" +
+        "<div class='pf-snap-sum'><span class='" + tone + "'>" + rsCompact(o.pl) + "</span>" +
+        "<span class='" + tone + "'>" + sPct(o.pl_pct) + arrow(o.pl_pct) + "</span></div></div></div>";
+    };
+
+    var card = function (c) {
+      return "<div class='pf-snap-card'>" +
+        "<div class='pf-snap-r1'><b>" + esc(c.symbol) + "</b><span>" + nf(c.price) + "</span></div>" +
+        "<div class='pf-snap-r2 " + cls(c.day_change) + "'>" +
+          "<span>" + (c.day_change == null ? "—" : nf(c.day_change)) + "</span>" +
+          "<span>" + sPct(c.day_change_pct) + arrow(c.day_change_pct) + "</span></div>" +
+        "<div class='pf-snap-r3'>Gain/Loss</div>" +
+        "<div class='pf-snap-r4 " + cls(c.pl) + "'>" +
+          "<span>" + rsCompact(c.pl) + "</span>" +
+          "<span>" + sPct(c.pl_pct) + arrow(c.pl_pct) + "</span></div></div>";
+    };
+
+    /* Diverging bars around a zero axis: profit grows right, loss grows left,
+       scaled to the largest absolute sector P/L. Reads the shape of the book at
+       a glance in a way four cropped cards never did. */
+    var sectorBars = function (sectors) {
+      var list = (sectors || []).filter(function (x) { return x.pl != null; });
+      if (!list.length) return "<div class='pf-muted pf-snap-empty'>No sector P/L available.</div>";
+      list.sort(function (a, b) { return b.pl - a.pl; });
+      var max = list.reduce(function (m, x) { return Math.max(m, Math.abs(x.pl)); }, 0) || 1;
+      return "<div class='pf-plbars'>" + list.map(function (x) {
+        var w = (Math.abs(x.pl) / max) * 50;              // half-track = 50%
+        var up = x.pl >= 0;
+        var bar = "<i class='" + (up ? "pos" : "neg") + "' style='" +
+          (up ? "left:50%;" : "right:50%;") + "width:" + w.toFixed(1) + "%'></i>";
+        return "<div class='pf-plbar-row'>" +
+          "<span class='pf-plbar-name' title='" + esc(x.sector) + "'>" + esc(x.sector) + "</span>" +
+          "<span class='pf-plbar-track'>" + bar + "<b class='pf-plbar-zero'></b></span>" +
+          "<span class='pf-plbar-val " + (up ? "num-pos" : "num-neg") + "'>" + rsCompact(x.pl) + "</span>" +
+          "<span class='pf-plbar-pct " + (up ? "num-pos" : "num-neg") + "'>" + sPct(x.pl_pct) + "</span>" +
+          "</div>";
+      }).join("") + "</div>";
+    };
+
+    var gain = s.top_gainers || [], lose = s.top_losers || [];
+    var best = gain.slice(0, 3).concat(lose.slice(0, 3));
+    var holdings = best.length
+      ? "<div class='pf-snap-cards'>" + best.map(card).join("") + "</div>"
+      : "<div class='pf-muted pf-snap-empty'>No costed holdings.</div>";
+
+    box.innerHTML =
+      "<div class='pf-snap-tops'>" + side("in Profit", s.winners, "num-pos") +
+        side("in Loss", s.losers, "num-neg") + "</div>" +
+      "<div class='pf-snap-grid'>" +
+        "<div class='pf-snap-col'><div class='pf-snap-col-h'>Profit / Loss by sector</div>" +
+          sectorBars(sectors) + "</div>" +
+        "<div class='pf-snap-col'><div class='pf-snap-col-h'>Best &amp; worst holdings (%)</div>" +
+          holdings + "</div>" +
+      "</div>" +
+      "<div class='pf-var-note'>Unrealised P/L against your WACC cost basis, ranked by percentage. " +
+      (s.uncosted ? "<b>" + s.uncosted + "</b> holding(s) have no cost basis and are excluded. " : "") +
+      "Bonus and IPO lots carry a par cost of Rs 100 in the broker's WACC report, which can make " +
+      "their percentage gain look extreme.</div>";
+  }
+
+  /* Shared with the Market Insights sector chart so a sector keeps the same
+     colour across the app. */
+  var SECTOR_COLORS = [
+    "#12d39a", "#5cb3ff", "#ffc166", "#ff6e72", "#a78bfa", "#34d399", "#f472b6",
+    "#60a5fa", "#fbbf24", "#fb7185", "#2dd4bf", "#c084fc", "#4ade80", "#f59e0b"
+  ];
+  function sectorColor(i) { return SECTOR_COLORS[i % SECTOR_COLORS.length]; }
+
+  /* Donut drawn with stroke-dasharray on concentric circles rather than arc
+     paths — no trigonometry to get wrong, and a single 100% slice still renders
+     as a full ring instead of collapsing to a zero-length arc. */
+  function donutSvg(items, centreVal, centreLabel) {
+    var R = 54, SW = 20, CX = 70, C = 2 * Math.PI * R;
+    var total = items.reduce(function (s, i) { return s + (i.value || 0); }, 0);
+    if (total <= 0) return "";
+    var offset = 0;
+    var segs = items.map(function (it, i) {
+      var len = C * ((it.value || 0) / total);
+      var seg = "<circle cx='" + CX + "' cy='" + CX + "' r='" + R + "' fill='none'" +
+        " stroke='" + sectorColor(i) + "' stroke-width='" + SW + "'" +
+        " stroke-dasharray='" + len.toFixed(2) + " " + (C - len).toFixed(2) + "'" +
+        " stroke-dashoffset='" + (-offset).toFixed(2) + "'>" +
+        "<title>" + esc(it.label) + ": " + pct(it.weight) + "</title></circle>";
+      offset += len;
+      return seg;
+    }).join("");
+    return "<svg class='pf-donut-svg' viewBox='0 0 140 140' role='img' aria-label='Sector allocation'>" +
+      "<g transform='rotate(-90 " + CX + " " + CX + ")'>" + segs + "</g>" +
+      "<text class='pf-donut-v' x='" + CX + "' y='" + (CX - 2) + "' text-anchor='middle'>" +
+        esc(centreVal) + "</text>" +
+      "<text class='pf-donut-k' x='" + CX + "' y='" + (CX + 13) + "' text-anchor='middle'>" +
+        esc(centreLabel) + "</text></svg>";
+  }
+
+  /* Left half of the card: where the CAPITAL sits. */
+  function renderSectorAllocation(sectors, totalValue) {
+    var box = el("pf-sector-donut");
+    if (!box) return;
+    if (!sectors || !sectors.length) {
+      box.innerHTML = "<div class='pf-muted'>No sector data</div>";
+      return;
+    }
+    var items = sectors.map(function (s) {
+      return { label: s.sector, value: s.value || 0, weight: s.weight || 0 };
+    });
+    var legend = items.map(function (it, i) {
+      return "<div class='pf-donut-li'>" +
+        "<i style='background:" + sectorColor(i) + "'></i>" +
+        "<span class='pf-donut-name' title='" + esc(it.label) + "'>" + esc(it.label) + "</span>" +
+        "<span class='pf-donut-pct'>" + pct(it.weight) + "</span>" +
+        "<span class='pf-donut-val'>" + rsCompact(it.value) + "</span></div>";
+    }).join("");
+    box.innerHTML = donutSvg(items, rsCompact(totalValue), "invested") +
+      "<div class='pf-donut-legend'>" + legend + "</div>";
+  }
+
+  /* Right half: where the RISK sits. Same sectors, deliberately beside the
+     donut — a sector can be a small share of capital and a large share of risk,
+     and that gap is the whole point of the card. */
+  function renderSectorRisk(f) {
+    var box = el("pf-sector-risk");
+    if (!box) return;
+    if (!f || !f.ok || !(f.sectors || []).length) {
+      box.innerHTML = "<div class='pf-muted'>Risk contribution unavailable.</div>";
+      return;
+    }
+    var secs = f.sectors;
+    var max = secs[0] && secs[0].pct ? secs[0].pct : 1;
+    box.innerHTML = secs.map(function (s) {
+      var w = (100 * s.pct / max).toFixed(1);
+      return "<div class='pf-fac-srow'>" +
         "<span class='pf-sec-name' title='" + esc(s.sector) + "'>" + esc(s.sector) + "</span>" +
         "<span class='pf-sec-bar'><i style='width:" + w + "%'></i></span>" +
-        "<span class='pf-sec-pct'>" + pct(s.weight) + "</span>" +
-        "<span class='pf-sec-val'>" + rsCompact(s.value) + "</span></div>";
+        "<span class='pf-sec-pct'>" + s.pct.toFixed(1) + "%</span></div>";
     }).join("");
   }
 
@@ -971,19 +1114,95 @@
       stat("Market (systematic)", f.systematic_vol_pct.toFixed(1) + "%", "β = " + f.beta) +
       stat("Stock-specific", f.idiosyncratic_vol_pct.toFixed(1) + "%", "diversifiable") +
       "</div>";
-    var secs = f.sectors || [];
-    var max = (secs[0] && secs[0].pct) || 1;
-    var sectors = "<div class='pf-liq-label'>Risk contribution by sector</div>" +
-      secs.map(function (s) {
-        var w = (100 * s.pct / max).toFixed(1);
-        return "<div class='pf-fac-srow'><span class='pf-sec-name' title='" + esc(s.sector) + "'>" + esc(s.sector) + "</span>" +
-          "<span class='pf-sec-bar'><i style='width:" + w + "%'></i></span>" +
-          "<span class='pf-sec-pct'>" + s.pct.toFixed(1) + "%</span></div>";
-      }).join("");
-    box.innerHTML = split + stats + sectors +
+    // Sector bars moved out to renderSectorRisk() so they can sit beside the
+    // capital donut instead of below it; this block stays portfolio-level.
+    box.innerHTML = split + stats +
       "<div class='pf-var-note'>Single-factor (NEPSE) model. <b>Market</b> risk moves with the index and can't be " +
       "diversified away; <b>stock-specific</b> risk can be cut by diversifying. Covers " +
       f.covered_weight_pct.toFixed(0) + "% of book value (names with price history).</div>";
+  }
+
+  /* Risk-adjusted performance. Every ratio here is weekly-based, matching the
+     beta the desk already estimates — see the SOP. The header states plainly
+     that this is today's weights run over past prices, not realised P/L. */
+  function renderPerformance(p) {
+    var box = el("pf-performance");
+    if (!box) return;
+    if (!p || !p.ok) {
+      box.innerHTML = "<div class='pf-muted'>" + esc((p && p.reason) || "Performance unavailable.") + "</div>";
+      return;
+    }
+    var sign = function (v) { return v == null ? "" : (v >= 0 ? "pos" : "neg"); };
+    var n3 = function (v) { return v == null ? "—" : v.toFixed(2); };
+    var p2 = function (v) { return v == null ? "—" : v.toFixed(2) + "%"; };
+
+    var head = "<div class='pf-stat-grid pf-stat-3'>" +
+      stat("Portfolio return", p2(p.portfolio_return_pct), "annualised, " + p.weeks + " weeks") +
+      stat("NEPSE return", p2(p.benchmark_return_pct), "same window") +
+      stat("Active return", p2(p.active_return_pct), "portfolio − index") +
+      "</div>";
+
+    var ratios = "<div class='pf-stat-grid pf-stat-3'>" +
+      stat("Sharpe", n3(p.sharpe), "per unit of total risk") +
+      stat("Treynor", n3(p.treynor), "per unit of beta") +
+      stat("Information ratio", n3(p.information_ratio), "active return ÷ tracking error") +
+      "</div>" +
+      "<div class='pf-stat-grid pf-stat-3'>" +
+      stat("Jensen's alpha", p2(p.jensen_alpha_pct), "vs CAPM required return") +
+      stat("M² alpha", p2(p.m2_alpha_pct), "at NEPSE volatility") +
+      stat("Tracking error", p2(p.tracking_error_pct), "annualised") +
+      "</div>";
+
+    // Sharpe/Treynor inverate when excess return is negative — a riskier book
+    // scores a less-negative ratio. Say so rather than let it be misread.
+    var warn = p.excess_negative
+      ? "<div class='pf-var-note pf-warn-note'><b>Excess return is negative.</b> " +
+        "Sharpe and Treynor rank unreliably below the risk-free rate — a riskier " +
+        "portfolio produces a less negative ratio. Read alpha and active return instead.</div>"
+      : "";
+
+    box.innerHTML = head + ratios + warn +
+      "<div class='pf-var-note'>Weekly returns vs NEPSE, risk-free " +
+      p2(p.risk_free_pct) + ", β = " + (p.beta_used == null ? "—" : p.beta_used) + ". " +
+      "<b>Sharpe / M²</b> use total risk — the right read if this book is your whole wealth. " +
+      "<b>Treynor / alpha</b> use beta — the right read if it is one sleeve of a diversified pot. " +
+      "Figures apply <b>current weights to past prices</b>, so they show how today's book would have " +
+      "scored, not what was actually earned.</div>";
+  }
+
+  /* Correlation: effective-holdings counts names, this checks whether they move
+     apart. Ten NEPSE banks score well on count and badly here. */
+  function renderCorrelation(c) {
+    var box = el("pf-correlation");
+    if (!box) return;
+    if (!c || !c.ok) {
+      box.innerHTML = "<div class='pf-muted'>" + esc((c && c.reason) || "Correlation unavailable.") + "</div>";
+      return;
+    }
+    var dr = c.diversification_ratio_pct;
+    var stats = "<div class='pf-stat-grid pf-stat-3'>" +
+      stat("Avg correlation", c.avg_correlation.toFixed(2), c.band + " — " + c.pairs_measured + " pairs") +
+      stat("Diversification ratio", dr == null ? "—" : dr.toFixed(1) + "%", "lower is better") +
+      stat("Portfolio vol", (c.portfolio_vol_pct == null ? "—" : c.portfolio_vol_pct.toFixed(1) + "%"),
+           "avg holding " + (c.avg_holding_vol_pct == null ? "—" : c.avg_holding_vol_pct.toFixed(1) + "%")) +
+      "</div>";
+
+    var pairRow = function (p) {
+      var w = Math.max(0, Math.min(100, p.corr * 100)).toFixed(0);
+      return "<div class='pf-fac-srow'><span class='pf-sec-name'>" +
+        esc(p.a) + " · " + esc(p.b) + "</span>" +
+        "<span class='pf-sec-bar'><i style='width:" + w + "%'></i></span>" +
+        "<span class='pf-sec-pct'>" + p.corr.toFixed(2) + "</span></div>";
+    };
+    var most = (c.most_correlated || []).map(pairRow).join("");
+    var least = (c.least_correlated || []).map(pairRow).join("");
+
+    box.innerHTML = stats +
+      "<div class='pf-liq-label'>Most correlated pairs — least diversifying</div>" + most +
+      "<div class='pf-liq-label'>Least correlated pairs — doing the real work</div>" + least +
+      "<div class='pf-var-note'>Weekly returns. <b>Diversification ratio</b> = portfolio volatility ÷ " +
+      "average single-holding volatility; 100% means holding several names bought you nothing. " +
+      "Adding more holdings does not diversify — adding holdings that behave <i>differently</i> does.</div>";
   }
 
   function dtlText(dtl) {
