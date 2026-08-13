@@ -1,11 +1,16 @@
-ÿþ# NEPSE Analytics Platform - runtime dependencies.
+# NEPSE Analytics Platform - runtime dependencies.
 #
 # Direct dependencies only. Everything these pull in (scipy, numba, pillow,
-# pdfminer.six, urllib3, typing_extensions, ...is resolved by pip and is
+# pdfminer.six, urllib3, typing_extensions, ...) is resolved by pip and is
 # deliberately not repeated here. This file was previously a raw `pip freeze`,
 # which mixed the app's own needs with dev tooling.
 #
-# Dev-only tooling (the graphify code-graph CLIlives in requirements-dev.txt.
+# Dev-only tooling (the graphify code-graph CLI) lives in requirements-dev.txt.
+#
+# Keep this file UTF-8 without a BOM. It was corrupted once by a UTF-16 BOM
+# being prepended to UTF-8 bytes, which made pip reject the whole file with
+# "Invalid requirement" on line 1. Edit it with a plain-text editor, never by
+# round-tripping through PowerShell Get-Content/Set-Content.
 
 # --- Django stack ----------------------------------------------------------
 Django==6.0.5
@@ -32,6 +37,6 @@ scikit-learn==1.9.0         # services/advanced_market_structure.py
 openpyxl==3.1.5
 pdfplumber==0.11.10
 
-# --- Docs: CFA practice-companion PDF generator (docs/make_cfa_pc_pdf.py) --
+# --- Docs: CFA practice-companion PDF generator (docs/make_cfa_pc_pdf.py) ---
 fpdf2==2.8.7
 matplotlib==3.10.9
