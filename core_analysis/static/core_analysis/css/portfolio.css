@@ -1333,3 +1333,75 @@
 .pf-notif-foot { padding: 9px 14px; border-top: 1px solid var(--line); text-align: right; }
 .pf-notif-foot a { font: 600 0.75rem/1 'Manrope', sans-serif; color: var(--accent); text-decoration: none; }
 .pf-notif-foot a:hover { text-decoration: underline; }
+
+/* ── Data reliability card ────────────────────────────────────────────── */
+.pf-reliability-card { margin-bottom: 16px; }
+.pf-rel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.pf-rel-summary { display: flex; gap: 6px; }
+.pf-rel-pill {
+  padding: 2px 9px; border-radius: 999px;
+  font: 700 0.6875rem/1.5 'Manrope', sans-serif;
+}
+.pf-rel-pill.green { color: var(--up);   background: var(--up-soft); }
+.pf-rel-pill.amber { color: #f59e0b;     background: rgba(245,158,11,.14); }
+.pf-rel-pill.red   { color: var(--down); background: var(--down-soft); }
+.pf-reliability { padding: 4px 0 6px; }
+.pf-rel-stale {
+  margin: 0 16px 12px; padding: 10px 13px; border-radius: 8px;
+  border-left: 3px solid var(--down); background: var(--down-soft);
+  font: 400 0.78rem/1.5 'Manrope', sans-serif; color: var(--ink-1);
+}
+.pf-rel-row {
+  display: flex; gap: 11px; align-items: flex-start;
+  padding: 9px 16px; border-top: 1px solid var(--line);
+}
+.pf-rel-row:first-child { border-top: 0; }
+.pf-rel-dot {
+  width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex: 0 0 auto;
+}
+.pf-rel-row.green .pf-rel-dot { background: var(--up); }
+.pf-rel-row.amber .pf-rel-dot { background: #f59e0b; }
+.pf-rel-row.red   .pf-rel-dot { background: var(--down); }
+.pf-rel-body { min-width: 0; }
+.pf-rel-label {
+  font: 700 0.8125rem/1.35 'Manrope', sans-serif; color: var(--ink-1);
+  display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;
+}
+.pf-rel-grade {
+  font: 600 0.6562rem/1.4 'Manrope', sans-serif; text-transform: uppercase;
+  letter-spacing: .04em; opacity: .75;
+}
+.pf-rel-row.green .pf-rel-grade { color: var(--up); }
+.pf-rel-row.amber .pf-rel-grade { color: #f59e0b; }
+.pf-rel-row.red   .pf-rel-grade { color: var(--down); }
+.pf-rel-why {
+  margin-top: 2px; font: 400 0.75rem/1.5 'Manrope', sans-serif;
+  color: var(--ink-2); max-width: 96ch;
+}
+.pf-rel-note {
+  padding: 10px 16px 2px; border-top: 1px solid var(--line);
+  font: 400 0.71rem/1.45 'Manrope', sans-serif; color: var(--ink-3);
+}
+
+/* Compact chip row — the collapsed state of the reliability card. */
+.pf-rel-chips {
+  display: flex; flex-wrap: wrap; gap: 7px; padding: 12px 16px 4px;
+}
+.pf-rel-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px; cursor: default;
+  border: 1px solid var(--line); background: var(--surface-2);
+  font: 600 0.71rem/1.45 'Manrope', sans-serif; color: var(--ink-2);
+}
+.pf-rel-chip i { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+.pf-rel-chip.green i { background: var(--up); }
+.pf-rel-chip.amber i { background: #f59e0b; }
+.pf-rel-chip.red   i { background: var(--down); }
+.pf-rel-chip.red { color: var(--down); border-color: var(--down-soft); }
+.pf-rel-toggle {
+  margin: 6px 16px 12px; padding: 4px 10px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: transparent; color: var(--ink-3);
+  font: 600 0.6875rem/1.5 'Manrope', sans-serif;
+}
+.pf-rel-toggle:hover { color: var(--accent); border-color: var(--accent); }
+.pf-rel-details { border-top: 1px solid var(--line); }

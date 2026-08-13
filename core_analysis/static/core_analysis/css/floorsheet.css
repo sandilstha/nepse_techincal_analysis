@@ -740,3 +740,122 @@
   color: var(--accent); border-color: var(--accent);
   background: var(--accent-soft); text-decoration: none;
 }
+
+/* ── A/D Radar (stock-first accumulation / distribution) ──────────────── */
+/* Four KPI tiles, not the five the shared strip assumes. */
+#panel-adradar .dsx-kpis { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 1100px) { #panel-adradar .dsx-kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px)  { #panel-adradar .dsx-kpis { grid-template-columns: 1fr; } }
+
+/* Evidence strip: the backtest result, shown next to the scores it justifies. */
+.dsx-ad-evidence {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 14px 16px; margin-bottom: 16px;
+}
+.dsx-ev-head {
+  font: 600 0.6875rem/1 'Manrope', sans-serif; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 12px;
+}
+.dsx-ev-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+}
+@media (max-width: 760px) { .dsx-ev-grid { grid-template-columns: repeat(2, 1fr); } }
+.dsx-ev-cell { display: flex; flex-direction: column; gap: 3px; }
+.dsx-ev-label {
+  font: 600 0.6562rem/1 'Manrope', sans-serif; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.dsx-ev-value { font: 700 1.125rem/1.1 'Manrope', system-ui, sans-serif; }
+.dsx-ev-tip { font: 400 0.6875rem/1.3 'Manrope', sans-serif; color: var(--ink-3); }
+.dsx-ev-warn {
+  margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--line);
+  font: 500 0.75rem/1.45 'Manrope', sans-serif; color: var(--ink-2);
+}
+
+/* Band pill. Deliberately five states: a neutral reading is a real answer, not
+   a missing one, so it gets its own muted treatment rather than a faint green. */
+.dsx-band {
+  display: inline-block; padding: 3px 9px; border-radius: 999px;
+  font: 700 0.6875rem/1.25 'Manrope', sans-serif; white-space: nowrap;
+}
+.dsx-band.accumulation      { color: var(--up);   background: var(--up-soft); }
+.dsx-band.mild_accumulation { color: var(--up);   background: var(--up-soft); opacity: .72; }
+.dsx-band.neutral           { color: var(--ink-3); background: var(--surface-2); }
+.dsx-band.mild_distribution { color: var(--down); background: var(--down-soft); opacity: .72; }
+.dsx-band.distribution      { color: var(--down); background: var(--down-soft); }
+
+/* Diverging position bar: centre is the market median. */
+.dsx-adbar-cell { width: 150px; }
+.dsx-adbar {
+  position: relative; display: block; height: 8px; width: 100%;
+  background: var(--surface-2); border-radius: 4px; overflow: hidden;
+}
+.dsx-adbar::before {
+  content: ""; position: absolute; left: 50%; top: 0; bottom: 0;
+  width: 1px; background: var(--line); z-index: 1;
+}
+.dsx-adbar i { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+.dsx-adbar i.pos { background: var(--up); }
+.dsx-adbar i.neg { background: var(--down); }
+
+.dsx-adrow { cursor: pointer; }
+.dsx-adrow:hover { background: var(--surface-2); }
+.dsx-ad-sec { color: var(--ink-3); font-size: 0.75rem; }
+.dsx-ad-note {
+  padding: 10px 16px 13px; font: 400 0.71rem/1.45 'Manrope', sans-serif;
+  color: var(--ink-3); border-top: 1px solid var(--line);
+}
+
+/* Detail drawer */
+.dsx-ad-detail { margin-top: 16px; }
+.dsx-ad-close {
+  background: none; border: 0; color: var(--ink-3); cursor: pointer;
+  font: 700 1.125rem/1 'Manrope', sans-serif; padding: 0 4px;
+}
+.dsx-ad-close:hover { color: var(--ink-1); }
+.dsx-ad-detail-body { padding: 15px 16px 17px; }
+.dsx-ad-detail-top { display: flex; align-items: center; gap: 11px; margin-bottom: 9px; }
+.dsx-ad-detail-score { font: 500 0.75rem/1 'Manrope', sans-serif; color: var(--ink-3); }
+.dsx-ad-reading {
+  margin: 0 0 15px; font: 400 0.8125rem/1.55 'Manrope', sans-serif; color: var(--ink-2);
+  max-width: 78ch;
+}
+.dsx-ad-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 760px) { .dsx-ad-sides { grid-template-columns: 1fr; } }
+.dsx-ad-sides h4 {
+  font: 600 0.6562rem/1 'Manrope', sans-serif; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--ink-3); margin: 0 0 9px;
+}
+.dsx-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 7px; }
+.dsx-chip {
+  padding: 4px 9px; border-radius: 6px; border: 1px solid var(--line);
+  font: 500 0.71rem/1.3 'Manrope', sans-serif; background: var(--surface-2);
+}
+.dsx-chip.buy  { color: var(--up);   border-color: var(--up-soft); }
+.dsx-chip.sell { color: var(--down); border-color: var(--down-soft); }
+.dsx-chip b { font-weight: 700; }
+.dsx-ad-meta { font: 400 0.6875rem/1.4 'Manrope', sans-serif; color: var(--ink-3); }
+
+/* Methodology link in the A/D card header. */
+.dsx-ad-sop {
+  margin-left: 10px; padding: 2px 8px; border-radius: 6px;
+  border: 1px solid var(--line); color: var(--ink-3);
+  font: 600 0.6875rem/1.4 'Manrope', sans-serif; text-decoration: none;
+}
+.dsx-ad-sop:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+
+/* Short-window alert inside the evidence strip. */
+.dsx-ev-alert {
+  margin: 0 0 12px; padding: 8px 11px; border-left: 3px solid var(--down);
+  background: var(--down-soft); color: var(--ink-1);
+  font: 600 0.75rem/1.45 'Manrope', sans-serif; border-radius: 4px;
+}
+
+/* Per-horizon strip under the headline backtest figures. */
+.dsx-ev-horizons {
+  display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px;
+  padding-top: 11px; border-top: 1px solid var(--line);
+  font: 500 0.71rem/1.4 'Manrope', sans-serif; color: var(--ink-3);
+}
+.dsx-ev-horizons b { color: var(--ink-2); font-weight: 700; }

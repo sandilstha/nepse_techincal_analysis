@@ -1,11 +1,11 @@
-# NEPSE Analytics Platform - runtime dependencies.
+ÿþ# NEPSE Analytics Platform - runtime dependencies.
 #
 # Direct dependencies only. Everything these pull in (scipy, numba, pillow,
-# pdfminer.six, urllib3, typing_extensions, ...) is resolved by pip and is
+# pdfminer.six, urllib3, typing_extensions, ...is resolved by pip and is
 # deliberately not repeated here. This file was previously a raw `pip freeze`,
 # which mixed the app's own needs with dev tooling.
 #
-# Dev-only tooling (the graphify code-graph CLI) lives in requirements-dev.txt.
+# Dev-only tooling (the graphify code-graph CLIlives in requirements-dev.txt.
 
 # --- Django stack ----------------------------------------------------------
 Django==6.0.5

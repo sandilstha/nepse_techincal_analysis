@@ -39,6 +39,11 @@
     .sop-table th,.sop-table td{padding:6px 10px;border-bottom:1px solid rgba(150,160,190,.18);text-align:left;vertical-align:top}
     .sop-table th{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;opacity:.7}
     .sop-note{font-size:12.5px;opacity:.75;border-left:3px solid rgba(150,160,190,.5);padding:4px 12px;margin:10px 0}
+    /* Live worked-example value beside a metric name, so the reader can follow
+       the arithmetic against a real book instead of an invented one. */
+    .sop-eg{font-family:ui-monospace,Consolas,monospace;font-weight:700;font-size:12.5px;
+      padding:1px 7px;border-radius:999px;background:rgba(110,160,255,.14);
+      border:1px solid rgba(110,160,255,.35);white-space:nowrap}
     .sop-anchor-link{font-size:12px;opacity:.4;text-decoration:none;color:inherit}
     .sop-sec:target, .sop-sec h4:target{outline:2px solid rgba(110,160,255,.55);outline-offset:4px;border-radius:14px}
     .sop-back{font-size:13px}
@@ -71,6 +76,7 @@
       <a href="#imports">3. Imports: Holdings, WACC &amp; Ledger</a>
       <a href="#broker-ledger">3.3 Broker Ledger &amp; Nepali FY</a>
       <h6>Core methodologies</h6>
+      <a href="#reliability">3.9 How reliable are these numbers?</a>
       <a href="#beta">4. Beta — weekly-return methodology</a>
       <a href="#var">5. Value at Risk — methodology</a>
       <h6>Portfolio Overview</h6>
@@ -272,6 +278,91 @@ portfolio beta β_p = Σ wᵢ · βᵢ                          weights re-based
         <p><b>Interpretation.</b> β_p = 1.20 means a −10% NEPSE week is <i>expected</i> to cost the
           book ≈ −12%, before stock-specific news. Beta explains the market-driven part only — see
           the <a href="#factor-model">factor model</a> for how much of your risk that actually is.</p>
+      </section>
+
+      <!-- 3.9 ───────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="reliability">
+        <p class="sop-kicker">Section 3.9 · Core methodology</p>
+        <h3>How reliable are these numbers?</h3>
+        <p><b>Purpose.</b> Every figure on this desk is computed to two decimals, but they are not all
+          equally trustworthy. Some are arithmetic on today's positions; others are statistical estimates
+          drawn from thin, illiquid price history. This section grades each metric group by the quality of
+          the data feeding it, and the desk shows that grading at the top of the risk section.</p>
+        <p><b>Grades describe the INPUTS, not the risk.</b> A red grade means "do not read this number to
+          two decimals" — not "this holding is dangerous".</p>
+        <table class="sop-table">
+          <thead><tr><th>Grade</th><th>Means</th></tr></thead>
+          <tbody>
+            <tr><td><b>Reliable</b></td><td>Arithmetic, or an estimate from essentially complete data</td></tr>
+            <tr><td><b>Estimate</b></td><td>Sound method, but resting on assumptions or a limited sample</td></tr>
+            <tr><td><b>High model uncertainty</b></td><td>Inputs are too thin or too stale for the output to be meaningful</td></tr>
+          </tbody>
+        </table>
+
+        <h4>The stale-price problem, measured</h4>
+        <p>This is the single largest data-quality issue for a NEPSE book. A scrip that does not trade
+          carries its last close forward, and the return series reads that as a <b>0% move</b>. An illiquid
+          holding therefore looks <i>calm</i> when it is really just <i>unpriced</i>, which biases
+          volatility, VaR, beta and correlation <b>downward</b> and flatters both Sharpe and
+          diversification.</p>
+        <p>Measured on a real 51-name book in this system: <b>1,014 symbol-days</b> were being treated as
+          0% returns. Three holdings (KSLY, NICADF, SLK) had <b>not traded at all</b> in 226 sessions, so
+          their computed volatility was 0.0%. KAHL traded 29 of 226 sessions and showed
+          <b>33.3%</b> annualised volatility against <b>90.8%</b> when measured only over sessions it
+          actually traded — understated by a factor of 2.7. A separate 10-name liquid book showed no
+          distortion whatsoever.</p>
+        <p>Holdings are graded <b>Reliable</b> at ≥90% of sessions priced, <b>Estimate</b> between 60% and
+          90%, and <b>High model uncertainty</b> below 60%. The desk names the affected scrips and states
+          what share of the book they represent, because four unpriced names that are 0.2% of the portfolio
+          matter far less than one that is 20%.</p>
+
+        <h4>Beta precision</h4>
+        <p>Weekly beta on ~52 observations is not a precise number, and printing it to two decimals implies
+          otherwise. The desk now computes the standard error of each regression. Real examples from these
+          books:</p>
+        <table class="sop-table">
+          <thead><tr><th>Holding</th><th>Beta</th><th>Std error</th><th>95% CI</th><th>Read</th></tr></thead>
+          <tbody>
+            <tr><td>UNHPL</td><td>0.50</td><td>0.24</td><td>[0.03, 0.97]</td><td>48% of that book — the true beta could be almost anything</td></tr>
+            <tr><td>HIMSTAR</td><td>2.36</td><td>0.53</td><td>[1.32, 3.40]</td><td>Directionally high, magnitude uncertain</td></tr>
+            <tr><td>NIBLGF</td><td>−0.20</td><td>0.27</td><td>[−0.72, 0.33]</td><td>t = −0.73 — indistinguishable from zero</td></tr>
+            <tr><td>NABIL</td><td>0.60</td><td>0.065</td><td>[0.48, 0.73]</td><td>Genuinely precise</td></tr>
+          </tbody>
+        </table>
+        <p>A holding whose |t| &lt; 2 is graded <b>Estimate</b>, and the weight of such holdings drives the
+          grade on the Beta &amp; Stress group. This is the trade-off behind weekly beta: it removes the
+          non-synchronous-trading bias that corrupts daily betas on thin NEPSE names, at the cost of
+          reducing the sample from ~246 observations to ~52.</p>
+
+        <h4>Assumptions that no amount of data fixes</h4>
+        <ul>
+          <li><b>Stress is linear.</b> Impact = β × shock. In a real crash betas rise, correlations converge
+            and liquidity disappears, so losses are typically <i>worse</i> than the scenario shows.</li>
+          <li><b>Performance is synthetic.</b> Sharpe, Treynor, alpha, M² and the information ratio apply
+            <i>today's</i> weights to past prices. They answer "how would this book have scored", not "what
+            did you earn" — realised performance needs a holdings history, which is not recorded yet.</li>
+          <li><b>Residuals are assumed uncorrelated</b> in the factor model. Measured on these books, that
+            is false: same-sector residual correlation averaged <b>+0.46</b> on one and <b>+0.15</b> on the
+            other, against ≈0 across sectors. Idiosyncratic risk is therefore understated and the factor
+            split flatters diversification.</li>
+          <li><b>One market factor only.</b> There is no explicit interest-rate, sector, size, value or
+            liquidity factor. It is a single-market-factor decomposition, not a full risk model.</li>
+          <li><b>Liquidity is modelled, not executable.</b> Days-to-liquidate uses past average volume at an
+            assumed participation rate. Volume tends to vanish exactly when selling is urgent.</li>
+          <li><b>Historical VaR assumes the past resembles the future.</b> A one-year window may contain no
+            crash at all, in which case VaR understates what a crash would cost. VaR is also a
+            <i>threshold</i>, never a maximum — read Expected Shortfall beside it.</li>
+          <li><b>Limits are conventions.</b> The 12%/15% single-name thresholds and the rest are monitoring
+            defaults, not derived from your risk appetite or any regulation.</li>
+        </ul>
+
+        <h4>One thing the textbook predicts that this data does not show</h4>
+        <p>Correlations are widely said to converge toward 1 in a crisis, destroying diversification when it
+          is most needed. Split by market direction on these books, the opposite appears: average pairwise
+          correlation in <b>down</b> weeks was <b>0.253</b> versus <b>0.411</b> in up weeks on one book, and
+          essentially unchanged (0.217 vs 0.224) on the other. The honest reading is <i>not observed in this
+          sample</i> rather than <i>false</i> — the window contains ordinary down weeks, not a genuine
+          crash, and a real crisis may still behave as the textbook says.</p>
       </section>
 
       <!-- 5 ─────────────────────────────────────────────────────────── -->
@@ -672,6 +763,87 @@ information ratio = (R_p − R_m) / tracking error</span>
           NEPSE names trade thinly and daily betas are biased toward zero. Treynor and Jensen's
           alpha divide by that beta, so the return and volatility feeding them are sampled weekly
           too. Mixing a weekly beta with a daily sigma would misstate every ratio on this card.</p>
+
+        <h4>What each number on the card means</h4>
+        <p>Every figure below is annualised. The worked example in each row uses a real book on the
+          desk today — 52 weeks of history, risk-free 6.00%, β 0.93 — so you can follow the
+          arithmetic straight through.</p>
+
+        <p><b>Portfolio return &mdash; <span class="sop-eg">−12.52%</span></b><br>
+          What this exact set of holdings, at today's weights, would have returned over the window.
+          It is a <i>geometric</i> (compounded) return, not an average of the weekly numbers, so it
+          answers "what would a rupee have become". Read it next to the benchmark, never alone.</p>
+
+        <p><b>NEPSE return &mdash; <span class="sop-eg">−7.34%</span></b><br>
+          The same calculation applied to the NEPSE Index over the identical weeks. This is the
+          "doing nothing clever" alternative — what an index tracker would have handed you.</p>
+
+        <p><b>Active return &mdash; <span class="sop-eg">−5.18%</span></b><br>
+          Portfolio minus benchmark (−12.52 − (−7.34)). The single plainest answer to "did picking
+          these stocks beat just buying the market?". Negative here means the selection cost 5.18
+          percentage points versus the index. It ignores risk entirely — that is what the ratios
+          below add.</p>
+
+        <p><b>Sharpe &mdash; <span class="sop-eg">−0.81</span></b><br>
+          Return earned <i>above the risk-free rate</i> per unit of <b>total</b> volatility:
+          (−12.52 − 6.00) ÷ 22.91. It answers "how much reward did each unit of bumpiness buy?".
+          Roughly: above 1.0 is strong, 0.5&ndash;1.0 respectable, below 0 means cash in a
+          fixed deposit would have beaten it. Sharpe is only meaningful <i>compared</i> with
+          another portfolio or the index — the number alone has no natural scale.</p>
+
+        <p><b>Treynor &mdash; <span class="sop-eg">−0.199</span></b><br>
+          The same excess return, but divided by <b>beta</b> instead of volatility:
+          (−0.1252 − 0.06) ÷ 0.93 = −0.199. It prices only the market risk you took, on the
+          assumption the stock-specific risk has been diversified away elsewhere. Use it when this
+          portfolio is one sleeve of a bigger pot; use Sharpe when it is the whole pot.</p>
+        <p class="sop-note"><b>Mind the units.</b> Sharpe divides a return by a volatility, so it is
+          a pure ratio. Treynor divides a return by beta, so it is still <i>in return units</i> —
+          −0.199 means <b>−19.9 percentage points of excess return per unit of beta</b>, not
+          &minus;0.199%. Sharpe −0.81 and Treynor −0.199 sit side by side on the card but are not on
+          the same scale, so never compare the two figures directly. Compare each against the same
+          measure for another portfolio or for NEPSE.</p>
+
+        <p><b>Jensen's alpha &mdash; <span class="sop-eg">−6.11%</span></b><br>
+          The most directly interpretable number on the card. CAPM says a book with β 0.93 should
+          have returned R_f + β(R_m − R_f) = 6.00 + 0.93 × (−7.34 − 6.00) = −6.41%. It actually
+          returned −12.52%. The 6.11-point shortfall <i>is</i> alpha. Positive alpha = beat what
+          the risk taken entitled you to; negative = fell short. Unlike Sharpe it stands on its own,
+          and it is the honest ceiling on what active management is worth paying for.</p>
+
+        <p><b>M² alpha &mdash; <span class="sop-eg">−0.70%</span></b><br>
+          Sharpe restated as a percentage return, which is far easier to feel. It asks: if this
+          portfolio were levered or de-levered until it was exactly as volatile as NEPSE (22.91% →
+          17.37%), what would it have returned? Answer −8.04%, against NEPSE's −7.34% — so
+          <b>0.70 points worse on equal footing</b>. Same ranking as Sharpe, expressed in money terms.</p>
+
+        <p><b>Tracking error &mdash; <span class="sop-eg">16.29%</span></b><br>
+          The volatility of the <i>difference</i> between the portfolio and the index — how tightly
+          the book shadows NEPSE. Near 0% is an index tracker; 16.29% is a long way from the index,
+          which is expected for a 10-stock concentrated book. High tracking error is not good or
+          bad in itself: it is the size of the bet you are taking away from the benchmark.</p>
+
+        <p><b>Information ratio &mdash; <span class="sop-eg">−0.32</span></b><br>
+          Active return ÷ tracking error (−5.18 ÷ 16.29). It answers "was the deviation from the
+          index worth it?" — reward per unit of benchmark-relative risk. Above 0.5 is good,
+          above 1.0 rare. Negative means the bets away from NEPSE lost money <i>and</i> added
+          volatility.</p>
+
+        <p><b>Beta (β) &mdash; <span class="sop-eg">0.93</span></b><br>
+          Sensitivity to NEPSE: the book moves ~0.93% for each 1% index move. Below 1 is defensive,
+          above 1 is geared. It is the input to Treynor and Jensen's alpha, which is why its
+          estimation frequency matters so much.</p>
+
+        <p><b>Risk-free rate &mdash; <span class="sop-eg">6.00%</span></b><br>
+          What you could earn with no risk at all (≈ the 91-day T-bill). Every ratio measures return
+          <i>in excess of</i> this, because return you could have had for free is not a reward for
+          taking risk. It is a fixed assumption in this build, not a live rate.</p>
+
+        <p class="sop-note">Reading the example as a whole: the book fell 12.52% while NEPSE fell
+          7.34%, so it lost more than the market <i>and</i> was more volatile (22.91% vs 17.37%).
+          Every measure agrees — negative alpha, negative M² alpha, negative information ratio.
+          When the measures disagree, that disagreement is informative: it usually means the
+          portfolio is winning on one kind of risk and losing on the other, and which one matters
+          depends on the question in the next paragraph.</p>
         <p><b>Which measure to read.</b> Sharpe and M² use <i>total</i> risk — the right choice when
           this portfolio is effectively the investor's whole wealth. Treynor and Jensen's alpha use
           <i>systematic</i> risk — the right choice when it is one sleeve of an already diversified

@@ -68,6 +68,21 @@ def floorsheet_sop_view(request):
     )
 
 
+def accumulation_sop_view(request):
+    """Methodology SOP for the A/D Radar tab.
+
+    Its own page rather than a section of the Floorsheet SOP: A/D Radar is the
+    only metric on the desk that is backtested rather than purely descriptive,
+    so it has to document what it was measured to be worth, what was rejected,
+    and where it fails. Static content — it never touches the analytics engine.
+    """
+    return render(
+        request,
+        "core_analysis/accumulation_sop.html",
+        {"asset_version": _asset_version()},
+    )
+
+
 def _window(request):
     """Extract the shared date-range selection (range + optional custom dates).
 
@@ -339,3 +354,41 @@ def hotstocks_api(request):
 @_validated_query
 def broker_flow_radar_api(request):
     return _safe(ba.broker_flow_radar, **_window(request))
+
+
+@require_GET
+@_validated_query
+def accumulation_api(request):
+    """Stock-first Accumulation / Distribution radar.
+
+    Without ``symbol`` this returns the market-wide ranking; with one it returns
+    that scrip's reading, still scored inside the full cross-section so the
+    percentile means the same thing on both views.
+
+    The window defaults to 1 month rather than the shared 'today' default: a
+    single session cannot show accumulation. Only the *unset* default is
+    upgraded — an explicitly requested short window is passed through and the
+    service refuses it with an explanation, rather than silently returning a
+    month of data under a label the user did not choose.
+    """
+    from core_analysis.services import accumulation as ad
+
+    window = _window(request)
+    if not request.GET.get("range"):
+        window["range_key"] = "1m"
+
+    symbol = (request.GET.get("symbol") or "").strip().upper()
+    if symbol:
+        if not _SYMBOL_RE.fullmatch(symbol):
+            raise QueryValidationError("Symbol must be 1-50 valid ticker characters.")
+        return _safe(ad.accumulation_detail, symbol, **window)
+
+    def _scan(**kw):
+        # `excluded_reasons` maps every excluded symbol to its reason — a few
+        # hundred entries the scan view never renders. It exists for the detail
+        # lookup, which reads it server-side, so drop it from the wire payload.
+        data = dict(ad.accumulation_scan(**kw))
+        data.pop("excluded_reasons", None)
+        return data
+
+    return _safe(_scan, sector=_sector(request), **window)

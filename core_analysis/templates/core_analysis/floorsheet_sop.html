@@ -74,8 +74,9 @@
       <a href="#aggregation">3. How a session is aggregated</a>
       <a href="#ranges">4. Date ranges &amp; the Shares/Turnover lens</a>
       <a href="#concepts">5. Core concepts (net, HHI, matching, churn)</a>
-      <h6>The seven tabs</h6>
+      <h6>The tabs</h6>
       <a href="#flowradar">6. Broker Flow Radar</a>
+      <a href="#adradar">6.1 A/D Radar (backtested)</a>
       <a href="#analysis">7. Broker Analysis</a>
       <a href="#analysis-kpis">7.1 KPI strip</a>
       <a href="#analysis-topbuysell">7.2 Top Buy / Top Sell</a>
@@ -215,6 +216,84 @@ churn %         = 2 × min(buyQ, sellQ) ÷ (buyQ + sellQ) × 100   ( same idea, 
         </table>
         <p><b>Interpretation.</b> Big total activity + strongly positive bias = a large desk leaning to buy;
           high matching % on a big total = a market-maker recycling inventory rather than taking a side.</p>
+      </section>
+
+      <!-- 6.1 ───────────────────────────────────────────────────────── -->
+      <section class="sop-sec" id="adradar">
+        <p class="sop-kicker">Section 6.1</p>
+        <h3>A/D Radar — stock-first Accumulation / Distribution</h3>
+        <p>Every other tab is <b>broker-first</b>: pick a broker, see what it traded. This one is
+          <b>stock-first</b>: for each scrip, is someone building a position or unloading one? It is also the
+          only metric on this desk that is <b>backtested</b> rather than purely descriptive, so it is
+          documented to a higher standard — including what it cannot do.</p>
+        <div class="sop-note">This section is the summary. The full methodology — backtest design, the
+          features that were tested and <b>rejected</b>, robustness checks and blind spots — has its own
+          document: <a href="{% url 'accumulation_sop' %}" target="_blank" rel="noopener">A/D Radar SOP</a>.</div>
+
+        <h4>The score</h4>
+        <p>Three features, each z-scored across every scored scrip in the same window (so the reading is
+          “relative to the rest of the market right now”, not against a fixed threshold that would drift):</p>
+        <table class="sop-table">
+          <thead><tr><th>Feature</th><th>Definition</th><th>Sign</th><th>Measured effect</th></tr></thead>
+          <tbody>
+            <tr><td><code>absorb</code></td><td>Top-5 net buyers' net quantity ÷ total window volume</td><td>+</td><td>+57 bps per SD (t = 4.22)</td></tr>
+            <tr><td><code>sell_hhi</code></td><td>Herfindahl concentration of the selling side</td><td>−</td><td>−34 bps per SD (t = −5.55)</td></tr>
+            <tr><td><code>top1_share</code></td><td>Share of net buying done by the single largest broker</td><td>−</td><td>−47 bps per SD (t = −2.23)</td></tr>
+          </tbody>
+        </table>
+        <p class="sop-formula">score = z(absorb) − z(top1_share) − z(sell_hhi)</p>
+        <p>The two negative signs are the important part. <b>Concentrated selling</b> is the most statistically
+          reliable feature on the whole desk — a seller with size has to keep hitting bids and cannot hide it,
+          whereas a patient accumulator genuinely can spread buying across brokers and days. And conditional on
+          how much is being absorbed, <b>buying concentrated in one broker scores worse</b> than the same
+          buying spread across several: real campaigns run through multiple brokers.</p>
+
+        <h4>Bands</h4>
+        <p>Percentile of the cross-section, cut into quintiles to match how the backtest was measured:
+          top 20% <b>Accumulation</b>, next 20% Mild Accumulation, middle 20% <b>Neutral</b>, then Mild
+          Distribution and <b>Distribution</b>. A neutral reading is a real answer — no side is controlling the
+          scrip — not a missing one.</p>
+
+        <h4>Universe</h4>
+        <p>Ordinary equities only, priced ≥ Rs 50, trading ≥ 800 shares/session over the window.
+          <b>Debentures, mutual funds and promoter shares are excluded</b>: they change hands through one or
+          two brokers, so every concentration measure pins at its extreme and would swamp both tails. Promoter
+          scrips carry their parent's sector (CZBILP reads as “Commercial Banks”), so they are caught by symbol
+          suffix rather than sector. The count of exclusions is printed under the table on every scan.</p>
+
+        <h4>Backtest</h4>
+        <p>3.5 years of floorsheet (2023-01-01 → 2026-08-11; 819 sessions; 9.76 M broker-day-stock cells).
+          Features use only data up to the anchor date, forward returns start the day after. Returns are
+          <b>adjusted for bonus/rights</b> — raw NEPSE closes book a 10–15% bonus ex-date as a crash — and
+          measured as <b>excess over the cross-sectional median of the same date</b>, so a rising market cannot
+          make a worthless signal look predictive. Only non-overlapping windows are reported.</p>
+        <table class="sop-table">
+          <thead><tr><th>Horizon</th><th>Bottom quintile</th><th>Top quintile</th><th>Spread</th><th>t-stat</th></tr></thead>
+          <tbody>
+            <tr><td>20 sessions</td><td>+0.18%</td><td>+0.94%</td><td>+0.76%</td><td>—</td></tr>
+            <tr><td>60 sessions</td><td>−0.75%</td><td>+3.60%</td><td>+4.34%</td><td>1.96</td></tr>
+            <tr><td><b>120 sessions</b></td><td>−0.91%</td><td>+5.39%</td><td><b>+6.30%</b></td><td><b>2.24</b></td></tr>
+          </tbody>
+        </table>
+        <p>Positive in all four years at the 120-session horizon (2023 +6.8%, 2024 +9.2%, 2025 +2.7%,
+          2026 +3.2%), and it is not a penny-stock artifact — the spread is largest in the most expensive
+          price tercile (+8.0%).</p>
+
+        <h4>How to read it — and how not to</h4>
+        <ul>
+          <li><b>It is a 3–6 month positioning screen.</b> At 20 sessions the edge (~0.8%) does not clear the
+            ~0.6% round trip. Traded weekly it will lose money.</li>
+          <li><b>Hit rate is ~53%.</b> The edge is in the average across many names, not in any single call.
+            Roughly half of top-quintile scrips still underperform.</li>
+          <li><b>2025 was weak</b> (+2.7%). It can go quiet for a year at a time.</li>
+          <li><b>It is a screen, not a signal</b> — it tells you where to look, not what to buy.</li>
+        </ul>
+
+        <h4>Blind spot</h4>
+        <p>Shares moved <b>off-market</b> — DP/BOD transfers, pledges, private deals — never print on the
+          floorsheet. A campaign conducted that way is completely invisible here, and no public data source
+          closes that gap. A “Neutral” reading means <i>no on-market campaign was detected</i>, which is not
+          the same as “nothing is happening”.</p>
       </section>
 
       <!-- 7 ─────────────────────────────────────────────────────────── -->

@@ -526,6 +526,243 @@
   }
 
   // ─────────────────────────────────────────────────────────────────────
+  // TAB: A/D Radar — stock-first accumulation / distribution
+  //
+  // Inverse of every other tab: not "what did this broker do" but "is this
+  // scrip being accumulated". The score is backtested; the evidence strip and
+  // the horizon warning are rendered from the payload rather than hard-coded so
+  // they cannot drift away from what the model actually measured.
+  // ─────────────────────────────────────────────────────────────────────
+  var adState = { dr: null, side: "accumulation", data: null };
+
+  // "Candidates" throughout, deliberately: the score narrows where to look, it
+  // does not establish that a campaign exists.
+  var AD_TITLES = {
+    accumulation: "ACCUMULATION CANDIDATES",
+    quiet: "QUIET ACCUMULATION CANDIDATES — ABSORPTION WITHOUT MARK-UP",
+    distribution: "DISTRIBUTION CANDIDATES",
+    all: "ALL SCORED SCRIPS"
+  };
+
+  TABS.adradar = {
+    init: function () {
+      var sec = el("ad-sector");
+      if (sec) { fillSectors(sec); sec.addEventListener("change", function () { TABS.adradar.load(); }); }
+      // Default to 1 month, not the shared "Current Day": a single session
+      // cannot show accumulation, and the service refuses anything under 5.
+      // This MUST go through dateRange's third argument — setting the <select>
+      // value directly only changes the visible label, because dateRange seeds
+      // its own state from `defaultRange || "today"` and ignores the DOM.
+      adState.dr = dateRange("ad", function () { TABS.adradar.load(); }, "1m");
+      segGroup("ad-side", function (v) { adState.side = v; drawAd(); });
+      var btn = el("ad-analyze");
+      if (btn) btn.addEventListener("click", function () { TABS.adradar.load(); });
+      var close = el("ad-detail-close");
+      if (close) close.addEventListener("click", function () { el("ad-detail").hidden = true; });
+      // Row click opens the broker breakdown for that scrip.
+      var tbl = el("ad-table");
+      if (tbl) tbl.addEventListener("click", function (e) {
+        var tr = e.target.closest ? e.target.closest("tr[data-sym]") : null;
+        if (tr) showAdDetail(tr.getAttribute("data-sym"));
+      });
+    },
+    load: function () {
+      var t = el("ad-table");
+      loading(t, 10);
+      var p = adState.dr ? adState.dr.params() : { range: "1m" };
+      var sec = el("ad-sector");
+      if (sec && sec.value) p.sector = sec.value;
+      getJSON("accumulation/", p, "ad-scan")
+        .then(function (d) { adState.data = d; drawAd(); })
+        .catch(function (err) {
+          if (isAbort(err)) return;
+          adState.data = null;
+          empty(t, 10, "Error loading A/D scan");
+        });
+    }
+  };
+
+  function adBandTag(r) {
+    return "<span class='dsx-band " + esc(r.band) + "'>" + esc(r.band_label) + "</span>";
+  }
+
+  // Diverging bar: centre = market median, right = accumulation, left = supply.
+  function adScoreBar(pct) {
+    var p = Math.max(0, Math.min(100, pct == null ? 50 : pct));
+    var half = Math.abs(p - 50);            // 0..50 from the centre
+    var side = p >= 50 ? "pos" : "neg";
+    var style = p >= 50
+      ? "left:50%;width:" + half + "%"
+      : "right:50%;width:" + half + "%";
+    return "<span class='dsx-adbar'><i class='" + side + "' style='" + style + "'></i></span>";
+  }
+
+  var AD_COLS = [
+    { label: "Ticker", key: "symbol", type: "str", cls: "l" },
+    { label: "Sector", key: "sector", type: "str", cls: "l" },
+    { label: "Reading", key: "percentile", type: "num" },
+    { label: "Distribution ◂ Position ▸ Accumulation" },
+    { label: "Score", key: "score", type: "num" },
+    { label: "Absorbed", key: "absorb_pct", type: "num" },
+    { label: "Buy Group", key: "group_n", type: "num" },
+    { label: "Top Broker", key: "top1_pct", type: "num" },
+    { label: "Sell Conc.", key: "sell_hhi", type: "num" },
+    { label: "Price Δ", key: "price_chg_pct", type: "num" }
+  ];
+
+  function buildAdTable(table, rows) {
+    if (!rows || !rows.length) { empty(table, 10, "No scrips in this band for the selected window"); return; }
+    var body = rows.map(function (r) {
+      var pxCls = (r.price_chg_pct || 0) >= 0 ? "num-pos" : "num-neg";
+      return "<tr data-sym='" + esc(r.symbol) + "' class='dsx-adrow'>" +
+        "<td class='l tkr' title='" + esc(r.name || r.symbol) + "'>" + esc(r.symbol) + "</td>" +
+        "<td class='l dsx-ad-sec'>" + esc(r.sector || "—") + "</td>" +
+        "<td>" + adBandTag(r) + "</td>" +
+        "<td class='dsx-adbar-cell'>" + adScoreBar(r.percentile) + "</td>" +
+        "<td class='" + (r.score >= 0 ? "num-pos" : "num-neg") + "'>" + (r.score || 0).toFixed(2) + "</td>" +
+        "<td title='Top 5 net buyers as a share of all volume traded'>" + fmtPct(r.absorb_pct) + "</td>" +
+        "<td title='Brokers doing half of the net buying — spread beats a single desk'>" + (r.group_n || 0) + "</td>" +
+        "<td title='Share of net buying done by the single largest broker'>" + fmtPct(r.top1_pct) + "</td>" +
+        "<td title='Herfindahl concentration of the selling side (10000 = one seller)'>" + fmtQty(r.sell_hhi) + "</td>" +
+        "<td class='" + pxCls + "'>" + (r.price_chg_pct == null ? "—" : fmtSignedPct(r.price_chg_pct)) + "</td></tr>";
+    }).join("");
+    table.innerHTML = sortableHead(table.id, AD_COLS) + "<tbody>" + body + "</tbody>";
+  }
+
+  function drawAd() {
+    var t = el("ad-table"), d = adState.data;
+    if (!t) return;
+    if (!d || !d.ok) {
+      empty(t, 10, (d && d.reason) || "No data");
+      if (el("ad-kpis")) el("ad-kpis").innerHTML = "";
+      if (el("ad-evidence")) el("ad-evidence").innerHTML = "";
+      if (el("ad-universe")) el("ad-universe").textContent = (d && d.reason) || "";
+      return;
+    }
+    var rows = adState.side === "accumulation" ? (d.accumulation || [])
+      : adState.side === "distribution" ? (d.distribution || [])
+      : adState.side === "quiet" ? (d.quiet_accumulation || [])
+      : (d.rows || []);
+
+    var title = el("ad-table-title");
+    if (title) title.textContent = AD_TITLES[adState.side] || AD_TITLES.accumulation;
+    var sub = el("ad-sub");
+    if (sub) sub.textContent = d.days + " sessions" + (d.as_of ? " to " + d.as_of : "");
+
+    var c = d.counts || {};
+    var k = el("ad-kpis");
+    if (k) {
+      k.innerHTML = [
+        kpi("Scrips Scored", nf(c.scored || 0), "ordinary equities passing the liquidity floor"),
+        kpi("Accumulating", nf(c.accumulation || 0), "top quintile of the cross-section"),
+        kpi("Distributing", nf(c.distribution || 0), "bottom quintile of the cross-section"),
+        kpi("Window", d.days + " sessions", "flow measured over this many trading days")
+      ].join("");
+    }
+
+    var ev = el("ad-evidence"), b = d.backtest || {};
+    if (ev && b.spread_pct != null) {
+      // The headline is the OUT-OF-SAMPLE result. Showing the in-sample figure
+      // as the headline (which this once did) presents a selection artifact as
+      // an edge; the in-sample number is kept only as the contrast that makes
+      // the decay visible.
+      var ins = b.in_sample || {};
+      ev.innerHTML =
+        (d.window_warning
+          ? "<div class='dsx-ev-alert'>" + esc(d.window_warning) + "</div>" : "") +
+        (b.validated === false
+          ? "<div class='dsx-ev-alert'>Not a validated predictive signal — this is a " +
+            "descriptive flow lens. See the out-of-sample figures below.</div>" : "") +
+        "<div class='dsx-ev-head'>Held-out test — " + esc(b.sample || "") + "</div>" +
+        "<div class='dsx-ev-grid'>" +
+        evCell("Out-of-sample spread", "+" + b.spread_pct + "%",
+               "t = " + b.t_stat + " · p = " + b.p_value + " · n = " + nf(b.n)) +
+        evCell("In-sample spread", "+" + ins.spread_pct + "%",
+               "t = " + ins.t_stat + " on " + esc(ins.period || "") + " — the period the features were chosen on") +
+        evCell("Decay", Math.round(100 - 100 * b.spread_pct / (ins.spread_pct || 1)) + "%",
+               "how much of the in-sample edge disappears on unseen data") +
+        evCell("Significant?", (b.p_value != null && b.p_value < 0.05) ? "yes" : "no",
+               "p = " + b.p_value + " at the " + b.horizon_sessions + "-session horizon") +
+        "</div>" +
+        "<div class='dsx-ev-horizons'>" +
+          (b.horizons || []).map(function (h) {
+            return "<span><b>" + h.sessions + " sessions</b> out-of-sample +" + h.spread_pct +
+              "% · t " + h.t_stat + " · p " + h.p_value + "</span>";
+          }).join("") +
+        "</div>" +
+        "<div class='dsx-ev-warn'>" + esc(b.note || "") + "</div>";
+    }
+
+    var uni = el("ad-universe");
+    if (uni) {
+      // If a quintile is larger than the server's cap, the table is showing a
+      // subset while the KPI above reports the full count. Say so.
+      var tr = d.truncated || {}, cut = 0;
+      if (adState.side === "accumulation") cut = tr.accumulation || 0;
+      else if (adState.side === "distribution") cut = tr.distribution || 0;
+      uni.textContent = (cut
+        ? "Showing the strongest " + tr.limit + " of " + (rows.length + cut) +
+          " in this band. "
+        : "") + (d.universe_note || "");
+    }
+    showTable(t, rows, buildAdTable);
+  }
+
+  // Same markup the other KPI strips emit, so these tiles inherit the desk's
+  // existing styling rather than introducing a parallel look.
+  function kpi(label, value, tip) {
+    return "<div class='dsx-kpi' title='" + esc(tip || "") + "'><span class='dsx-kpi-label'>" +
+      esc(label) + "</span><span class='dsx-kpi-val'>" + esc(value) + "</span>" +
+      "<span class='dsx-kpi-sub'>" + esc(tip || "") + "</span></div>";
+  }
+  function evCell(label, value, tip) {
+    var cls = String(value).charAt(0) === "-" ? "num-neg" : "num-pos";
+    return "<div class='dsx-ev-cell'><span class='dsx-ev-label'>" + esc(label) + "</span>" +
+      "<span class='dsx-ev-value " + cls + "'>" + esc(value) + "</span>" +
+      "<span class='dsx-ev-tip'>" + esc(tip) + "</span></div>";
+  }
+
+  function brokerChip(x, side) {
+    var nm = brokerName(x.broker);
+    return "<span class='dsx-chip " + side + "' title='" + esc(nm ? "#" + x.broker + " — " + nm : "Broker " + x.broker) +
+      "'>#" + esc(x.broker) + " <b>" + fmtQty(Math.abs(x.net)) + "</b></span>";
+  }
+
+  function showAdDetail(symbol) {
+    var box = el("ad-detail"), body = el("ad-detail-body");
+    if (!box || !body) return;
+    box.hidden = false;
+    body.innerHTML = "<div class='dsx-loading'>Loading…</div>";
+    el("ad-detail-title").textContent = symbol + " — FLOW DETAIL";
+    var p = adState.dr ? adState.dr.params() : { range: "1m" };
+    p.symbol = symbol;
+    getJSON("accumulation/", p, "ad-detail")
+      .then(function (d) {
+        if (!d.ok) { body.innerHTML = "<div class='dsx-empty'>" + esc(d.reason || "Not scored") + "</div>"; return; }
+        var r = d.row || {};
+        body.innerHTML =
+          "<div class='dsx-ad-detail-top'>" + adBandTag(r) +
+            "<span class='dsx-ad-detail-score'>score " + (r.score || 0).toFixed(2) +
+            " · " + (r.percentile || 0).toFixed(0) + "th percentile of " + nf(d.universe) + " scrips</span></div>" +
+          "<p class='dsx-ad-reading'>" + esc(d.reading || "") + "</p>" +
+          "<div class='dsx-ad-sides'>" +
+            "<div><h4>Net buyers</h4><div class='dsx-chips'>" +
+              (r.top_buyers || []).map(function (x) { return brokerChip(x, "buy"); }).join("") +
+              "</div><span class='dsx-ad-meta'>" + (r.buyers_n || 0) + " brokers net long · half the buying done by " +
+              (r.group_n || 0) + "</span></div>" +
+            "<div><h4>Net sellers</h4><div class='dsx-chips'>" +
+              (r.top_sellers || []).map(function (x) { return brokerChip(x, "sell"); }).join("") +
+              "</div><span class='dsx-ad-meta'>" + (r.sellers_n || 0) + " brokers net short · concentration " +
+              fmtQty(r.sell_hhi) + "</span></div>" +
+          "</div>";
+      })
+      .catch(function (err) {
+        if (isAbort(err)) return;
+        body.innerHTML = "<div class='dsx-empty'>Error loading detail</div>";
+      });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
   // TAB: Broker Favorites
   // ─────────────────────────────────────────────────────────────────────
   var favState = { brokers: [], dr: null, persistSide: "all", persistLb: "1m", persistData: null, persistSort: null };
