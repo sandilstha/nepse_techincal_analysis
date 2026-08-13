@@ -45,6 +45,7 @@
        title="How every metric on this page is calculated — methodology SOP"
        aria-label="Methodology SOP for the whole page">?</a>
     <button class="dsx-tab active" data-tab="flowradar">Broker Flow Radar</button>
+    <button class="dsx-tab" data-tab="adradar">A/D Radar</button>
     <button class="dsx-tab" data-tab="favorites">Broker Analysis</button>
     <button class="dsx-tab" data-tab="signals">Signal Desk</button>
     <button class="dsx-tab" data-tab="stockwise">Script Deep Dive</button>
@@ -57,6 +58,59 @@
   {% if not meta.ok %}
   <div class="dsx-banner" id="dsx-banner">Floorsheet feed unavailable — showing no data. It will populate once the feed responds.</div>
   {% endif %}
+
+  {% comment %}
+  A/D Radar — stock-first accumulation/distribution. Every other tab is
+  broker-first (pick a broker, see what it traded); this one asks, for each
+  scrip, whether someone is building or unloading a position.
+
+  The score is backtested (see services/accumulation.py) and the evidence strip
+  below states the result INCLUDING its limits, because the honest headline is
+  "a 3-6 month screen with a ~53% hit rate", not "a signal".
+  {% endcomment %}
+  <section class="dsx-panel" id="panel-adradar">
+    <div class="dsx-controls">
+      <div class="dsx-field">Sector
+        <select id="ad-sector" class="dsx-select dsx-sector"></select>
+      </div>
+      {% include "core_analysis/includes/_date_range.html" with prefix="ad" %}
+      <div class="dsx-seg" data-group="ad-side" title="Which side of the book to list">
+        <button type="button" class="dsx-pill active" data-val="accumulation">Accumulation</button>
+        <button type="button" class="dsx-pill" data-val="quiet">Quiet Accumulation</button>
+        <button type="button" class="dsx-pill" data-val="distribution">Distribution</button>
+        <button type="button" class="dsx-pill" data-val="all">All Scored</button>
+      </div>
+      <button type="button" id="ad-analyze" class="dsx-analyze">Scan</button>
+    </div>
+
+    <div class="dsx-kpis" id="ad-kpis"></div>
+
+    <!-- Evidence strip: what the backtest actually found, stated up front so the
+         score is never read as a prediction. -->
+    <div class="dsx-ad-evidence" id="ad-evidence"></div>
+
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span id="ad-table-title">ACCUMULATION CANDIDATES</span>
+        <span class="dsx-ad-sub">
+          <span id="ad-sub"></span>
+          <a class="dsx-ad-sop" href="{% url 'accumulation_sop' %}" target="_blank" rel="noopener"
+             title="A/D Radar methodology — the score, the backtest, and its limits">Methodology</a>
+        </span>
+      </div>
+      <div class="dsx-table-wrap"><table class="dsx-table dsx-ad-table" id="ad-table"></table></div>
+      <div class="dsx-ad-note" id="ad-universe"></div>
+    </div>
+
+    <!-- Detail drawer: the brokers on each side for one scrip. -->
+    <div class="dsx-card dsx-ad-detail" id="ad-detail" hidden>
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span id="ad-detail-title">SCRIP DETAIL</span>
+        <button type="button" class="dsx-ad-close" id="ad-detail-close" aria-label="Close detail">×</button>
+      </div>
+      <div class="dsx-ad-detail-body" id="ad-detail-body"></div>
+    </div>
+  </section>
 
   <!-- shared range / view controls (each panel toggles which it shows) -->
   <section class="dsx-panel" id="panel-favorites">

@@ -67,7 +67,7 @@ LIQUIDITY_RISK_LABELS = {
 RISK_FREE_ANNUAL = 0.06
 
 CACHE_TTL = 180
-PAYLOAD_VERSION = 8   # 7: performance + correlation · 8: pl_snapshot + per-sector P/L
+PAYLOAD_VERSION = 9   # 7: performance+correlation · 8: pl_snapshot · 9: reliability grading
 
 # Default investment-policy limits monitored on every portfolio. "warn" raises a
 # watch, "breach" a violation. Sensible institutional defaults tuned for a
@@ -325,6 +325,32 @@ def _beta_resid(stock_ret, index_ret, min_n=MIN_WEEKLY_RETURNS):
     return beta, _stdev(resid)
 
 
+def _beta_precision(stock_ret, index_ret, min_n=MIN_WEEKLY_RETURNS):
+    """(beta, standard error, n) for one holding — how much to trust the beta.
+
+    A weekly beta on ~52 observations is not a precise number, and displaying it
+    to two decimals implies otherwise. Measured on real books: UNHPL came out at
+    0.50 with a standard error of 0.24 (95% CI 0.03-0.97) while being 48% of that
+    portfolio, and NIBLGF at -0.20 with t = -0.73, i.e. indistinguishable from
+    zero. The desk needs to say which betas are estimates and which are noise.
+    """
+    common = [d for d in stock_ret if d in index_ret]
+    n = len(common)
+    if n < min_n:
+        return None, None, n
+    xs = [index_ret[d] for d in common]
+    ys = [stock_ret[d] for d in common]
+    mx, my = sum(xs) / n, sum(ys) / n
+    sxx = sum((x - mx) ** 2 for x in xs)
+    if not sxx or n < 3:
+        return None, None, n
+    beta = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sxx
+    alpha = my - beta * mx
+    resid = [y - (alpha + beta * x) for x, y in zip(xs, ys)]
+    s2 = sum(e * e for e in resid) / (n - 2)
+    return beta, math.sqrt(s2 / sxx), n
+
+
 def _parametric_var(vol_annual_pct, sessions):
     """95% parametric VaR as a positive loss *fraction* over ``sessions`` sessions.
 
@@ -437,6 +463,171 @@ def _cost_summary(rows):
         "costed_market_value": mkt,
         "paper_pl": pl,
         "paper_pl_pct": round(100.0 * pl / book, 2) if book else None,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Data-quality grading
+# ─────────────────────────────────────────────────────────────────────────────
+# Thresholds for how much of a holding's history has to be real prints before
+# its risk numbers can be believed. A NEPSE scrip that does not trade carries
+# its last close forward, which the return series reads as a 0% move — so an
+# illiquid name looks CALM rather than unpriced. Measured on a real 51-name
+# book: KAHL traded 29 of 226 sessions and its annualised volatility came out
+# at 33.3%, against 90.8% when computed only over sessions it actually traded.
+TRADED_OK = 0.90        # >= 90% of sessions priced -> treat as reliable
+TRADED_WEAK = 0.60      # 60-90% -> estimate; below that -> unreliable
+BETA_T_OK = 2.0         # |beta / se| below this is statistically indistinct from 0
+STALE_WEIGHT_WARN = 5.0     # % of book in stale names before vol/VaR is flagged
+STALE_WEIGHT_BAD = 20.0
+
+GRADE_LABELS = {"green": "Reliable", "amber": "Estimate", "red": "High model uncertainty"}
+
+
+def _holding_quality(rows, stock_ret, stock_wret, index_wret, session_dates):
+    """Attach a per-holding data-quality grade, and return the book-level roll-up.
+
+    Grades describe INPUT quality, not risk: a red holding is one whose numbers
+    cannot be trusted, which is different from a holding that is risky.
+    """
+    sessions = len(set(session_dates or []))
+    stale_weight = 0.0
+    noisy_beta_weight = 0.0
+    no_beta_weight = 0.0
+    worst = "green"
+    for r in rows:
+        sym = r["symbol"]
+        traded = len(stock_ret.get(sym, {}))
+        frac = (traded / sessions) if sessions else 0.0
+        beta, se, nwk = _beta_precision(stock_wret.get(sym, {}), index_wret)
+        tstat = (beta / se) if (beta is not None and se) else None
+
+        reasons = []
+        grade = "green"
+        if frac < TRADED_WEAK:
+            grade = "red"
+            reasons.append(f"priced on only {traded} of {sessions} sessions — "
+                           f"volatility and VaR are understated")
+        elif frac < TRADED_OK:
+            grade = "amber"
+            reasons.append(f"missing {sessions - traded} of {sessions} sessions")
+        if beta is None:
+            grade = "red" if grade != "red" else grade
+            reasons.append(f"no beta ({nwk} shared weeks, needs {MIN_WEEKLY_RETURNS})")
+        elif tstat is not None and abs(tstat) < BETA_T_OK:
+            grade = "amber" if grade == "green" else grade
+            reasons.append(f"beta {beta:.2f} ± {se:.2f} is not statistically "
+                           f"distinguishable from zero (t={tstat:.1f})")
+
+        r["quality"] = grade
+        r["quality_label"] = GRADE_LABELS[grade]
+        r["quality_reasons"] = reasons
+        r["traded_sessions"] = traded
+        r["traded_pct"] = round(100.0 * frac, 1) if sessions else None
+        r["beta_se"] = round(se, 3) if se is not None else None
+        r["beta_t"] = round(tstat, 2) if tstat is not None else None
+        r["beta_ci"] = ([round(beta - 1.96 * se, 2), round(beta + 1.96 * se, 2)]
+                        if (beta is not None and se) else None)
+
+        w = r.get("weight", 0.0)
+        if frac < TRADED_OK:
+            stale_weight += w
+        if beta is None:
+            no_beta_weight += w
+        elif tstat is not None and abs(tstat) < BETA_T_OK:
+            noisy_beta_weight += w
+        if grade == "red" or (grade == "amber" and worst == "green"):
+            worst = grade if grade == "red" else "amber"
+
+    return {
+        "sessions": sessions,
+        "stale_weight_pct": round(stale_weight, 1),
+        "noisy_beta_weight_pct": round(noisy_beta_weight, 1),
+        "no_beta_weight_pct": round(no_beta_weight, 1),
+        "worst_holding_grade": worst,
+        "stale_names": [r["symbol"] for r in rows if r["quality"] == "red"],
+    }
+
+
+def _metric_reliability(q, cost_has, perf_ok):
+    """Grade each METRIC GROUP by the quality of the data feeding it.
+
+    The point of this block is that the desk currently presents a 2-decimal VaR
+    computed partly from prices that never moved because nothing traded. Every
+    number here is still shown; this says how much weight to put on it.
+    """
+    stale, noisy = q["stale_weight_pct"], q["noisy_beta_weight_pct"] + q["no_beta_weight_pct"]
+
+    def g(bad, warn):
+        return "red" if bad else ("amber" if warn else "green")
+
+    items = [
+        {"key": "vol_var", "label": "Volatility · VaR · Expected Shortfall",
+         "grade": g(stale >= STALE_WEIGHT_BAD, stale >= STALE_WEIGHT_WARN),
+         "why": (f"{stale:.1f}% of the book trades on fewer than {TRADED_OK*100:.0f}% of "
+                 f"sessions. A scrip that does not trade repeats its last close, which the "
+                 f"return series reads as a 0% move, so risk is biased DOWNWARD."
+                 if stale else
+                 "Every holding is priced on essentially all sessions, so no stale-price "
+                 "bias in the return series.")},
+        {"key": "beta_stress", "label": "Beta · Stress scenarios",
+         "grade": g(q["no_beta_weight_pct"] >= 25 or noisy >= 40, noisy >= 10),
+         "why": (f"{noisy:.1f}% of the book has a beta that is statistically weak or absent. "
+                 f"Beta is also estimated on ~52 weekly points, so a two-decimal figure "
+                 f"carries a confidence interval that is often ±0.2 or wider."
+                 if noisy else
+                 "Beta is available and statistically distinguishable from zero across "
+                 "essentially the whole book — though still a ~52-point estimate.")},
+        {"key": "stress_linearity", "label": "Stress = beta × shock",
+         "grade": "amber",
+         "why": ("A linear approximation. In a genuine crash, betas rise, correlations "
+                 "converge and liquidity vanishes, so realised losses are typically worse "
+                 "than beta × shock. Treat it as a scenario, not a prediction.")},
+        {"key": "performance", "label": "Sharpe · Treynor · Alpha · M² · Info ratio",
+         "grade": "amber" if perf_ok else "red",
+         "why": ("Computed by applying TODAY'S weights to past prices. It answers 'how "
+                 "would this book have scored', not 'what did you actually earn' — that "
+                 "needs a holdings history, which is not recorded yet."
+                 if perf_ok else "Not enough shared history to compute.")},
+        {"key": "correlation", "label": "Correlation · Diversification ratio",
+         "grade": "amber",
+         "why": ("Measured on ~52 weekly points in one regime. Same-sector residuals are "
+                 "empirically correlated (+0.15 to +0.46 on these books), which the "
+                 "single-factor model assumes away — so diversification is, if anything, "
+                 "flattered.")},
+        {"key": "factors", "label": "Factor decomposition",
+         "grade": "amber",
+         "why": ("A SINGLE-market-factor split, not a full risk model: it carries no "
+                 "explicit interest-rate, sector, size or liquidity factor, and assumes "
+                 "residuals are uncorrelated — which measurement shows they are not "
+                 "within a sector.")},
+        {"key": "liquidity", "label": "Days-to-liquidate · Liquidity stress",
+         "grade": "amber",
+         "why": ("Modelled capacity from past average volume, not executable liquidity. "
+                 "Volume tends to disappear precisely when selling is urgent, so DTL "
+                 "understates exit time in exactly the conditions that matter.")},
+        {"key": "concentration", "label": "Weights · HHI · Effective holdings",
+         "grade": "green",
+         "why": ("Arithmetic on current positions and prices — no statistical estimation, "
+                 "so no model uncertainty. Note HHI counts names, not economic exposure: "
+                 "ten banks score as diversified.")},
+        {"key": "pl", "label": "Book value · Unrealised P/L",
+         "grade": "green" if cost_has else "red",
+         "why": ("Arithmetic against the imported WACC cost basis."
+                 if cost_has else "No WACC cost basis imported, so P/L cannot be computed.")},
+    ]
+    order = {"red": 0, "amber": 1, "green": 2}
+    items.sort(key=lambda i: order[i["grade"]])
+    worst = items[0]["grade"] if items else "green"
+    return {
+        "items": items,
+        "labels": GRADE_LABELS,
+        "overall": worst,
+        "counts": {k: sum(1 for i in items if i["grade"] == k)
+                   for k in ("green", "amber", "red")},
+        "note": ("Grades describe the QUALITY OF THE INPUTS, not how risky the portfolio "
+                 "is. A red grade means the number should not be read to two decimals — "
+                 "not that the holding is dangerous."),
     }
 
 
@@ -1376,6 +1567,16 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
         logger.exception("portfolio compliance failed")
         compliance = {"summary": {"ok": 0, "warn": 0, "breach": 0}, "checks": []}
 
+    # Data-quality grading. Runs last because it annotates `rows` in place and
+    # needs the finished weights.
+    try:
+        quality = _holding_quality(rows, stock_ret, stock_wret, index_wret, index_ret.keys())
+        reliability = _metric_reliability(quality, _cost_summary(rows).get("has_cost", False),
+                                          bool(performance.get("ok")))
+    except Exception:  # pragma: no cover - grading must never break the desk
+        logger.exception("portfolio data-quality grading failed")
+        quality, reliability = {}, {"items": [], "overall": "amber", "labels": GRADE_LABELS}
+
     cost_summary = _cost_summary(rows)
     from core_analysis.services.portfolio_ledger import ledger_payload
 
@@ -1422,6 +1623,8 @@ def build_portfolio_payload(portfolio, participation_rate=PARTICIPATION_RATE,
         "liquidity": liquidity,
         "compliance": compliance,
         "factors": factors,
+        "data_quality": quality,
+        "reliability": reliability,
     }
     cache.set(ck, payload, CACHE_TTL)
     return payload

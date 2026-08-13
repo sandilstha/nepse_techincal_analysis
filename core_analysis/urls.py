@@ -49,6 +49,8 @@ from .broker_views import (
     hotstocks_api,
     broker_flow_radar_api,
     broker_flow_map_api,
+    accumulation_api,
+    accumulation_sop_view,
 )
 from .udf_views import (
     udf_config,
@@ -148,6 +150,9 @@ urlpatterns = [
     path('floorsheet/api/hotstocks/', hotstocks_api, name='hotstocks_api'),
     path('floorsheet/api/flow-radar/', broker_flow_radar_api, name='broker_flow_radar_api'),
     path('floorsheet/api/flow-map/', broker_flow_map_api, name='broker_flow_map_api'),
+    path('floorsheet/api/accumulation/', accumulation_api, name='accumulation_api'),
+    # Dedicated SOP for the A/D Radar model (backtest, rejected features, limits).
+    path('floorsheet/accumulation/sop/', accumulation_sop_view, name='accumulation_sop'),
 
     # Analytics workbench (moved off root to /workbench/)
     path('workbench/', crud_dashboard_view, name='crud_dashboard'),

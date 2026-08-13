@@ -565,6 +565,16 @@ market-cycle chart rides along on the `market_cycle` payload.
           var stageColor = {1: '#94a3b8', 2: '#16a34a', 3: '#eab308', 4: '#dc2626'};
           var mk = function (key) { return d.points.map(function (p) { return [p.x, p[key]]; }); };
 
+          // Actual extent of every plotted series — drives the y-axis bounds below.
+          var mcVals = [];
+          d.points.forEach(function (p) {
+            ['c', 'm50', 'm150', 'm200'].forEach(function (k) {
+              if (p[k] != null && isFinite(p[k])) mcVals.push(p[k]);
+            });
+          });
+          var mcLow = mcVals.length ? Math.min.apply(null, mcVals) : 1750;
+          var mcHigh = mcVals.length ? Math.max.apply(null, mcVals) : 3500;
+
           var bandAnns = (d.bands || []).map(function (b) {
             return { x: b.x, x2: b.x2, fillColor: stageColor[b.s] || '#94a3b8', opacity: isDark ? 0.13 : 0.10 };
           });
@@ -593,8 +603,18 @@ market-cycle chart rides along on the `market_cycle` payload.
             legend: { show: true, position: 'top', horizontalAlign: 'left', fontSize: '11px' },
             grid: { borderColor: isDark ? 'rgba(148,163,184,.14)' : 'rgba(15,23,42,.08)', strokeDashArray: 3 },
             xaxis: { type: 'datetime', labels: { datetimeUTC: true } },
-            yaxis: { labels: { formatter: function (v) { return v == null ? '' : Math.round(v).toLocaleString(); } },
-              tickAmount: 5, decimalsInFloat: 0 },
+            yaxis: {
+              // Apex auto-scaled this to 1,750-4,250 while the series only spans
+              // ~1,818-3,002, so roughly half the plot was empty headroom and the
+              // index was squashed into the bottom. Pin the axis to 1,750-3,500
+              // (250-point ticks) so the shape of the cycle is actually readable.
+              // Both bounds still widen to the data: a rally past 3,500 or a fall
+              // below 1,750 grows the axis instead of clipping the line.
+              min: Math.min(1750, Math.floor(mcLow / 250) * 250),
+              max: Math.max(3500, Math.ceil(mcHigh / 250) * 250),
+              tickAmount: 7,
+              labels: { formatter: function (v) { return v == null ? '' : Math.round(v).toLocaleString(); } },
+              decimalsInFloat: 0 },
             tooltip: { shared: true, x: { format: 'dd MMM yyyy' },
               y: { formatter: function (v) { return v == null ? '—' : v.toLocaleString(undefined, { maximumFractionDigits: 2 }); } } },
             annotations: { xaxis: bandAnns.concat(crossAnns) }

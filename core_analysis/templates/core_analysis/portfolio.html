@@ -326,6 +326,21 @@
   <div class="pf-section"><span>Risk &amp; Allocation
     <a class="pf-help" href="{% url 'portfolio_sop' %}#var" title="Risk methodology — VaR, stress, factor model, liquidity">?</a></span></div>
 
+  {% comment %}
+  How much to trust the numbers below. Placed FIRST in the risk section, not
+  buried at the end, because the whole point is to be read before the metrics
+  it qualifies. Grades describe input quality — stale prices, beta precision,
+  model assumptions — not how risky the portfolio is.
+  {% endcomment %}
+  <div class="pf-card pf-reliability-card">
+    <div class="pf-card-head pf-rel-head">
+      <span>How reliable are these numbers?
+        <a class="pf-help" href="{% url 'portfolio_sop' %}#reliability" title="What each grade means and how it is derived">?</a></span>
+      <span class="pf-rel-summary" id="pf-rel-summary"></span>
+    </div>
+    <div class="pf-reliability" id="pf-reliability"></div>
+  </div>
+
   <!-- Row 1: Value at Risk · Compliance — both are "where do we stand"
        summaries, and they finish at similar heights (424 / 462). -->
   <div class="pf-grid pf-risk-market-grid">

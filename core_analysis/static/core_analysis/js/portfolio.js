@@ -302,6 +302,7 @@
     renderKpis(d);
     renderSnapshot(d.pl_snapshot, d.sectors || []);
     renderSummaryDesk(d);
+    renderReliability(d.reliability, d.data_quality);
     renderCompliance(d.compliance);
     renderRisk(d.risk, d.nepse_index);
     renderFactors(d.factors);
@@ -941,6 +942,70 @@
       "<div class='pf-var-note'>Return contribution is one-year current-weight arithmetic attribution (" +
       (c.return_observations || 0) + " observed sessions), not transaction-adjusted performance. " +
       "Risk contribution is the holding's Euler contribution in the weekly NEPSE factor model.</div>";
+  }
+
+  // ── Data reliability ──────────────────────────────────────────────────
+  // Grades the INPUTS behind each metric group. Deliberately worst-first: the
+  // numbers you should trust least are the ones you should see first.
+  function renderReliability(r, q) {
+    var box = el("pf-reliability"), sum = el("pf-rel-summary");
+    if (!box) return;
+    if (!r || !r.items || !r.items.length) {
+      box.innerHTML = "<div class='pf-muted'>Reliability grading unavailable.</div>";
+      if (sum) sum.innerHTML = "";
+      return;
+    }
+    var lab = r.labels || {};
+    if (sum) {
+      var c = r.counts || {};
+      sum.innerHTML =
+        "<span class='pf-rel-pill green'>" + (c.green || 0) + " reliable</span>" +
+        "<span class='pf-rel-pill amber'>" + (c.amber || 0) + " estimate</span>" +
+        "<span class='pf-rel-pill red'>" + (c.red || 0) + " uncertain</span>";
+    }
+    // Only genuinely-unreliable inputs get a banner. Everything else collapses
+    // to chips: the full card ran ~730px tall, which pushed VaR, Compliance and
+    // Stress below the fold — a caveat panel should not outrank the data.
+    var stale = "";
+    if (q && q.stale_names && q.stale_names.length) {
+      stale = "<div class='pf-rel-stale'><b>" + q.stale_names.length +
+        " holding" + (q.stale_names.length === 1 ? "" : "s") +
+        " barely trade</b> (" + q.stale_names.map(esc).join(", ") + ") — " +
+        "they carry their last close forward, which the return series reads as a 0% " +
+        "move, so their volatility and VaR are understated. They are " +
+        (q.stale_weight_pct || 0).toFixed(1) + "% of the book.</div>";
+    }
+    var chips = "<div class='pf-rel-chips'>" + r.items.map(function (i) {
+      // title= keeps the full reasoning one hover away even when collapsed.
+      return "<span class='pf-rel-chip " + esc(i.grade) + "' title='" +
+        esc((lab[i.grade] || i.grade) + " — " + i.why) + "'>" +
+        "<i></i>" + esc(i.label) + "</span>";
+    }).join("") + "</div>";
+
+    var details = "<div class='pf-rel-details' id='pf-rel-details' hidden>" +
+      r.items.map(function (i) {
+        return "<div class='pf-rel-row " + esc(i.grade) + "'>" +
+          "<span class='pf-rel-dot'></span>" +
+          "<div class='pf-rel-body'><div class='pf-rel-label'>" + esc(i.label) +
+          "<span class='pf-rel-grade'>" + esc(lab[i.grade] || i.grade) + "</span></div>" +
+          "<div class='pf-rel-why'>" + esc(i.why) + "</div></div></div>";
+      }).join("") +
+      (r.note ? "<div class='pf-rel-note'>" + esc(r.note) + "</div>" : "") +
+      "</div>";
+
+    box.innerHTML = stale + chips +
+      "<button type='button' class='pf-rel-toggle' id='pf-rel-toggle' " +
+      "aria-expanded='false'>Why these grades?</button>" + details;
+
+    var btn = el("pf-rel-toggle"), det = el("pf-rel-details");
+    if (btn && det) {
+      btn.addEventListener("click", function () {
+        var open = det.hidden;
+        det.hidden = !open;
+        btn.setAttribute("aria-expanded", String(open));
+        btn.textContent = open ? "Hide detail" : "Why these grades?";
+      });
+    }
   }
 
   function renderCompliance(c) {

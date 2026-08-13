@@ -45,8 +45,8 @@
     "semantic_hash": "c065a2c80b13b071b04373c5bf750482"
   },
   "core_analysis/broker_views.py": {
-    "mtime": 1785389017.5088468,
-    "ast_hash": "6eb6f14126f35944aeaf02afa0c61953",
+    "mtime": 1786523705.132197,
+    "ast_hash": "54026428f91ad3394491ef28989e1f48",
     "semantic_hash": ""
   },
   "core_analysis/indicator_views.py": {
@@ -220,8 +220,8 @@
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/floorsheet-brokers.js": {
-    "mtime": 1785905594.5015156,
-    "ast_hash": "c49bbf1561590104589f1049efcfa1cb",
+    "mtime": 1786531762.2187047,
+    "ast_hash": "eb4d8b7c8dc197683be27451c665447d",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/insights.js": {
@@ -270,8 +270,8 @@
     "semantic_hash": ""
   },
   "core_analysis/urls.py": {
-    "mtime": 1786353652.2529602,
-    "ast_hash": "d764155c89ffe41ff8bb1baa797dca73",
+    "mtime": 1786521365.1203616,
+    "ast_hash": "8d4f679a4ada58bea6f39e46b13f5037",
     "semantic_hash": ""
   },
   "core_analysis/views.py": {
@@ -355,13 +355,13 @@
     "semantic_hash": ""
   },
   "core_analysis/services/portfolio_analytics.py": {
-    "mtime": 1786424313.2501738,
-    "ast_hash": "4fc955f8d6bf41ad524bdcbdf2f7de9b",
+    "mtime": 1786532747.380227,
+    "ast_hash": "2ea167f783f2d44ecddf863d7188b675",
     "semantic_hash": ""
   },
   "core_analysis/static/core_analysis/js/portfolio.js": {
-    "mtime": 1786424225.7764452,
-    "ast_hash": "a2b1c1bb5b19dab959625c5551547e59",
+    "mtime": 1786533657.9684038,
+    "ast_hash": "24536a03ae9795e4ffbe2de7d9ad2327",
     "semantic_hash": ""
   },
   "core_analysis/management/commands/grant_staff.py": {
@@ -1272,6 +1272,21 @@
   "core_analysis/services/proposed_dividend.py": {
     "mtime": 1786335196.9676738,
     "ast_hash": "b15c0ab05b20eb2e884b2c5cb25f0cb8",
+    "semantic_hash": ""
+  },
+  "core_analysis/management/commands/market_close_sync.py": {
+    "mtime": 1786445037.6864583,
+    "ast_hash": "95fe2ed2f6d97f6a2c5c440c76a4d7a7",
+    "semantic_hash": ""
+  },
+  "scripts/register_sync_tasks.ps1": {
+    "mtime": 1786445043.5589988,
+    "ast_hash": "2b13e8afeb9554ba8db28b377bdf801d",
+    "semantic_hash": ""
+  },
+  "core_analysis/services/accumulation.py": {
+    "mtime": 1786531840.5052655,
+    "ast_hash": "9bb06ce4940a997e17303646b5fe7b3f",
     "semantic_hash": ""
   }
 }
