@@ -539,24 +539,91 @@ def stock360_keyfin_api(request):
 def stock360_funda_recent(request):
     """Recently synced fundamentals (for the Workbench panel's history table).
 
-    Only the newest few are shown — the panel is a "did my sync land?" check, not
-    an audit log, and a sector run would otherwise push 50-110 rows into the page.
+    Unfiltered it shows only the newest few — the panel is a "did my sync land?"
+    check, not an audit log, and a sector run would otherwise push 50-110 rows
+    into the page.
+
+    FILTERING IS SERVER-SIDE, which is the whole point: the table holds one row
+    per synced company, so filtering the five rows the page happens to be
+    holding would search almost nothing. ``q`` matches symbol or company name,
+    ``sector`` and ``period`` match exactly. When any filter is supplied the
+    default limit opens up, because the reader is now searching rather than
+    glancing.
     """
-    try:
-        limit = max(1, min(50, int(request.GET.get("limit", 5))))
-    except (TypeError, ValueError):
-        limit = 5
+    from datetime import timedelta
+
+    from django.db.models import Q
+    from django.utils import timezone
 
     from .models import FundaFundamentalSnapshot
 
+    # One filter per column of the history table, so each control sits under the
+    # header it acts on. `q` stays supported as a symbol-or-company catch-all.
+    q = (request.GET.get("q") or "").strip()[:60]
+    symbol = (request.GET.get("symbol") or "").strip()[:40]
+    company = (request.GET.get("company") or "").strip()[:80]
+    sector = (request.GET.get("sector") or "").strip()[:100]
+    period = (request.GET.get("period") or "").strip()[:40]
+    fs_min = (request.GET.get("fs_min") or "").strip()[:10]
+    within = (request.GET.get("within") or "").strip()[:10]   # hours
+
+    filtered = bool(q or symbol or company or sector or period or fs_min or within)
+
+    try:
+        limit = int(request.GET.get("limit", 50 if filtered else 5))
+    except (TypeError, ValueError):
+        limit = 50 if filtered else 5
+    limit = max(1, min(200, limit))
+
+    qs = FundaFundamentalSnapshot.objects.all()
+    if q:
+        qs = qs.filter(Q(symbol__icontains=q) | Q(security_name__icontains=q))
+    if symbol:
+        qs = qs.filter(symbol__icontains=symbol)
+    if company:
+        qs = qs.filter(security_name__icontains=company)
+    if sector:
+        qs = qs.filter(sector=sector)
+    if period:
+        qs = qs.filter(period=period)
+    if fs_min:
+        try:
+            qs = qs.filter(fs_written__gte=int(fs_min))
+        except (TypeError, ValueError):
+            pass          # a half-typed number must not blank the table
+    if within:
+        try:
+            qs = qs.filter(synced_at__gte=timezone.now() - timedelta(hours=float(within)))
+        except (TypeError, ValueError):
+            pass
+
+    total = qs.count()
     rows = list(
-        FundaFundamentalSnapshot.objects.order_by("-synced_at").values(
+        qs.order_by("-synced_at").values(
             "symbol", "security_name", "sector", "period", "fs_written", "synced_at"
         )[:limit]
     )
     for r in rows:
         r["synced_at"] = r["synced_at"].isoformat() if r["synced_at"] else None
-    return JsonResponse({"ok": True, "results": rows}, status=200)
+
+    # Dropdown options come from what has actually been synced, so the filter
+    # can never offer a sector or period that would return nothing.
+    base = FundaFundamentalSnapshot.objects.order_by()
+    sectors = sorted(s for s in base.values_list("sector", flat=True).distinct() if s)
+    periods = sorted((p for p in base.values_list("period", flat=True).distinct() if p),
+                     reverse=True)
+
+    return JsonResponse({
+        "ok": True,
+        "results": rows,
+        "total": total,                       # matches BEFORE the limit is applied
+        "returned": len(rows),
+        "grand_total": base.count(),          # everything ever synced
+        "filtered": filtered,
+        "limit": limit,
+        "sectors": sectors,
+        "periods": periods,
+    }, status=200)
 
 
 @require_GET
