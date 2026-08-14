@@ -177,6 +177,26 @@ MIDDLEWARE = [
     # WhiteNoise serves static files (with compression + far-future caching)
     # directly from the app in production. Must sit right after SecurityMiddleware.
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    # Compresses DYNAMIC responses (the HTML Django renders). WhiteNoise only
+    # compresses files on disk, so without this every page went out raw: the
+    # Workbench alone was 473 KB on the wire against 58 KB gzipped — an 88%
+    # saving on the single heaviest response in the app.
+    #
+    # It matters most on the origin -> Cloudflare hop. Cloudflare will compress
+    # for the browser regardless, but it can only send what it receives, so an
+    # uncompressed origin pushes the full 473 KB up a home upload link on every
+    # cache miss.
+    #
+    # Sits AFTER WhiteNoise (so static files, already compressed, skip it) and
+    # BEFORE everything that writes to the response body, so it compresses the
+    # final bytes — GoogleAnalyticsMiddleware injects its tag further down and
+    # that injection still ends up inside the compressed payload.
+    #
+    # Trade-off, stated because it is a real one: compressing a response that
+    # mixes secrets with attacker-controlled text is the BREACH attack. Django
+    # re-masks the CSRF token on every request specifically to blunt it, and
+    # this is an internal analytics tool, so the bandwidth win is worth it.
+    'django.middleware.gzip.GZipMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

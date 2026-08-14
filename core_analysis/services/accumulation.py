@@ -75,7 +75,7 @@ CACHE_TTL = 300
 # v5 replaced the in-sample headline with the out-of-sample result. The BACKTEST
 # block is embedded in every cached payload, so the version MUST move with it or
 # stale caches keep serving the retracted figures.
-PAYLOAD_VERSION = 5
+PAYLOAD_VERSION = 6
 
 TOP_K = 5              # size of the "accumulating group" used by `absorb`
 
@@ -174,11 +174,13 @@ BACKTEST = {
                "observations · features selected on 2023-24 only"),
     "in_sample": {"spread_pct": 11.15, "t_stat": 3.34, "p_value": 0.001,
                   "period": "2023-02 → 2024-12"},
-    "note": ("NOT a validated predictive signal. In-sample this scored +11.15% "
-             "(t=3.34); on held-out data it falls to +1.64% (t=0.82, p=0.41) — "
-             "no better than chance. Treat the tab as a DESCRIPTION of who is "
-             "absorbing and how concentrated the flow is, which the floorsheet "
-             "measures directly, and not as a forecast."),
+    # Deliberately does NOT repeat "not predictive" — the pill above the grid and
+    # the "Significant? no" cell already say it, and a third restatement of the
+    # same point is the fastest way to get all three ignored. This line carries
+    # only what the numbers cannot: what the tab is actually good for.
+    "note": ("Use it to see who is absorbing and how concentrated each side of the "
+             "book is — the floorsheet measures that directly, and no price/volume "
+             "screen can. Hit rate is around 51%, so no single reading is a call."),
     # Every horizon, sampled so that FORWARD windows never overlap (anchors are
     # spaced at least one horizon apart per symbol). An earlier version spaced
     # anchors by the 25-session formation window instead, which left consecutive

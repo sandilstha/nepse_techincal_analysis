@@ -1043,21 +1043,33 @@ def build_payload(force=False, cache_only=False, fast=False):
     # Fetch every external feed CONCURRENTLY. Done sequentially, a single slow or
     # down service serialises into a multi-second stall (timeouts add up); in
     # parallel the cold-build cost is just the slowest single feed.
-    with ThreadPoolExecutor(max_workers=7) as pool:
+    with ThreadPoolExecutor(max_workers=6) as pool:
         f_live = pool.submit(fetch_live_rows)
         f_subidx = pool.submit(fetch_subindices)
         f_summary = pool.submit(fetch_market_summary)
-        f_contrib = pool.submit(fetch_contributors)
         f_gainers = pool.submit(fetch_top_gainers, TABLE_LIMIT)
         f_losers = pool.submit(fetch_top_losers, TABLE_LIMIT)
         f_active = pool.submit(fetch_top_active, TABLE_LIMIT)
         live_rows = f_live.result()
         subidx = f_subidx.result()
         summary = f_summary.result()
-        contrib = f_contrib.result()
         top_gainers = f_gainers.result()
         top_losers = f_losers.result()
         top_active = f_active.result()
+
+    # Contributors is deliberately NOT in that pool. Its upstream page is by far
+    # the slowest feed — measured at 2.7s of a 2.8s build — and because the pool
+    # is joined before the function continues, one slow feed sets the latency for
+    # the whole dashboard. Waiting on it inside the pool with a timeout does not
+    # help either: leaving a ThreadPoolExecutor block joins every worker anyway.
+    #
+    # So read the last cached value and refresh off-thread, exactly as the
+    # after-close path above already does. The cost is that a cold cache renders
+    # one build without contributors (the NEPSE headline falls back to the market
+    # summary) and self-heals as soon as the background refresh lands.
+    contrib = _cached_contributors()
+    if contrib is None:
+        _refresh_contributors_async()
 
     sector_map = _sector_map()
 

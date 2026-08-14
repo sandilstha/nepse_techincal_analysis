@@ -44,12 +44,12 @@
     <a class="dsx-help" href="{% url 'floorsheet_sop' %}" target="_blank" rel="noopener"
        title="How every metric on this page is calculated — methodology SOP"
        aria-label="Methodology SOP for the whole page">?</a>
-    <button class="dsx-tab active" data-tab="flowradar">Broker Flow Radar</button>
-    <button class="dsx-tab" data-tab="adradar">A/D Radar</button>
+    <button class="dsx-tab active" data-tab="adradar">A/D Radar</button>
+    <button class="dsx-tab" data-tab="flowmap">Broker Flow Map</button>
+    <button class="dsx-tab" data-tab="flowradar">Broker Flow Radar</button>
     <button class="dsx-tab" data-tab="favorites">Broker Analysis</button>
     <button class="dsx-tab" data-tab="signals">Signal Desk</button>
     <button class="dsx-tab" data-tab="stockwise">Script Deep Dive</button>
-    <button class="dsx-tab" data-tab="flowmap">Broker Flow Map</button>
     <button class="dsx-tab" data-tab="hotstocks">Market Heatmap</button>
     <button class="dsx-tab" data-tab="netholding">Net Position Analytics</button>
     <button class="dsx-tab" data-tab="concentration">Broker Exposure Monitor</button>
@@ -68,12 +68,18 @@
   below states the result INCLUDING its limits, because the honest headline is
   "a 3-6 month screen with a ~53% hit rate", not "a signal".
   {% endcomment %}
-  <section class="dsx-panel" id="panel-adradar">
+  <section class="dsx-panel active" id="panel-adradar">
     <div class="dsx-controls">
       <div class="dsx-field">Sector
         <select id="ad-sector" class="dsx-select dsx-sector"></select>
       </div>
-      {% include "core_analysis/includes/_date_range.html" with prefix="ad" %}
+      {% comment %}
+        Current Day and Last 1 Week are withheld here: the service refuses a
+        1-session window outright, and 5 sessions is below the 15-session
+        minimum the model was tested on, so both could only ever return a
+        warning. The shortest offered window is 1 Month.
+      {% endcomment %}
+      {% include "core_analysis/includes/_date_range.html" with prefix="ad" hide_today=1 hide_week=1 %}
       <div class="dsx-seg" data-group="ad-side" title="Which side of the book to list">
         <button type="button" class="dsx-pill active" data-val="accumulation">Accumulation</button>
         <button type="button" class="dsx-pill" data-val="quiet">Quiet Accumulation</button>
@@ -180,7 +186,7 @@
   </section>
 
   <!-- Broker Flow Radar: market-wide broker activity ranking -->
-  <section class="dsx-panel active" id="panel-flowradar">
+  <section class="dsx-panel" id="panel-flowradar">
     <div class="dsx-controls">
       {% include "core_analysis/includes/_date_range.html" with prefix="flow" %}
       <button type="button" id="flow-analyze" class="dsx-analyze">Analyze</button>

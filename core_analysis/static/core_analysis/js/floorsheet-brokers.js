@@ -547,7 +547,18 @@
   TABS.adradar = {
     init: function () {
       var sec = el("ad-sector");
-      if (sec) { fillSectors(sec); sec.addEventListener("change", function () { TABS.adradar.load(); }); }
+      if (sec) {
+        fillSectors(sec);
+        // Land on Commercial Banks rather than the whole market. Selected by
+        // value match, not by index: the sector list comes from the floorsheet
+        // feed and its order is not guaranteed, so a hard-coded position would
+        // silently pick the wrong sector the day the feed reorders. Falls back
+        // to "All" if the label is ever absent.
+        var want = "Commercial Banks";
+        var has = [].some.call(sec.options, function (o) { return o.value === want; });
+        sec.value = has ? want : "All";
+        sec.addEventListener("change", function () { TABS.adradar.load(); });
+      }
       // Default to 1 month, not the shared "Current Day": a single session
       // cannot show accumulation, and the service refuses anything under 5.
       // This MUST go through dateRange's third argument — setting the <select>
@@ -670,27 +681,55 @@
       ev.innerHTML =
         (d.window_warning
           ? "<div class='dsx-ev-alert'>" + esc(d.window_warning) + "</div>" : "") +
+        // The "not predictive" fact stays on the page but as one quiet line
+        // rather than a red banner: it is a standing property of the model, not
+        // an incident, and a permanent alert bar trains people to ignore alerts.
+        // The numbers underneath still spell it out, and `title` carries the
+        // full sentence on hover.
         (b.validated === false
-          ? "<div class='dsx-ev-alert'>Not a validated predictive signal — this is a " +
-            "descriptive flow lens. See the out-of-sample figures below.</div>" : "") +
-        "<div class='dsx-ev-head'>Held-out test — " + esc(b.sample || "") + "</div>" +
-        "<div class='dsx-ev-grid'>" +
-        evCell("Out-of-sample spread", "+" + b.spread_pct + "%",
-               "t = " + b.t_stat + " · p = " + b.p_value + " · n = " + nf(b.n)) +
-        evCell("In-sample spread", "+" + ins.spread_pct + "%",
-               "t = " + ins.t_stat + " on " + esc(ins.period || "") + " — the period the features were chosen on") +
-        evCell("Decay", Math.round(100 - 100 * b.spread_pct / (ins.spread_pct || 1)) + "%",
-               "how much of the in-sample edge disappears on unseen data") +
-        evCell("Significant?", (b.p_value != null && b.p_value < 0.05) ? "yes" : "no",
-               "p = " + b.p_value + " at the " + b.horizon_sessions + "-session horizon") +
+          ? "<div class='dsx-ev-flag' title='" +
+            esc("Not a validated predictive signal. In-sample it scored +" +
+                (ins.spread_pct || "") + "%; on held-out data +" + b.spread_pct +
+                "% (p = " + b.p_value + "), no better than chance. Use it to describe " +
+                "who is absorbing, not to forecast price.") + "'>" +
+            "Descriptive · not predictive" +
+            "<a href='/floorsheet/accumulation/sop/#backtest' target='_blank' " +
+            "rel='noopener'>why?</a></div>" : "") +
+        // Plain words first. The statistics are all still here, one click away —
+        // leading with t/p/n meant the reader met four unfamiliar symbols before
+        // reaching anything they could act on.
+        "<div class='dsx-ev-plain'>" +
+          "<b>Does it predict what happens next? Barely.</b> " +
+          "We built the score using 2023–24, then tested it on 2025–26 — years it " +
+          "had never seen. Almost all of the apparent advantage vanished." +
         "</div>" +
-        "<div class='dsx-ev-horizons'>" +
-          (b.horizons || []).map(function (h) {
-            return "<span><b>" + h.sessions + " sessions</b> out-of-sample +" + h.spread_pct +
-              "% · t " + h.t_stat + " · p " + h.p_value + "</span>";
-          }).join("") +
+        "<div class='dsx-ev-compare'>" +
+          "<div class='dsx-ev-cmp'><span>On the years it was built from</span>" +
+            "<b class='num-pos'>+" + ins.spread_pct + "%</b><i>looks impressive</i></div>" +
+          "<div class='dsx-ev-arrow'>→</div>" +
+          "<div class='dsx-ev-cmp'><span>On new years it had never seen</span>" +
+            "<b>+" + b.spread_pct + "%</b><i>no better than chance</i></div>" +
         "</div>" +
-        "<div class='dsx-ev-warn'>" + esc(b.note || "") + "</div>";
+        "<div class='dsx-ev-warn'>" + esc(b.note || "") + "</div>" +
+        "<details class='dsx-ev-stats'><summary>Show the statistics</summary>" +
+          "<div class='dsx-ev-head'>Held-out test — " + esc(b.sample || "") + "</div>" +
+          "<div class='dsx-ev-grid'>" +
+          evCell("Out-of-sample spread", "+" + b.spread_pct + "%",
+                 "t = " + b.t_stat + " · p = " + b.p_value + " · n = " + nf(b.n)) +
+          evCell("In-sample spread", "+" + ins.spread_pct + "%",
+                 "t = " + ins.t_stat + " on " + esc(ins.period || "") + " — the period the features were chosen on") +
+          evCell("Decay", Math.round(100 - 100 * b.spread_pct / (ins.spread_pct || 1)) + "%",
+                 "how much of the in-sample edge disappears on unseen data") +
+          evCell("Significant?", (b.p_value != null && b.p_value < 0.05) ? "yes" : "no",
+                 "p = " + b.p_value + " at the " + b.horizon_sessions + "-session horizon") +
+          "</div>" +
+          "<div class='dsx-ev-horizons'>" +
+            (b.horizons || []).map(function (h) {
+              return "<span><b>" + h.sessions + " sessions</b> out-of-sample +" + h.spread_pct +
+                "% · t " + h.t_stat + " · p " + h.p_value + "</span>";
+            }).join("") +
+          "</div>" +
+        "</details>";
     }
 
     var uni = el("ad-universe");
@@ -2173,7 +2212,10 @@
     var banner = el("dsx-banner");
     if (banner && META.ok) banner.hidden = true;
     var dl = readDeepLink();
-    activateTab(dl ? dl.tab : "flowradar",
+    // Landing tab. Must match the button/panel carrying `active` in the
+    // template — if the two disagree the page renders one tab highlighted and a
+    // different one populated.
+    activateTab(dl ? dl.tab : "adradar",
                 dl ? function () { applyDeepLink(dl); } : null);
   }
 

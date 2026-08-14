@@ -50,12 +50,48 @@
 
     <div class="funda-recent">
       <div class="funda-recent-head">
-        <h3>Recently synced <span class="funda-recent-note">latest 5</span></h3>
+        <h3>Recently synced <span class="funda-recent-note" id="fundaRecentNote">latest 5</span></h3>
         <button type="button" class="funda-refresh" id="fundaRefresh" title="Refresh list">↻ Refresh</button>
       </div>
+      {% comment %}
+        One filter per column, sitting directly under the header it acts on.
+        Every control queries the SERVER, not the rows already rendered — the
+        table holds one row per synced company while the page shows only the
+        newest few, so a client-side filter would search almost nothing and
+        report "no match" for records that plainly exist. Leaving every control
+        empty restores the plain "latest 5" glance.
+      {% endcomment %}
       <div class="funda-table-wrap">
         <table class="funda-table">
-          <thead><tr><th>Symbol</th><th>Company</th><th>Sector</th><th>Period</th><th>FS items</th><th>Synced</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Symbol</th><th>Company</th><th>Sector</th>
+              <th>Period</th><th>FS items</th><th>Synced</th>
+            </tr>
+            <tr class="funda-frow">
+              <th><input type="text" id="fundaFsymbol" class="funda-fin" autocomplete="off"
+                         placeholder="e.g. NABIL" aria-label="Filter by symbol"></th>
+              <th><input type="text" id="fundaFcompany" class="funda-fin" autocomplete="off"
+                         placeholder="name contains…" aria-label="Filter by company name"></th>
+              <th><select id="fundaFsector" class="funda-fin" aria-label="Filter by sector">
+                    <option value="">All</option></select></th>
+              <th><select id="fundaFperiod" class="funda-fin" aria-label="Filter by period">
+                    <option value="">All</option></select></th>
+              <th><input type="number" id="fundaFfs" class="funda-fin" min="0" step="1"
+                         placeholder="min" aria-label="Minimum FS items"></th>
+              <th class="funda-fth-last">
+                <select id="fundaFwithin" class="funda-fin" aria-label="Filter by when it was synced">
+                  <option value="">Any time</option>
+                  <option value="1">Last hour</option>
+                  <option value="24">Last 24 hours</option>
+                  <option value="168">Last 7 days</option>
+                  <option value="720">Last 30 days</option>
+                </select>
+                <button type="button" class="funda-fclear" id="fundaFclear" hidden
+                        title="Clear all column filters">✕</button>
+              </th>
+            </tr>
+          </thead>
           <tbody id="fundaRecentBody"><tr><td colspan="6" class="funda-empty">Loading…</td></tr></tbody>
         </table>
       </div>
@@ -112,6 +148,21 @@
   .funda-recent-note{font-size:11px;font-weight:600;color:var(--ink-2,#6b7684);margin-left:6px}
   .funda-refresh{margin-left:auto;font:inherit;font-size:12px;font-weight:700;cursor:pointer;
     background:transparent;border:1px solid var(--line-2,rgba(128,128,128,.3));border-radius:7px;padding:5px 11px;color:inherit}
+  /* per-column filter row */
+  .funda-frow th{padding:6px 8px;background:rgba(128,128,128,.05);
+    border-bottom:1px solid var(--line,rgba(128,128,128,.2))}
+  .funda-fin{width:100%;min-width:0;padding:5px 8px;font:inherit;font-size:12px;font-weight:500;
+    border:1px solid var(--line-2,rgba(128,128,128,.3));border-radius:6px;
+    background:var(--bg-raised,#fff);color:inherit}
+  .funda-fin::placeholder{font-weight:400;opacity:.65}
+  .funda-fin:focus{outline:none;border-color:#5b8def}
+  /* Synced column shares its cell with the clear button, so the select needs a
+     floor or it collapses and clips its own labels ("Any tin…"). */
+  .funda-fth-last{display:flex;gap:6px;align-items:center;white-space:nowrap}
+  .funda-fth-last .funda-fin{min-width:104px}
+  .funda-fclear{flex:0 0 auto;font:inherit;font-size:12px;font-weight:800;cursor:pointer;line-height:1;
+    color:#d24b3a;background:transparent;border:1px solid rgba(210,75,58,.5);border-radius:6px;padding:5px 8px}
+  .funda-fclear:hover{background:rgba(210,75,58,.10)}
   .funda-table-wrap{overflow-x:auto;border:1px solid var(--line,rgba(128,128,128,.2));border-radius:10px}
   .funda-table{width:100%;border-collapse:collapse;font-size:13px}
   .funda-table th,.funda-table td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--line,rgba(128,128,128,.15))}
@@ -142,10 +193,75 @@
   }
   function getJSON(u){ return fetch(u,{headers:{'X-Requested-With':'XMLHttpRequest'}}).then(function(r){ return r.json(); }); }
 
+  /* ── History filter ───────────────────────────────────────────────────
+     Every query goes to the server. The table stores one row per synced
+     company, so filtering the five rows already rendered would search a
+     fraction of the data and quietly report "no match" for records that
+     exist. Empty controls = the original latest-5 glance. ── */
+  // One control per column; `key` is the query parameter it maps to.
+  var FILTERS = [
+    {key:'symbol',  el:document.getElementById('fundaFsymbol'),  typed:true},
+    {key:'company', el:document.getElementById('fundaFcompany'), typed:true},
+    {key:'sector',  el:document.getElementById('fundaFsector')},
+    {key:'period',  el:document.getElementById('fundaFperiod')},
+    {key:'fs_min',  el:document.getElementById('fundaFfs'),      typed:true},
+    {key:'within',  el:document.getElementById('fundaFwithin')}
+  ];
+  var fsector = document.getElementById('fundaFsector'),
+      fperiod = document.getElementById('fundaFperiod'),
+      fclear = document.getElementById('fundaFclear'),
+      fnote = document.getElementById('fundaRecentNote');
+  var facetsReady = false, fqTimer = null;
+
+  function fillFacets(d){
+    // Options come from what has actually been synced, so the filter can never
+    // offer a value that returns nothing. Only built once.
+    if(facetsReady || !d) return;
+    function opts(sel, values, label){
+      if(!sel || !values) return;
+      sel.innerHTML = '<option value="">'+label+'</option>' +
+        values.map(function(v){ return '<option value="'+esc(v)+'">'+esc(v)+'</option>'; }).join('');
+    }
+    opts(fsector, d.sectors, 'All');
+    opts(fperiod, d.periods, 'All');
+    facetsReady = true;
+  }
+
+  function filterParams(){
+    var p = [];
+    FILTERS.forEach(function(f){
+      var v = f.el && f.el.value != null ? String(f.el.value).trim() : '';
+      if(v) p.push(f.key+'='+encodeURIComponent(v));
+    });
+    return p;
+  }
+
   function loadRecent(){
-    getJSON('/stock/api/funda/recent/').then(function(d){
+    var p = filterParams();
+    var active = p.length > 0;
+    if(fclear) fclear.hidden = !active;
+    getJSON('/stock/api/funda/recent/' + (p.length ? '?'+p.join('&') : '')).then(function(d){
+      fillFacets(d);
       var rows = (d && d.results) || [];
-      if(!rows.length){ body.innerHTML = '<tr><td colspan="6" class="funda-empty">Nothing synced yet.</td></tr>'; return; }
+      // Say plainly how much of the table is on screen — a capped list that
+      // looks complete is how a filter starts lying.
+      if(fnote){
+        if(!active){
+          fnote.textContent = 'latest ' + rows.length +
+            (d && d.grand_total ? ' of ' + d.grand_total : '');
+        } else if(d && d.total > rows.length){
+          fnote.textContent = 'showing ' + rows.length + ' of ' + d.total + ' matches';
+        } else {
+          fnote.textContent = (d && d.total || rows.length) + ' match' +
+            ((d && d.total) === 1 ? '' : 'es');
+        }
+      }
+      if(!rows.length){
+        body.innerHTML = '<tr><td colspan="6" class="funda-empty">' +
+          (active ? 'No synced record matches this filter.' : 'Nothing synced yet.') +
+          '</td></tr>';
+        return;
+      }
       body.innerHTML = rows.map(function(r){
         return '<tr><td class="sym">'+esc(r.symbol)+'</td><td>'+esc(r.security_name||'—')+'</td><td>'+
           esc(r.sector||'—')+'</td><td>'+esc(r.period||'—')+'</td><td>'+(r.fs_written||0)+'</td><td>'+
@@ -153,6 +269,23 @@
       }).join('');
     }).catch(function(){ body.innerHTML = '<tr><td colspan="6" class="funda-empty">Could not load history.</td></tr>'; });
   }
+
+  FILTERS.forEach(function(f){
+    if(!f.el) return;
+    if(f.typed){
+      // Debounce typed columns: one request per pause, not per keystroke.
+      f.el.addEventListener('input', function(){
+        clearTimeout(fqTimer);
+        fqTimer = setTimeout(loadRecent, 250);
+      });
+    } else {
+      f.el.addEventListener('change', loadRecent);
+    }
+  });
+  if(fclear) fclear.addEventListener('click', function(){
+    FILTERS.forEach(function(f){ if(f.el) f.el.value = ''; });
+    loadRecent();
+  });
 
   if(refresh) refresh.addEventListener('click', loadRecent);
   loadRecent();
