@@ -34,7 +34,6 @@ from .insights_views import (
     market_insights_api,
     subindex_comparison_api,
     sector_turnover_api,
-    technical_analysis_view,
 )
 from .broker_views import (
     floorsheet_view,
@@ -50,6 +49,7 @@ from .broker_views import (
     broker_flow_radar_api,
     broker_flow_map_api,
     accumulation_api,
+    accumulation_ask_api,
     accumulation_sop_view,
 )
 from .udf_views import (
@@ -65,7 +65,6 @@ from .nepse_data_views import (
     nepse_data_api,
     nepse_data_symbols_api,
 )
-from .indicator_views import indicator_catalog, indicator_data
 from .fundamental_views import (
     fundamental_analysis_view,
     fundamental_sop_view,
@@ -105,11 +104,13 @@ urlpatterns = [
     path('stock/<str:symbol>/valuation/', stock_valuation_view, name='stock_valuation'),
     path('stock/<str:symbol>/', stock360_view, name='stock360_symbol'),
 
-    # Technical Analysis terminal (Lightweight Charts: price + volume + indicators).
-    path('chart/', technical_analysis_view, name='technical_analysis'),
-    path('chart/indicators', indicator_catalog, name='indicator_catalog'),
-    path('chart/indicator', indicator_data, name='indicator_data'),
-    path('chart/<str:symbol>/', technical_analysis_view, name='technical_analysis_symbol'),
+    # NOTE: the built-in charting TERMINAL (/chart/ + its pandas_ta indicator
+    # endpoints) was removed; charting moved to settings.EXTERNAL_CHART_URL.
+    #
+    # The UDF datafeed below STAYS. It is not part of that terminal — the
+    # Market Insights landing page's "Index Price & Volume" card (ohlc-chart.js,
+    # tv-chart.js) reads /insights/udf/history for its candles. Removing it
+    # blanked that chart, which is how this comment came to exist.
 
     # Fundamental Analysis Desk — company financial statements + ratios.
     path('fundamentals/', fundamental_analysis_view, name='fundamental_analysis'),
@@ -151,6 +152,10 @@ urlpatterns = [
     path('floorsheet/api/flow-radar/', broker_flow_radar_api, name='broker_flow_radar_api'),
     path('floorsheet/api/flow-map/', broker_flow_map_api, name='broker_flow_map_api'),
     path('floorsheet/api/accumulation/', accumulation_api, name='accumulation_api'),
+    # Grounded natural-language Q&A over the current A/D scan. POST + login:
+    # every call spends API credit, so it must not be prefetchable or anonymous.
+    path('floorsheet/api/accumulation/ask/', accumulation_ask_api,
+         name='accumulation_ask_api'),
     # Dedicated SOP for the A/D Radar model (backtest, rejected features, limits).
     path('floorsheet/accumulation/sop/', accumulation_sop_view, name='accumulation_sop'),
 
@@ -185,7 +190,8 @@ urlpatterns = [
     # Keep last: a bare <slug> would otherwise swallow the two routes above.
     path('nepse-data/<slug:slug>/', nepse_data_view, name='nepse_data_report'),
 
-    # TradingView Advanced Charts UDF datafeed (no trailing slashes — UDF spec)
+    # TradingView UDF datafeed (no trailing slashes — UDF spec). Feeds the
+    # Market Insights index chart; NOT tied to the removed /chart/ terminal.
     path('insights/udf/config', udf_config, name='udf_config'),
     path('insights/udf/time', udf_time, name='udf_time'),
     path('insights/udf/symbols', udf_symbols, name='udf_symbols'),

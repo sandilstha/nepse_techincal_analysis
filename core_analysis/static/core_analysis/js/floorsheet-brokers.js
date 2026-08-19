@@ -576,6 +576,7 @@
         var tr = e.target.closest ? e.target.closest("tr[data-sym]") : null;
         if (tr) showAdDetail(tr.getAttribute("data-sym"));
       });
+      initAdAsk();
     },
     load: function () {
       var t = el("ad-table");
@@ -592,6 +593,97 @@
         });
     }
   };
+
+  // ── Ask the desk ──────────────────────────────────────────────────────────
+  // Sends the question to the server, which answers from the SAME scan payload
+  // this tab is showing. The model never sees the screen, so any number in the
+  // answer can be checked against the table above.
+  function csrfToken() {
+    // The hidden input FIRST, not the cookie: this project sets
+    // CSRF_COOKIE_HTTPONLY = True, so document.cookie never exposes csrftoken
+    // and a cookie-first helper silently returns "" and 403s every POST.
+    var i = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (i && i.value) return i.value;
+    var m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : "";
+  }
+
+  function askScopeLabel() {
+    var sec = el("ad-sector");
+    var d = adState.data || {};
+    var bits = [];
+    if (d.sessions) bits.push(d.sessions + " sessions");
+    if (d.as_of) bits.push("to " + d.as_of);
+    if (sec && sec.value && sec.value !== "All") bits.push(sec.value);
+    return bits.length ? bits.join(" · ") : "current window";
+  }
+
+  function runAdAsk(question) {
+    var out = el("ad-ask-out"), btn = el("ad-ask-go");
+    if (!out || !question) return;
+    out.hidden = false;
+    out.innerHTML = "<span class='dsx-ad-ask-wait'>Reading this scan…</span>";
+    if (btn) btn.disabled = true;
+
+    var p = adState.dr ? adState.dr.params() : { range: "1m" };
+    var sec = el("ad-sector");
+    var body = {
+      question: question,
+      range: p.range || "1m",
+      sector: sec && sec.value ? sec.value : "All"
+    };
+    if (p.start_date) body.start = p.start_date;
+    if (p.end_date) body.end = p.end_date;
+
+    fetch("/floorsheet/api/accumulation/ask/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
+      credentials: "same-origin",
+      body: JSON.stringify(body)
+    })
+      .then(function (r) { return r.json().catch(function () { return { ok: false, error: "Bad response from server." }; }); })
+      .then(function (d) {
+        if (btn) btn.disabled = false;
+        var q = el("ad-ask-quota");
+        if (q && typeof d.quota_remaining === "number") {
+          q.textContent = d.quota_remaining + " questions left today";
+        }
+        if (!d.ok) {
+          out.innerHTML = "<div class='dsx-ad-ask-err'>" + esc(d.error || "Could not answer.") + "</div>";
+          return;
+        }
+        var g = d.grounding || {};
+        out.innerHTML = d.answer_html +
+          "<div class='dsx-ad-ask-src'>Answered only from this scan — " +
+          esc(String(g.equities_scored || "?")) + " equities scored over " +
+          esc(String(g.sessions || "?")) + " sessions to " + esc(String(g.as_of || "?")) +
+          "; " + esc(String(g.rows_supplied || "?")) + " ranked rows supplied. " +
+          "Model: " + esc(String(d.model || "")) + " via " + esc(String(d.provider || "")) +
+          ". Check any figure against the table above.</div>";
+      })
+      .catch(function () {
+        if (btn) btn.disabled = false;
+        out.innerHTML = "<div class='dsx-ad-ask-err'>Could not reach the assistant.</div>";
+      });
+  }
+
+  function initAdAsk() {
+    var go = el("ad-ask-go"), q = el("ad-ask-q");
+    if (!go || !q || go.dataset.ready) return;
+    go.dataset.ready = "1";
+    go.addEventListener("click", function () { runAdAsk(q.value.trim()); });
+    q.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); runAdAsk(q.value.trim()); }
+    });
+    [].forEach.call(document.querySelectorAll(".dsx-ad-eg"), function (b) {
+      b.addEventListener("click", function () {
+        q.value = b.textContent.trim();
+        runAdAsk(q.value);
+      });
+    });
+    var scope = el("ad-ask-scope");
+    if (scope) scope.textContent = askScopeLabel();
+  }
 
   function adBandTag(r) {
     return "<span class='dsx-band " + esc(r.band) + "'>" + esc(r.band_label) + "</span>";

@@ -21,18 +21,28 @@ Self-contained: markup + style + submit handler in one include.
   .hdr-stock-search input{border:0;outline:0;background:transparent;color:inherit;
     font:inherit;font-size:13px;width:100%;min-width:0}
   .hdr-stock-search input::placeholder{color:var(--ink-2,#8b96a3);opacity:.8}
-  /* suggestion dropdown */
+  /* Suggestion dropdown.
+     The surface and the text MUST come from the same token set, or they stop
+     agreeing when the theme flips. This previously asked for --panel /
+     --bg-raised / --ink / --line-2, none of which exist in tokens.css, so the
+     panel fell back to hard-coded #fff while the text still resolved --ink-1
+     (#edf4ff in dark theme) — white on white, measured at 1.11:1 contrast and
+     effectively invisible. --surface / --ink-1 / --ink-2 / --line are the real
+     tokens and flip together; the literal fallbacks are a matched light pair
+     for any page that does not load tokens.css. */
   .hdr-stock-ac{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:1200;
-    background:var(--panel,var(--bg-raised,#fff));border:1px solid var(--line-2,rgba(128,128,128,.3));
-    border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);overflow:hidden auto;
+    background:var(--surface,#ffffff);color:var(--ink-1,#0e1b33);
+    border:1px solid var(--line,#d7e0ee);
+    border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.35);overflow:hidden auto;
     max-height:300px;display:none;min-width:230px}
   .hdr-stock-ac.open{display:block}
   .hdr-stock-ac .row{display:flex;justify-content:space-between;gap:10px;align-items:baseline;
-    padding:8px 12px;cursor:pointer;font-size:13px;color:var(--ink,inherit)}
+    padding:8px 12px;cursor:pointer;font-size:13px;color:var(--ink-1,#0e1b33)}
   .hdr-stock-ac .row:hover,.hdr-stock-ac .row.hi{background:var(--accent-weak,rgba(76,141,255,.14))}
-  .hdr-stock-ac .row .t{font-weight:700;flex:0 0 auto}
-  .hdr-stock-ac .row .n{color:var(--ink-2,#8b96a3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .hdr-stock-ac .empty{padding:9px 12px;font-size:12px;color:var(--ink-2,#8b96a3)}
+  /* Ticker code carries the emphasis, so it takes the strongest ink. */
+  .hdr-stock-ac .row .t{font-weight:700;flex:0 0 auto;color:var(--ink-1,#0e1b33)}
+  .hdr-stock-ac .row .n{color:var(--ink-2,#41587c);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hdr-stock-ac .empty{padding:9px 12px;font-size:12px;color:var(--ink-2,#41587c)}
 </style>
 <script>
   function hdrStockSearch(ev){

@@ -18,9 +18,16 @@ def global_assets(request):
     invisible outside the workbench until a manual cache clear. Supplying it
     globally makes the fallback unreachable.
     """
+    from django.conf import settings as _s
+
     from core_analysis.views import _dashboard_asset_version
 
-    return {"dashboard_asset_version": _dashboard_asset_version()}
+    return {
+        "dashboard_asset_version": _dashboard_asset_version(),
+        # Every "Charts" / "Full chart" link reads this, so repointing the
+        # charting terminal is a one-line settings change, not a template hunt.
+        "external_chart_url": getattr(_s, "EXTERNAL_CHART_URL", ""),
+    }
 
 
 def nepse_data_menu(request):

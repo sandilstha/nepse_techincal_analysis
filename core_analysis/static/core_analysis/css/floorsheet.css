@@ -921,3 +921,42 @@
 .dsx-ev-stats summary:hover { color: var(--accent); }
 .dsx-ev-stats[open] summary { margin-bottom: 10px; }
 @media (max-width: 720px) { .dsx-ev-arrow { display: none; } }
+
+/* ── Ask the desk (A/D Radar) ────────────────────────────────────────────────
+   Grounded Q&A over the current scan. Colours come from the same tokens as the
+   rest of the desk so it follows the theme instead of pinning one palette. */
+.dsx-ad-ask { margin-top: 14px; }
+.dsx-ad-ask-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.dsx-ad-ask-hint { margin: 0; font-size: 0.75rem; color: var(--ink-3); line-height: 1.5; }
+.dsx-ad-ask-row { display: flex; gap: 8px; align-items: stretch; }
+.dsx-ad-ask-input {
+  flex: 1 1 auto; min-width: 0; padding: 8px 11px; font: inherit; font-size: 0.8125rem;
+  color: var(--ink-1); background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 7px;
+}
+.dsx-ad-ask-input::placeholder { color: var(--ink-3); }
+.dsx-ad-ask-input:focus { outline: none; border-color: var(--accent, #12d39a); }
+.dsx-ad-ask-eg { display: flex; flex-wrap: wrap; gap: 6px; }
+.dsx-ad-eg {
+  font: inherit; font-size: 0.7rem; cursor: pointer; padding: 4px 9px; border-radius: 999px;
+  color: var(--ink-2); background: transparent; border: 1px dashed var(--line);
+}
+.dsx-ad-eg:hover { color: var(--ink-1); border-style: solid; }
+.dsx-ad-ask-out {
+  font-size: 0.8125rem; line-height: 1.6; color: var(--ink-1);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 12px 14px; overflow-x: auto;
+}
+.dsx-ad-ask-out h2, .dsx-ad-ask-out h3 { font-size: 0.875rem; margin: 10px 0 6px; }
+.dsx-ad-ask-out p { margin: 0 0 8px; }
+.dsx-ad-ask-out ul { margin: 0 0 8px; padding-left: 18px; }
+.dsx-ad-ask-out table { border-collapse: collapse; width: 100%; margin: 6px 0 10px; font-size: 0.75rem; }
+.dsx-ad-ask-out th, .dsx-ad-ask-out td {
+  border-bottom: 1px solid var(--line); padding: 5px 8px; text-align: left; white-space: nowrap;
+}
+.dsx-ad-ask-out th { color: var(--ink-3); font-weight: 600; }
+.dsx-ad-ask-src {
+  margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line);
+  font-size: 0.68rem; color: var(--ink-3);
+}
+.dsx-ad-ask-err { color: var(--neg, #ff6b6b); }

@@ -43,9 +43,8 @@ except ImproperlyConfigured:  # Allows `python core_analysis/tests.py` outside D
     nepse_contributors = None
 
 try:
-    from core_analysis import indicator_views, udf_views
+    from core_analysis import udf_views
 except ImproperlyConfigured:  # Allows `python core_analysis/tests.py` outside Django.
-    indicator_views = None
     udf_views = None
 
 try:
@@ -1013,62 +1012,6 @@ class PortfolioStressAnalyticsTests(SimpleTestCase):
         self.assertEqual(target_rows[0]["target_index"], 3200.0)
         self.assertIn("3,198.00", target_rows[0]["reference"])
         self.assertIn("2021-08-18", target_rows[0]["reference"])
-
-
-@unittest.skipIf(indicator_views is None, "Django settings unavailable")
-class IndicatorHistoryWindowTests(SimpleTestCase):
-    def test_history_window_parses_udf_dates_and_countback(self):
-        factory = RequestFactory()
-        from_ts = int(datetime(2026, 6, 1, tzinfo=timezone.utc).timestamp())
-        to_ts = int(datetime(2026, 6, 16, tzinfo=timezone.utc).timestamp())
-        request = factory.get(
-            "/chart/indicator",
-            {"from": str(from_ts), "to": str(to_ts), "countback": "5000"},
-        )
-
-        self.assertEqual(
-            indicator_views._history_window(request),
-            (date(2026, 6, 1), date(2026, 6, 16), 5000),
-        )
-
-    def test_indicator_data_uses_windowed_chart_rows(self):
-        factory = RequestFactory()
-        to_ts = int(datetime(2026, 6, 16, tzinfo=timezone.utc).timestamp())
-        rows = [
-            (date(2026, 6, day), 100.0 + day, 102.0 + day, 99.0 + day, 101.0 + day, 1000 + day)
-            for day in range(1, 21)
-        ]
-        captured = {}
-
-        def fake_chart_bars(kind, key, from_date, to_date, countback):
-            captured.update(
-                {
-                    "kind": kind,
-                    "key": key,
-                    "from_date": from_date,
-                    "to_date": to_date,
-                    "countback": countback,
-                }
-            )
-            return rows
-
-        request = factory.get(
-            "/chart/indicator",
-            {"symbol": "NEPSE", "name": "RSI", "to": str(to_ts), "countback": "5000"},
-        )
-
-        with (
-            patch.object(indicator_views, "_resolve", return_value=("index", "NEPSE INDEX")),
-            patch.object(indicator_views, "_chart_bars", side_effect=fake_chart_bars),
-            patch.object(indicator_views.talib, "RSI", return_value=np.arange(len(rows), dtype=float)),
-        ):
-            response = indicator_views.indicator_data(request)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(captured["kind"], "index")
-        self.assertEqual(captured["key"], "NEPSE INDEX")
-        self.assertEqual(captured["to_date"], date(2026, 6, 16))
-        self.assertEqual(captured["countback"], 5000)
 
 
 @unittest.skipIf(udf_views is None, "Django settings unavailable")
