@@ -75,7 +75,10 @@ CACHE_TTL = 300
 # v5 replaced the in-sample headline with the out-of-sample result. The BACKTEST
 # block is embedded in every cached payload, so the version MUST move with it or
 # stale caches keep serving the retracted figures.
-PAYLOAD_VERSION = 6
+# v7: price_chg_pct now prefers bonus/rights-ADJUSTED closes (a raw close made a
+# bonus ex-date look like a crash and put the scrip in Quiet Accumulation);
+# deterministic tie-break in the ranking; identity check in _symbol_flow.
+PAYLOAD_VERSION = 7
 
 TOP_K = 5              # size of the "accumulating group" used by `absorb`
 
@@ -306,7 +309,10 @@ def _non_equity_symbols():
     scrip's z-score. Resolved once an hour from ``CompanyProfile`` because the
     per-session sector label is not trustworthy for new listings.
     """
-    cached = cache.get("ad_non_equity_v1")
+    # Keyed to PAYLOAD_VERSION so an edit to the exclusion regexes never serves
+    # the previous exclusion set for up to an hour after a deploy.
+    ck = f"ad_non_equity_v{PAYLOAD_VERSION}"
+    cached = cache.get(ck)
     if cached is not None:
         return cached
     out = set()
@@ -326,7 +332,7 @@ def _non_equity_symbols():
     except Exception:  # pragma: no cover - reference table optional
         logger.exception("non-equity symbol load failed")
         return set()
-    cache.set("ad_non_equity_v1", out, _NON_EQUITY_TTL)
+    cache.set(ck, out, _NON_EQUITY_TTL)
     return out
 
 
@@ -353,8 +359,10 @@ def _symbol_flow(buy_cells, sell_cells):
       ``sum_pos`` = Σ of the POSITIVE nets (what the net buyers accumulated).
       ``sum_neg`` = Σ of |negative nets| (what the net sellers released).
                     These two are equal by construction — every share bought net
-                    by one broker was sold net by another — and the code asserts
-                    the identity holds to floating-point exactness.
+                    by one broker was sold net by another — and the code CHECKS
+                    the identity below, refusing to score a symbol where it
+                    breaks (which would mean the floorsheet aggregate itself has
+                    a hole, e.g. rows with a missing broker code on one side).
 
       ``volume``  = GROSS shares traded in the window = Σ of every broker's buy
                     quantity (identical to the sell-side total, since each trade
@@ -390,6 +398,16 @@ def _symbol_flow(buy_cells, sell_cells):
     if not pos or not neg:
         return None
     sum_pos, sum_neg = sum(pos), sum(neg)
+
+    # The identity the docstring promises. A mismatch beyond float noise means
+    # the aggregate itself is broken for this symbol (a side missing broker
+    # codes, a partial sync) — scoring it anyway would distort top1_share and
+    # sell_hhi in opposite directions, so refuse and say why in the log.
+    if abs(sum_pos - sum_neg) > 1e-6 * max(sum_pos, sum_neg, 1.0):
+        logger.warning(
+            "A/D identity broken: sum_pos=%.1f sum_neg=%.1f — aggregate has a "
+            "hole for this symbol; refusing to score it.", sum_pos, sum_neg)
+        return None
 
     # The accumulating GROUP: the smallest set of net buyers whose nets sum to
     # half of `sum_pos`. Descriptive only — group size did not predict on its
@@ -503,8 +521,18 @@ def _scan_market(range_key="1m", start=None, end=None,
             # under the table does not add up to the market, which is the same
             # quiet-truncation problem in a smaller form.
             skipped["one_sided"] += 1
-            reasons[sym] = "every broker was on the same side — nothing to compare"
+            # Covers both unscoreable cases _symbol_flow refuses: genuinely
+            # one-sided flow, and (rare, logged) a broken buy/sell identity.
+            reasons[sym] = ("flow could not be scored — brokers on one side only, "
+                            "or an inconsistent aggregate for this scrip")
             continue
+        # Known approximation: the whole window's volume is valued at the
+        # window-END close, so a scrip that moved sharply in-window has its
+        # turnover mis-stated by roughly that move, and a borderline name can
+        # flicker across the floor between windows. Accepted: the floor is a
+        # liquidity heuristic, not a scored quantity, and a per-day repricing
+        # would add a query per symbol for a decision that is almost always
+        # nowhere near the boundary.
         turnover_day = close * flow["volume"] / sessions
         if turnover_day < min_turnover:
             skipped["volume"] += 1
@@ -527,7 +555,11 @@ def _scan_market(range_key="1m", start=None, end=None,
                 "reason": "Flow is degenerate in this window (no cross-sectional spread)."}
 
     scored = {s: z_absorb[s] - z_top1[s] - z_sell[s] for s in raw}
-    order = sorted(scored, key=lambda s: scored[s])
+    # Tie-break on symbol, NOT dict order. `raw` is built from a set, whose
+    # iteration order is hash-randomised per process — with tied scores (77 of
+    # 268 in a typical window at 2dp) a tie straddling the 80th-percentile edge
+    # would band "Accumulation" on one server process and "Mild" on another.
+    order = sorted(scored, key=lambda s: (scored[s], s))
     n = len(order)
     pct_of = {s: 100.0 * i / (n - 1) for i, s in enumerate(order)} if n > 1 else {}
 

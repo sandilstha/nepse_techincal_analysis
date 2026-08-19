@@ -184,11 +184,16 @@ def markdown_lite_to_html(text: str) -> str:
     """Convert the model's constrained markdown to a small, safe HTML subset.
 
     Input is escaped first, so model output cannot inject markup. Supports
-    ## / ### headings, - or * bullet lists, **bold**/*italic*, and paragraphs.
+    ## / ### headings, - or * bullet lists, **bold**/*italic*, paragraphs, and
+    GitHub-style pipe tables — the desk assistant is told to compare stocks in a
+    table, and without table support those render as a wall of raw "|" text.
     """
     lines = (text or "").replace("\r\n", "\n").split("\n")
     out: list[str] = []
     in_list = False
+    in_table = False
+    # A |---|---| divider line, which marks the row above it as the header.
+    sep_re = re.compile(r"^\s*\|?[\s:|-]+\|[\s:|-]*$")
 
     def close_list():
         nonlocal in_list
@@ -196,11 +201,43 @@ def markdown_lite_to_html(text: str) -> str:
             out.append("</ul>")
             in_list = False
 
-    for raw in lines:
+    def close_table():
+        nonlocal in_table
+        if in_table:
+            out.append("</tbody></table>")
+            in_table = False
+
+    def cells(row):
+        # Strip the outer pipes before splitting, or "| a | b |" yields an empty
+        # first and last cell.
+        return [c.strip() for c in row.strip().strip("|").split("|")]
+
+    for idx, raw in enumerate(lines):
         line = raw.rstrip()
         if not line.strip():
             close_list()
+            close_table()
             continue
+
+        if line.lstrip().startswith("|") and line.count("|") >= 2:
+            if sep_re.match(line) and "-" in line:
+                continue                      # divider carries no content
+            if not in_table:
+                close_list()
+                nxt = lines[idx + 1] if idx + 1 < len(lines) else ""
+                out.append('<table class="sr-ai-table">')
+                if sep_re.match(nxt) and "-" in nxt:
+                    out.append("<thead><tr>"
+                               + "".join(f"<th>{_inline(c)}</th>" for c in cells(line))
+                               + "</tr></thead><tbody>")
+                    in_table = True
+                    continue
+                out.append("<tbody>")
+                in_table = True
+            out.append("<tr>" + "".join(f"<td>{_inline(c)}</td>" for c in cells(line)) + "</tr>")
+            continue
+        close_table()
+
         heading = re.match(r"^(#{2,4})\s+(.*)$", line)
         bullet = re.match(r"^\s*[-*]\s+(.*)$", line)
         if heading:
@@ -216,6 +253,7 @@ def markdown_lite_to_html(text: str) -> str:
             close_list()
             out.append(f"<p>{_inline(line.strip())}</p>")
     close_list()
+    close_table()
     return "\n".join(out)
 
 
@@ -225,16 +263,18 @@ def markdown_lite_to_html(text: str) -> str:
 # silently rather than surfacing an error.
 # ---------------------------------------------------------------------------
 
-def _try_gemini(brief: dict[str, Any]) -> tuple[str | None, str | None, str]:
+def _try_gemini(system_prompt: str, user_text: str, *, max_tokens: int = 1400,
+                temperature: float = 0.55) -> tuple[str | None, str | None, str]:
     api_key = getattr(settings, "GEMINI_API_KEY", "")
     model = getattr(settings, "GEMINI_MODEL", "gemini-2.5-pro") or "gemini-2.5-pro"
     if not api_key:
         return None, None, model
     timeout = getattr(settings, "GEMINI_TIMEOUT_SECONDS", 45)
     payload = {
-        "system_instruction": {"parts": [{"text": _SYSTEM_PROMPT}]},
-        "contents": [{"role": "user", "parts": [{"text": _build_user_text(brief)}]}],
-        "generationConfig": {"temperature": 0.55, "topP": 0.9, "maxOutputTokens": 1400},
+        "system_instruction": {"parts": [{"text": system_prompt}]},
+        "contents": [{"role": "user", "parts": [{"text": user_text}]}],
+        "generationConfig": {"temperature": temperature, "topP": 0.9,
+                             "maxOutputTokens": max_tokens},
     }
     try:
         resp = requests.post(
@@ -268,7 +308,8 @@ def _try_gemini(brief: dict[str, Any]) -> tuple[str | None, str | None, str]:
     return text, None, model
 
 
-def _try_openrouter(brief: dict[str, Any]) -> tuple[str | None, str | None, str]:
+def _try_openrouter(system_prompt: str, user_text: str, *, max_tokens: int = 1400,
+                    temperature: float = 0.55) -> tuple[str | None, str | None, str]:
     api_key = getattr(settings, "OPENROUTER_API_KEY", "")
     model = getattr(settings, "OPENROUTER_MODEL", "") or "nvidia/llama-3.1-nemotron-70b-instruct:free"
     if not api_key:
@@ -287,17 +328,17 @@ def _try_openrouter(brief: dict[str, Any]) -> tuple[str | None, str | None, str]
         "Content-Type": "application/json",
         # Optional OpenRouter attribution header (used for their dashboards).
         # Must be latin-1 encodable — keep it ASCII (no em-dash etc.).
-        "X-Title": "NEPSE Analytics - S/R AI Narrative",
+        "X-Title": "NEPSE Analytics Desk",
     }
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": _build_user_text(brief)},
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_text},
         ],
-        "temperature": 0.55,
+        "temperature": temperature,
         "top_p": 0.9,
-        "max_tokens": 1400,
+        "max_tokens": max_tokens,
     }
     try:
         resp = requests.post(_OPENROUTER_ENDPOINT, headers=headers, json=payload, timeout=timeout)
@@ -342,21 +383,38 @@ def generate_sr_ai_analysis(metrics, institutional_rows, advanced_metrics, recen
 
     brief = build_sr_brief(metrics, institutional_rows, advanced_metrics, recent_bars)
 
+    res = call_llm(_SYSTEM_PROMPT, _build_user_text(brief))
+    if res.get("text"):
+        return {"analysis_html": markdown_lite_to_html(res["text"]),
+                "model": res["model"], "provider": res["provider"]}
+    return {"error": res["error"]}
+
+
+def call_llm(system_prompt: str, user_text: str, *, max_tokens: int = 1400,
+             temperature: float = 0.55) -> dict[str, Any]:
+    """Run a prompt through Gemini, falling back to OpenRouter. Never raises.
+
+    Returns {"text", "model", "provider"} on success, or {"error"} — the same
+    contract every caller already expects, so a provider outage degrades to an
+    inline message instead of a 500. Shared by the S/R narrative and the desk
+    assistant so the auth/timeout/fallback handling exists in exactly one place.
+    """
     errors: list[str] = []
     for provider, runner in (("Gemini", _try_gemini), ("OpenRouter", _try_openrouter)):
         try:
-            text, err, model = runner(brief)
+            text, err, model = runner(system_prompt, user_text,
+                                      max_tokens=max_tokens, temperature=temperature)
         except Exception as exc:  # never let one provider 500 the endpoint
             errors.append(f"{provider}: {exc}")
             continue
         if text:
-            return {"analysis_html": markdown_lite_to_html(text), "model": model, "provider": provider}
+            return {"text": text, "model": model, "provider": provider}
         if err:
             errors.append(f"{provider}: {err}")
 
     if errors:
-        return {"error": "AI analysis failed. " + " · ".join(errors)}
+        return {"error": "AI request failed. " + " · ".join(errors)}
     return {
-        "error": "AI analysis is not configured. Set GEMINI_API_KEY (or OPENROUTER_API_KEY for the "
+        "error": "AI is not configured. Set GEMINI_API_KEY (or OPENROUTER_API_KEY for the "
                  "fallback) in your .env to enable it."
     }

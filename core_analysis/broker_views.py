@@ -13,7 +13,8 @@ from functools import wraps
 
 from django.http import JsonResponse
 from django.shortcuts import render
-from django.views.decorators.http import require_GET
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_GET, require_POST
 
 from core_analysis.services import broker_analytics as ba
 
@@ -348,6 +349,60 @@ def hotstocks_api(request):
         sector=_sector(request),
         **_window(request),
     )
+
+
+@login_required(login_url="login")
+@require_POST
+def accumulation_ask_api(request):
+    """Natural-language question answered against the CURRENT A/D scan.
+
+    POST, not GET, for three reasons: the question is user input that does not
+    belong in a URL or an access log, each call spends real API credit so it
+    must not be triggered by a prefetch or a shared link, and it is not
+    idempotent against the per-user daily quota.
+
+    Login-gated for the same spend reason — an anonymous endpoint that costs
+    money per hit is a bill waiting to happen.
+    """
+    import json as _json
+
+    from core_analysis.services import desk_assistant as da
+
+    try:
+        body = _json.loads(request.body or b"{}")
+    except ValueError:
+        return JsonResponse({"ok": False, "error": "Malformed request."}, status=400)
+
+    question = (body.get("question") or "").strip()
+    if not question:
+        return JsonResponse({"ok": False, "error": "Ask a question first."}, status=400)
+
+    uid = request.user.id
+    allowed, remaining = da.check_quota(uid)
+    if not allowed:
+        return JsonResponse(
+            {"ok": False, "error": (
+                f"Daily limit reached ({da.DAILY_QUESTION_CAP} questions). "
+                f"It resets at midnight.")}, status=429)
+
+    range_key = (body.get("range") or "1m").strip() or "1m"
+    sector = (body.get("sector") or "All").strip() or "All"
+    start = (body.get("start") or None)
+    end = (body.get("end") or None)
+
+    try:
+        out = da.ask(question, range_key=range_key, sector=sector, start=start, end=end)
+    except Exception:  # pragma: no cover - defensive, never 500 the panel
+        logger.exception("desk assistant failed")
+        return JsonResponse({"ok": False, "error": "The assistant is unavailable."}, status=200)
+
+    # Charge only for answers actually produced, so a provider outage or a
+    # too-short window does not silently eat someone's daily allowance.
+    if out.get("ok"):
+        da.consume_quota(uid)
+        _, remaining = da.check_quota(uid)
+    out["quota_remaining"] = remaining
+    return JsonResponse(out)
 
 
 @require_GET

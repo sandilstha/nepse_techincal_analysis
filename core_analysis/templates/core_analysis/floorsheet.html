@@ -108,6 +108,61 @@
       <div class="dsx-ad-note" id="ad-universe"></div>
     </div>
 
+    <!-- Ask the desk: grounded Q&A over THIS scan.
+         The model is handed the computed JSON, never a screenshot, and is
+         forbidden from using any number not in it - so an answer can always be
+         checked against the table above. -->
+    <div class="dsx-card dsx-ad-ask" id="ad-ask">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span>ASK THE DESK</span>
+        <span class="dsx-ad-sub" id="ad-ask-quota"></span>
+      </div>
+      <div class="dsx-ad-ask-body">
+        <p class="dsx-ad-ask-hint">
+          Answers come only from the numbers in this scan
+          (<span id="ad-ask-scope">current window</span>). It will say so when
+          something is not in the data, and it cannot forecast prices.
+        </p>
+        {% comment %}
+          CSRF_COOKIE_HTTPONLY is True in settings, so JavaScript cannot read the
+          token from document.cookie - the usual getCookie('csrftoken') trick
+          silently yields "" and every POST 403s. Render the token into the DOM
+          instead and read it from here.
+        {% endcomment %}
+        {% csrf_token %}
+        <div class="dsx-ad-ask-row">
+          <input type="text" id="ad-ask-q" class="dsx-ad-ask-input" maxlength="400"
+                 placeholder="e.g. which stocks are absorbing without the price going up?"
+                 aria-label="Ask a question about this scan">
+          <button type="button" id="ad-ask-go" class="dsx-analyze">Ask</button>
+        </div>
+        {% comment %}
+          Every example below is answerable from the brief the server sends
+          (both tails of the ranking + the quiet-accumulation list + the
+          evidence block). Questions needing data the brief does not carry -
+          fundamentals, news, anything intraday - are deliberately absent, so
+          the chips never teach a question the tool must refuse.
+
+          Grouped by what they exercise: flow structure, then who is doing it,
+          then comparison, then the honesty check.
+        {% endcomment %}
+        <div class="dsx-ad-ask-eg">
+          <button type="button" class="dsx-ad-eg">Which stocks are absorbing without the price going up?</button>
+          <button type="button" class="dsx-ad-eg">Which stocks are being distributed the hardest?</button>
+          <button type="button" class="dsx-ad-eg">Where is the selling most concentrated?</button>
+          <button type="button" class="dsx-ad-eg">Where is one broker doing most of the buying?</button>
+          <button type="button" class="dsx-ad-eg">Which stocks have the widest group of buyers?</button>
+          <button type="button" class="dsx-ad-eg">Is anything absorbing even though the price already rose?</button>
+          <button type="button" class="dsx-ad-eg">Which sectors show up most in the accumulation list?</button>
+          <button type="button" class="dsx-ad-eg">Compare the top 3 accumulating stocks.</button>
+          <button type="button" class="dsx-ad-eg">Explain the top stock in plain language.</button>
+          <button type="button" class="dsx-ad-eg">How much can I trust this score?</button>
+          <button type="button" class="dsx-ad-eg">Summarise this window in three lines.</button>
+        </div>
+        <div class="dsx-ad-ask-out" id="ad-ask-out" hidden></div>
+      </div>
+    </div>
+
     <!-- Detail drawer: the brokers on each side for one scrip. -->
     <div class="dsx-card dsx-ad-detail" id="ad-detail" hidden>
       <div class="dsx-card-head neutral dsx-ad-head">

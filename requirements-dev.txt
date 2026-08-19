@@ -11,3 +11,4 @@
 # Code knowledge graph used by the repo workflow (see CLAUDE.md):
 #   graphify query "<question>" | graphify update .
 graphifyy==0.8.41
+

@@ -122,8 +122,14 @@ CSRF_TRUSTED_ORIGINS = [
 # production. Front-end must terminate HTTPS for SECURE_SSL_REDIRECT to be safe.
 if not DEBUG:
     SECURE_SSL_REDIRECT = _env_bool('DJANGO_SECURE_SSL_REDIRECT', True)
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    # Secure-only cookies default ON, but MUST be switchable: this desk is also
+    # reached over plain http on the LAN (http://192.168.1.31:8501). A Secure
+    # cookie is never stored or sent over http, so with these hard-coded True the
+    # CSRF token silently disappears and every login POST fails with a bare 403 —
+    # which looks exactly like a wrong password. Set DJANGO_SECURE_COOKIES=0 when
+    # plain-http access is required; leave it on for an https-only deployment.
+    SESSION_COOKIE_SECURE = _env_bool('DJANGO_SECURE_COOKIES', True)
+    CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
     SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_HSTS_SECONDS', '31536000'))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
@@ -374,12 +380,28 @@ else:
 # overridden via the INSIGHTS_REFRESH_SECONDS environment variable.
 INSIGHTS_REFRESH_SECONDS = int(os.environ.get('INSIGHTS_REFRESH_SECONDS', '30'))
 
+# ── External charting terminal ────────────────────────────────────────────────
+# The built-in Lightweight-Charts terminal (/chart/, its UDF datafeed and the
+# pandas_ta indicator endpoints) was removed in favour of this external
+# TradingView-based terminal, which serves its own datafeed from its own origin
+# and therefore has no dependency on this project.
+#
+# It is deep-linkable: ?symbol=NABIL&interval=60&theme=light|dark
+# Kept as a setting so the host is changed in ONE place rather than in every
+# template that links to a chart.
+EXTERNAL_CHART_URL = os.environ.get(
+    'EXTERNAL_CHART_URL', 'https://technical.aurasrp.com.np/chart').strip()
+
 # ── Gemini AI narrative (Support & Resistance tab) ──────────────────────────
 # Powers the "AI Narrative Analysis" panel under the Institutional Multi-Framework
 # table. Leave GEMINI_API_KEY blank to disable the panel (it degrades gracefully).
 # Get a key at https://aistudio.google.com/apikey and put it in .env.
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-pro').strip()
+# gemini-2.5-pro was retired upstream (404: "no longer available to new
+# users"), and the 3.x *pro* models return 429 on this key's free tier.
+# A flash model is the right fit anyway: these calls are grounded Q&A over
+# a JSON brief, where latency matters more than deep reasoning.
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.7-flash').strip()
 GEMINI_TIMEOUT_SECONDS = int(os.environ.get('GEMINI_TIMEOUT_SECONDS', '45'))
 
 # Fallback provider (OpenRouter, OpenAI-compatible) used when Gemini is missing,

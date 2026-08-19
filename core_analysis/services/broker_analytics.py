@@ -1147,29 +1147,56 @@ def broker_persistence(brokers, range_key="1w", sector="All", exclude_mf=False,
 def _window_close_changes(symbols, dates):
     """% price change over the window for each symbol (first vs last close in it).
 
-    Reads the local EOD table (NepseDailyStockPrice), the same authoritative
-    source the trend line uses. Returns {symbol: pct_change}; symbols without two
-    priced sessions are simply omitted.
+    Prefers the bonus/rights-ADJUSTED series (StockPriceAdjustment.close_price_adj)
+    and falls back to raw NepseDailyStockPrice closes for symbols the adjusted
+    table does not cover in the window. The raw close books a bonus ex-date as a
+    price crash — which put scrips whose adjusted price actually ROSE into the
+    A/D Radar's "Quiet Accumulation" list and into the divergence signal as
+    'accum_weak'. Returns {symbol: pct_change}; symbols without two priced
+    sessions are simply omitted.
     """
     if not symbols or not dates:
         return {}
     series = {}
+    adjusted = set()
     try:
-        from core_analysis.models import NepseDailyStockPrice
+        from core_analysis.models import NepseDailyStockPrice, StockPriceAdjustment
 
         d0 = datetime.strptime(min(dates), "%Y-%m-%d").date()
         d1 = datetime.strptime(max(dates), "%Y-%m-%d").date()
-        qs = (
-            NepseDailyStockPrice.objects.filter(
-                symbol__in=list(symbols), business_date__gte=d0, business_date__lte=d1
+        # Adjusted series first. Iterate INSIDE the try — querysets are lazy, so
+        # the DB only executes here; an error during iteration must also degrade
+        # (divergence simply drops out) instead of failing the whole payload.
+        adj_qs = (
+            StockPriceAdjustment.objects.filter(
+                company__symbol__in=list(symbols),
+                business_date__gte=d0, business_date__lte=d1,
+                close_price_adj__isnull=False,
             )
-            .values_list("symbol", "business_date", "close_price")
+            .values_list("company__symbol", "business_date", "close_price_adj")
         )
-        # Iterate INSIDE the try — querysets are lazy, so the DB only executes
-        # here; an error during iteration must also degrade to {} (divergence
-        # simply drops out) instead of failing the whole signals payload.
-        for sym, bd, cp in qs:
-            series.setdefault(sym, []).append((bd, float(cp)))
+        for sym, bd, cp in adj_qs:
+            if cp:
+                series.setdefault(sym, []).append((bd, float(cp)))
+        # A single adjusted row cannot make a change; treat it as no coverage so
+        # the raw fallback still produces a figure for that symbol. Partial
+        # adjusted entries are DROPPED, not appended to — mixing one adjusted
+        # close with raw closes would put two different price scales in the same
+        # series whenever a corp action sits in the window, which is exactly the
+        # distortion this function exists to avoid.
+        adjusted = {s for s, arr in series.items() if len(arr) >= 2}
+        raw_needed = [s for s in symbols if s not in adjusted]
+        for s in raw_needed:
+            series.pop(s, None)
+        if raw_needed:
+            qs = (
+                NepseDailyStockPrice.objects.filter(
+                    symbol__in=raw_needed, business_date__gte=d0, business_date__lte=d1
+                )
+                .values_list("symbol", "business_date", "close_price")
+            )
+            for sym, bd, cp in qs:
+                series.setdefault(sym, []).append((bd, float(cp)))
     except Exception:  # pragma: no cover - DB optional for this overlay
         return {}
     out = {}

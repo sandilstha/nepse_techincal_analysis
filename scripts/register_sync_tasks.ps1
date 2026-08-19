@@ -19,7 +19,11 @@ $path = '\NEPSE\'
 $days = 'Sunday','Monday','Tuesday','Wednesday','Thursday','Friday'
 
 $jobs = @(
-    @{ Name = 'NEPSE Sync 1515 Full';   Time = '15:15'; Args = '';         Desc = 'Price + floorsheet sync right after close.' },
+    # --with-adjustments: also refresh bonus/rights-adjusted prices
+    # (StockPriceAdjustment). The A/D Radar's Quiet Accumulation list and the
+    # portfolio desk both read the adjusted series; a stale table silently
+    # falls back to raw closes, which book every bonus ex-date as a crash.
+    @{ Name = 'NEPSE Sync 1515 Full';   Time = '15:15'; Args = '--with-adjustments'; Desc = 'Price + floorsheet + adjusted-price sync right after close.' },
     @{ Name = 'NEPSE Sync 1530 Verify'; Time = '15:30'; Args = '--verify'; Desc = 'Verify completeness; re-sync only what is missing.' },
     @{ Name = 'NEPSE Sync 1600 Verify'; Time = '16:00'; Args = '--verify'; Desc = 'Final verification sweep.' }
 )

@@ -199,7 +199,9 @@
       <section id="tech" class="panel">
         <div class="phead"><h2>Technical · trend &amp; momentum</h2>
           {% if tech %}<span class="desk-score sc-{{ tech.trend_tone }}">{{ tech.trend }}</span>{% endif %}
-          <a class="link" href="/chart/{{ symbol }}/">Full chart ↗</a></div>
+          <a class="link" href="{{ external_chart_url }}?symbol={{ symbol|urlencode }}"
+             target="_blank" rel="noopener noreferrer"
+             title="Open this symbol on the charting terminal (new tab)">Full chart ↗</a></div>
         <div class="pbody">
           {% if not tech %}
             <div class="notice">Not enough price history for <b>{{ symbol }}</b> to compute moving averages.</div>
