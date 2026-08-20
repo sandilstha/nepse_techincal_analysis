@@ -30,6 +30,7 @@ Design notes:
   * Every underlying sync upserts, so re-running is safe — which is what makes
     the three-pass schedule work.
 """
+import os
 from datetime import date, timedelta, timezone as dt_timezone
 
 from django.core.management import call_command
@@ -72,6 +73,17 @@ class Command(BaseCommand):
         # StockPriceAdjustment feeds most desks and goes stale silently.
         p.add_argument("--with-adjustments", action="store_true",
                        help="Also sync split/bonus-adjusted prices (sync_and_calculate).")
+        # NEPSE REVISES closes after the session. Measured 2026-08-19: 43 of 347
+        # closes for the prior session (12.4%) differed from what we stored, and
+        # in all 43 cases the revised value matched today's `previous_close`
+        # field exactly - so ours were the stale ones, not upstream's.
+        #
+        # The completeness check compares ROW COUNTS, which a revision never
+        # changes, so revisions were invisible and stale closes accumulated
+        # (100 across the last 10 sessions). Re-pull a trailing window each run.
+        p.add_argument("--revision-window", type=int, default=5,
+                       help="Also re-sync the N prior sessions to pick up "
+                            "exchange revisions to already-stored closes (0 = off).")
 
     # ── status ──────────────────────────────────────────────────────────────
     def _status(self, day):
@@ -139,12 +151,29 @@ class Command(BaseCommand):
         if do_price:
             results.append(self._run("prices", "sync_nepse_data",
                                      source="both", from_date=day))
+            window = max(0, int(o.get("revision_window") or 0))
+            if window:
+                results.append(self._resync_revisions(day, window))
             if o["with_adjustments"]:
                 results.append(self._run("adjusted", "sync_and_calculate",
                                          source="adjustments", from_date=day))
         if do_floor:
             results.append(self._run("floorsheet", "sync_floorsheet",
                                      from_date=day, to_date=day))
+
+        # Warm the caches the desks read, now that fresh data is in. Runs after
+        # the syncs so it caches the NEW session, and only when something was
+        # actually synced. Two separate problems this solves:
+        #
+        #  * contributors are fetched off-thread (the upstream call takes ~7s),
+        #    so the first Market Insights build after any restart has none and
+        #    the panels sit in a "loading" state until it lands;
+        #  * the floorsheet window aggregate costs 13-18s to build cold and is
+        #    shared by EVERY tab on the broker desk, so whoever opens it first
+        #    after a restart pays that on a single-process server.
+        #
+        # Best-effort by design: a warming failure must never mark the sync bad.
+        self._warm_caches()
 
         after = self._status(day)
         ok = [n for n, good, _ in results if good]
@@ -177,3 +206,118 @@ class Command(BaseCommand):
         except Exception as exc:   # pragma: no cover - upstream is best-effort
             self.stderr.write(self.style.ERROR(f"  {label} sync failed: {exc}"))
             return (label, False, str(exc)[:120])
+
+    def _resync_revisions(self, day, window):
+        """Re-pull the prior ``window`` sessions so exchange revisions land.
+
+        Returns the same (label, ok, err) tuple as ``_run`` so it slots into the
+        results summary. Cheap: ~350 rows per session, and the sync upserts, so
+        unchanged rows are simply rewritten with identical values.
+        """
+        from core_analysis.models import NepseDailyStockPrice as P
+
+        prior = list(
+            P.objects.filter(business_date__lt=day)
+            .order_by("-business_date")
+            .values_list("business_date", flat=True).distinct()[:window]
+        )
+        if not prior:
+            return ("revisions", True, None)
+        start, end = min(prior), max(prior)
+        before = {
+            (r["symbol"], r["business_date"]): r["close_price"]
+            for r in P.objects.filter(business_date__gte=start, business_date__lte=end)
+            .values("symbol", "business_date", "close_price")
+        }
+        # Pass date OBJECTS, not ISO strings: sync_nepse_data calls .isoformat()
+        # on these itself, so a string here raises AttributeError inside the sync.
+        # update_existing is the whole point: the default path uses
+        # ignore_conflicts, so an already-stored row can never be corrected.
+        label, ok, err = self._run(
+            "revisions", "sync_nepse_data", source="stocks",
+            from_date=start, to_date=end, update_existing=True)
+        if not ok:
+            return (label, ok, err)
+        after = {
+            (r["symbol"], r["business_date"]): r["close_price"]
+            for r in P.objects.filter(business_date__gte=start, business_date__lte=end)
+            .values("symbol", "business_date", "close_price")
+        }
+        changed = [k for k, v in after.items()
+                   if k in before and before[k] is not None and v is not None
+                   and abs(float(v) - float(before[k])) > 0.01]
+        if changed:
+            sample = ", ".join(f"{s} {d}" for s, d in sorted(changed)[:5])
+            self.stdout.write(self.style.WARNING(
+                f"    revisions: {len(changed)} close(s) corrected over "
+                f"{start}..{end} ({sample}{' …' if len(changed) > 5 else ''})"))
+        else:
+            self.stdout.write(f"    revisions: none over {start}..{end}")
+        return (label, True, None)
+
+    def _warm_caches(self):
+        """Pre-build the expensive caches so no human pays the cold build.
+
+        Warming happens over HTTP against the RUNNING SERVER, not in-process.
+        That is not a style choice: CACHES uses LocMemCache, which is per-process
+        (see the note in settings.py). Calling the services directly from this
+        management command would fill THIS process's cache and then throw it away
+        on exit, leaving the web server exactly as cold as before. Requesting the
+        endpoints makes the server build and cache them in its own process.
+
+        Set REDIS_URL to share one cache across processes and this could then be
+        done in-process instead.
+
+        Entirely best-effort: the desk is merely slow if warming fails, so a
+        failure here must never mark the sync itself bad.
+        """
+        import json
+        import time
+        import urllib.request
+
+        base = os.environ.get("WARM_BASE_URL", "http://192.168.1.31:8501").rstrip("/")
+
+        def _get(path, timeout=300):
+            # Deliberately NOT requesting gzip: the point is to make the server
+            # BUILD and cache the payload, and asking for gzip only means this
+            # side has to decompress before it can read the result back.
+            req = urllib.request.Request(
+                base + path, headers={"User-Agent": "market_close_sync/warm"})
+            t0 = time.time()
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                body = r.read()
+            return time.time() - t0, body
+
+        try:
+            _get("/insights/api/?force=1")
+        except Exception as exc:
+            self.stdout.write(self.style.WARNING(
+                f"    warm: server unreachable at {base} ({exc}) — skipped"))
+            return
+
+        # Contributors are fetched OFF-THREAD, so the forced build above only
+        # kicks the refresh off. Wait for it (upstream takes ~7s), then rebuild
+        # so the cached payload actually contains them.
+        time.sleep(9)
+        try:
+            took, body = _get("/insights/api/?force=1")
+            c = (json.loads(body).get("contributors") or {})
+            n = len(c.get("positive") or [])
+            self.stdout.write(
+                f"    warmed insights in {took:.1f}s (contributors: {n} up-movers"
+                + (", still pending" if c.get("pending") else "") + ")")
+        except Exception as exc:
+            self.stdout.write(self.style.WARNING(f"    insights warm failed: {exc}"))
+
+        # Floorsheet window aggregates + the A/D scan built on them. This is the
+        # 13-18s cold build shared by every tab on the broker desk.
+        for rng in ("1w", "1m", "3m"):
+            try:
+                took, body = _get(f"/floorsheet/api/accumulation/?range={rng}")
+                d = json.loads(body)
+                self.stdout.write(
+                    f"    warmed A/D {rng}: {len(d.get('rows') or [])} scored in {took:.1f}s"
+                    if d.get("ok") else
+                    f"    A/D {rng} not built: {d.get('reason', 'unknown')}")
+            except Exception as exc:
+                self.stdout.write(self.style.WARNING(f"    A/D {rng} warm failed: {exc}"))

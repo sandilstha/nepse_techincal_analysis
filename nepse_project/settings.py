@@ -378,7 +378,11 @@ else:
 # Default auto-refresh interval (seconds) for the /insights/ dashboard. The UI
 # lets users override this per-session; this is just the initial value. Can be
 # overridden via the INSIGHTS_REFRESH_SECONDS environment variable.
-INSIGHTS_REFRESH_SECONDS = int(os.environ.get('INSIGHTS_REFRESH_SECONDS', '30'))
+# 0 = Manual (no auto-refresh), which is now the default. Polling every 30s
+# reloaded the whole dashboard around the clock, including after close when
+# nothing changes. The user can still pick 15s/30s/60s/5m in the header, and
+# that choice is remembered per browser.
+INSIGHTS_REFRESH_SECONDS = int(os.environ.get('INSIGHTS_REFRESH_SECONDS', '0'))
 
 # ── External charting terminal ────────────────────────────────────────────────
 # The built-in Lightweight-Charts terminal (/chart/, its UDF datafeed and the

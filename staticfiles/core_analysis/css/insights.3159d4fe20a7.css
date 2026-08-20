@@ -5,7 +5,7 @@
 
 /* Design tokens now live in tokens.css so the workbench and Stock 360 —
    which do not load this sheet — can share them. Single source of truth. */
-@import url('tokens.css');
+@import url("tokens.9c08112f4c2f.css");
 
 
 *, *::before, *::after { box-sizing: border-box; }
