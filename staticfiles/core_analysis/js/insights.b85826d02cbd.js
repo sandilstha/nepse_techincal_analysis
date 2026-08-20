@@ -10,10 +10,7 @@
 
   var CONFIG = window.MI_CONFIG || { apiUrl: "/insights/api/", refreshSeconds: 30 };
   var LS_THEME = "mi-theme";
-  // Key bumped to v2 when the default became Manual: browsers holding the old
-  // saved "30" would otherwise keep auto-refreshing forever and the new
-  // default would appear not to work. Bumping discards that value once.
-  var LS_INTERVAL = "mi-refresh-interval-v2";
+  var LS_INTERVAL = "mi-refresh-interval";
   var LS_HEATMAP_SECTOR = "mi-heatmap-sector";
   var LS_HEATMAP_ZOOM = "mi-heatmap-zoom";
   var LS_COMPARE_DAYS = "mi-compare-days";
@@ -1025,7 +1022,6 @@
         if (banner && d.has_data) banner.style.display = "none";
         renderAll(d);
         setPayloadStatus(d);
-        state.lastFetchMs = Date.now();
         stamp();
         if (options.fast && !manual && !d.live) {
           deferNonCritical(function () { refresh(false); }, 2500);
@@ -1117,18 +1113,9 @@
     // Sector turnover period buttons (Daily … Yearly + custom date range).
     initSectorRange();
 
-    // Resume promptly when the tab regains focus. This must ALSO fire in
-    // Manual mode: with Manual now the default, a tab left open across the
-    // market close otherwise freezes at its load-time snapshot forever — which
-    // reads as "the heatmap stopped working" when it is simply never asked
-    // again. Manual still means no polling; a stale tab regaining focus gets
-    // exactly one catch-up request, and only when the data is >10 min old.
-    var STALE_TAB_MS = 10 * 60 * 1000;
+    // Resume promptly when the tab regains focus.
     document.addEventListener("visibilitychange", function () {
-      if (document.hidden) return;
-      if (state.intervalSec > 0) { refresh(false); return; }
-      var age = Date.now() - (state.lastFetchMs || 0);
-      if (age > STALE_TAB_MS) refresh(false);
+      if (!document.hidden && state.intervalSec > 0) refresh(false);
     });
   }
 

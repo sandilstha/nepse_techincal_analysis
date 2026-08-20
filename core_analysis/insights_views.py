@@ -86,11 +86,19 @@ def _tv_library_installed():
 
 
 def _refresh_seconds():
+    """Initial auto-refresh interval in seconds; 0 means Manual.
+
+    0 must survive the clamp. The old `max(5, ...)` silently turned Manual into
+    a 5-second poll — the one setting that exists to STOP polling became the
+    most aggressive one available. Anything above 0 is still floored at 5 so a
+    stray `1` cannot hammer the API.
+    """
     value = getattr(settings, "INSIGHTS_REFRESH_SECONDS", DEFAULT_REFRESH_SECONDS)
     try:
-        return max(5, int(value))
+        value = int(value)
     except (TypeError, ValueError):
         return DEFAULT_REFRESH_SECONDS
+    return 0 if value <= 0 else max(5, value)
 
 
 def _empty_payload(error):

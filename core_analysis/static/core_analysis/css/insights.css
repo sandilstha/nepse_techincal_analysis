@@ -724,3 +724,17 @@ body:not(.mi-feed-delayed) .mi-stale-hint { display: none; }
   .mi-stat-value { font-size: var(--fs-lg); }
   .mi-stat-range { font-size: var(--fs-base); gap: var(--sp-1); }
 }
+
+/* Contributors / sector movers still arriving. The feed is fetched off-thread,
+   so the first build after a restart legitimately has no data yet — this state
+   says "loading", never "no data", which previously read as a broken feed. */
+.mi-empty.mi-loading { opacity: .75; }
+.mi-empty.mi-loading::after {
+  content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 7px;
+  border-radius: 50%; background: currentColor; vertical-align: middle;
+  animation: mi-loading-pulse 1.1s ease-in-out infinite;
+}
+@keyframes mi-loading-pulse { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .mi-empty.mi-loading::after { animation: none; opacity: .6; }
+}

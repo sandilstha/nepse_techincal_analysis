@@ -10,7 +10,10 @@
 
   var CONFIG = window.MI_CONFIG || { apiUrl: "/insights/api/", refreshSeconds: 30 };
   var LS_THEME = "mi-theme";
-  var LS_INTERVAL = "mi-refresh-interval";
+  // Key bumped to v2 when the default became Manual: browsers holding the old
+  // saved "30" would otherwise keep auto-refreshing forever and the new
+  // default would appear not to work. Bumping discards that value once.
+  var LS_INTERVAL = "mi-refresh-interval-v2";
   var LS_HEATMAP_SECTOR = "mi-heatmap-sector";
   var LS_HEATMAP_ZOOM = "mi-heatmap-zoom";
   var LS_COMPARE_DAYS = "mi-compare-days";
@@ -905,17 +908,41 @@
 
   function renderContributors(d) {
     var c = d.contributors || {};
-    renderContribList("contrib-positive", c.positive, "up");
-    renderContribList("contrib-negative", c.negative, "down");
-    renderSectorMoverList("sector-positive", (c.sectors || {}).positive, "up");
-    renderSectorMoverList("sector-negative", (c.sectors || {}).negative, "down");
+    // `pending` means the feed is fetched off-thread and has not landed yet
+    // (normal for the first build after a restart) — as opposed to the feed
+    // genuinely returning nothing. The two must not read the same on screen.
+    var contribPending = !!c.pending;
+    renderContribList("contrib-positive", c.positive, "up", contribPending);
+    renderContribList("contrib-negative", c.negative, "down", contribPending);
+    renderSectorMoverList("sector-positive", (c.sectors || {}).positive, "up", contribPending);
+    renderSectorMoverList("sector-negative", (c.sectors || {}).negative, "down", contribPending);
+    scheduleContribRecheck(contribPending);
   }
 
-  function renderContribList(id, rows, cls) {
+  // While contributors are pending, fetch again shortly so the panels fill in
+  // on their own. Bounded to a few attempts: this exists to cover the ~7s
+  // upstream fetch after a restart, not to poll forever if the feed is dead.
+  var contribRechecks = 0;
+  var contribTimer = null;
+  function scheduleContribRecheck(pending) {
+    if (!pending) { contribRechecks = 0; return; }
+    if (contribTimer || contribRechecks >= 4) return;
+    contribRechecks += 1;
+    contribTimer = setTimeout(function () {
+      contribTimer = null;
+      // refresh() is the module's payload fetch; it self-guards on
+      // state.inFlight, so this can never stack onto an in-progress poll.
+      refresh(false);
+    }, 4000);
+  }
+
+  function renderContribList(id, rows, cls, pending) {
     var box = el(id);
     if (!box) return;
     if (!rows || !rows.length) {
-      box.innerHTML = '<div class="mi-empty">No data available</div>';
+      box.innerHTML = pending
+        ? '<div class="mi-empty mi-loading">Loading contributors…</div>'
+        : '<div class="mi-empty">No data available</div>';
       return;
     }
     var maxAbs = rows.reduce(function (m, r) {
@@ -934,11 +961,13 @@
   }
 
   // ── Render everything ──────────────────────────────────────────────────
-  function renderSectorMoverList(id, rows, cls) {
+  function renderSectorMoverList(id, rows, cls, pending) {
     var box = el(id);
     if (!box) return;
     if (!rows || !rows.length) {
-      box.innerHTML = '<div class="mi-empty">No sector data available</div>';
+      box.innerHTML = pending
+        ? '<div class="mi-empty mi-loading">Loading sector movers…</div>'
+        : '<div class="mi-empty">No sector data available</div>';
       return;
     }
     box.innerHTML = rows.map(function (r) {
@@ -996,6 +1025,7 @@
         if (banner && d.has_data) banner.style.display = "none";
         renderAll(d);
         setPayloadStatus(d);
+        state.lastFetchMs = Date.now();
         stamp();
         if (options.fast && !manual && !d.live) {
           deferNonCritical(function () { refresh(false); }, 2500);
@@ -1087,9 +1117,18 @@
     // Sector turnover period buttons (Daily … Yearly + custom date range).
     initSectorRange();
 
-    // Resume promptly when the tab regains focus.
+    // Resume promptly when the tab regains focus. This must ALSO fire in
+    // Manual mode: with Manual now the default, a tab left open across the
+    // market close otherwise freezes at its load-time snapshot forever — which
+    // reads as "the heatmap stopped working" when it is simply never asked
+    // again. Manual still means no polling; a stale tab regaining focus gets
+    // exactly one catch-up request, and only when the data is >10 min old.
+    var STALE_TAB_MS = 10 * 60 * 1000;
     document.addEventListener("visibilitychange", function () {
-      if (!document.hidden && state.intervalSec > 0) refresh(false);
+      if (document.hidden) return;
+      if (state.intervalSec > 0) { refresh(false); return; }
+      var age = Date.now() - (state.lastFetchMs || 0);
+      if (age > STALE_TAB_MS) refresh(false);
     });
   }
 

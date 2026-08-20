@@ -760,19 +760,30 @@ def _heatmap(enriched, limit=HEATMAP_POOL):
     ]
 
 
-def _contributors_block(contrib):
+def _contributors_block(contrib, pending=False):
     """Shape the raw contributors feed into the payload's contributors dict.
 
     Single source of truth so the live build and the post-close EOD build emit
     the Top Contributors widget identically. Empty-but-valid when the feed is
     down, so the widget degrades gracefully instead of erroring.
+
+    ``pending`` carries the distinction the UI could not previously make. The
+    feed is fetched OFF-THREAD (so the dashboard never waits 7s on it), which
+    means the first build after any restart legitimately has no contributors
+    yet. Rendering that as "No data available" was wrong and read as a broken
+    feed; with pending=True the panel can say it is still loading and poll
+    again. An empty block with pending=False means the feed really did return
+    nothing.
     """
     if not contrib:
-        return {"positive": [], "negative": [], "sectors": {"positive": [], "negative": []}}
+        return {"positive": [], "negative": [],
+                "sectors": {"positive": [], "negative": []},
+                "pending": bool(pending)}
     return {
         "positive": contrib.get("positive", []),
         "negative": contrib.get("negative", []),
         "sectors": contrib.get("sectors", {"positive": [], "negative": []}),
+        "pending": False,
     }
 
 
@@ -976,7 +987,11 @@ def _build_eod_payload():
         "heatmap": _heatmap(enriched),
         "heatmap_as_of": as_of,
         "history": _nepse_history(),
-        "contributors": _contributors_block(None),
+        # Placeholder: the caller overwrites this with the real block (and the
+        # correct pending flag) right after. pending=True so a payload that
+        # somehow escapes without that step still reads as "loading", never
+        # as "the feed returned nothing".
+        "contributors": _contributors_block(None, pending=True),
         "stock_count": len(enriched),
     }
 
@@ -1015,7 +1030,8 @@ def build_payload(force=False, cache_only=False, fast=False):
         # Use the last cached value and refresh it off-thread so the API returns
         # the settled SQL dashboard immediately.
         cached_contrib = _cached_contributors()
-        payload["contributors"] = _contributors_block(cached_contrib)
+        payload["contributors"] = _contributors_block(
+            cached_contrib, pending=cached_contrib is None)
         if force or cached_contrib is None:
             _refresh_contributors_async()
         cache.set(CACHE_KEY, payload, CACHE_TTL)
@@ -1265,7 +1281,7 @@ def build_payload(force=False, cache_only=False, fast=False):
         "heatmap": heatmap_tiles,
         "heatmap_as_of": heatmap_as_of,
         "history": _nepse_history(),
-        "contributors": _contributors_block(contrib),
+        "contributors": _contributors_block(contrib, pending=contrib is None),
         "stock_count": len(enriched),
     }
     cache.set(CACHE_KEY, payload, CACHE_TTL)

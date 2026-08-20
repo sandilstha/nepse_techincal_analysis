@@ -1343,6 +1343,18 @@ def _build_institutional_context(support_metrics: dict[str, Any], advanced: dict
     zones_sorted = sorted(zones, key=lambda z: _safe_float(z.get("strength")) or 0.0, reverse=True)
 
     last_event = structure_events[-1] if structure_events else {}
+    # A CHoCH is a change-of-character CALL — "reversal expected soon" — and that
+    # expectation decays. Without an age check the latest CHoCH, however old,
+    # keeps announcing an imminent reversal at full confidence every day (the
+    # audit measured ZERO Neutral votes from SMC/RTM/Wyckoff across 36 symbols,
+    # because there is always a "latest event"). A BOS is different: broken
+    # structure is a persistent state and stays honoured at any age. So expose
+    # whether the event printed within the last 15 sessions and let the readers
+    # decay a stale CHoCH instead of repeating it.
+    event_recent = bool(
+        last_event
+        and last_event.get("date") in {c.get("date") for c in candles[-15:] if c.get("date")}
+    ) if candles else bool(last_event)
     # A liquidity sweep is an EVENT whose expected reaction plays out within a
     # few sessions — unlike structure (BOS/CHoCH), it is not a persistent state.
     # Without a recency gate, a sweep from months ago keeps driving the SMC/ICT,
@@ -1384,6 +1396,7 @@ def _build_institutional_context(support_metrics: dict[str, Any], advanced: dict
         "last_event": last_event,
         "event_type": str(last_event.get("event") or ""),
         "event_dir": _dir_from_text(last_event.get("direction")),
+        "event_recent": event_recent,
         "last_sweep": last_sweep,
         "sweep_side": sweep_side,
         "sweep_level": _safe_float(last_sweep.get("level")),
@@ -1406,7 +1419,16 @@ def _read_smc_ict(ctx: dict[str, Any]) -> dict[str, Any]:
     if et and ed != "Neutral":
         kind = "reversal (CHoCH)" if et == "CHoCH" else "continuation (BOS)"
         struct_txt = f"{ed} {et} at {_price_text(ctx['last_event'].get('level'))} → {kind}"
-        signal, confidence = ed, (70 if et == "CHoCH" else 62)
+        # A fresh CHoCH is the strongest read here (70); a stale one (>15
+        # sessions) has had its reversal window pass, so it decays to below
+        # BOS-continuation weight instead of repeating "reversal" forever.
+        if et == "CHoCH":
+            confidence = 70 if ctx.get("event_recent") else 55
+            if not ctx.get("event_recent"):
+                struct_txt += " [aging — printed >15 sessions ago]"
+        else:
+            confidence = 62
+        signal = ed
     else:
         struct_txt = "no confirmed BOS/CHoCH on the visible range"
         signal, confidence = "Neutral", 45
@@ -1457,7 +1479,10 @@ def _read_rtm_qm(ctx: dict[str, Any]) -> dict[str, Any]:
     price = ctx["price"]
     supply, demand = ctx["supply_zone"], ctx["demand_zone"]
     et, ed = ctx["event_type"], ctx["event_dir"]
-    qm_active = et == "CHoCH" and ed != "Neutral"
+    # A QM reversal sequence is a live trade setup, not a state — only a FRESH
+    # change of character qualifies. Without the recency test this row echoed
+    # SMC's stale CHoCH (83% signal agreement measured across 36 symbols).
+    qm_active = et == "CHoCH" and ed != "Neutral" and bool(ctx.get("event_recent"))
 
     target, signal, confidence = None, "Neutral", 45
     if qm_active:
@@ -1504,39 +1529,36 @@ def _read_rtm_qm(ctx: dict[str, Any]) -> dict[str, Any]:
 # 3. BTMM — market-maker cycle
 # ---------------------------------------------------------------------------
 
+# This panel mirrors what _read_btmm ACTUALLY computes on daily data. The
+# classic BTMM playbook (15-minute session boxes, EMA 5/13/50/200/800 crosses)
+# needs intraday candles, and this platform is EOD-only — an earlier version of
+# this panel documented that intraday system anyway, promising rules the code
+# never ran on data that does not exist here.
 _BTMM_DETAIL_SECTIONS = [
     {
-        "title": "Inputs",
+        "title": "Inputs (daily adaptation — this desk is EOD-only)",
         "items": [
-            "Timeframe: 15m candles.",
-            "EMA stack on close: EMA_5, EMA_13, EMA_50, EMA_200, EMA_800.",
+            "Most recent liquidity sweep within the last 10 sessions (buy-side / sell-side).",
+            "Dealing-range zone from Bollinger %B: premium / equilibrium / discount.",
+            "Trend stack from the SMA bias; price vs HMA and vs VWAP as value references.",
         ],
     },
     {
-        "title": "NEPSE Session Box",
+        "title": "Market-Maker Cycle Read",
         "items": [
-            "Use Nepal Standard Time (NPT, UTC+5:45).",
-            "Pre-open reference: 10:30-10:45 NPT when available.",
-            "Opening_Range_High = highest high from 11:00-11:30 NPT.",
-            "Opening_Range_Low = lowest low from 11:00-11:30 NPT.",
-            "Scan trades only after the opening range, from 11:30-15:00 NPT.",
+            "Sell-side sweep in discount/equilibrium: manipulation low set, mark-up expected → Bullish 64.",
+            "Buy-side sweep in premium/equilibrium: manipulation high set, mark-down expected → Bearish 64.",
+            "No fresh sweep, stack up and price above VWAP: mark-up leg → Bullish 58.",
+            "No fresh sweep, stack down and price below a KNOWN VWAP: mark-down leg → Bearish 58.",
+            "Anything else (including missing VWAP): accumulation / consolidation → Neutral 48.",
         ],
     },
     {
-        "title": "Execution Rules",
+        "title": "Not Implemented Here",
         "items": [
-            "BUY: Low < Opening_Range_Low, EMA_13 crosses above EMA_50, and EMA_5 > EMA_13.",
-            "SELL: High > Opening_Range_High, EMA_13 crosses below EMA_50, and EMA_5 < EMA_13.",
-        ],
-    },
-    {
-        "title": "Risk Rules",
-        "items": [
-            "Entry = close of trigger candle.",
-            "BUY SL = lowest low of last 4 candles minus buffer.",
-            "SELL SL = highest high of last 4 candles plus buffer.",
-            "TP1 = next major EMA line such as EMA_200.",
-            "TP2 = 1:2 or 1:3 risk/reward based on SL distance.",
+            "The intraday BTMM entry (15m opening-range false break + EMA 13/50 cross) "
+            "requires intraday data NEPSE does not publish to this desk — the daily "
+            "cycle read above is the honest substitute, not a replacement for it.",
         ],
     },
 ]
@@ -1558,7 +1580,11 @@ def _read_btmm(ctx: dict[str, Any]) -> dict[str, Any]:
     elif stack == "up" and above_vwap:
         phase = "Mark-up / distribution leg — MM trending up above value"
         signal, confidence = "Bullish", 58
-    elif stack == "down" and not above_vwap:
+    elif stack == "down" and vwap is not None and not above_vwap:
+        # `vwap is not None` matters: with VWAP missing, `not above_vwap` is
+        # vacuously true, so a down-stack earned Bearish 58 from ABSENT data
+        # while the mirror-image up-stack (which requires a real VWAP) could
+        # not go Bullish. Missing data must read Neutral in both directions.
         phase = "Mark-down leg — MM trending down below value"
         signal, confidence = "Bearish", 58
     else:
@@ -1595,18 +1621,43 @@ def _read_malaysian_snr(ctx: dict[str, Any]) -> dict[str, Any]:
     at_support = sup is not None and ctx["support_pct"] is not None and ctx["support_pct"] <= 1.5
     at_resistance = res is not None and ctx["resistance_pct"] is not None and ctx["resistance_pct"] <= 1.5
     wall = ctx["demand_zone"] if at_support else ctx["supply_zone"] if at_resistance else None
-    touches = _zone_touches(wall)
-    strength = "fresh/strong" if touches <= 1 else ("holding" if touches == 2 else f"weak ({touches}× tested → break risk)")
+
+    # The wall comes from the S/R engine; the touch count comes from a DENSITY
+    # ZONE — a different system. Only trust the count when a zone actually sits
+    # ON the wall (within 2%). Previously a missing zone meant touches=0, which
+    # read as "fresh/strong": the strongest possible claim, made from no data,
+    # about a level the zone might not even be near.
+    wall_level = sup if at_support else res if at_resistance else None
+    zone_center = _safe_float((wall or {}).get("center"))
+    tracked = (
+        wall is not None and wall_level is not None and zone_center is not None
+        and abs(zone_center - wall_level) / wall_level <= 0.02
+    )
+    touches = _zone_touches(wall) if tracked else None
+    if tracked:
+        strength = "fresh/strong" if touches <= 1 else ("holding" if touches == 2 else f"weak ({touches}× tested → break risk)")
+    else:
+        strength = "strength untracked (no volume zone at this level)"
 
     signal, confidence = "Neutral", 48
     if at_support:
-        signal = "Bullish" if touches <= 2 else "Bearish"
-        confidence = 60 if touches <= 2 else 56
-        status = "At support wall — bounce expected" if touches <= 2 else "Support wall fatigued — breakdown risk"
+        if tracked:
+            signal = "Bullish" if touches <= 2 else "Bearish"
+            confidence = 60 if touches <= 2 else 56
+            status = "At support wall — bounce expected" if touches <= 2 else "Support wall fatigued — breakdown risk"
+        else:
+            # Level is real, freshness unverified — lean with it, but without
+            # the confidence a measured fresh wall earns.
+            signal, confidence = "Bullish", 54
+            status = "At support wall — strength untracked"
     elif at_resistance:
-        signal = "Bearish" if touches <= 2 else "Bullish"
-        confidence = 60 if touches <= 2 else 56
-        status = "At resistance wall — rejection expected" if touches <= 2 else "Resistance wall fatigued — breakout risk"
+        if tracked:
+            signal = "Bearish" if touches <= 2 else "Bullish"
+            confidence = 60 if touches <= 2 else 56
+            status = "At resistance wall — rejection expected" if touches <= 2 else "Resistance wall fatigued — breakout risk"
+        else:
+            signal, confidence = "Bearish", 54
+            status = "At resistance wall — strength untracked"
     else:
         status = "Mid-range between walls"
         if price is not None and pivot is not None:
@@ -1616,11 +1667,12 @@ def _read_malaysian_snr(ctx: dict[str, Any]) -> dict[str, Any]:
         f"Walls: support {_price_text(sup)}, resistance {_price_text(res)}; working wall is {strength}.{flip} "
         "SNR principle: fresh walls hold, repeatedly-tested walls break."
     )
-    sentiment = (
-        "Confidence; an untested wall should reject cleanly on the first tap."
-        if touches <= 1 else
-        "Doubt; every retest drains the wall and late defenders get run."
-    )
+    if touches is None:
+        sentiment = "Caution; the level is real but its freshness is unmeasured — size accordingly."
+    elif touches <= 1:
+        sentiment = "Confidence; an untested wall should reject cleanly on the first tap."
+    else:
+        sentiment = "Doubt; every retest drains the wall and late defenders get run."
     return _pack(logic, sentiment, status, signal, confidence)
 
 
@@ -1644,7 +1696,10 @@ def _read_wyckoff(ctx: dict[str, Any]) -> dict[str, Any]:
         phase, signal, confidence = "Phase D SOS — mark-up confirmed", "Bullish", 62
     elif et == "BOS" and ed == "Bearish":
         phase, signal, confidence = "Phase D SOW — mark-down confirmed", "Bearish", 62
-    elif et == "CHoCH" and ed != "Neutral":
+    elif et == "CHoCH" and ed != "Neutral" and ctx.get("event_recent"):
+        # Recency-gated for the same reason as RTM's QM read: an old character
+        # change is not an active Phase C/D transition, and honouring it forever
+        # made this row a third copy of SMC's vote.
         phase, signal, confidence = f"Phase C/D character change ({ed.lower()})", ed, 58
     else:
         if pd_zone == "Discount":
@@ -1882,15 +1937,72 @@ def _framework_weight(row: dict) -> float:
     return row.get("confidence", 0) * reliability
 
 
+# The nine frameworks are NOT independent witnesses: several read the same data
+# facet, so a naive nine-way vote counts one piece of evidence several times.
+# Measured over 36 liquid symbols, SMC↔RTM agreed on 83% of signals (+33pp above
+# what their marginals predict under independence), SMC↔Wyckoff 78% (+25pp) and
+# BTMM↔Wyckoff +24pp — all four are driven by the same BOS/CHoCH event, the same
+# sweep, and the same %B zone. Grouping by SHARED INPUT (the causal mechanism,
+# not the empirical clustering, which trends contaminate) and giving each group
+# ONE vote removes the double-count while all nine rows stay on screen.
+_EVIDENCE_CLUSTERS: dict[str, tuple[str, ...]] = {
+    "Structure & liquidity": ("SMC / ICT", "RTM / QM", "Wyckoff Phase", "BTMM"),
+    "Auction & levels": ("Volume Flow", "Malaysian SNR", "Structural S/R / Pivot Matrix"),
+    "Momentum & wave": ("Elliott Wave",),
+    "Tape": ("Candle Range",),
+}
+
+
+def _cluster_votes(rows: list[dict]) -> list[dict[str, Any]]:
+    """One (signal, weight) vote per evidence cluster.
+
+    Within a cluster the members' signed weights are netted, but the cluster's
+    vote weight is CAPPED at its strongest member — three correlated frameworks
+    repeating one CHoCH must not outvote one framework reading something else.
+    A cluster whose members cancel (net under 20% of its gross) votes Neutral.
+    """
+    by_name = {r.get("system"): r for r in rows}
+    votes = []
+    for cluster, members in _EVIDENCE_CLUSTERS.items():
+        present = [by_name[m] for m in members if m in by_name]
+        if not present:
+            continue
+        signed = sum(
+            _framework_weight(r) * (1 if r["signal"] == "Bullish" else -1)
+            for r in present if r["signal"] != "Neutral"
+        )
+        gross = sum(_framework_weight(r) for r in present)
+        cap = max(_framework_weight(r) for r in present)
+        if gross > 0 and abs(signed) >= 0.2 * gross:
+            direction = "Bullish" if signed > 0 else "Bearish"
+            weight = min(abs(signed), cap)
+        else:
+            direction, weight = "Neutral", cap
+        # `cap` is carried separately: the consensus denominator must be the
+        # cluster's FULL capacity, not its netted vote. Otherwise four clusters
+        # that each barely clear the 20% bar read as 100% conviction — weak
+        # internal agreement has to show up as weak conviction.
+        votes.append({"cluster": cluster, "signal": direction, "weight": weight,
+                      "cap": cap, "members": [r["system"] for r in present]})
+    return votes
+
+
 def _institutional_consensus(rows: list[dict]) -> dict[str, Any]:
-    """Reliability-weighted confidence vote of the nine framework reads."""
+    """Cluster-weighted vote: nine frameworks, one vote per evidence group."""
+    votes = _cluster_votes(rows)
+    bull_v = [v for v in votes if v["signal"] == "Bullish"]
+    bear_v = [v for v in votes if v["signal"] == "Bearish"]
+    bull_w = sum(v["weight"] for v in bull_v)
+    bear_w = sum(v["weight"] for v in bear_v)
+    total_w = bull_w + bear_w
+    # Denominator = every cluster's full capacity. A cluster whose members half
+    # cancel contributes its small net to the numerator but its full cap here,
+    # so internal disagreement reads as reduced conviction rather than vanishing.
+    panel_w = sum(v["cap"] for v in votes)
+
     bull = [r for r in rows if r["signal"] == "Bullish"]
     bear = [r for r in rows if r["signal"] == "Bearish"]
     neutral = [r for r in rows if r["signal"] == "Neutral"]
-    bull_w = sum(_framework_weight(r) for r in bull)
-    bear_w = sum(_framework_weight(r) for r in bear)
-    total_w = bull_w + bear_w
-    panel_w = total_w + sum(_framework_weight(r) for r in neutral)
 
     if total_w == 0:
         signal, confidence, lean = "Neutral", 0, 0.0
@@ -1898,7 +2010,7 @@ def _institutional_consensus(rows: list[dict]) -> dict[str, Any]:
         lean = (bull_w - bear_w) / total_w
         # Conviction = |lean| scaled by how much of the panel actually voted a
         # direction. Without the participation factor, a single directional
-        # framework among nine neutrals reads as "100% conviction".
+        # cluster among neutrals reads as "100% conviction".
         participation = (total_w / panel_w) if panel_w > 0 else 0.0
         confidence = int(round(abs(lean) * participation * 100))
         if lean > 0.15:
@@ -1908,12 +2020,13 @@ def _institutional_consensus(rows: list[dict]) -> dict[str, Any]:
         else:
             signal = "Neutral"
 
-    aligned = bull if signal == "Bullish" else bear if signal == "Bearish" else []
-    names = ", ".join(r["system"] for r in sorted(aligned, key=_framework_weight, reverse=True)[:4])
+    aligned_v = bull_v if signal == "Bullish" else bear_v if signal == "Bearish" else []
+    names = ", ".join(v["cluster"] for v in sorted(aligned_v, key=lambda v: v["weight"], reverse=True))
     names = names or "no directional alignment"
     logic = (
-        f"Reliability-weighted vote of 9 frameworks → net lean {lean:+.2f}. "
-        f"{len(bull)} bullish / {len(bear)} bearish / {len(neutral)} neutral. Aligned: {names}."
+        f"Vote of {len(votes)} evidence groups (9 frameworks; correlated frameworks share "
+        f"one vote) → net lean {lean:+.2f}. Frameworks: {len(bull)} bullish / {len(bear)} "
+        f"bearish / {len(neutral)} neutral. Aligned groups: {names}."
     )
     sentiment = (
         f"Ensemble reads {signal.lower()} at {confidence}% conviction."

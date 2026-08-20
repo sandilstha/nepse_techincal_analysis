@@ -19,6 +19,40 @@ from core_analysis.management.commands.backfill_companies import (
 DEFAULT_API_BASE_URL = os.environ.get("NEPSE_API_BASE_URL", "http://192.168.1.100:8000")
 
 
+# Everything except the pk and the (business_date, symbol) unique key. api_id is
+# itself unique, so it is refreshed too - a revised row can carry a new upstream id.
+_STOCK_UPDATE_FIELDS = [
+    "api_id", "security_id", "security_name",
+    "open_price", "high_price", "low_price", "close_price", "previous_close",
+    "average_traded_price", "total_traded_quantity", "total_traded_value",
+    "total_trades", "market_capitalization",
+    "fifty_two_week_high", "fifty_two_week_low", "last_updated_time",
+]
+
+
+def _upsert_stock_rows(model, batch, update_existing):
+    """Insert a batch, optionally overwriting rows that already exist.
+
+    ignore_conflicts is right for the daily pass (today's rows are new, and
+    skipping is fast). It is WRONG for a revision re-sync: an existing row can
+    never be corrected, so a stale close survives every future sync. When
+    update_existing is set, switch to a real upsert.
+
+    MySQL note: its ON DUPLICATE KEY UPDATE has no conflict-target clause, so
+    Django rejects unique_fields there. Branch on the backend feature flag
+    rather than hard-coding either dialect.
+    """
+    if not update_existing:
+        model.objects.bulk_create(batch, ignore_conflicts=True)
+        return
+    from django.db import connection
+
+    kwargs = {"update_conflicts": True, "update_fields": _STOCK_UPDATE_FIELDS}
+    if connection.features.supports_update_conflicts_with_target:
+        kwargs["unique_fields"] = ["business_date", "symbol"]
+    model.objects.bulk_create(batch, **kwargs)
+
+
 class Command(BaseCommand):
     help = "Sync raw NEPSE daily stock prices and market indices into local MySQL tables."
 
@@ -40,6 +74,16 @@ class Command(BaseCommand):
             choices=["both", "stocks", "indices"],
             default="both",
             help="Select which dataset to sync.",
+        )
+
+        parser.add_argument(
+            "--update-existing",
+            action="store_true",
+            help=(
+                "Overwrite rows that already exist instead of skipping them. "
+                "NEPSE revises closes after the session, and the default "
+                "ignore_conflicts path silently drops those corrections."
+            ),
         )
         parser.add_argument(
             "--api-base-url",
@@ -115,7 +159,8 @@ class Command(BaseCommand):
         )
 
         if source in ("both", "stocks"):
-            self._sync_stocks(session, api_base_url, from_date, to_date, batch_size, max_pages, dry_run)
+            self._sync_stocks(session, api_base_url, from_date, to_date, batch_size,
+                              max_pages, dry_run, options.get("update_existing", False))
 
         if source in ("both", "indices"):
             self._sync_indices(session, api_base_url, from_date, to_date, batch_size, max_pages, dry_run)
@@ -162,7 +207,8 @@ class Command(BaseCommand):
             + (f" (skipped {', '.join(stats['failed_years'])})" if stats["failed_years"] else "")
         ))
 
-    def _sync_stocks(self, session, api_base_url, from_date, to_date, batch_size, max_pages, dry_run):
+    def _sync_stocks(self, session, api_base_url, from_date, to_date, batch_size,
+                     max_pages, dry_run, update_existing=False):
         stock_url = _build_url(
             api_base_url,
             "/api/nepse-data/api/stock-prices/",
@@ -225,7 +271,7 @@ class Command(BaseCommand):
 
                 if len(stock_batch) >= batch_size:
                     if not dry_run:
-                        NepseDailyStockPrice.objects.bulk_create(stock_batch, ignore_conflicts=True)
+                        _upsert_stock_rows(NepseDailyStockPrice, stock_batch, update_existing)
                     processed += len(stock_batch)
                     self.stdout.write(self.style.WARNING(f"Processed {processed} stock records..."))
                     stock_batch = []
@@ -238,7 +284,7 @@ class Command(BaseCommand):
 
         if stock_batch:
             if not dry_run:
-                NepseDailyStockPrice.objects.bulk_create(stock_batch, ignore_conflicts=True)
+                _upsert_stock_rows(NepseDailyStockPrice, stock_batch, update_existing)
             processed += len(stock_batch)
 
         self.stdout.write(
