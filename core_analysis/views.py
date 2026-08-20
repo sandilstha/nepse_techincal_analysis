@@ -628,14 +628,40 @@ def symbol_autocomplete_view(request):
 
 # ── Main dashboard ────────────────────────────────────────────────────────────
 
-# Workbench tabs open to anonymous visitors. The ENTIRE Workbench is now
-# admin/staff-only — no tab is public — so this set is intentionally empty and
-# every request (full page + AJAX calc) falls through to staff_member_required.
-# To re-open a read-only desk later, add its active_tab key back here (the
-# computable desks are: backtest, ema_backtest, cci_backtest, rsi_backtest,
-# msv_backtest, imm_backtest, stage_backtest, support_resistance, rrg_backtest,
-# rrg_indices — see TAB_RESULTS_PARTIALS).
-PUBLIC_WORKBENCH_TABS = set()
+# Workbench tabs open to anonymous visitors.
+#
+# The primary nav links "Technical Analysis" and "RRG Analytics" straight at
+# workbench tabs. With this set empty they fell through to staff_member_required
+# and dumped visitors on the DJANGO ADMIN login — a page that is not part of
+# this site, looks nothing like it, and offers no sign-up. These two desks are
+# read-only computations over public market data, so they are public.
+#
+# SAFETY: crud_dashboard.html renders EVERY pane, and build_dashboard_context
+# always loads the 100 newest StockPriceAdjustment rows regardless of tab. The
+# Raw Inventory Manager pane (sync triggers, CRUD forms, delete buttons) is
+# therefore gated on user.is_staff in the template. Opening a tab here WITHOUT
+# that gate would publish the whole data-admin surface. The mutating views are
+# independently @staff_member_required + @require_POST, so this is defence in
+# depth, not the only lock.
+#
+# Other computable desks that could be added: backtest, ema_backtest,
+# cci_backtest, rsi_backtest, msv_backtest, imm_backtest, support_resistance,
+# rrg_indices — see TAB_RESULTS_PARTIALS.
+# Every read-only computation desk in TAB_RESULTS_PARTIALS. These run public
+# market data through an indicator and render a result table — nothing to edit,
+# nothing to sync, no per-user data. Keeping them behind the staff gate meant a
+# visitor clicking "Strategy Simulator" or "Technical Analysis" in the primary
+# nav landed on the Django ADMIN login.
+#
+# DELIBERATELY NOT PUBLIC:
+#   inventory, rrg_seasonal  - the Workbench/Data pane (sync triggers, CRUD
+#                              forms, delete buttons, raw adjustment rows)
+#   bare /workbench/         - defaults to `inventory`, so it stays staff-only
+PUBLIC_WORKBENCH_TABS = {
+    "backtest", "ema_backtest", "cci_backtest", "sop_backtest", "sop_combined",
+    "rsi_backtest", "msv_backtest", "imm_backtest", "stage_backtest",
+    "support_resistance", "rrg_backtest", "rrg_indices",
+}
 
 # Seasonal Return lives inside the (staff-only) Workbench/Data area next to the Raw
 # Inventory Manager, so its payload is built for either of those tabs — the two
