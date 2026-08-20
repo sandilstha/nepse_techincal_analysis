@@ -174,6 +174,11 @@ class Command(BaseCommand):
         #
         # Best-effort by design: a warming failure must never mark the sync bad.
         self._warm_caches()
+        # Forward-test record: snapshot today's A/D scores AFTER the day's data
+        # landed. Every historical split has been consumed by feature selection,
+        # so the only clean test left is scores logged BEFORE their outcomes
+        # exist. Append-only, one file per session, never rewritten.
+        self._snapshot_ad_scores()
 
         after = self._status(day)
         ok = [n for n, good, _ in results if good]
@@ -254,6 +259,62 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"    revisions: none over {start}..{end}")
         return (label, True, None)
+
+    def _snapshot_ad_scores(self):
+        """Append-only daily snapshot of the A/D scan for a true walk-forward test.
+
+        Writes logs/ad_forward/<as_of>.jsonl with one row per scored scrip. The
+        file is keyed on the scan's own as_of date and NEVER overwritten: a
+        forward test is only clean if the record provably predates the outcome,
+        so an existing file is left untouched even on --force re-runs.
+
+        Reads the scan over HTTP from the running server (same reason as
+        _warm_caches: LocMem cache is per-process, and the server has just been
+        warmed, so this is a cache hit there). Best-effort — a failure logs a
+        warning and never marks the sync bad.
+        """
+        import json
+        import urllib.request
+        from pathlib import Path
+
+        base = os.environ.get("WARM_BASE_URL", "http://192.168.1.31:8501").rstrip("/")
+        try:
+            req = urllib.request.Request(
+                base + "/floorsheet/api/accumulation/?range=1m",
+                headers={"User-Agent": "market_close_sync/forward-log"})
+            with urllib.request.urlopen(req, timeout=300) as r:
+                scan = json.loads(r.read())
+        except Exception as exc:
+            self.stdout.write(self.style.WARNING(f"    forward-log: scan fetch failed ({exc})"))
+            return
+        if not scan.get("ok") or not scan.get("as_of"):
+            self.stdout.write(self.style.WARNING(
+                f"    forward-log: scan not usable ({scan.get('reason', 'no as_of')})"))
+            return
+
+        out_dir = Path("logs") / "ad_forward"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out = out_dir / f"{scan['as_of']}.jsonl"
+        if out.exists():
+            self.stdout.write(f"    forward-log: {out.name} already exists — kept as-is")
+            return
+
+        fields = ("symbol", "sector", "score", "percentile", "band",
+                  "absorb_pct", "top1_pct", "sell_hhi", "group_n",
+                  "buyers_n", "sellers_n", "price_chg_pct", "volume")
+        try:
+            with out.open("w", encoding="utf-8") as f:
+                f.write(json.dumps({
+                    "_meta": {"as_of": scan["as_of"], "sessions": scan.get("sessions"),
+                              "universe": scan.get("universe"), "range": "1m",
+                              "payload_version": scan.get("payload_version"),
+                              "written_by": "market_close_sync"}}) + "\n")
+                for row in scan.get("rows") or []:
+                    f.write(json.dumps({k: row.get(k) for k in fields}) + "\n")
+            self.stdout.write(
+                f"    forward-log: wrote {out.name} ({len(scan.get('rows') or [])} scrips)")
+        except Exception as exc:
+            self.stdout.write(self.style.WARNING(f"    forward-log write failed: {exc}"))
 
     def _warm_caches(self):
         """Pre-build the expensive caches so no human pays the cold build.

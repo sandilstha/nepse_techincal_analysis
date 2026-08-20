@@ -713,12 +713,19 @@
     { label: "Price Δ", key: "price_chg_pct", type: "num" }
   ];
 
+  // Symbols in the quiet subset for the CURRENT payload. Module-scoped because
+  // buildAdTable is handed to showTable() and cannot take another argument.
+  var adQuiet = {};
+
   function buildAdTable(table, rows) {
     if (!rows || !rows.length) { empty(table, 10, "No scrips in this band for the selected window"); return; }
     var body = rows.map(function (r) {
       var pxCls = (r.price_chg_pct || 0) >= 0 ? "num-pos" : "num-neg";
       return "<tr data-sym='" + esc(r.symbol) + "' class='dsx-adrow'>" +
-        "<td class='l tkr' title='" + esc(r.name || r.symbol) + "'>" + esc(r.symbol) + "</td>" +
+        "<td class='l tkr' title='" + esc(r.name || r.symbol) + "'>" + esc(r.symbol) +
+          (adQuiet[r.symbol] && adState.side !== "quiet"
+            ? " <span class='dsx-quiet-tag' title='Also in Quiet Accumulation — absorbed without the price rising'>quiet</span>"
+            : "") + "</td>" +
         "<td class='l dsx-ad-sec'>" + esc(r.sector || "—") + "</td>" +
         "<td>" + adBandTag(r) + "</td>" +
         "<td class='dsx-adbar-cell'>" + adScoreBar(r.percentile) + "</td>" +
@@ -750,7 +757,20 @@
     var title = el("ad-table-title");
     if (title) title.textContent = AD_TITLES[adState.side] || AD_TITLES.accumulation;
     var sub = el("ad-sub");
-    if (sub) sub.textContent = d.days + " sessions" + (d.as_of ? " to " + d.as_of : "");
+    if (sub) {
+      // Quiet Accumulation is a SUBSET of Accumulation - the same scrips,
+      // filtered to those whose price did not rise. The four pills sit side by
+      // side and read as mutually exclusive buckets, so the overlap looks like
+      // a bug unless the relationship is stated here.
+      var window_txt = d.days + " sessions" + (d.as_of ? " to " + d.as_of : "");
+      if (adState.side === "quiet") {
+        var nAcc = (d.counts || {}).accumulation || 0;
+        var nQ = (d.quiet_accumulation || []).length;
+        sub.textContent = nQ + " of " + nAcc + " accumulation candidates · price did not rise · " + window_txt;
+      } else {
+        sub.textContent = window_txt;
+      }
+    }
 
     var c = d.counts || {};
     var k = el("ad-kpis");
@@ -836,6 +856,8 @@
           " in this band. "
         : "") + (d.universe_note || "");
     }
+    adQuiet = {};
+    (d.quiet_accumulation || []).forEach(function (q) { adQuiet[q.symbol] = 1; });
     showTable(t, rows, buildAdTable);
   }
 

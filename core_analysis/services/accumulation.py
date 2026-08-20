@@ -8,17 +8,30 @@ positioning: *for this scrip, is someone building a position or unloading one?*
 It is built on the same cached window aggregates as the rest of the desk
 (``broker_analytics._window_aggregate``), so it adds no new queries.
 
-THE MODEL IS BACKTESTED, and the scoring below is exactly what was validated —
-3.5 years of floorsheet (2023-01-01 → 2026-08-11, 819 sessions, 9.76M
-broker-day-stock cells), non-overlapping windows, returns adjusted for
-bonus/rights, measured as excess over the cross-sectional median of the same
-date. Three features survived, with date-clustered standard errors:
+THE MODEL IS BACKTESTED AND IT DOES NOT PREDICT. Read that before anything else
+here: out-of-sample the score has no demonstrated ability to forecast returns
+(60-session Q5-Q1 spread +1.72%, t=+1.02, against a ~0.6% round trip). It is a
+DESCRIPTIVE flow lens — it measures who absorbed and how concentrated each side
+of the book was, which the floorsheet records directly and no price/volume
+screen can see. It is not a buy list.
+
+The scoring below is exactly what was tested — 3.5 years of floorsheet
+(2023-01-01 → 2026-08-19, 825 sessions, 9.83M broker-day-stock cells),
+non-overlapping windows, returns adjusted for bonus/rights, measured as excess
+over the cross-sectional median of the same date. Three features were selected
+IN-SAMPLE on 2023-24, with date-clustered standard errors:
 
     absorb      top-5 net buyers' net qty ÷ window volume    +57 bps/SD  t=+4.22
     sell_hhi    concentration of the selling side            -34 bps/SD  t=-5.55
     top1_share  share of net buying done by ONE broker       -47 bps/SD  t=-2.23
 
     score = z(absorb) − z(top1_share) − z(sell_hhi)
+
+Those t-statistics are IN-SAMPLE and are kept only to document what the score
+is made of. Held out on 2025-01-01 onward the edge collapses: `absorb` falls
+from t=5.73 to t=0.70, and `top1_share` never had univariate power in either
+period and flips sign on 2023-24 alone. The composite is retained because it is
+a coherent description of flow structure, NOT because it was shown to work.
 
 The three z-scores are combined with EQUAL WEIGHTS (+1, -1, -1). That is a
 deliberate robustness choice, not a fitted result: regression weights on this
@@ -30,24 +43,70 @@ relative sizes are not, so they are not asserted.
 
 Two findings shaped the design and both are load-bearing:
 
-  * HORIZON. Measured with forward windows that never overlap, the edge is
-    +1.26% over 20 sessions (t=3.84) but +8.03% over 120 (t=3.49, p=0.0005).
-    The 20-session figure barely clears the ~0.6% round trip. This is a
-    3-6 MONTH positioning screen; the UI says so, because a user who trades it
-    weekly will lose money with a tool that backtested well.
+  * HORIZON. In-sample the edge grew with the horizon (+1.26% over 20 sessions,
+    +8.03% over 120), which is why this is framed as a 3-6 MONTH positioning
+    lens rather than a weekly signal. Out-of-sample neither horizon is
+    significant, and the 120-session test cannot even be run honestly: with
+    non-overlapping windows only 2 anchors survive after 2025-01-01, too few for
+    a clustered t-statistic. Treat the horizon claim as untested, not proven.
 
-  * SEVERAL BROKERS, NOT ONE. Conditional on how much is being absorbed, having
-    it concentrated in a single broker is a NEGATIVE (top1_share, t=-2.23).
-    What the data shows is a structural regularity in the flow: dispersed
-    net buying has been followed by better returns than concentrated net buying.
-    It says nothing about anyone's INTENT — a broker with many retail clients
-    and a deliberately-split order look identical in this data, and nothing here
-    can separate them.
+  * SEVERAL BROKERS, NOT ONE — RETRACTED AS A FINDING. In-sample, absorption
+    concentrated in one broker scored as a negative (top1_share, t=-2.23), but
+    that significance was a suppression effect in the multivariate fit: the
+    feature has no univariate power in either sub-period and takes the OPPOSITE
+    sign on 2023-24 alone. "Dispersed buying beats concentrated" must not be
+    repeated as fact. The term stays in the score because dropping a component
+    would change what the tested composite is, not because it was validated.
+    It says nothing about anyone's INTENT either — a broker with many retail
+    clients and a deliberately-split order look identical in this data.
 
 Explicitly REJECTED by the backtest, and therefore not scored (they are still
 reported as context, because they describe what happened even when they do not
 predict): multi-session persistence of the buying group, volume expansion,
 buy-side HHI, and group size on its own.
+
+SECOND REJECTION ROUND (2026-08-20). Three further additions were proposed and
+tested on the full 9.83M broker-day-stock cells over 825 sessions, out-of-sample
+from 2025-01-01, non-overlapping forward windows, bonus-adjusted returns and
+date-clustered errors. NONE survived, so NONE is scored:
+
+    60-session horizon, out-of-sample, 1,245 observations
+    base Q5-Q1 (unchanged)                +1.72%   t=+1.02
+    + persistence (top quintile 20/40/60) +2.79%   t=+1.46
+    + spike filter (no single day >50%)   +1.78%   t=+1.06
+    + self-trade filter (<10% self-traded)+1.72%   t=+1.01
+    + all three combined                  +2.76%   t=+1.44
+
+Persistence looked the most promising on the headline number and is the clearest
+failure underneath it. If it were real, more persistence would mean more return.
+The dose-response is non-monotonic and its strongest tier is NEGATIVE:
+
+    persist=1  -1.99%  t=-1.50
+    persist=2  +1.09%  t=+0.57
+    persist=3  -0.19%  t=-0.11   <- strong at 20 AND 40 AND 60 sessions
+
+Its +2.79% came from a weak comparison group, not from persistent names
+performing. Spike showed no gradient either (-0.26% / -0.37% across buckets).
+
+In-sample (2023-24) every one of them "cleared cost" — base +5.64% t=2.40,
+persistence dose-response a clean 3.71 -> 6.91 -> 6.14, spike 25-50% +10.09%.
+All of it vanished out-of-sample. That is the same selection artifact that
+produced the retracted +8.03%, which is why the in-sample column is kept here
+only as the contrast that makes the decay visible.
+
+Two design consequences, both load-bearing:
+  * The 20/40/60 windows NEST — the last 20 sessions sit inside the 40 and the
+    60 — so "strong at all three" is one reading counted three times, not three
+    confirmations. Measured score correlations: 20d-40d r=+0.71, 40d-60d r=+0.82.
+  * There is no validated "confidence" to report. Persistence, spike shape and
+    self-trade share DESCRIBE how the flow happened and are worth surfacing as
+    context, but none of them predicts, so none may be presented as reliability.
+
+Self-trades are exactly identifiable (floorsheet buyer == seller, ~3.7% of
+volume market-wide, median 2.4% per symbol, 47 of 411 symbols above 10%). They
+are reported as context and deliberately NOT removed from the `absorb`
+denominator: the scoring above was validated on gross volume, and changing the
+denominator would mean the backtest no longer describes what is on screen.
 
 Known blind spot, stated here so it is never mistaken for completeness: shares
 transferred off-market (DP/BOD transfers, pledges, private deals) never print on
@@ -78,7 +137,10 @@ CACHE_TTL = 300
 # v7: price_chg_pct now prefers bonus/rights-ADJUSTED closes (a raw close made a
 # bonus ex-date look like a crash and put the scrip in Quiet Accumulation);
 # deterministic tie-break in the ranking; identity check in _symbol_flow.
-PAYLOAD_VERSION = 7
+# v8: BACKTEST gained `rejected_round2` (persistence / spike / self-trade all
+# failed out-of-sample). The block is embedded in every cached payload, so the
+# version MUST move with it or stale caches keep serving the old evidence text.
+PAYLOAD_VERSION = 8
 
 TOP_K = 5              # size of the "accumulating group" used by `absorb`
 
@@ -223,6 +285,38 @@ BACKTEST = {
     # across score quintiles (Q1 18.6% … Q5 18.7%).
     "attrition_120_pct": 18.3,
     "attrition_is_uniform": True,
+    # Round 2 (2026-08-20): persistence, spike-concentration and self-trade
+    # filtering were each tested as overlays on the UNCHANGED score. None
+    # reached significance out-of-sample, so none is scored — they are surfaced
+    # as descriptive context only. Kept in the payload so the UI can say what
+    # was tried and rejected instead of silently dropping it.
+    "rejected_round2": {
+        "tested_on": "825 sessions, 9.83M broker-day-stock cells, OOS from 2025-01-01",
+        "horizon_sessions": 60,
+        "n": 1245,
+        "base": {"spread_pct": 1.72, "t_stat": 1.02},
+        "candidates": [
+            {"name": "persistence (top quintile at 20/40/60)",
+             "spread_pct": 2.79, "t_stat": 1.46, "kept": False,
+             "why": "dose-response non-monotonic and NEGATIVE at the strongest "
+                    "tier (-1.99 / +1.09 / -0.19); the headline came from a weak "
+                    "comparison group, not from persistent names performing"},
+            {"name": "spike filter (no single day >50% of the accumulation)",
+             "spread_pct": 1.78, "t_stat": 1.06, "kept": False,
+             "why": "no gradient across spike buckets (-0.26% / -0.37%)"},
+            {"name": "self-trade filter (<10% buyer==seller volume)",
+             "spread_pct": 1.72, "t_stat": 1.01, "kept": False,
+             "why": "no effect on the spread; self-trading is real (~3.7% of "
+                    "volume) but does not separate winners from losers"},
+            {"name": "all three combined",
+             "spread_pct": 2.76, "t_stat": 1.44, "kept": False,
+             "why": "no better than persistence alone"},
+        ],
+        # The windows nest, so agreement across them is one reading repeated.
+        "window_overlap_r": {"20d_40d": 0.71, "40d_60d": 0.82, "20d_60d": 0.55},
+        "note": ("In-sample every one of these cleared the cost hurdle — the same "
+                 "selection artifact that produced the retracted +8.03%."),
+    },
 }
 
 

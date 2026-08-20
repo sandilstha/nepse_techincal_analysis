@@ -960,3 +960,13 @@
   font-size: 0.68rem; color: var(--ink-3);
 }
 .dsx-ad-ask-err { color: var(--neg, #ff6b6b); }
+
+/* "quiet" marker on A/D rows that are also in the Quiet Accumulation subset.
+   The four band pills read as mutually exclusive, but Quiet is carved OUT of
+   Accumulation — this shows the overlap without switching views. */
+.dsx-quiet-tag {
+  display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
+  font-size: 0.62rem; font-weight: 600; letter-spacing: .04em; text-transform: lowercase;
+  color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line);
+  vertical-align: middle;
+}
