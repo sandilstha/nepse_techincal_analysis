@@ -82,6 +82,23 @@
 
       <button type="button" id="mi-refresh-btn" class="mi-icon-btn" title="Refresh now" aria-label="Refresh now">Refresh</button>
       <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch to light theme" aria-label="Switch to light theme">Light</button>
+      {% comment %}
+        Account entry point. Before this, the ONLY route to the sign-up page was
+        indirect: "My Portfolio" in the nav -> /portfolio/ -> 302 to the login
+        page -> "create account" link. That works, but nothing on screen reads as
+        "sign in", so a visitor clicking "Workbench" instead lands on the Django
+        ADMIN login (staff-only, no registration) and reasonably concludes the
+        site has no sign-up.
+
+        Signed in, this shows who you are and links to the portfolio desk.
+      {% endcomment %}
+      {% if user.is_authenticated %}
+        <a href="{% url 'portfolio' %}" class="mi-icon-btn mi-account-link"
+           title="Your portfolio desk">{{ user.username }}</a>
+      {% else %}
+        <a href="{% url 'login' %}" class="mi-icon-btn mi-account-link"
+           title="Sign in or create an account">Sign in</a>
+      {% endif %}
       <a href="{% url 'crud_dashboard' %}" class="mi-icon-btn mi-workbench-link" title="Analytics workbench" aria-label="Analytics workbench">Workbench</a>
     </div>
   </header>
