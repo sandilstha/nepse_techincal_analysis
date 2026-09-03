@@ -140,9 +140,7 @@
       { n: "III", x: X(3),  y: Y(6),  a: "start", cap: "Low growth · low value",   tip: "Below median on both scores — slow AND expensive; avoid zone" },
       { n: "IV",  x: X(97), y: Y(6),  a: "end",   cap: "High growth · low value",  tip: "Growing faster than peers but expensively priced — already discovered" }
     ].forEach(function (q) {
-      svg += "<text x='" + q.x + "' y='" + q.y + "' class='ms-sc-quadlbl' text-anchor='" + q.a + "'>" +
-        q.n + "<title>" + q.tip + "</title></text>";
-      svg += "<text x='" + q.x + "' y='" + (q.y + 13) + "' class='ms-sc-quadcap' text-anchor='" + q.a + "'>" +
+      svg += "<text x='" + q.x + "' y='" + q.y + "' class='ms-sc-quadcap' text-anchor='" + q.a + "'>" +
         q.cap + "<title>" + q.tip + "</title></text>";
     });
     svg += "<text x='" + (m.l + iw / 2) + "' y='" + (H - 4) + "' class='ms-sc-axis' text-anchor='middle'>Growth score</text>";
@@ -212,8 +210,10 @@
     host.innerHTML = "<div class='dsx-card ms-scatter-card'>" +
       "<div class='dsx-card-head neutral dsx-ad-head'>" +
       "<span>GROWTH vs VALUE BY MARKET CAP</span>" +
-      "<span class='dsx-ad-sub'>right = stronger growth, up = better value · amber = 4★/5★, red = quality-gated" +
-      uncNote + "</span></div>" +
+      "<span class='dsx-ad-sub'>right = stronger growth, up = better value" + uncNote +
+      " &nbsp; <span class='ms-legend'><i class='ms-leg-dot star'></i>4★/5★ · clean" +
+      "<i class='ms-leg-dot gated'></i>quality-gated (max 2★)" +
+      "<i class='ms-leg-dot'></i>others</span></span></div>" +
       "<div class='ms-sc-row'>" + panes + "</div></div>";
   }
 
@@ -233,39 +233,46 @@
     if (FILTERS.quality === "clean" && (gated || flagged)) return false;
     if (FILTERS.quality === "gated" && !gated) return false;
     if (FILTERS.quality === "flagged" && !flagged) return false;
-    if (FILTERS.conf === "full" && r.low_confidence) return false;
+    
     return true;
   }
 
   function filterBar() {
+    function group(key, label, opts) {
+      var html = "<span class='ms-fgroup'><b>" + label + "</b>";
+      opts.forEach(function (o) {
+        html += "<button type='button' class='ms-fpill" + (FILTERS[key] === o.v ? " active" : "") +
+          "' data-fkey='" + key + "' data-fval='" + o.v + "'>" + o.t + "</button>";
+      });
+      return html + "</span>";
+    }
     return "<div class='ms-filters'>" +
       "<input type='search' id='msf-q' class='dsx-select ms-f' placeholder='Search company…' value='" + esc(FILTERS.q) + "'>" +
-      "<select id='msf-stars' class='dsx-select ms-f'>" +
-        "<option value='0'>Any rating</option><option value='5'>5★ only</option>" +
-        "<option value='4'>4★ &amp; up</option><option value='3'>3★ &amp; up</option></select>" +
-      "<select id='msf-style' class='dsx-select ms-f'>" +
-        "<option value='all'>Any style</option><option>Growth</option><option>Blend</option><option>Value</option></select>" +
-      "<select id='msf-size' class='dsx-select ms-f'>" +
-        "<option value='all'>Any size</option><option>Large</option><option>Mid</option><option>Small</option></select>" +
-      "<select id='msf-quality' class='dsx-select ms-f'>" +
-        "<option value='all'>Any quality</option><option value='clean'>Clean only</option>" +
-        "<option value='flagged'>Flagged</option><option value='gated'>Gated</option></select>" +
-      "<select id='msf-conf' class='dsx-select ms-f'>" +
-        "<option value='all'>Any confidence</option><option value='full'>High confidence only</option></select>" +
+      group("stars", "Rating", [
+        { v: "0", t: "All" }, { v: "5", t: "5★" }, { v: "4", t: "4★+" }, { v: "3", t: "3★+" }]) +
+      group("style", "Style", [
+        { v: "all", t: "All" }, { v: "Growth", t: "Growth" }, { v: "Blend", t: "Blend" }, { v: "Value", t: "Value" }]) +
+      group("size", "Size", [
+        { v: "all", t: "All" }, { v: "Large", t: "Large" }, { v: "Mid", t: "Mid" }, { v: "Small", t: "Small" }]) +
+      group("quality", "Quality", [
+        { v: "all", t: "All" }, { v: "clean", t: "Clean" }, { v: "flagged", t: "Flagged" }, { v: "gated", t: "Gated" }]) +
       "<span class='ms-f-count' id='msf-count'></span></div>";
   }
 
   function bindFilters() {
-    var ids = { q: "msf-q", stars: "msf-stars", style: "msf-style", size: "msf-size",
-                quality: "msf-quality", conf: "msf-conf" };
-    Object.keys(ids).forEach(function (key) {
-      var input = el(ids[key]);
-      if (!input) return;
-      input.value = FILTERS[key];
-      input.addEventListener(key === "q" ? "input" : "change", function () {
-        FILTERS[key] = input.value;
-        drawTable(state.data);
+    var q = el("msf-q");
+    if (q) q.addEventListener("input", function () { FILTERS.q = q.value; drawTable(state.data); });
+    var bar = document.querySelector(".ms-filters");
+    if (!bar) return;
+    bar.addEventListener("click", function (e) {
+      var pill = e.target.closest ? e.target.closest(".ms-fpill") : null;
+      if (!pill) return;
+      var key = pill.getAttribute("data-fkey");
+      FILTERS[key] = pill.getAttribute("data-fval");
+      bar.querySelectorAll(".ms-fpill[data-fkey='" + key + "']").forEach(function (b2) {
+        b2.classList.toggle("active", b2 === pill);
       });
+      drawTable(state.data);
     });
   }
 

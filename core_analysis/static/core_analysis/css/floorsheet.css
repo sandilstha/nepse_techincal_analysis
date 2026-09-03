@@ -1164,3 +1164,25 @@
 .ms-sc-quadlbl { fill: var(--ink-2, #aab2c5); font-size: 15px; font-weight: 800; opacity: 0.55; }
 .ms-sc-quadcap { fill: var(--ink-3, #8b93a7); font-size: 9.5px; font-weight: 600;
                  letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.75; }
+
+/* Scatter color legend */
+.ms-legend { white-space: nowrap; }
+.ms-leg-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+              background: #60a5fa; margin: 0 4px 0 10px; vertical-align: middle; }
+.ms-leg-dot.star { background: #f3b53c; }
+.ms-leg-dot.gated { background: var(--down, #ff6e72); }
+
+/* One-click filter pills */
+.ms-fgroup { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+.ms-fgroup b { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+               color: var(--ink-3, #8b93a7); margin: 0 4px 0 8px; font-weight: 700; }
+.ms-fpill { background: var(--bg-input, rgba(255,255,255,0.04)); color: var(--ink-2, #aab2c5);
+            border: 1px solid var(--line, #2a3350); border-radius: 999px; padding: 3px 11px;
+            font-size: 11.5px; font-weight: 600; cursor: pointer; }
+.ms-fpill:hover { border-color: var(--accent, #5cb3ff); color: var(--ink-1, #e8ecf5); }
+.ms-fpill.active { background: var(--accent, #5cb3ff); border-color: var(--accent, #5cb3ff);
+                   color: var(--bg-base, #0a1020); }
+
+/* Morning Star KPIs: number and label on one horizontal line */
+#ms-kpis .dsx-kpi { display: flex; flex-direction: row; align-items: baseline; gap: 10px; }
+#ms-kpis .dsx-kpi span { margin: 0; }
