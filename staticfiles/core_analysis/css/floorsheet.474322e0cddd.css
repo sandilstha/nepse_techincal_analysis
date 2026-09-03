@@ -1182,7 +1182,3 @@
 .ms-fpill:hover { border-color: var(--accent, #5cb3ff); color: var(--ink-1, #e8ecf5); }
 .ms-fpill.active { background: var(--accent, #5cb3ff); border-color: var(--accent, #5cb3ff);
                    color: var(--bg-base, #0a1020); }
-
-/* Morning Star KPIs: number and label on one horizontal line */
-#ms-kpis .dsx-kpi { display: flex; flex-direction: row; align-items: baseline; gap: 10px; }
-#ms-kpis .dsx-kpi span { margin: 0; }
