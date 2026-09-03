@@ -15,6 +15,7 @@ intraday on the exchange feed and is not retained in any local table, so it
 cannot be reconstructed from history the way these nine can.
 """
 
+import hashlib
 import logging
 from datetime import timedelta
 
@@ -748,7 +749,9 @@ def _floor_sheet(p):
         except (TypeError, ValueError):
             page_size = 500
     try:
-        page = max(1, int(p.get("page") or 1))
+        # Hard ceiling: an uncounted wide broker window would otherwise turn
+        # ?page=999999999 into a deep OFFSET scan of a 60M-row table.
+        page = max(1, min(int(p.get("page") or 1), 5000))
     except (TypeError, ValueError):
         page = 1
 
@@ -760,8 +763,10 @@ def _floor_sheet(p):
     countable = want_all or span <= COUNT_MAX_DAYS or bool(sym)
     if countable:
         if split_broker:
+            # Union size: a self-cross (broker on both sides) is one row.
             total = (qs.filter(buyer=broker).count()
-                     + qs.filter(seller=broker).count())
+                     + qs.filter(seller=broker).count()
+                     - qs.filter(buyer=broker, seller=broker).count())
         else:
             total = qs.count()
         pages = max(1, (total + page_size - 1) // page_size)
@@ -797,15 +802,22 @@ def _floor_sheet(p):
         # rows are de-duplicated on contract number.
         need = offset + fetch
         merged, seen = [], set()
+        sort_fields = [f.lstrip("-") for f in order_by]
         for side in ("buyer", "seller"):
-            for r in qs.filter(**{side: broker}).order_by(*order_by).values(*_cols)[:need]:
+            for r in qs.filter(**{side: broker}).order_by(*order_by).values(*_cols, "id")[:need]:
                 k = r["contract_no"]
                 if k in seen:
                     continue
                 seen.add(k)
                 merged.append(r)
-        merged.sort(key=lambda r: (r["business_date"], r["contract_no"] or ""), reverse=True)
+        # The per-side slice only contains the true top-N of the union if the
+        # merge is sorted by the SAME key the sides were fetched with.
+        def _mk(r):
+            return tuple((r.get(f) is not None, r.get(f)) for f in sort_fields)
+        merged.sort(key=_mk, reverse=True)
         page_rows = merged[offset:offset + fetch]
+        for r in page_rows:
+            r.pop("id", None)
     else:
         page_rows = list(qs.order_by(*order_by).values(*_cols)[offset:offset + fetch])
 
@@ -1065,7 +1077,15 @@ def build(slug, params):
     spec = REPORTS.get(slug)
     if not spec:
         return None
-    out = spec["builder"](params or {})
+    # Every report is a fresh scan of one or more sessions; the same
+    # slug+params served twice within the TTL should not scan twice.
+    ck = "nd_report:v1:" + hashlib.md5(
+        (slug + "|" + repr(sorted((params or {}).items()))).encode()).hexdigest()
+    out = cache.get(ck)
+    if out is None:
+        out = spec["builder"](params or {})
+        cache.set(ck, out, _TTL)
+    out = dict(out)
     out["columns"] = spec["columns"]
     out["title"] = spec["title"]
     return out

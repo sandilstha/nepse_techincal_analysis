@@ -41,12 +41,15 @@
               aria-selected="{% if active_tab == 'inventory' %}true{% else %}false{% endif %}">Raw Inventory Manager</button>
     </li>
     {% endif %}
+    {% if user.is_staff %}
+    {# rrg_seasonal is not in PUBLIC_WORKBENCH_TABS: the server refuses it to anonymous users, so the button would only offer a dead pane. #}
     <li class="nav-item workspace-subtab-item data-tool-item">
       <button class="nav-link workspace-subtab {% if active_tab == 'rrg_seasonal' %}active{% endif %}"
               data-section="inventory"
               data-bs-toggle="tab" data-bs-target="#rrg-seasonal-pane" type="button" role="tab"
               aria-selected="{% if active_tab == 'rrg_seasonal' %}true{% else %}false{% endif %}">Seasonal Return</button>
     </li>
+    {% endif %}
     <li class="nav-item workspace-subtab-item strategy-card-item">
       <button class="nav-link workspace-subtab strategy-card-button {% if active_tab == 'backtest' %}active{% endif %}"
               data-section="strategy"
@@ -148,7 +151,7 @@
       {% include "core_analysis/includes/_rrg_tab.html" %}
       {% include "core_analysis/includes/_rrg_indices_tab.html" %}
     </div>
-    {% include "core_analysis/includes/_rrg_seasonal_tab.html" %}
+    {% if user.is_staff %}{% include "core_analysis/includes/_rrg_seasonal_tab.html" %}{% endif %}
   </div>{# /tab-content #}
 
   {% include "core_analysis/includes/_fundamentals_panel.html" %}

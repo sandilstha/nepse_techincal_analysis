@@ -55,7 +55,7 @@ def run_t3ma_macd_ribbon_simulation(data_source, initial_capital=100000.0, use_r
     fast_ema = close_ser.ewm(span=12, adjust=False).mean()
     slow_ema = close_ser.ewm(span=26, adjust=False).mean()
     macd_main = fast_ema - slow_ema
-    macd_signal = macd_main.rolling(window=9).mean()
+    macd_signal = macd_main.ewm(span=9, adjust=False).mean()   # MACD signal is an EMA, not an SMA
     hist = macd_main - macd_signal
 
     # 2. Vector Signal Identifications
@@ -66,8 +66,10 @@ def run_t3ma_macd_ribbon_simulation(data_source, initial_capital=100000.0, use_r
     raw_bear = (macd_signal > macd_main) & (prev_signal < prev_main) & (hist < 0)
 
     if use_ribbon_filter:
-        bull = raw_bull & (t3_fast < t3_slow)
-        bear = raw_bear & (t3_fast > t3_slow)
+        # Bullish ribbon = fast T3 ABOVE slow T3 (this was inverted before, so
+        # the filter admitted bull crosses only while the ribbon was bearish).
+        bull = raw_bull & (t3_fast > t3_slow)
+        bear = raw_bear & (t3_fast < t3_slow)
     else:
         bull = raw_bull
         bear = raw_bear

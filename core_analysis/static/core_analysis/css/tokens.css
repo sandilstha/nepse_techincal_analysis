@@ -107,7 +107,12 @@
      .fa-main, Stock 360's .wrap. They had each hard-coded 1280px separately,
      so widening one left the others narrow. Prose pages (the SOP documents at
      980px) deliberately opt out. */
-  --shell-max: max(1280px, min(1720px, 94vw));
+  /* The 1280px floor is a floor on the MEASURE, not a licence to exceed the
+     window: on a viewport narrower than ~1362px `max(1280px, 94vw)` alone
+     pinned the shell at 1280px, so the whole page overflowed horizontally and
+     scrolled sideways with an unpainted strip past the shell. The trailing
+     96vw term clamps it back to the window. */
+  --shell-max: min(max(1280px, 94vw), 1720px, 96vw);
   --shell-pad: clamp(16px, 2.2vw, 44px);
 }
 
@@ -119,3 +124,16 @@
    proportion — type, spacing and radii keep their exact relationships.
    ------------------------------------------------------------------------ */
 html { font-size: clamp(16px, 13px + 0.234vw, 17.5px); }
+
+/* Semantic aliases used by the Floorsheet, Portfolio and NEPSE Data desks
+   (previously defined only in stock360.css, so those pages always fell back
+   to their hard-coded dark values in BOTH themes). */
+:root, [data-theme="dark"] {
+  --pos: var(--up); --pos-weak: var(--up-soft);
+  --neg: var(--down); --neg-weak: var(--down-soft);
+  --neutral: var(--flat); --neutral-weak: var(--flat-soft);
+  --warn: #e6b04a; --warn-weak: rgba(230, 176, 74, .14);
+}
+[data-theme="light"] {
+  --warn: #b7811f; --warn-weak: rgba(183, 129, 31, .13);
+}

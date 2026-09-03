@@ -4,144 +4,181 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fundamental Analysis · {% if symbol %}{{ symbol }} · {% endif %}NEPSE</title>
+  <title>Fundamental Analysis — NEPSE</title>
+  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/floorsheet.css' %}?v={{ asset_version }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'core_analysis/css/insights.css' %}?v={{ asset_version }}">
-  <link rel="stylesheet" href="{% static 'core_analysis/css/fundamentals-desk.css' %}?v={{ asset_version|default:1 }}">
-  {# Shared mobile layer, loaded LAST so its @media overrides win. #}
-  {# Every rule inside is gated behind a max-width query: desktop untouched. #}
-  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ asset_version|default:1 }}">
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="{% static 'core_analysis/css/responsive.css' %}?v={{ asset_version }}">
 </head>
 <body>
-<div class="fa-shell">
+<div class="mi-shell">
 
-  <main class="fa-main">
-    {% include "core_analysis/includes/_primary_nav.html" with active_section='fundamental' %}
-
-    <div class="fa-tabrow">
-      <div class="fa-subtabs" id="fa-subtabs" role="tablist">
-        <button type="button" class="fa-subtab active" data-subtab="statement" role="tab" aria-selected="true">Financial Statement</button>
-        <button type="button" class="fa-subtab" data-subtab="morningstar" role="tab" aria-selected="false">Morningstar</button>
-        <a class="fa-help" href="{% url 'fundamental_sop' %}#morningstar" target="_blank" rel="noopener"
-           title="Morningstar tab methodology SOP" aria-label="Morningstar tab methodology SOP">?</a>
+  <header class="mi-topbar">
+    <div class="mi-brand">
+      <span class="mi-logo">FA</span>
+      <div>
+        <h1 class="mi-title">Fundamental Analysis</h1>
+        <p class="mi-subtitle">Compare companies across a sector, and score them across the market</p>
       </div>
-      <button type="button" id="mi-theme-btn" class="fa-btn ghost" title="Switch theme" aria-label="Switch theme">Light</button>
+    </div>
+    <div class="mi-controls">
+      {% include "core_analysis/includes/_stock_search.html" %}
+      <a href="{% url 'market_insights' %}" class="mi-icon-btn" title="Home">Home</a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'portfolio' %}" class="mi-icon-btn">{{ user.username }}</a>
+      {% else %}
+        <a href="{% url 'login' %}" class="mi-icon-btn">Sign in</a>
+      {% endif %}
+      <button type="button" id="mi-theme-btn" class="mi-icon-btn" title="Switch theme">Light</button>
+    </div>
+  </header>
+
+  {% include "core_analysis/includes/_primary_nav.html" with active_section='fundamentals' %}
+
+  {% comment %}
+    Two desks, both CROSS-SECTIONAL. The single-company view lives on Stock 360
+    and stays there — /fundamentals/<SYMBOL>/ redirects to it, so old links work.
+  {% endcomment %}
+  <div class="dsx-tabs" role="tablist">
+    <button class="dsx-tab active" data-tab="industry" role="tab">Industry Analysis</button>
+    <button class="dsx-tab" data-tab="smart" role="tab">Smart Stock Score</button>
+    <button class="dsx-tab" data-tab="morningstar" role="tab">Morning Star</button>
+  </div>
+
+  <!-- ── Industry Analysis ─────────────────────────────────────────────── -->
+  <section class="dsx-panel active" id="panel-industry">
+    <div class="dsx-controls">
+      <div class="dsx-field">Sector
+        <select id="ia-sector" class="dsx-select dsx-sector">
+          {% for s in sectors %}
+            <option value="{{ s.sector }}"{% if s.sector == 'Commercial Banks' %} selected{% endif %}>
+              {{ s.sector }} ({{ s.companies }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="dsx-field">Period
+        <select id="ia-period" class="dsx-select"></select>
+      </div>
+      <div class="dsx-seg" data-group="ia-stmt" title="Which statement to compare">
+        <button type="button" class="dsx-pill active" data-val="BS">Balance Sheet</button>
+        <button type="button" class="dsx-pill" data-val="IS">Income Statement</button>
+        <button type="button" class="dsx-pill" data-val="KS">Key Stats &amp; Ratios</button>
+        {% comment %}
+          Cash Flow is rendered but DISABLED. The upstream feed supplies BS/IS/KS
+          only — a search of all 992k rows finds no cash-flow lines under any
+          type. A disabled tab with a reason is honest; an empty table is not.
+        {% endcomment %}
+        <button type="button" class="dsx-pill is-disabled" data-val="CF" disabled
+                title="Not published to this platform — the upstream feed supplies balance sheet, income statement and key stats only.">Cash Flow</button>
+      </div>
+      <button type="button" id="ia-refresh" class="dsx-analyze">Load</button>
     </div>
 
-    <!-- ── Financial Statement: company search + that company's statements ── -->
-    <section id="fa-panel-statement" class="fa-subpanel" role="tabpanel">
-      <div class="fa-searchbar">
-        <strong class="fa-brand">Company</strong>
-        <div class="fa-company-picker" id="fa-company-picker">
-          <input id="fa-symbol" class="fa-input" value="{{ symbol }}"
-                 placeholder="Search symbol, company, or sector" aria-label="Company"
-                 role="combobox" aria-autocomplete="list" aria-haspopup="listbox"
-                 aria-controls="fa-company-menu" aria-expanded="false" autocomplete="off">
-          <div id="fa-company-menu" class="fa-company-menu" role="listbox"
-               aria-label="Companies grouped by sector" hidden>
-            {% regroup symbols by sector as sector_groups %}
-            {% for group in sector_groups %}
-              <section class="fa-company-group" data-sector="{{ group.grouper }}">
-                <div class="fa-company-sector-head">
-                  <span>{{ group.grouper }}</span>
-                  <span class="fa-company-count">{{ group.list|length }}</span>
-                </div>
-                {% for company in group.list %}
-                  <button type="button" class="fa-company-option" role="option"
-                          data-symbol="{{ company.symbol }}" aria-selected="false">
-                    <span class="fa-company-symbol">{{ company.symbol }}</span>
-                    <span class="fa-company-name">{{ company.name|default:"Name unavailable" }}</span>
-                  </button>
-                {% endfor %}
-              </section>
-            {% endfor %}
-            <div id="fa-company-empty" class="fa-company-empty" hidden>
-              No matching company. You can still enter a valid symbol directly.
-            </div>
-          </div>
-        </div>
-        <button id="fa-go" class="fa-btn" type="button">Go</button>
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span id="ia-title">BALANCE SHEET</span>
+        <span class="dsx-ad-sub"><span id="ia-sub"></span></span>
       </div>
+      <div class="dsx-table-wrap"><table class="dsx-table ia-matrix" id="ia-table"></table></div>
+      <div class="dsx-ad-note" id="ia-note"></div>
+    </div>
+  </section>
 
-      <div id="fa-status" class="fa-status">Search a company to view its fundamentals.</div>
-
-      <div id="fa-content" class="fa-hidden">
-        <div class="fa-company">
-          <h1 id="fa-ticker">—</h1>
-          <span class="fa-name" id="fa-secname"></span>
-          <span class="fa-sector fa-hidden" id="fa-sector"></span>
-          <span class="fa-period" id="fa-periodlabel"></span>
-        </div>
-
-        <div class="fa-cards" id="fa-cards"></div>
-
-        <div id="fa-trend-section">
-          <div class="fa-section-title">Multi-year trend (annual)</div>
-          <div class="fa-trend" id="fa-trend"></div>
-        </div>
-
-        <div class="fa-section-title">Financial statements</div>
-        <div class="fm-controls">
-          <div class="fm-tabs" id="fm-tabs" role="tablist" aria-label="Statement">
-            <button type="button" class="fm-tab active" data-st="BS" role="tab">Balance Sheet</button>
-            <button type="button" class="fm-tab" data-st="IS" role="tab">Income Statement</button>
-            <button type="button" class="fm-tab" data-st="KS" role="tab">Key Statistics</button>
-          </div>
-          <div class="fm-side">
-            <select id="fm-version" class="fa-select fm-version" aria-label="Data version"></select>
-            <div class="fm-pills" id="fm-pills" role="group" aria-label="Periods">
-              <button type="button" class="fm-pill" data-n="8">8</button>
-              <button type="button" class="fm-pill active" data-n="12">12</button>
-              <button type="button" class="fm-pill" data-n="16">16</button>
-              <button type="button" class="fm-pill" data-n="24">24</button>
-            </div>
-          </div>
-        </div>
-        <div class="fm-wrap"><table class="fm-table" id="fm-table"></table></div>
+  <!-- ── Smart Stock Score (CAN SLIM) ──────────────────────────────────── -->
+  <section class="dsx-panel" id="panel-smart">
+    <section class="cs-gate" id="cs-gate" hidden></section>
+    <div class="dsx-controls">
+      <div class="dsx-field">Sector
+        <select id="cs-sector" class="dsx-select dsx-sector"></select>
       </div>
-    </section>
+      <div class="dsx-field">Show
+        <select id="cs-conf" class="dsx-select">
+          <option value="all">All scored</option>
+          <option value="full">Full data only (5 of 5 factors)</option>
+        </select>
+      </div>
+      <button type="button" id="cs-refresh" class="dsx-analyze">Refresh</button>
+    </div>
+    <div class="dsx-kpis" id="cs-kpis"></div>
+    <div class="dsx-ad-evidence" id="cs-limits"></div>
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span id="cs-title">RANKED BY CAN SLIM SCORE</span>
+        <span class="dsx-ad-sub">
+          <span id="cs-sub"></span>
+          <a class="dsx-ad-sop" href="{% url 'canslim_sop' %}" target="_blank" rel="noopener"
+             title="How every factor and score is calculated — in simple language">Methodology</a>
+        </span>
+      </div>
+      <div class="dsx-table-wrap"><table class="dsx-table dsx-ad-table" id="cs-table"></table></div>
+      <div class="dsx-ad-note" id="cs-universe"></div>
+    </div>
+  </section>
 
-    <!-- ── Morningstar: sector-driven Growth & Value model (independent) ── -->
-    <section id="fa-panel-morningstar" class="fa-subpanel fa-hidden" role="tabpanel">
-      <div id="fa-model"></div>
-    </section>
-  </main>
+  <!-- ── Morning Star (sector G/V/Quality framework) ───────────────────── -->
+  <section class="dsx-panel" id="panel-morningstar">
+    <div class="dsx-controls">
+      <div class="dsx-field">Sector
+        <select id="ms-sector" class="dsx-select dsx-sector"></select>
+      </div>
+      <button type="button" id="ms-refresh" class="dsx-analyze">Refresh</button>
+    </div>
+    <div class="dsx-kpis" id="ms-kpis"></div>
+    <div id="ms-scatter"></div>
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-ad-head">
+        <span>MORNING STAR — GROWTH / VALUE / QUALITY</span>
+        <span class="dsx-ad-sub">
+          <span id="ms-sub"></span>
+          <a class="dsx-ad-sop" href="{% url 'morningstar_sop' %}" target="_blank" rel="noopener"
+             title="The complete methodology — every parameter, weight, gate and formula">Methodology</a>
+        </span>
+      </div>
+      <div id="ms-filterbar"></div>
+      <div class="dsx-table-wrap"><table class="dsx-table dsx-ad-table" id="ms-table"></table></div>
+      <div class="dsx-ad-note" id="ms-note"></div>
+    </div>
+  </section>
+
 </div>
 
 <script>
-  // Theme toggle — shares the "mi-theme" key with the Market Insights dashboard
-  // so the chosen light/dark theme persists across every page.
+  window.MS_CONFIG = { scanUrl: "{% url 'morningstar_scan_api' %}" };
+  window.CS_CONFIG = { scanUrl: "{% url 'canslim_scan_api' %}" };
+  window.IA_CONFIG = {
+    matrixUrl: "{% url 'industry_matrix_api' %}",
+    periodsUrl: "{% url 'industry_periods_api' %}"
+  };
+</script>
+<script defer src="{% static 'core_analysis/js/fundamentals-desk.js' %}?v={{ asset_version }}"></script>
+<script defer src="{% static 'core_analysis/js/canslim.js' %}?v={{ asset_version }}"></script>
+<script defer src="{% static 'core_analysis/js/morningstar.js' %}?v={{ asset_version }}"></script>
+<script>
+  /* Theme toggle only — insights.js wires the Market Insights dashboard and
+     throws here because none of its elements exist on this page. */
   (function () {
-    var saved = null;
-    try { saved = localStorage.getItem('mi-theme'); } catch (e) {}
-    if (saved) document.documentElement.setAttribute('data-theme', saved);
-    var btn = document.getElementById('mi-theme-btn');
-    function sync() {
-      if (!btn) return;
-      var light = document.documentElement.getAttribute('data-theme') === 'light';
-      btn.textContent = light ? 'Dark' : 'Light';
-      btn.title = light ? 'Switch to dark theme' : 'Switch to light theme';
+    var KEY = "mi-theme";
+    function apply(th) {
+      document.documentElement.setAttribute("data-theme", th);
+      var b = document.getElementById("mi-theme-btn");
+      if (b) b.textContent = th === "dark" ? "Light" : "Dark";
     }
-    sync();
-    if (btn) btn.addEventListener('click', function () {
-      var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-      document.documentElement.setAttribute('data-theme', next);
-      try { localStorage.setItem('mi-theme', next); } catch (e) {}
-      sync();
+    var saved = "dark";
+    try { saved = localStorage.getItem(KEY) || "dark"; } catch (e) {}
+    apply(saved);
+    document.addEventListener("DOMContentLoaded", function () {
+      var b = document.getElementById("mi-theme-btn");
+      if (!b) return;
+      b.addEventListener("click", function () {
+        var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        try { localStorage.setItem(KEY, next); } catch (e) {}
+        apply(next);
+      });
     });
   })();
 </script>
-<script>
-  window.FA_CONFIG = {
-    apiUrl: "{% url 'fundamental_data_api' %}",
-    matrixUrl: "{% url 'fundamental_matrix_api' %}",
-    modelUrl: "{% url 'fundamental_model_api' %}",
-    symbol: "{{ symbol|escapejs }}",
-  };
-</script>
-<script defer src="{% static 'core_analysis/js/fundamentals.js' %}?v={{ asset_version }}"></script>
-<script defer src="{% static 'core_analysis/js/responsive.js' %}?v={{ asset_version|default:1 }}"></script>
 </body>
 </html>

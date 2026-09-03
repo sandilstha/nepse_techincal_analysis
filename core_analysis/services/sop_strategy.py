@@ -226,7 +226,9 @@ def run_sop_simulation(
         if exec_price <= 0:
             continue
         sig = i - 1
-        is_bear = use_regime_filter and (regime.iloc[i] == "Bear")
+        # Regime is built from bar closes; deciding at bar i's OPEN must use
+        # the previous close (sig), or the filter sees the bar it is trading.
+        is_bear = use_regime_filter and (regime.iloc[sig] == "Bear")
 
         # Exit on the indicator's sell signal OR when the regime turns bear.
         if position > 0 and (bool(sell.iloc[sig]) or is_bear):
@@ -294,7 +296,7 @@ def run_sop_simulation(
         position = 0
 
     trades_df = pd.DataFrame(trades)
-    equity_df = _daily_equity(df, trades, initial_capital, regime)
+    equity_df = _daily_equity(df, trades, initial_capital, regime, cost_frac)
     metrics = _metrics(df, trades_df, equity_df, initial_capital,
                        indicator, use_regime_filter, regime, cost_bps, blocked_by_regime)
     # Same live BUY/HOLD/SELL/WAIT read as the confluence model, expressed as a
@@ -418,7 +420,7 @@ def run_sop_combined_simulation(
             continue
         dt = df.loc[i, "business_date"]
         sig = i - 1
-        raw_bear = use_regime_filter and (regime.iloc[i] == "Bear")
+        raw_bear = use_regime_filter and (regime.iloc[sig] == "Bear")
         # SWING mode keeps trading through a bear regime, but only on a raised
         # agreement threshold. Measured cost on 2003-2026 NEPSE index: bear-regime
         # entries alone run at profit factor 0.44 (3 of 5) down to 0.12 (5 of 5),
@@ -479,7 +481,7 @@ def run_sop_combined_simulation(
         position = 0
 
     trades_df = pd.DataFrame(trades)
-    equity_df = _daily_equity(df, trades, initial_capital, regime)
+    equity_df = _daily_equity(df, trades, initial_capital, regime, cost_frac)
     metrics = _metrics(df, trades_df, equity_df, initial_capital,
                        "combined", use_regime_filter, regime, cost_bps, blocked_by_regime,
                        indicator_label=label)
@@ -598,7 +600,7 @@ def _current_signal(df, indicators, states, votes, desired_long, regime, min_agr
 
 
 # ── Equity curve & metrics ───────────────────────────────────────────────────
-def _daily_equity(df, trades, initial_capital, regime):
+def _daily_equity(df, trades, initial_capital, regime, cost_frac=0.0):
     """Daily mark-to-market equity of the strategy vs. buy&hold, + drawdown/regime.
 
     Reconstructed from the trade list so the curve is a true per-bar mark-to-market
@@ -616,7 +618,10 @@ def _daily_equity(df, trades, initial_capital, regime):
         if ei is None or xi is None:
             continue
         shares = t["shares"]
-        cash_while_held = cash - shares * t["entry_price"]   # cash tied up in the position
+        # Cash tied up in the position, including the entry-side commission
+        # the simulation charged — otherwise mark-to-market equity (and hence
+        # drawdown / Sharpe) is overstated for the whole holding period.
+        cash_while_held = cash - shares * t["entry_price"] * (1 + cost_frac / 2.0)
         for b in range(ei, xi):                              # held: entry bar → (excl) exit bar
             held_shares[b] = shares
             cash_track[b] = cash_while_held

@@ -10,7 +10,7 @@ def run_rrg_simulation(
     """
     Calculates Relative Rotation Graph (RRG) coordinates (RS-Ratio and RS-Momentum)
     for a given stock against a benchmark (typically NEPSE INDEX).
-    
+
     RRG Quadrants:
     - Leading (Green): RS-Ratio > 100, RS-Momentum > 100
     - Weakening (Yellow): RS-Ratio > 100, RS-Momentum < 100
@@ -28,13 +28,13 @@ def run_rrg_simulation(
 
     stock = _prepare_price_frame(stock_df, "stock_close")
     bench = _prepare_price_frame(benchmark_df, "bench_close")
-    
+
     df = pd.merge(stock, bench, on="business_date", how="inner").sort_values("business_date").reset_index(drop=True)
     df = df[(df["stock_close"] > 0) & (df["bench_close"] > 0)].copy()
     source_bars = int(len(stock))
     benchmark_bars = int(len(bench))
     matched_bars = int(len(df))
-    
+
     if len(df) < lookback * 2:
         return {
             "error": (
@@ -51,17 +51,21 @@ def run_rrg_simulation(
     df["RS"] = (df["stock_close"] / df["bench_close"]) * 100.0
 
     # 2. RS-Ratio: z-score of RS against its own rolling window, centred at 100
-    #    (the standard public JdK approximation). The previous RS/SMA×100 form
-    #    made the distance from 100 scale with each symbol's OWN volatility, so
-    #    on a multi-symbol chart the volatile series always plotted farther out
-    #    than the placid ones even with equal relative trend — z-scoring puts
-    #    every symbol on the same footing, which is the point of an RRG.
-    #    A locally flat RS window (std == 0) means "exactly on trend" → 100.
+    #    (the standard public JdK approximation). The RS/SMA×100 form makes the
+    #    distance from 100 scale with each symbol's OWN volatility, so on a
+    #    multi-symbol chart the volatile series always plot farther out than the
+    #    placid ones even with equal relative trend — z-scoring puts every symbol
+    #    on the same footing, which is the point of an RRG.
+    #    A window with no variation carries no signal → NaN (row not plotted).
     df["RS_Ratio"] = 100.0 + _z(df["RS"], lookback)
 
-    # 3. RS-Momentum: the same normalization applied to RS-Ratio itself —
-    #    above its own recent mean = relative strength still accelerating.
-    df["RS_Momentum"] = 100.0 + _z(df["RS_Ratio"], lookback)
+    # 3. RS-Momentum: the rate of change of RS-Ratio over the window (JdK
+    #    defines momentum as the ROC of the ratio). RS-Ratio is already in
+    #    z-units, so the plain difference is on a comparable scale and needs no
+    #    second normalisation. (The earlier z-of-z form divided by the rolling
+    #    std of RS-Ratio, which → 0 in a steady trend and blew momentum up
+    #    precisely in the calmest, most persistent cases.)
+    df["RS_Momentum"] = 100.0 + (df["RS_Ratio"] - df["RS_Ratio"].shift(lookback - 1))
 
     # Determine quadrant
     conditions = [
@@ -75,7 +79,13 @@ def run_rrg_simulation(
 
     out_df = df.dropna().copy()
     if out_df.empty:
-        return {"error": "Not enough data points after calculating RRG."}, pd.DataFrame()
+        return {
+            "error": "Relative strength shows no variation in this window — nothing to rotate.",
+            "source_bars": source_bars,
+            "benchmark_bars": benchmark_bars,
+            "matched_bars": matched_bars,
+            "lookback": lookback,
+        }, pd.DataFrame()
 
     latest = out_df.iloc[-1]
     previous = out_df.iloc[-2] if len(out_df) > 1 else latest
@@ -93,9 +103,20 @@ def run_rrg_simulation(
         quadrants[-bars_in_quadrant - 1] if bars_in_quadrant < len(quadrants) else None
     )
 
+    # Staleness: a halted/delisted symbol's last plotted point can be months
+    # older than the benchmark's latest session — flag it so it isn't read as
+    # today's rotation.
+    latest_date = pd.Timestamp(latest["business_date"])
+    bench_latest = pd.Timestamp(bench["business_date"].max())
+    stale_sessions = int((bench["business_date"] > latest_date).sum())
+
     metrics = {
         "bars_in_quadrant": int(bars_in_quadrant),
         "rotated_from": rotated_from,
+        "latest_date": latest_date.strftime("%Y-%m-%d"),
+        "benchmark_latest_date": bench_latest.strftime("%Y-%m-%d"),
+        "stale": stale_sessions > 0,
+        "stale_sessions": stale_sessions,
         "latest_rs_ratio": round(float(latest["RS_Ratio"]), 2),
         "latest_rs_momentum": round(float(latest["RS_Momentum"]), 2),
         "latest_quadrant": latest["Quadrant"],
@@ -112,17 +133,19 @@ def run_rrg_simulation(
 
 
 def _z(series: pd.Series, lookback: int) -> pd.Series:
-    """Rolling z-score of ``series`` over ``lookback`` bars.
+    """Rolling (sample) z-score of ``series`` over ``lookback`` bars.
 
-    std == 0 (a locally flat window) is treated as zero deviation rather than
-    NaN so a symbol tracking its trend exactly stays plotted at the centre
-    instead of silently dropping out of the chart.
+    A window with (near-)zero dispersion has no defined deviation: it is
+    returned as NaN rather than 0, because 0 would plot as exactly (100, 100)
+    and — with the ``>= 100`` quadrant rule — label a flat, signal-less window
+    as *Leading*.
     """
     mean = series.rolling(window=lookback).mean()
-    std = series.rolling(window=lookback).std(ddof=0)
-    z = (series - mean) / std.replace(0, np.nan)
-    # Flat window (std 0) → deviation 0; keep warmup NaNs (mean still NaN).
-    return z.where(std != 0, 0.0).where(mean.notna())
+    std = series.rolling(window=lookback).std(ddof=1)
+    # Relative floor so a series quoted in tiny units isn't mistaken for flat.
+    floor = (mean.abs() * 1e-9).clip(lower=1e-12)
+    std = std.where(std > floor)
+    return (series - mean) / std
 
 
 def _prepare_price_frame(source_df: pd.DataFrame, close_column_name: str) -> pd.DataFrame:

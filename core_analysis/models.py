@@ -694,6 +694,28 @@ class AccountApproval(models.Model):
     def is_pending(self):
         return self.status == self.PENDING
 
+    # Called by the admin actions and the approvals API. These were missing,
+    # so every approve/reject raised AttributeError (the tests caught it).
+    def _review(self, status, reviewer=None, note=""):
+        self.status = status
+        self.reviewed_by = reviewer
+        self.reviewed_at = timezone.now()
+        if note:
+            self.review_note = note[:255]
+        self.save(update_fields=["status", "reviewed_by", "reviewed_at", "review_note"])
+
+    def approve(self, reviewer=None, note=""):
+        self._review(self.APPROVED, reviewer, note)
+        if not self.user.is_active:
+            self.user.is_active = True
+            self.user.save(update_fields=["is_active"])
+
+    def reject(self, reviewer=None, note=""):
+        self._review(self.REJECTED, reviewer, note)
+        if self.user.is_active:
+            self.user.is_active = False
+            self.user.save(update_fields=["is_active"])
+
 
 class MarginEligibleCompany(models.Model):
     """
@@ -911,3 +933,336 @@ class ProposedDividend(models.Model):
 
     def __str__(self):
         return f"{self.symbol} {self.fiscal_year} — {self.total_percent}%"
+
+
+class MutualFundNav(models.Model):
+    """
+    Table: mutual_fund_nav
+
+    Net asset value per unit for NEPSE-listed mutual funds, scraped from
+    ShareSansar's /mutual-fund-navs DataTables feed.
+
+    WHY THIS TABLE EXISTS AT ALL. Mutual funds do not file the quarterly
+    Balance Sheet / Income Statement / Key Statistics that ``FinancialStatement``
+    harvests — a fund has no revenue or ROE — so every fund shows blank on the
+    fundamentals desks and always will. What a fund publishes instead is its NAV,
+    and because almost every Nepali scheme is CLOSED-END, the number that
+    actually matters is the gap between NAV and the market price: a fund trading
+    at 9.35 against a NAV of 9.96 is on an 8% discount. ``premium_discount_pct``
+    is that figure, and it is the fund equivalent of P/B.
+
+    One row per (symbol, NAV period). The feed only ever exposes each fund's
+    LATEST reading, so history is not backfillable — it accumulates from the
+    first sync onward, one new row per fund per Nepali month.
+
+    ``nav_period`` is a Nepali-calendar month label as published, e.g.
+    "Asadh 2083". It is stored as text on purpose: it is the source's own
+    reporting key, and converting it to a Gregorian date would invent a
+    precision (which day?) the publisher never stated.
+    """
+    symbol = models.CharField(max_length=20, db_index=True)
+    nav_period = models.CharField(
+        max_length=32, help_text="Nepali month as published, e.g. 'Asadh 2083'")
+
+    fund_name = models.CharField(max_length=255, blank=True, default="")
+    # Upstream row id. Kept for provenance/debugging only — NOT the unique key,
+    # because one fund yields a new row every month under the same id.
+    source_id = models.IntegerField(null=True, blank=True)
+
+    # 0 = closed-end, 1 = matured, 2 = open-end. Stored as the source sends it;
+    # see FUND_TYPES in services/mutual_fund_nav.py for the labels.
+    fund_type = models.CharField(max_length=2, blank=True, default="")
+    fund_size = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
+    maturity_date = models.DateField(null=True, blank=True)
+    maturity_period = models.CharField(max_length=40, blank=True, default="")
+
+    nav_monthly = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    # Open-end schemes publish daily/weekly as well; closed-end ones mostly do not.
+    nav_weekly = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    nav_weekly_date = models.DateField(null=True, blank=True)
+    nav_daily = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    nav_daily_date = models.DateField(null=True, blank=True)
+    # Only open-end funds quote a refund/redemption NAV.
+    refund_nav = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+
+    # The source's own price snapshot, kept ONLY so premium_discount_pct can be
+    # audited against the inputs that produced it. Never use it for analytics:
+    # nepse_daily_stock_prices is the price source and is split/bonus adjusted.
+    market_close = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    market_close_date = models.DateField(null=True, blank=True)
+    # Negative = trading BELOW NAV (a discount), which is the normal state for
+    # Nepali closed-end funds. Null when the fund no longer trades.
+    premium_discount_pct = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+
+    synced_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "mutual_fund_nav"
+        # The feed exposes one reading per fund, so re-syncing inside the same
+        # Nepali month must update that month's row, not append a duplicate.
+        unique_together = (("symbol", "nav_period"),)
+        indexes = [
+            models.Index(fields=["symbol", "-synced_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.symbol} {self.nav_period} — NAV {self.nav_monthly}"
+
+
+class MutualFundPortfolio(models.Model):
+    """
+    Table: mutual_fund_portfolio
+
+    One fund's portfolio for one Nepali month: the asset-class split, plus the
+    NAV/price context needed to read it. The per-script detail hangs off this
+    row as ``MutualFundHolding``.
+
+    WHY A SUMMARY ROW AND NOT JUST HOLDINGS. Equity is recomputed from the
+    holdings (their market values sum to it), but fixed income and cash have no
+    per-script detail to sum — a fund reports "Fixed Deposit: 4,105,151" as one
+    line. Those buckets therefore have to be stored, not derived, or the asset
+    allocation could never add up to 100%.
+
+    ``period`` is a Nepali month, stored CANONICALLY (see
+    ``services/mutual_fund_portfolio.canonical_period``). The sources disagree
+    on spelling — ShareSansar's NAV feed says "Asadh 2083" where the portfolio
+    reports say "Ashad 2083" — so both are normalised on the way in, or the NAV
+    and the allocation for one fund-month would never join.
+    """
+    symbol = models.CharField(max_length=20, db_index=True)
+    period = models.CharField(
+        max_length=32, db_index=True,
+        help_text="Canonical Nepali month, e.g. 'Ashadh 2083'")
+
+    fund_name = models.CharField(max_length=255, blank=True, default="")
+
+    # NAV/price context as reported with the portfolio. Nullable: a report may
+    # carry the holdings without restating the NAV, which the NAV feed already has.
+    nav_monthly = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    nav_daily = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    ltp = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+
+    # Asset-class buckets, in rupees. equity_value is the sum of the holdings
+    # below and is stored denormalised so allocation queries need no join.
+    equity_value = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    fixed_income_value = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    cash_value = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    # Anything the report lists that is none of the three above. Kept separate
+    # rather than folded into cash so the percentages stay honest.
+    other_value = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+
+    # Net assets as the fund reports them, when the report states it. This is
+    # the DENOMINATOR the published allocation tables use, and it is not the sum
+    # of the buckets above: liabilities net out, which is why a fund's published
+    # equity/fixed-income/cash percentages routinely add up to slightly over
+    # 100%. Null means we fall back to the bucket sum, which sums to exactly
+    # 100% — self-consistent, but not the same convention.
+    net_assets = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
+
+    source_name = models.CharField(max_length=255, blank=True, default="",
+                                   help_text="Uploaded file this came from")
+    imported_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "mutual_fund_portfolio"
+        unique_together = (("symbol", "period"),)
+        indexes = [models.Index(fields=["period", "symbol"])]
+
+    def __str__(self):
+        return f"{self.symbol} {self.period}"
+
+    @property
+    def total_value(self):
+        return (self.equity_value + self.fixed_income_value
+                + self.cash_value + self.other_value)
+
+
+class MutualFundHolding(models.Model):
+    """
+    Table: mutual_fund_holding
+
+    One line of a fund's equity portfolio for one month — the ``Script /
+    Company Name / Sector / Kitta / Book Value / Market Value`` detail.
+
+    ``sector`` is stored as the report gave it, but allocation is aggregated on
+    the sector resolved from CompanyProfile where the script is known: the
+    platform already has one answer for "what sector is NABIL", and a report's
+    own spelling should not create a second.
+    """
+    portfolio = models.ForeignKey(
+        MutualFundPortfolio, on_delete=models.CASCADE, related_name="holdings")
+
+    script = models.CharField(max_length=20, db_index=True)
+    company_name = models.CharField(max_length=255, blank=True, default="")
+    sector = models.CharField(max_length=80, blank=True, default="",
+                              help_text="As printed in the report")
+
+    kitta = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
+    book_value = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
+    market_value = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
+
+    # The fund's OWN published weight for this line, as a percentage of its
+    # equity book. Verified against the source: it tracks the BOOK (cost) share,
+    # not the market one — C30MF/SALICO Ashad 2083 reports 8.61 where cost gives
+    # 8.6059 and market gives 8.4199 — and the set sums to ~99.99 rather than
+    # exactly 100 because each line is rounded to 2dp before publication.
+    #
+    # Stored rather than always recomputed so a fund's stated weight can be
+    # shown as the fund stated it. Null for any month published without it.
+    weight_percent = models.DecimalField(max_digits=8, decimal_places=4,
+                                         null=True, blank=True)
+
+    class Meta:
+        db_table = "mutual_fund_holding"
+        # One line per script per fund-month; a re-import replaces the set.
+        unique_together = (("portfolio", "script"),)
+        indexes = [models.Index(fields=["script"])]
+
+    def __str__(self):
+        return f"{self.portfolio.symbol} {self.portfolio.period} — {self.script}"
+
+
+class MutualFundProfile(models.Model):
+    """
+    Table: mutual_fund_profile
+
+    Scheme-level facts for one fund: who runs it, how big it is, when it
+    matures, and the two NAVs it publishes. Sourced from the internal
+    ``/api/mutual-fund/funds/`` feed (see ``services/mutual_fund_api``).
+
+    WHY THIS IS SEPARATE FROM ``MutualFundNav``. That table is a time series
+    scraped from ShareSansar — one row per reading, and history matters. This is
+    a single current-state row per fund, and it carries things a NAV feed has no
+    concept of: fund size, maturity date, the asset management company. Merging
+    them would force every scheme fact to be re-stated on every NAV reading.
+
+    ``daily_nav`` is the fund's most recent published NAV and ``monthly_nav``
+    its month-end one. They are frequently equal — the feed restates the daily
+    figure as the monthly at period close — and that is not an error.
+    """
+    symbol = models.CharField(max_length=20, unique=True, db_index=True)
+    fund_name = models.CharField(max_length=255, blank=True, default="")
+    amc = models.CharField(max_length=255, blank=True, default="",
+                           help_text="Asset management company")
+    amc_member = models.CharField(max_length=255, blank=True, default="")
+
+    fund_size = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
+    maturity_date = models.DateField(null=True, blank=True)
+    maturity_period = models.CharField(max_length=64, blank=True, default="")
+
+    daily_nav = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    daily_nav_date = models.DateField(null=True, blank=True)
+    monthly_nav = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    # Nepali month text ("Ashadh 2083"), canonicalised on the way in.
+    monthly_nav_period = models.CharField(max_length=32, blank=True, default="")
+
+    synced_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "mutual_fund_profile"
+        ordering = ["symbol"]
+
+    def __str__(self):
+        return f"{self.symbol} — {self.fund_name}"
+
+
+class MutualFundStatementItem(models.Model):
+    """
+    Table: mutual_fund_statement_item
+
+    One line of a fund's Balance Sheet or Income Statement for one month, stored
+    VERBATIM as the fund published it.
+
+    WHY VERBATIM, AND WHY SEPARATE FROM ``MutualFundPortfolio``. That model
+    holds four normalised buckets in rupees, which is what allocation maths
+    needs. This holds every line the fund actually filed, at the scale it filed
+    it, which is what a financials screen needs — a reader comparing our page
+    with the fund's own report must see the same numbers in the same units.
+    Deriving one from the other is lossy in both directions, so both are kept.
+
+    ``amount`` IS NOT NORMALISED. The source reports money in thousands of
+    rupees ("Invested in Shares 725,961.84" means Rs 725.96m) while per-unit and
+    count lines — "NAV per Unit", "Number of Units Outstanding" — are in their
+    own natural units. Mixing scales in one column is only safe because nothing
+    aggregates across this table: it is read back a line at a time for display.
+    Anything that does arithmetic on these figures must use
+    ``MutualFundPortfolio``'s rupee columns instead.
+    """
+    symbol = models.CharField(max_length=20, db_index=True)
+    period = models.CharField(max_length=32, db_index=True,
+                              help_text="Canonical Nepali month")
+    # "BS" (Balance Sheet) or "IS" (Income Statement), as the feed labels them.
+    fs_type = models.CharField(max_length=4)
+    item_name = models.CharField(max_length=120)
+    amount = models.DecimalField(max_digits=22, decimal_places=4, null=True, blank=True)
+
+    # The statement date this line came from. A fund can file twice for one
+    # month (Provisional, then Published); the newest wins on import.
+    nav_date = models.DateField(null=True, blank=True)
+    # Publication order, so the panel can render the fund's own line sequence
+    # rather than an alphabetical one that reads as a jumble.
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        db_table = "mutual_fund_statement_item"
+        unique_together = (("symbol", "period", "fs_type", "item_name"),)
+        indexes = [models.Index(fields=["symbol", "period", "fs_type"])]
+        ordering = ["fs_type", "position", "item_name"]
+
+    def __str__(self):
+        return f"{self.symbol} {self.period} {self.fs_type} — {self.item_name}"
+
+
+class LifeInsuranceIndicator(models.Model):
+    """
+    Table: life_insurance_indicators — the "Other Indicators" block of an
+    insurer's quarterly report (life AND non-life; the name predates the
+    non-life extension), entered BY HAND.
+
+    WHY A SEPARATE TABLE: the fundamentals feed (funda.aurasrp) publishes only
+    eight of the seventeen "Other Indicators" lines — it stops at
+    ``li_ks_534_short_term_investments`` for every life insurer — and the nine
+    below appear nowhere but the company's own PDF. They cannot go into
+    ``FinancialStatement`` either: that table is unmanaged, owned by another
+    app, and keyed on an account-dictionary id we do not model.
+
+    Read paths merge these rows into the KS statement at read time (Industry
+    Analysis matrix, company statement API) as items ``li_ks_535``–``543`` so
+    they sit under the feed's own rows without a second UI.
+
+    Amounts are stored in FULL RUPEES exactly as printed on the report; the
+    merge converts to the feed's "Rs. 000" unit so columns compare.
+    """
+    # Which "Other Indicators" layout the row follows. Life and non-life
+    # reports print different tables; the field set per sector lives in
+    # services/life_indicators.SPECS and unused columns simply stay NULL.
+    sector = models.CharField(max_length=40, default="Life Insurance", db_index=True)
+    ticker = models.CharField(max_length=20, db_index=True)
+    fiscal_year_ad = models.CharField(max_length=10, db_index=True, help_text="e.g. 2025/26")
+    quarter = models.PositiveSmallIntegerField(help_text="1-4")
+
+    policies_issued = models.BigIntegerField(null=True, blank=True,
+                                             help_text="Total no. of policies issued during the year")
+    gross_claim_outstanding = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True,
+                                                  help_text="Rs, as printed")
+    declared_bonus_rate = models.CharField(max_length=80, blank=True, default="",
+                                           help_text="As printed, e.g. 'Rs. 55 - Rs. 85 Per Thousand'")
+    interim_bonus_rate = models.CharField(max_length=80, blank=True, default="")
+    policyholders_loan = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
+    investment_at_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
+    life_insurance_fund = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
+    unearned_premium_reserve = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
+    solvency_margin_ratio = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+
+    source_note = models.CharField(max_length=255, blank=True, default="",
+                                   help_text="Where the figures came from, e.g. 'Q4 2082/83 report p.7'")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "life_insurance_indicators"
+        unique_together = (("ticker", "fiscal_year_ad", "quarter"),)
+        ordering = ["-fiscal_year_ad", "-quarter", "ticker"]
+
+    def __str__(self):
+        return f"{self.ticker} {self.fiscal_year_ad} Q{self.quarter} — other indicators"

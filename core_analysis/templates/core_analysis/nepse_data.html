@@ -20,10 +20,12 @@ is the same for all nine, and nepse-data.js fills the table from the JSON API.
 {% block content %}
 <div class="nd-wrap">
 
-  {# The report's name and blurb are rendered by base.html's workspace-header
-     (fed by page_title / page_sub from the view), so every page carries the same
-     badge + title + actions bar. The old .nd-head duplicated it, and its
-     "← Workbench" link is already in the header's action cluster. #}
+  {% comment %}
+    The report's name and blurb are rendered by base.html's workspace-header
+    (fed by page_title / page_sub from the view), so every page carries the
+    same badge + title + actions bar. The old .nd-head duplicated it, and its
+    back-to-Workbench link is already in the header's action cluster.
+  {% endcomment %}
 
   {# Report switcher — same order as the exchange's own menu. #}
   <nav class="nd-tabs" aria-label="NEPSE data reports">
@@ -127,13 +129,15 @@ is the same for all nine, and nepse-data.js fills the table from the JSON API.
 
 </div>
 
+{{ columns|json_script:"nd-columns-json" }}
+{{ controls|json_script:"nd-controls-json" }}
 <script>
   window.ND = {
     slug: "{{ slug|escapejs }}",
     api: "{% url 'nepse_data_api' slug %}",
     symbolsUrl: "{% url 'nepse_data_symbols' %}",
-    columns: {{ columns_json|safe }},
-    controls: {{ controls_json|safe }},
+    columns: JSON.parse(document.getElementById("nd-columns-json").textContent),
+    controls: JSON.parse(document.getElementById("nd-controls-json").textContent),
     {# ISO only: input[type=date] rejects a localised "July 30, 2026" and blanks. #}
     latest: {
       price: "{{ latest.price|date:'Y-m-d' }}",

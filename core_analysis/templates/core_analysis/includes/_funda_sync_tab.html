@@ -13,6 +13,17 @@
          all unticked and the whole sector runs. Each sync stores a snapshot and pushes the
          statements into the Financial Statement, so the fundamentals desk, Morningstar and
          Stock 360 update too.</p>
+      {% comment %}
+        The dropdown is built from the sectors that actually HAVE statement rows,
+        so Mutual Fund is absent by construction rather than by omission. Saying
+        so here stops it reading as a missing sector or a broken sync — funds
+        file no statements at all, and their equivalent is the NAV feed.
+      {% endcomment %}
+      <p class="funda-sync-note"><b>Mutual funds are not in this list, and should not be.</b>
+         A fund files no balance sheet or income statement — it has no revenue or ROE — so
+         there is nothing here to pull for one. Their equivalent is NAV and discount to NAV:
+         use <b>Sync Fund NAV</b> in the toolbar above. Debentures and preference shares are
+         absent for the same reason.</p>
     </div>
 
     {# Primary: whole-sector sync — the client loops symbol-by-symbol with progress. #}
@@ -104,6 +115,12 @@
   .funda-sync-head h2{font-size:20px;font-weight:800;margin:0 0 4px}
   .funda-sync-head p{font-size:13px;color:var(--ink-2,#6b7684);margin:0 0 16px;line-height:1.5}
   .funda-sync-head code{font-size:12px;background:rgba(128,128,128,.14);padding:1px 6px;border-radius:5px}
+  /* An aside, not body copy: it explains an ABSENCE, so it must not read as
+     another instruction. Left rule + muted tone sets it apart from the para
+     above without shouting like a warning. */
+  .funda-sync-head p.funda-sync-note{
+    border-left:3px solid rgba(128,128,128,.34);
+    padding:2px 0 2px 11px; margin:-6px 0 16px; font-size:12.5px;}
   .funda-sector-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
   .funda-sector-sel{flex:1;min-width:220px;max-width:340px;padding:10px 13px;font-size:14px;
     border:1px solid var(--line-2,rgba(128,128,128,.3));border-radius:9px;background:var(--bg-raised,#fff);color:inherit}
@@ -192,6 +209,18 @@
     return Math.floor(s/86400)+'d ago';
   }
   function getJSON(u){ return fetch(u,{headers:{'X-Requested-With':'XMLHttpRequest'}}).then(function(r){ return r.json(); }); }
+  function csrfToken(){
+    var m = document.cookie.match('(?:^|; )csrftoken=([^;]*)');
+    if (m) return decodeURIComponent(m[1]);
+    var inp = document.querySelector('input[name=csrfmiddlewaretoken]');   // cookie may be HttpOnly
+    return inp ? inp.value : '';
+  }
+  /* The sync endpoint is a write, so it is POST + CSRF like every other write
+     on this dashboard; the symbol still travels in the query string. */
+  function postJSON(u){
+    return fetch(u,{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest','X-CSRFToken':csrfToken()}})
+      .then(function(r){ return r.json(); });
+  }
 
   /* ── History filter ───────────────────────────────────────────────────
      Every query goes to the server. The table stores one row per synced
@@ -478,7 +507,7 @@
     (function next(){
       if(stopFlag || i >= syms.length){ finishRun(syms.length, okCount, fails, skipped); return; }
       var sym = syms[i++];
-      getJSON('/stock/api/funda/sync/?symbol='+encodeURIComponent(sym)).then(function(r){
+      postJSON('/stock/api/funda/sync/?symbol='+encodeURIComponent(sym)).then(function(r){
         if(r && r.ok) okCount++; else fails.push(sym);
         setProgress(i, syms.length, sym, okCount, fails.length);
         if(i % 10 === 0) loadRecent();          // keep the history table fresh mid-run

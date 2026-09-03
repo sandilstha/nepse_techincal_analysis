@@ -73,15 +73,20 @@ def run_rrg_indices_simulation(
 
     benchmark = (benchmark_symbol or "NEPSE INDEX").strip().upper()
     ordered_symbols = ordered_nepse_indices(index_frames.keys(), benchmark)
+    skipped = []
     if selected_symbols is not None:
         selected_set = {str(symbol).strip().upper() for symbol in selected_symbols if str(symbol).strip()}
+        # A selected index with no rows in the date range must show up as
+        # skipped, not vanish — otherwise scanned/plotted/skipped don't add up.
+        for symbol in sorted(selected_set - set(ordered_symbols) - {benchmark}):
+            if symbol not in RRG_EXCLUDED_INDICES:
+                skipped.append({"symbol": symbol, "reason": "No index rows in the selected date range."})
         ordered_symbols = [symbol for symbol in ordered_symbols if symbol in selected_set]
     if not ordered_symbols:
-        return {"error": "No NEPSE indices selected for RRG plotting."}, [], [], []
+        return {"error": "No NEPSE indices selected for RRG plotting."}, [], [], skipped
 
     points = []
     trails = []
-    skipped = []
 
     # Benchmark's own most recent session: a sector index whose feed lags plots
     # at an OLDER date on the same chart — flag those points as stale so the
@@ -101,7 +106,6 @@ def run_rrg_indices_simulation(
             continue
 
         latest = rrg_df.iloc[-1]
-        previous = rrg_df.iloc[-2] if len(rrg_df) > 1 else latest
         label = NEPSE_INDEX_LABELS.get(symbol, symbol.replace(" INDEX", ""))
         point_date = _format_date(latest["business_date"])
         point = {
@@ -117,13 +121,13 @@ def run_rrg_indices_simulation(
             "RS": round(float(latest["RS"]), 4),
             "RS_Ratio": round(float(latest["RS_Ratio"]), 2),
             "RS_Momentum": round(float(latest["RS_Momentum"]), 2),
-            "ratio_delta": round(float(latest["RS_Ratio"] - previous["RS_Ratio"]), 2),
-            "momentum_delta": round(float(latest["RS_Momentum"] - previous["RS_Momentum"]), 2),
+            "ratio_delta": metrics["rs_ratio_delta"],
+            "momentum_delta": metrics["rs_momentum_delta"],
             "Quadrant": str(latest["Quadrant"]),
-            "data_points": int(len(rrg_df)),
-            "source_bars": int(metrics.get("source_bars", len(index_df))),
-            "benchmark_bars": int(metrics.get("benchmark_bars", len(benchmark_df))),
-            "matched_bars": int(metrics.get("matched_bars", len(rrg_df))),
+            "data_points": metrics["data_points"],
+            "source_bars": metrics["source_bars"],
+            "benchmark_bars": metrics["benchmark_bars"],
+            "matched_bars": metrics["matched_bars"],
         }
         points.append(point)
 
@@ -145,12 +149,12 @@ def run_rrg_indices_simulation(
     quadrant_counts = Counter(point["Quadrant"] for point in points)
     metrics = {
         "benchmark_symbol": benchmark,
-        "indices_scanned": len(ordered_symbols),
+        "indices_scanned": len(ordered_symbols) + sum(1 for s in skipped if s["symbol"] not in ordered_symbols),
         "indices_plotted": len(points),
         "skipped_count": len(skipped),
         "stale_count": sum(1 for point in points if point.get("stale")),
         "lookback": lookback,
-        "latest_date": max(point["business_date"] for point in points),
+        "latest_date": max((point["business_date"] for point in points if point["business_date"]), default=""),
         "quadrant_counts": {
             "Leading": quadrant_counts.get("Leading", 0),
             "Weakening": quadrant_counts.get("Weakening", 0),

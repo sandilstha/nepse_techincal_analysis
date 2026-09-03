@@ -26,7 +26,7 @@ from datetime import date, timedelta
 from django.core.cache import cache
 from django.http import JsonResponse
 from django.shortcuts import render
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 
 from .models import NepseDailyStockPrice, NepseMarketIndex
 from .insights_views import _asset_version
@@ -399,6 +399,107 @@ def _freshness(as_of):
             "as_of": as_of, "market_latest": market_iso}
 
 
+def _fund_nav(symbol, close=None):
+    """NAV block for a mutual fund, or None if this symbol is not one.
+
+    Funds file no quarterly statements, so every ratio card on this page is
+    blank for them by construction. What a fund publishes is its NAV, and since
+    almost every Nepali scheme is closed-end the number that matters is the gap
+    between NAV and the market price — the fund equivalent of P/B.
+
+    WHICH NAV THE DISCOUNT USES. A fund can publish two NAVs: a month-end
+    ("monthly") figure and, for many schemes, a far more recent weekly one. The
+    discount is computed against the NEWEST available — the weekly where there
+    is one — for two reasons: it is the current read, and it is the basis the
+    publisher itself uses. Verified against the source on 2026-08-25: KDBY's
+    published -9.18% is price 9.99 over its WEEKLY NAV of 11.00, not over its
+    monthly 12.26 (which would give -18.52%). Leading with the monthly figure
+    overstated the discount by nine points.
+
+    Three figures come back, each labelled, because they answer different
+    questions:
+      * ``discount_pct``        — OUR latest close against the reference NAV.
+        The current read, and the one the panel leads with.
+      * ``nav_reference`` / ``nav_reference_label`` — which NAV that was, so the
+        number is never unattributable.
+      * ``source_discount_pct`` — the publisher's own figure. Kept for
+        provenance, so a disagreement is explainable rather than mysterious.
+    """
+    from .models import CompanyProfile
+    from .services import mutual_fund_nav as mfn
+
+    sym = (symbol or "").strip().upper()
+    if not CompanyProfile.objects.filter(symbol=sym, sector_name="Mutual Fund").exists():
+        return None
+
+    row = mfn.latest_for(sym)
+    if row is None:
+        # A fund with no NAV synced yet is still a fund — say so, rather than
+        # falling through to ratio cards that can never populate.
+        return {"available": False, "symbol": sym}
+
+    nav = float(row.nav_monthly) if row.nav_monthly is not None else None
+    weekly = float(row.nav_weekly) if row.nav_weekly is not None else None
+
+    # Newest NAV wins. The weekly reading is days old where the monthly is a
+    # month-end snapshot, and it is what the publisher divides by.
+    if weekly:
+        reference, ref_label = weekly, "weekly NAV"
+        ref_when = row.nav_weekly_date.isoformat() if row.nav_weekly_date else ""
+    else:
+        reference, ref_label = nav, "monthly NAV"
+        ref_when = row.nav_period
+
+    discount = None
+    if reference and close:
+        # Negative = trading BELOW NAV (a discount), matching the source's sign.
+        discount = round((float(close) - reference) / reference * 100.0, 2)
+
+    return {
+        "available": True,
+        "symbol": sym,
+        "fund_name": row.fund_name,
+        "fund_type": mfn.FUND_TYPES.get(row.fund_type, ""),
+        "nav": nav,
+        "nav_period": row.nav_period,
+        "nav_weekly": weekly,
+        "nav_weekly_date": row.nav_weekly_date,
+        "nav_reference": reference,
+        "nav_reference_label": ref_label,
+        "nav_reference_when": ref_when,
+        # Matured schemes stop reporting; their last reading can be years old
+        # and the panel must not present it as current.
+        "is_matured": row.fund_type == "1",
+        "nav_daily": float(row.nav_daily) if row.nav_daily is not None else None,
+        "nav_daily_date": row.nav_daily_date,
+        "refund_nav": float(row.refund_nav) if row.refund_nav is not None else None,
+        "fund_size": float(row.fund_size) if row.fund_size is not None else None,
+        "maturity_date": row.maturity_date,
+        "maturity_period": row.maturity_period,
+        "discount_pct": discount,
+        "discount_tone": "neu" if discount is None else ("pos" if discount >= 0 else "neg"),
+        "source_discount_pct": (float(row.premium_discount_pct)
+                                if row.premium_discount_pct is not None else None),
+        "source_close": float(row.market_close) if row.market_close is not None else None,
+        "synced_at": row.synced_at,
+    }
+
+
+@require_GET
+def stock360_sop_view(request):
+    """Short methodology SOP for Stock 360 — which table feeds which panel.
+
+    Static page, no symbol: it documents the data lineage, not one company.
+    Named ``stock360_sop`` to keep it distinct from ``stock360_sop_api``, which
+    is a different thing entirely (the SOP Confluence *signal* for one symbol).
+    """
+    return render(
+        request,
+        "core_analysis/stock360_sop.html",
+        {"asset_version": _asset_version()},
+    )
+
+
 @require_GET
 def stock360_view(request, symbol=None):
     """Render Stock 360 for one symbol (falls back to the latest-traded name)."""
@@ -414,6 +515,8 @@ def stock360_view(request, symbol=None):
         "market": payload.get("market") or {},
         "tech": payload.get("tech"),
         "freshness": _freshness((payload.get("quote") or {}).get("as_of")),
+        # None for ordinary equities; the NAV panel renders only for funds.
+        "fund_nav": _fund_nav(sym, (payload.get("quote") or {}).get("close")),
         "asset_version": _asset_version(),
     }
     return render(request, "core_analysis/stock360.html", context)
@@ -442,17 +545,20 @@ def stock360_funda_api(request):
     return JsonResponse({**result, "symbol": sym}, status=200)
 
 
-@require_GET
+@require_POST
 def stock360_funda_sync(request):
     """Pull one symbol's latest published report from funda.aurasrp.com.np into
-    our DB. Signed-in users only (it triggers an outbound fetch and a write)."""
+    our DB. Staff-only and POST-only: it triggers an outbound fetch and a DB
+    write, so it must not be reachable from a GET a third-party page can forge,
+    and it matches every other write on the sync dashboard."""
     from .services.funda_financials import sync_symbol
 
     user = getattr(request, "user", None)
-    if not user or not user.is_authenticated:
-        return JsonResponse({"ok": False, "error": "Sign in to sync fundamentals."}, status=200)
+    if not user or not user.is_authenticated or not user.is_staff:
+        return JsonResponse(
+            {"ok": False, "error": "Staff sign-in required."}, status=403)
 
-    sym = _valid_symbol(request.GET.get("symbol"))
+    sym = _valid_symbol(request.POST.get("symbol") or request.GET.get("symbol"))
     if not sym:
         return JsonResponse({"ok": False, "error": "Invalid symbol."}, status=200)
 

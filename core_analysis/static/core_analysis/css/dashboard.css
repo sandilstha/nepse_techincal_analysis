@@ -1088,7 +1088,9 @@
       letter-spacing: 0.08em;
       color: var(--ink-2);
       white-space: nowrap;
-      min-width: 72px;
+      /* Wide enough for the longest label (MUTUAL FUND HOLDINGS) so the input
+         column starts at the same x on every row. */
+      min-width: 150px;
     }
     .sync-sep {
       color: var(--ink-3);
@@ -1223,7 +1225,28 @@
     ::-webkit-scrollbar-thumb { background: var(--line-bright); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
     .rrg-chart-card { min-height: 420px; }
-    .rrg-chart-wrap { position: relative; width: 100%; height: 390px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden; }
+    /* Chart palette: the SVGs paint with these tokens, so both RRG charts
+       follow the page theme instead of rendering a white slab in dark mode. */
+    .rrg-chart-wrap,
+    .rrg-indices-chart-wrap {
+      --rrg-paper: var(--bg-raised, #ffffff);
+      --rrg-ink: var(--ink-1, #0f172a);
+      --rrg-ink-2: var(--ink-2, #475569);
+      --rrg-grid: var(--line, #cbd5e1);
+      --rrg-axis: var(--ink-3, #94a3b8);
+      --rrg-leading: #16a34a;
+      --rrg-weakening: #f59e0b;
+      --rrg-lagging: #dc2626;
+      --rrg-improving: #2563eb;
+    }
+    [data-theme="dark"] .rrg-chart-wrap,
+    [data-theme="dark"] .rrg-indices-chart-wrap {
+      --rrg-leading: #34d399;
+      --rrg-weakening: #fbbf24;
+      --rrg-lagging: #f87171;
+      --rrg-improving: #60a5fa;
+    }
+    .rrg-chart-wrap { position: relative; width: 100%; height: 390px; background: var(--rrg-paper); border: 1px solid var(--rrg-grid); border-radius: 14px; overflow: hidden; }
     .rrg-chart-card.rrg-max-view { position: fixed; inset: 14px; z-index: 2050; overflow: auto; padding: 14px !important; border-radius: 8px !important; }
     /* Max view fills the viewport, so the aspect-ratio/max-width sizing used in
        the normal layout has to be cleared or the chart would stay capped at
@@ -1236,13 +1259,15 @@
     .rrg-blink { transform-box: fill-box; transform-origin: center; animation: rrgBlinkPulse 1.4s ease-out infinite; pointer-events: none; }
     @keyframes rrgBlinkPulse { 0% { transform: scale(1); opacity: 0.9; } 70% { transform: scale(2.6); opacity: 0; } 100% { transform: scale(2.6); opacity: 0; } }
     @media (prefers-reduced-motion: reduce) { .rrg-blink { animation: none; opacity: 0.6; } }
-    .rrg-chart-empty { display: grid; height: 100%; place-items: center; color: #6b7280; font-size: 0.8125rem; }
-    .rrg-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.75rem; color: #6b7280; }
+    .rrg-chart-empty { display: grid; height: 100%; place-items: center; color: var(--ink-3, #6b7280); font-size: 0.8125rem; }
+    .rrg-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.75rem; color: var(--ink-3, #6b7280); }
     .rrg-legend-item::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
     .rrg-leading::before { background: #16a34a; }
     .rrg-weakening::before { background: #f59e0b; }
     .rrg-lagging::before { background: #dc2626; }
     .rrg-improving::before { background: #2563eb; }
+    /* Max view: the card becomes a full-viewport panel; stop the page behind it scrolling. */
+    body.rrg-max-open { overflow: hidden; }
     .rrg-indices-chart-card { min-height: 620px; }
     .rrg-indices-chart-card.rrg-indices-max-view {
       position: fixed;
@@ -1257,8 +1282,8 @@
       width: 100%;
       height: min(68vh, 620px);
       min-height: 520px;
-      background: #ffffff;
-      border: 1px solid #d1d5db;
+      background: var(--rrg-paper);
+      border: 1px solid var(--rrg-grid);
       border-radius: 8px;
       overflow: hidden;
     }
@@ -1274,10 +1299,10 @@
       flex-wrap: wrap;
       margin-bottom: 10px;
       padding: 8px 10px;
-      background: #eef3f8;
-      border: 1px solid #d7e0ea;
+      background: var(--bg-raised, #eef3f8);
+      border: 1px solid var(--line, #d7e0ea);
       border-radius: 6px;
-      color: #5b6b7f;
+      color: var(--ink-2, #5b6b7f);
       font-family: 'Manrope', system-ui, sans-serif;
     }
     .rrg-toolbar-btn {
@@ -1459,10 +1484,10 @@
       border-radius: 50%;
       background: currentColor;
     }
-    .rrg-index-badge.leading { color: #15803d; }
-    .rrg-index-badge.weakening { color: #b45309; }
-    .rrg-index-badge.lagging { color: #b91c1c; }
-    .rrg-index-badge.improving { color: #1d4ed8; }
+    .rrg-index-badge.leading { color: #16a34a; }
+    .rrg-index-badge.weakening { color: #f59e0b; }
+    .rrg-index-badge.lagging { color: #dc2626; }
+    .rrg-index-badge.improving { color: #2563eb; }
 
     /* Full-screen workspace layout */
     html,
@@ -1533,17 +1558,23 @@
 
     .sync-toolbar form {
       flex-wrap: wrap;
-      justify-content: flex-end;
+      justify-content: flex-start;
     }
 
+    /* This block once served the compact header column, where inputs had to
+       stretch. In the full-width tab pane, unbounded flex-grow ballooned a
+       10-character date field to ~700px — cap growth and right-align the
+       action button instead. */
     .sync-toolbar .sync-date-input,
     .sync-toolbar .sync-scope-input {
       width: auto !important;
-      flex: 1 1 132px;
+      flex: 0 1 170px;
+      max-width: 200px;
     }
 
     .sync-toolbar .sync-btn {
       flex: 0 0 auto;
+      margin-left: auto;
     }
 
     .nav-tabs {
@@ -1757,7 +1788,6 @@
         min-height: 460px;
       }
 
-      .rrg-chart-wrap,
       .rrg-indices-chart-wrap,
       .ams-chart-wrap {
         height: 460px;

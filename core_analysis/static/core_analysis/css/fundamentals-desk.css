@@ -82,17 +82,22 @@
     }
     .fa-period { font-size: 12px; opacity: .7; }
 
+    /* One horizontal strip: all nine headline tiles on a single row, compact.
+       Below ~900px the strip scrolls sideways rather than wrapping into a
+       second block, so the row stays a row. */
     .fa-cards {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-      gap: 10px; margin-bottom: 22px;
+      display: grid; grid-auto-flow: column; grid-auto-columns: minmax(110px, 1fr);
+      gap: 6px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 2px;
     }
     .fa-card {
       background: var(--surface, rgba(128,128,128,.07));
       border: 1px solid var(--line, rgba(128,128,128,.22));
-      border-radius: 12px; padding: 12px 14px;
+      border-radius: 8px; padding: 9px 11px; min-width: 0;
     }
-    .fa-card .fa-card-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; }
-    .fa-card .fa-card-value { font-size: 20px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .fa-card .fa-card-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; opacity: .6;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fa-card .fa-card-value { font-size: 17px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums;
+      white-space: nowrap; }
 
     .fa-section-title { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; opacity: .65; margin: 4px 0 10px; }
 

@@ -1,3 +1,4 @@
+import re
 import os
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -15,6 +16,7 @@ from django.db import IntegrityError
 from django.db.models import Max, OuterRef, Q, Subquery
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.template.loader import render_to_string
 from django.core.management import call_command
 from django.views.decorators.http import require_GET, require_POST
@@ -38,10 +40,13 @@ _SOP_INDICATOR_KEYS = tuple(_SOP_INDICATOR_DEFAULTS)
 from core_analysis.services.strategy_tester import run_t3ma_macd_ribbon_simulation
 from core_analysis.services.stage_analysis import calculate_stage_analysis
 from core_analysis.services.RGG_Chart import run_rrg_simulation
-from core_analysis.services.RGG_indices import NEPSE_INDEX_LABELS, ordered_nepse_indices, run_rrg_indices_simulation
+from core_analysis.services.RGG_indices import (
+    NEPSE_INDEX_LABELS, RRG_EXCLUDED_INDICES, ordered_nepse_indices, run_rrg_indices_simulation,
+)
 from core_analysis.services.seasonal_returns import build_seasonal_payload, build_market_cycle
 from core_analysis.services.market_regimes import build_market_regimes
 from core_analysis.services import proposed_dividend
+from core_analysis.services import mutual_fund_nav
 from core_analysis.services.advanced_market_structure import run_advanced_market_structure_analysis
 from core_analysis.services.support_resistance import (
     DEFAULT_LEVEL_FAMILIES,
@@ -106,6 +111,9 @@ def trigger_sync_and_calculate(request):
         to_date = date.fromisoformat(to_date_raw) if to_date_raw else None
     except ValueError:
         messages.error(request, "Invalid sync date format. Use YYYY-MM-DD.")
+        return redirect("crud_dashboard")
+    if from_date and to_date and from_date > to_date:
+        messages.error(request, "Sync start date cannot be after the end date.")
         return redirect("crud_dashboard")
     try:
         # Always include the company-profile refresh ("both" runs _sync_companies
@@ -412,12 +420,20 @@ def _build_standard_dataframe(symbol, start_date, end_date, use_unadjusted_fallb
     return df
 
 
-def _build_index_dataframes(start_date, end_date):
+def _build_index_dataframes(start_date, end_date, symbols=None):
+    """Per-index OHLC frames for the RRG index desk.
+
+    ``symbols`` (optional) limits the query to the indices actually being
+    plotted; the RRG-excluded composites (SENSITIVE/FLOAT) are never loaded.
+    """
+    qs = NepseMarketIndex.objects.filter(
+        business_date__gte=start_date,
+        business_date__lte=end_date,
+    ).exclude(sector_name__in=RRG_EXCLUDED_INDICES)
+    if symbols:
+        qs = qs.filter(sector_name__in=list(symbols))
     rows = list(
-        NepseMarketIndex.objects.filter(
-            business_date__gte=start_date,
-            business_date__lte=end_date,
-        ).values(
+        qs.values(
             "sector_name", "business_date", "open_index", "high_index",
             "low_index", "close_index", "turnover_volume",
         ).order_by("sector_name", "business_date")
@@ -463,12 +479,17 @@ def _build_benchmark_sparkline(df, limit=45):
 
 
 def _build_rrg_index_choices(benchmark_symbol="NEPSE INDEX"):
-    index_names = list(
-        NepseMarketIndex.objects
-        .values_list("sector_name", flat=True)
-        .distinct()
-        .order_by("sector_name")
-    )
+    # DISTINCT over the whole index table on every workbench request is
+    # needless; the set of index names changes about never.
+    index_names = cache.get("rrg_index_names:v1")
+    if index_names is None:
+        index_names = list(
+            NepseMarketIndex.objects
+            .values_list("sector_name", flat=True)
+            .distinct()
+            .order_by("sector_name")
+        )
+        cache.set("rrg_index_names:v1", index_names, timeout=600)
     ordered_names = ordered_nepse_indices(index_names, benchmark_symbol)
     return [
         {
@@ -723,11 +744,15 @@ def build_dashboard_context(request):
     # tab is never blank — including when it's reached via a client-side tab
     # switch rather than a fresh page load. Capped at 100 rows, so the cost is
     # negligible even on the strategy-tab AJAX recalcs that also hit this path.
-    queryset = list(
-        StockPriceAdjustment.objects
-        .select_related("company")
-        .order_by("-business_date")[:100]
-    )
+    # Only the staff-only Inventory tab renders these rows; skip the query for
+    # every other tab (and every anonymous request).
+    queryset = []
+    if request.user.is_staff and active_tab in _WORKBENCH_DATA_TABS:
+        queryset = list(
+            StockPriceAdjustment.objects
+            .select_related("company")
+            .order_by("-business_date")[:100]
+        )
 
     # Initialise result vectors
     backtest_metrics = ema_backtest_metrics = cci_backtest_metrics = rsi_backtest_metrics = msv_backtest_metrics = imm_backtest_metrics = stage_backtest_metrics = rrg_backtest_metrics = None
@@ -774,15 +799,29 @@ def build_dashboard_context(request):
     rrg_selected_symbol = g.get("rrg_backtest_symbol", "").upper().strip()
     rrg_benchmark_symbol = g.get("rrg_benchmark_symbol", "NEPSE INDEX").upper().strip()
     rrg_indices_benchmark_symbol = g.get("rrg_indices_benchmark_symbol", "NEPSE INDEX").upper().strip()
-    rrg_indices_choices = _build_rrg_index_choices(rrg_indices_benchmark_symbol)
+    rrg_indices_choices = (
+        _build_rrg_index_choices(rrg_indices_benchmark_symbol) if active_tab in RRG_TABS else []
+    )
+    # The AJAX calc endpoint renders ONE desk's partial; computing the other
+    # desk too (a full all-indices load per company recalc) is pure waste.
+    rrg_calc_only = getattr(request, "rrg_calc_only", None)
+    rrg_run_company = active_tab in RRG_TABS and rrg_calc_only in (None, "rrg_backtest")
+    rrg_run_indices = active_tab in RRG_TABS and rrg_calc_only in (None, "rrg_indices")
+    rrg_lookback = _safe_int(g.get("rrg_lookback", 14), 14, minimum=2)
+    rrg_indices_lookback = _safe_int(g.get("rrg_indices_lookback", 14), 14, minimum=2)
+    rrg_indices_tail_length = _safe_int(g.get("rrg_indices_tail_length", 30), 30, minimum=1)
 
     if active_tab == "imm_backtest":
-        latest_adjusted_date = StockPriceAdjustment.objects.aggregate(max_date=Max("business_date"))["max_date"]
-        latest_raw_date = NepseDailyStockPrice.objects.aggregate(max_date=Max("business_date"))["max_date"]
-        imm_data_upload_date = max(
-            [row_date for row_date in (latest_adjusted_date, latest_raw_date) if row_date],
-            default=None,
-        )
+        # Two full-table MAX() scans just for a "data as of" label — cache them.
+        imm_data_upload_date = cache.get("imm_data_upload_date:v1")
+        if imm_data_upload_date is None:
+            latest_adjusted_date = StockPriceAdjustment.objects.aggregate(max_date=Max("business_date"))["max_date"]
+            latest_raw_date = NepseDailyStockPrice.objects.aggregate(max_date=Max("business_date"))["max_date"]
+            imm_data_upload_date = max(
+                [row_date for row_date in (latest_adjusted_date, latest_raw_date) if row_date],
+                default=None,
+            )
+            cache.set("imm_data_upload_date:v1", imm_data_upload_date, timeout=300)
     rrg_indices_choice_values = [choice["value"] for choice in rrg_indices_choices]
     rrg_indices_selection_submitted = g.get("rrg_indices_selection_submitted") == "1"
     rrg_indices_selected_symbols = [
@@ -1315,12 +1354,11 @@ def build_dashboard_context(request):
     # so a full-page load of either tab key builds BOTH — otherwise whichever
     # desk did not match the key would render empty. They read separate GET
     # params (rrg_* vs rrg_indices_*), so neither can affect the other.
-    # The AJAX calc endpoint still renders one desk's partial at a time.
-    if rrg_selected_symbol and active_tab in RRG_TABS:
+    # The AJAX calc endpoint renders one desk's partial and computes only that one.
+    if rrg_selected_symbol and rrg_run_company:
         if not (rrg_from and rrg_to):
             rrg_backtest_metrics = {"error": "Please select both From Date and To Date."}
         else:
-            rrg_lookback = _safe_int(g.get("rrg_lookback", 14), 14, minimum=2)
             # RRG needs lookback*2 bars (RS-Ratio MA, then RS-Momentum MA of it)
             # before it can plot a single point — see run_rrg_simulation's gate.
             rrg_required_bars = rrg_lookback * 2
@@ -1340,7 +1378,7 @@ def build_dashboard_context(request):
                 rrg_backtest_metrics = {"error": f"No price data found for '{rrg_selected_symbol}' in the selected date range."}
             elif bench_df.empty:
                 rrg_backtest_metrics = {"error": f"No price data found for '{rrg_benchmark_symbol}' in the selected date range."}
-            elif len(stock_df) < rrg_required_bars:
+            elif int((pd.to_numeric(stock_df["close_price_adj"], errors="coerce") > 0).sum()) < rrg_required_bars:
                 # Too few bars to rotate on the RRG — show a New Listing snapshot
                 # with relative strength measured against the chosen benchmark.
                 rrg_new_listing = build_new_listing_snapshot(
@@ -1365,21 +1403,36 @@ def build_dashboard_context(request):
                         }
                         for _, row in rrg_df.tail(50).iterrows()
                     ]
-                    rrg_indicator_rows = rrg_df.tail(150).iloc[::-1].to_dict(orient="records")
+                    rrg_indicator_rows = [
+                        {
+                            "business_date": row["business_date"],
+                            "stock_close": round(float(row["stock_close"]), 2),
+                            "bench_close": round(float(row["bench_close"]), 2),
+                            "RS": round(float(row["RS"]), 4),
+                            "RS_Ratio": round(float(row["RS_Ratio"]), 2),
+                            "RS_Momentum": round(float(row["RS_Momentum"]), 2),
+                            "Quadrant": str(row["Quadrant"]),
+                        }
+                        for _, row in rrg_df.tail(150).iloc[::-1].iterrows()
+                    ]
 
     # TAB 11: RRG Indices
-    if active_tab in RRG_TABS:
+    if rrg_run_indices:
         if not (rrg_indices_from and rrg_indices_to):
             rrg_indices_metrics = {"error": "Please select both From Date and To Date."}
+        elif not rrg_indices_selected_symbols:
+            rrg_indices_metrics = {"error": "Select at least one NEPSE index to plot."}
         else:
             bench_df = _build_standard_dataframe(rrg_indices_benchmark_symbol, rrg_indices_from, rrg_indices_to)
-            index_frames = _build_index_dataframes(rrg_indices_from, rrg_indices_to)
+            index_frames = _build_index_dataframes(
+                rrg_indices_from, rrg_indices_to, symbols=rrg_indices_selected_symbols,
+            )
             rrg_indices_metrics, rrg_indices_points, rrg_indices_trails, rrg_indices_skipped = run_rrg_indices_simulation(
                 index_frames=index_frames,
                 benchmark_df=bench_df,
                 benchmark_symbol=rrg_indices_benchmark_symbol,
-                lookback=_safe_int(g.get("rrg_indices_lookback", 14), 14, minimum=2),
-                tail_length=_safe_int(g.get("rrg_indices_tail_length", 30), 30, minimum=1),
+                lookback=rrg_indices_lookback,
+                tail_length=rrg_indices_tail_length,
                 selected_symbols=rrg_indices_selected_symbols,
             )
             rrg_indices_benchmark_points = _build_benchmark_sparkline(bench_df)
@@ -1396,8 +1449,21 @@ def build_dashboard_context(request):
         # dates the full 29-year cycle history.
         market_regimes = build_market_regimes()
 
+    # Life-insurance "Other Indicators" entry form — staff-only inventory tab.
+    life_tickers, life_recent, life_spec = [], [], []
+    if active_tab == "inventory":
+        from core_analysis.models import LifeInsuranceIndicator
+        from core_analysis.services import life_indicators as li
+        by_sec = li.tickers_by_sector()
+        life_tickers = [{"sector": sec, "tickers": by_sec.get(sec, [])} for sec in li.SPECS]
+        life_recent = list(LifeInsuranceIndicator.objects.order_by("-updated_at")[:20])
+        life_spec = li.form_spec()
+
     return {
         "records": queryset,
+        "life_tickers": life_tickers,
+        "life_recent": life_recent,
+        "life_spec": life_spec,
 
         # OPTIMIZED: Empty symbol lists (autocomplete handles search)
         "company_choices": db_companies,
@@ -1513,7 +1579,7 @@ def build_dashboard_context(request):
         "rrg_benchmark_symbol": rrg_benchmark_symbol,
         "rrg_from_date":        rrg_from,
         "rrg_to_date":          rrg_to,
-        "rrg_lookback":         g.get("rrg_lookback", "14"),
+        "rrg_lookback":         str(rrg_lookback),
 
         # RRG Indices
         "rrg_indices_metrics": rrg_indices_metrics,
@@ -1526,8 +1592,8 @@ def build_dashboard_context(request):
         "rrg_indices_selected_count": len(rrg_indices_selected_symbols),
         "rrg_indices_from_date": rrg_indices_from,
         "rrg_indices_to_date": rrg_indices_to,
-        "rrg_indices_lookback": g.get("rrg_indices_lookback", "14"),
-        "rrg_indices_tail_length": g.get("rrg_indices_tail_length", "30"),
+        "rrg_indices_lookback": str(rrg_indices_lookback),
+        "rrg_indices_tail_length": str(rrg_indices_tail_length),
 
         # RRG Seasonal Return
         "seasonal": seasonal,
@@ -1609,6 +1675,8 @@ def dashboard_tab_calc(request):
     partial = TAB_RESULTS_PARTIALS.get(active_tab)
     if not partial:
         return HttpResponseBadRequest("Unknown or non-computable tab.")
+    if active_tab in RRG_TABS:
+        request.rrg_calc_only = active_tab   # compute just the desk being re-rendered
     context = build_dashboard_context(request)
     html = render_to_string(partial, context, request=request)
     return HttpResponse(html)
@@ -1699,6 +1767,9 @@ def crud_operations_handler(request):
             if not company_symbol:
                 messages.error(request, "Inventory create failed: company ticker is required.")
                 return redirect("crud_dashboard")
+            if close_price_adj <= 0:
+                messages.error(request, "Inventory create failed: close price must be greater than zero.")
+                return redirect("crud_dashboard")
 
             company_profile, _ = CompanyProfile.objects.get_or_create(
                 symbol=company_symbol,
@@ -1729,6 +1800,9 @@ def crud_operations_handler(request):
             except (InvalidOperation, ValueError):
                 messages.error(request, "Inventory update failed: close price must be a valid number.")
                 return redirect("crud_dashboard")
+            if record.close_price_adj <= 0:
+                messages.error(request, "Inventory update failed: close price must be greater than zero.")
+                return redirect("crud_dashboard")
             record.save(update_fields=["close_price_adj"])
             messages.success(request, f"Close price updated for {record.company_id} on {record.business_date}.")
 
@@ -1737,10 +1811,77 @@ def crud_operations_handler(request):
 
 @staff_member_required
 @require_POST
+def life_indicator_save(request):
+    """Create or replace one life insurer's hand-entered "Other Indicators".
+
+    One row per ticker x fiscal year x quarter; re-submitting the same period
+    overwrites it, which is the correction path. Bumps the indicator revision
+    so the cached Industry Analysis KS matrix rebuilds on the next read.
+    """
+    from core_analysis.models import LifeInsuranceIndicator
+    from core_analysis.services import life_indicators as li
+
+    sector = (request.POST.get("sector") or li.LIFE).strip()
+    ticker = (request.POST.get("ticker") or "").strip().upper()
+    fy = (request.POST.get("fiscal_year_ad") or "").strip()
+    try:
+        quarter = int(request.POST.get("quarter") or 0)
+    except (TypeError, ValueError):
+        quarter = 0
+    if sector not in li.SPECS:
+        messages.error(request, f"Insurance indicators: unknown sector {sector!r}.")
+        return redirect(f"{reverse('crud_dashboard')}?active_tab=inventory")
+    if not ticker or not re.match(r"^\d{4}/\d{2}$", fy) or quarter not in (1, 2, 3, 4):
+        messages.error(request, "Insurance indicators: ticker, fiscal year (e.g. 2025/26) and quarter (1-4) are required.")
+        return redirect(f"{reverse('crud_dashboard')}?active_tab=inventory")
+
+    values, errors = li.parse_form(request.POST, sector)
+    if errors:
+        messages.error(request, "Life indicators not saved — " + " ".join(errors))
+        return redirect(f"{reverse('crud_dashboard')}?active_tab=inventory")
+    if all(v in (None, "") for v in values.values()):
+        messages.error(request, "Life indicators not saved — every field was blank.")
+        return redirect(f"{reverse('crud_dashboard')}?active_tab=inventory")
+
+    values["source_note"] = (request.POST.get("source_note") or "").strip()[:255]
+    values["sector"] = sector
+    _, created = LifeInsuranceIndicator.objects.update_or_create(
+        ticker=ticker, fiscal_year_ad=fy, quarter=quarter, defaults=values)
+    li.bump_revision()
+    messages.success(request, f"Other indicators {'added' if created else 'updated'} for {ticker} {fy} Q{quarter}.")
+    return redirect(f"{reverse('crud_dashboard')}?active_tab=inventory")
+
+
+@staff_member_required
+@require_POST
+def life_indicator_delete(request, pk):
+    from core_analysis.models import LifeInsuranceIndicator
+    from core_analysis.services import life_indicators as li
+
+    row = LifeInsuranceIndicator.objects.filter(id=pk).first()
+    if row is None:
+        messages.error(request, f"Life indicators row #{pk} no longer exists.")
+    else:
+        label = f"{row.ticker} {row.fiscal_year_ad} Q{row.quarter}"
+        row.delete()
+        li.bump_revision()
+        messages.success(request, f"Deleted life indicators for {label}.")
+    return redirect(f"{reverse('crud_dashboard')}?active_tab=inventory")
+
+
+@staff_member_required
+@require_POST
 def crud_delete_handler(request, pk):
     """DELETE operation route (POST only, CSRF-protected)."""
-    record = get_object_or_404(StockPriceAdjustment, id=pk)
+    record = StockPriceAdjustment.objects.filter(id=pk).first()
+    if record is None:
+        # A stale row (already deleted in another tab) lands back on the
+        # dashboard with an explanation, not on a bare 404 page.
+        messages.error(request, f"Record #{pk} no longer exists.")
+        return redirect("crud_dashboard")
+    label = f"{record.company_id} on {record.business_date}"
     record.delete()
+    messages.success(request, f"Deleted inventory row for {label}.")
     return redirect("crud_dashboard")
 
 
@@ -1758,6 +1899,9 @@ def trigger_daily_api_sync_view(request):
         to_date = date.fromisoformat(to_date_raw) if to_date_raw else None
     except ValueError:
         messages.error(request, "Invalid sync date format. Use YYYY-MM-DD.")
+        return redirect("crud_dashboard")
+    if from_date and to_date and from_date > to_date:
+        messages.error(request, "Price sync start date cannot be after the end date.")
         return redirect("crud_dashboard")
     source = (request.POST.get("source") or "both").strip().lower()
     if source not in {"both", "stocks", "indices"}:
@@ -1778,6 +1922,44 @@ def trigger_daily_api_sync_view(request):
     except Exception as e:
         messages.error(request, f"Price sync failed: {str(e)}")
 
+    return redirect("crud_dashboard")
+
+
+@staff_member_required
+@require_POST
+def trigger_mutual_fund_nav_sync_view(request):
+    """On-demand mutual-fund NAV scrape (ShareSansar), POST-only.
+
+    This is the ONLY source of data for the Mutual Fund sector. Funds file no
+    quarterly statements, so the fundamentals sync above will never populate
+    them however often it runs — NAV is what a fund publishes instead.
+
+    Worth running monthly: the feed exposes only each fund's latest reading, so
+    history accumulates from syncs rather than being backfillable.
+    """
+    try:
+        stats = mutual_fund_nav.sync()
+    except Exception as e:
+        # Leaves the local network — surface why rather than a silent no-op.
+        messages.error(request, f"Mutual fund NAV sync failed: {e}")
+        return redirect("crud_dashboard")
+
+    cov = mutual_fund_nav.coverage()
+    note = ""
+    if stats["failed_types"]:
+        note += f" Skipped: {', '.join(stats['failed_types'])}."
+    if cov["missing"]:
+        note += f" No NAV published for: {', '.join(cov['missing'])}."
+    if cov["unprofiled"]:
+        note += (f" {len(cov['unprofiled'])} fund(s) in the feed have no company "
+                 f"profile yet: {', '.join(cov['unprofiled'][:6])}"
+                 f"{'…' if len(cov['unprofiled']) > 6 else ''}.")
+    messages.success(
+        request,
+        f"Mutual fund NAV synced — {stats['upserted']} row(s) upserted for "
+        f"{stats['funds']} fund(s); {cov['with_nav']} of {cov['listed']} active "
+        f"listed funds now have a NAV. Table holds {stats['total_rows']}.{note}",
+    )
     return redirect("crud_dashboard")
 
 

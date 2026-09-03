@@ -19,10 +19,12 @@ from .views import (
     dashboard_tab_calc,
     gemini_sr_analysis,
     crud_operations_handler,
+    life_indicator_save, life_indicator_delete,
     crud_delete_handler,
     trigger_daily_api_sync_view,
     trigger_floorsheet_sync_view,
     trigger_proposed_dividend_sync_view,
+    trigger_mutual_fund_nav_sync_view,
     symbol_autocomplete_view,
     trigger_sync_and_calculate,
     stage_sop_view,
@@ -59,6 +61,12 @@ from .udf_views import (
     udf_search,
     udf_history,
 )
+from .canslim_views import (
+    canslim_view,
+    canslim_scan_api,
+    canslim_stock_api,
+    canslim_sop_view,
+)
 from .analytics_views import site_stats_view
 from .nepse_data_views import (
     nepse_data_view,
@@ -67,16 +75,26 @@ from .nepse_data_views import (
 )
 from .fundamental_views import (
     fundamental_analysis_view,
+    industry_matrix_api,
+    industry_periods_api,
     fundamental_sop_view,
     fundamental_data_api,
     fundamental_matrix_api,
     fundamental_model_api,
+    morningstar_scan_api,
+    morningstar_sop_view,
+)
+from .mutual_fund_views import (
+    mf_home, mf_list_page, mf_assets_page, mf_sector_page, mf_holdings_page,
+    mf_financials_page, mf_fund_list_api, mf_assets_api, mf_sector_api,
+    mf_company_holdings_api, mf_financials_api, mf_sync_api,
+    mf_dashboard, mf_nav_api, mf_import_api,
 )
 from .stock360_views import (
     stock360_view, stock360_ai_api, stock360_funda_api, stock360_funda_sync,
     stock360_funda_recent, stock360_funda_sector, stock360_keyfin_api,
     stock360_valuation_api, stock360_dividends_api, stock360_flow_series_api,
-    stock360_sop_api, stock_valuation_view,
+    stock360_sop_api, stock360_sop_view, stock_valuation_view,
 )
 
 urlpatterns = [
@@ -100,7 +118,8 @@ urlpatterns = [
     path('stock/api/sop/', stock360_sop_api, name='stock360_sop_api'),
     path('stock/api/dividends/', stock360_dividends_api, name='stock360_dividends_api'),
     path('stock/api/flow-series/', stock360_flow_series_api, name='stock360_flow_series_api'),
-    # More specific than the catch-all below, so it must come first.
+    # More specific than the catch-all below, so both must come first.
+    path('stock/sop/', stock360_sop_view, name='stock360_sop'),
     path('stock/<str:symbol>/valuation/', stock_valuation_view, name='stock_valuation'),
     path('stock/<str:symbol>/', stock360_view, name='stock360_symbol'),
 
@@ -117,7 +136,14 @@ urlpatterns = [
     path('fundamentals/api/', fundamental_data_api, name='fundamental_data_api'),
     path('fundamentals/matrix/', fundamental_matrix_api, name='fundamental_matrix_api'),
     path('fundamentals/model/', fundamental_model_api, name='fundamental_model_api'),
+    path('fundamentals/morningstar/', morningstar_scan_api, name='morningstar_scan_api'),
+    path('fundamentals/morningstar/sop/', morningstar_sop_view, name='morningstar_sop'),
     path('fundamentals/sop/', fundamental_sop_view, name='fundamental_sop'),
+    # Industry Analysis — sector-wide statement comparison (cross-sectional,
+    # which is why it lives here and not on the per-symbol Stock 360 page).
+    path('fundamentals/industry/', industry_matrix_api, name='industry_matrix_api'),
+    path('fundamentals/industry/periods/', industry_periods_api,
+         name='industry_periods_api'),
     path('fundamentals/<str:symbol>/', fundamental_analysis_view, name='fundamental_analysis_symbol'),
 
     # Auth (user-facing; the workbench keeps its separate admin/staff login).
@@ -159,6 +185,14 @@ urlpatterns = [
     # Dedicated SOP for the A/D Radar model (backtest, rejected features, limits).
     path('floorsheet/accumulation/sop/', accumulation_sop_view, name='accumulation_sop'),
 
+    # CAN SLIM screen — ranked cross-section of every ordinary equity.
+    # Public: derived entirely from public filings and public price data.
+    path('canslim/', canslim_view, name='canslim'),
+    path('canslim/api/scan/', canslim_scan_api, name='canslim_scan_api'),
+    path('canslim/api/stock/', canslim_stock_api, name='canslim_stock_api'),
+    # Plain-language methodology — every threshold and every honesty rule.
+    path('canslim/sop/', canslim_sop_view, name='canslim_sop'),
+
     # Analytics workbench (moved off root to /workbench/)
     path('workbench/', crud_dashboard_view, name='crud_dashboard'),
     # Methodology SOP for the Stage Analysis desk (Technical Analysis tab).
@@ -173,9 +207,35 @@ urlpatterns = [
     path('workbench/ai-analysis/', gemini_sr_analysis, name='gemini_sr_analysis'),
     path('dashboard/process/', crud_operations_handler, name='crud_operations'),
     path('dashboard/delete/<int:pk>/', crud_delete_handler, name='crud_delete'),
+    path('dashboard/life-indicators/', life_indicator_save, name='life_indicator_save'),
+    path('dashboard/life-indicators/delete/<int:pk>/', life_indicator_delete, name='life_indicator_delete'),
     path('dashboard/sync/', trigger_daily_api_sync_view, name='trigger_daily_sync'),
     path('dashboard/sync-floorsheet/', trigger_floorsheet_sync_view, name='trigger_floorsheet_sync'),
     path('dashboard/sync-proposed-dividend/', trigger_proposed_dividend_sync_view, name='trigger_proposed_dividend_sync'),
+    path('dashboard/sync-mutual-fund-nav/', trigger_mutual_fund_nav_sync_view, name='trigger_mutual_fund_nav_sync'),
+
+    # Mutual fund desk — allocation views computed from imported monthly
+    # portfolios. Read endpoints take ?month= in any Nepali spelling and default
+    # to the newest imported month.
+    path('mutual-fund/', mf_dashboard, name='mutual_fund'),
+    path('mutual-fund/api/nav/', mf_nav_api, name='mf_nav_api'),
+    path('mutual-fund/api/import/', mf_import_api, name='mf_import_api'),
+
+    # The six desk screens. Page routes first, then their JSON. `mutual-fund/`
+    # above stays the NAV & discount dashboard; `mutual-fund/desk/` is the
+    # report suite that mirrors the published site.
+    path('mutual-fund/desk/', mf_home, name='mf_home'),
+    path('mutual-fund/desk/list/', mf_list_page, name='mf_list_page'),
+    path('mutual-fund/desk/assets/', mf_assets_page, name='mf_assets_page'),
+    path('mutual-fund/desk/sector/', mf_sector_page, name='mf_sector_page'),
+    path('mutual-fund/desk/holdings/', mf_holdings_page, name='mf_holdings_page'),
+    path('mutual-fund/desk/financials/', mf_financials_page, name='mf_financials_page'),
+    path('mutual-fund/api/fund-list/', mf_fund_list_api, name='mf_fund_list_api'),
+    path('mutual-fund/api/assets/', mf_assets_api, name='mf_assets_api'),
+    path('mutual-fund/api/sector/', mf_sector_api, name='mf_sector_api'),
+    path('mutual-fund/api/company-holdings/', mf_company_holdings_api, name='mf_company_holdings_api'),
+    path('mutual-fund/api/financials/', mf_financials_api, name='mf_financials_api'),
+    path('mutual-fund/api/sync/', mf_sync_api, name='mf_sync_api'),
     path('dashboard/sync-calculate/', trigger_sync_and_calculate, name='trigger_sync_and_calculate'),
     # NEW — lightweight autocomplete endpoint for symbol search boxes
     path('dashboard/symbols/', symbol_autocomplete_view, name='symbol_autocomplete'),

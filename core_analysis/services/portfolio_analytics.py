@@ -399,7 +399,7 @@ def _pl_snapshot(rows, top_n=4):
     just the biggest position, which says more about sizing than about the
     holding. Totals stay in rupees because that is the money at stake.
     """
-    costed = [r for r in rows if r.get("pl") is not None and r.get("cost_value")]
+    costed = [r for r in rows if r.get("pl") is not None and r.get("cost_value") is not None]
     if not costed:
         return {"ok": False, "reason": "Import the WACC report to see unrealised P/L."}
 
@@ -1286,10 +1286,15 @@ def _return_attribution(rows, stock_ret, session_dates=None):
     for row in rows:
         symbol_returns = stock_ret.get(row["symbol"], {})
         observations.update(symbol_returns)
-        contributions[row["symbol"]] = (
-            (row["weight"] / 100.0) * sum(symbol_returns.values()) * 100.0
-            if symbol_returns else None
-        )
+        # Compound the daily returns (an arithmetic sum over ~250 sessions
+        # drifts far from the geometric return every other figure uses).
+        if symbol_returns:
+            growth = 1.0
+            for r_ in symbol_returns.values():
+                growth *= (1.0 + r_)
+            contributions[row["symbol"]] = (row["weight"] / 100.0) * (growth - 1.0) * 100.0
+        else:
+            contributions[row["symbol"]] = None
     total = sum(value for value in contributions.values() if value is not None)
     return contributions, round(total, 2), len(observations)
 

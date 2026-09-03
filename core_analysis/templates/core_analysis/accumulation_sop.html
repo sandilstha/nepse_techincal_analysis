@@ -196,6 +196,41 @@
             equal weights: <code>score = z(absorb) − z(top1_share) − z(sell_hhi)</code>. Equal weights are a
             deliberate choice — fitted weights would be roughly (+1.00, −0.87, −0.41) and score better on
             the same data they were fitted to, which is exactly the trap described in section 6.</p>
+
+          <h3 style="font-size:14px;margin:18px 0 6px">A worked example — NADEP, one-month window</h3>
+          <p>An ordinary Accumulation reading, followed all the way through. Nadep Laghubittiya
+            had <b>38 different sellers</b> and <b>23 buyers</b>, with no single broker dominating
+            either side. All three ingredients lean the same way, none of them dramatically —
+            which is what a typical reading looks like.</p>
+          <table class="sop-table">
+            <thead><tr><th>Ingredient</th><th>Raw</th><th>z-score</th><th>Sign</th><th>Contributes</th></tr></thead>
+            <tbody>
+              <tr><td><code>absorb</code></td><td class="num">33.2%</td><td class="num">+0.97</td><td>+</td><td class="num pos">+0.97</td></tr>
+              <tr><td><code>top1_share</code></td><td class="num">18.0%</td><td class="num">−0.30</td><td>−</td><td class="num pos">+0.30</td></tr>
+              <tr><td><code>sell_hhi</code></td><td class="num">668</td><td class="num">−0.55</td><td>−</td><td class="num pos">+0.55</td></tr>
+              <tr><td colspan="4"><b>score</b></td><td class="num pos"><b>+1.81</b></td></tr>
+            </tbody>
+          </table>
+          <div class="sop-eg">
+            <b>Reading it in words.</b> The top five buyers ended up with 33% of everything
+            traded, which is more than most companies that month — so <code>absorb</code> helps.
+            The largest single buyer took only 18% of the net buying, so the buying was
+            <i>spread</i> rather than one broker's doing — <code>top1_share</code> is below
+            average, and because the formula subtracts it, that helps too. And the selling came
+            from many hands (<code>sell_hhi</code> 668 against a market median near 957), so
+            <code>sell_hhi</code> helps as well. Three modest pushes in the same direction give
+            +1.81, near the top of the market that month:
+            <span class="sop-pill acc">Accumulation</span>.
+          </div>
+          <p>The other end works identically. Everest Colour scored <b>−1.95</b> the same month
+            from <code>absorb</code> 9.6% (z −1.04, contributing −1.04), <code>top1_share</code>
+            21.7% (z −0.01, +0.01) and <code>sell_hhi</code> 2,427 (z +0.91, −0.91): little was
+            absorbed, and what selling there was came from fewer hands —
+            <span class="sop-pill dis">Distribution</span>.</p>
+          <div class="sop-note">
+            Both examples are snapshots of one rolling one-month window and will change as the
+            window moves. The arithmetic is what matters, not these particular figures.
+          </div>
         </details>
       </section>
 

@@ -12,6 +12,11 @@ def _compute_rsi(close: pd.Series, length: int) -> pd.Series:
 
     rs = avg_gain / avg_loss.replace(0, np.nan)
     rsi = 100 - (100 / (1 + rs))
+    # Flat / one-sided streaks (common on thin NEPSE scrips) would otherwise
+    # leave NaN that then poisons the RSI-SMA for another `length` bars.
+    rsi = rsi.mask((avg_loss == 0) & (avg_gain > 0), 100)
+    rsi = rsi.mask((avg_gain == 0) & (avg_loss > 0), 0)
+    rsi = rsi.mask((avg_gain == 0) & (avg_loss == 0), 50)
     return rsi
 
 

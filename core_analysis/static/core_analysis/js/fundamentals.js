@@ -464,8 +464,9 @@
     if (m.length !== 2) return null;
     var a = parseInt(m[0], 10), b = parseInt(m[1], 10);
     if (isNaN(a) || isNaN(b)) return null;
-    var pb = String((b - 1 + 100) % 100);
-    if (pb.length < 2) pb = "0" + pb;
+    // Keep the second component's width: "2078/2079" → "2077/2078".
+    var pb = String(b - 1);
+    while (pb.length < m[1].length) pb = "0" + pb;
     return (a - 1) + "/" + pb;
   }
 
@@ -487,8 +488,8 @@
       .then(function (r) { return r.json(); })
       .then(function (m) {
         if (!m.ok) {
-          els.fmTable.innerHTML = '<tbody><tr><td class="fm-empty">' +
-            (m.error || "No data.") + "</td></tr></tbody>";
+          els.fmTable.innerHTML = '<tbody><tr><td class="fm-empty"></td></tr></tbody>';
+          els.fmTable.querySelector(".fm-empty").textContent = m.error || "No data.";
           return;
         }
         state.matrix = m;

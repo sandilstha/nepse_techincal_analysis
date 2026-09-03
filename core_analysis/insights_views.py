@@ -35,12 +35,14 @@ DEFAULT_REFRESH_SECONDS = 30
 # rate-limit it: at most one forced rebuild per this window across all clients,
 # regardless of how often "?force=1" is hit (manual-refresh spam / scripted GETs).
 FORCE_COOLDOWN_KEY = "market_insights_force_cooldown"
-FORCE_COOLDOWN_SECONDS = 5
+FORCE_COOLDOWN_SECONDS = 60   # a forced rebuild is ~3s of external fetches + table scans
 
 # Static assets fingerprinted for cache-busting: the page appends ?v=<version>
 # to these so the browser fetches fresh copies whenever a file changes.
 _ASSET_FILES = (
     "core_analysis/css/insights.css",
+    "core_analysis/css/tokens.css",
+    "core_analysis/css/responsive.css",
     "core_analysis/js/insights.js",
     "core_analysis/js/ohlc-chart.js",
     "core_analysis/js/tv-chart.js",
@@ -48,9 +50,14 @@ _ASSET_FILES = (
     "core_analysis/js/floorsheet-brokers.js",
     "core_analysis/css/portfolio.css",
     "core_analysis/js/portfolio.js",
-    "core_analysis/js/fundamentals.js",
     "core_analysis/css/stock360.css",
     "core_analysis/js/stock360.js",
+    "core_analysis/js/stock360-grid.js",
+    # Shared by Stock 360 and the Fundamentals desk; left out of this list they
+    # kept an unchanged ?v= and a styling change never reached the browser.
+    "core_analysis/css/fundamentals-desk.css",
+    "core_analysis/js/fundamentals.js",
+    "core_analysis/js/fundamentals-panel.js",
     "core_analysis/css/nepse-data.css",
     "core_analysis/js/nepse-data.js",
 )
@@ -156,7 +163,6 @@ def market_insights_view(request):
     return render(request, "core_analysis/market_insights.html", context)
 
 
-@require_GET
 @require_GET
 def subindex_comparison_api(request):
     """JSON multi-series feed for the sub-index comparison chart.

@@ -262,7 +262,7 @@
    * positions (holdings). Market-wide buy always equals sell, so there is no
    * "net market position" — the honest metrics are broker accumulation and
    * side concentration, which is exactly what we show. */
-  var FLOW_WIN = "1m";                     // current floorsheet window
+  var FLOW_WIN = "1w";                     // current floorsheet window
   var WIN_LABEL = { "1w": "1 week", "1m": "1 month", "3m": "3 months", "1y": "1 year" };
   /* Broker numbers are meaningless on their own, and all three floorsheet views
    * need the same lookup. Fetch it ONCE and have every view wait on the same
@@ -372,7 +372,7 @@
         load(b.dataset.w);
       });
     }
-    load("1m");
+    load("1w");
   })();
 
   /* ---------- AI Narrative (Gemini, on-demand, server-cached) ---------- */
@@ -483,38 +483,59 @@
      each. Blank dates are real — a fresh announcement has no book-closure or
      distribution date until the AGM sets them, so they show as "—" rather than
      being hidden. */
-  function renderProposed(rows) {
-    if (!rows || !rows.length) return "";
-    var top = rows[0];
-    var dash = function (v) { return v ? esc(v) : "—"; };
-    // A cash-only dividend has no bonus at all; render that as "—", not "—%".
-    var pctOr = function (v) { return v == null || isNaN(v) ? "—" : num(v, 2) + "%"; };
-    var bookclose = top.bookclose
-      ? esc(top.bookclose) + (top.bookclose_status ? " (" + esc(top.bookclose_status) + ")" : "")
+  // ---- Dividend card ------------------------------------------------------
+  // ONE highlighted block for the current dividend (the declared figure merged
+  // with the board proposal's bonus/cash split and dates when they are the same
+  // fiscal year — the server does the merge), then the history as a horizontal
+  // table: one column per fiscal year, rows for total / bonus / cash.
+  var pctOr = function (v) { return v == null || isNaN(v) ? "—" : num(v, 2) + "%"; };
+  var dash = function (v) { return v ? esc(v) : "—"; };
+
+  function renderCurrent(c) {
+    if (!c) return "";
+    var proposed = c.status === "proposed";
+    var bookclose = c.bookclose
+      ? esc(c.bookclose) + (c.bookclose_status ? " (" + esc(c.bookclose_status) + ")" : "")
       : "—";
-
-    var earlier = rows.slice(1).map(function (r) {
-      return '<li><b>FY ' + esc(r.fy) + "</b> " + pctOr(r.total) + " " +
-        "<span>(bonus " + pctOr(r.bonus) + " · cash " + pctOr(r.cash) + ")</span> " +
-        "<em>" + dash(r.announced) + "</em></li>";
-    }).join("");
-
-    return '<div class="dv-proposed">' +
-      '<div class="dv-prop-head">Proposed · FY ' + esc(top.fy) + "</div>" +
-      '<div class="dv-prop-grid">' +
-      '<div><div class="dv-k">Bonus</div><div class="dv-v num">' + pctOr(top.bonus) + "</div></div>" +
-      '<div><div class="dv-k">Cash</div><div class="dv-v num">' + pctOr(top.cash) + "</div></div>" +
-      '<div><div class="dv-k">Total</div><div class="dv-v num">' + pctOr(top.total) + "</div></div>" +
+    var hasDates = c.announced || c.bookclose || c.distribution || c.bonus_listing;
+    var fyLabel = "FY " + esc(c.fy) + (c.fy_bs ? " · " + esc(c.fy_bs) + " BS" : "");
+    return '<div class="dv-current' + (proposed ? " is-proposed" : "") + '">' +
+      '<div class="dv-cur-head"><span>' + (proposed ? "Proposed" : "Latest dividend") + "</span>" +
+      '<span class="dv-cur-fy">' + fyLabel + "</span>" +
+      '<span class="dv-cur-chip">' + (proposed ? "Pending AGM" : "Declared") + "</span></div>" +
+      '<div class="dv-cur-grid">' +
+      '<div class="dv-cur-main"><div class="dv-k">Total</div><div class="dv-v dv-v-lg num">' + pctOr(c.total) + "</div></div>" +
+      '<div><div class="dv-k">Bonus</div><div class="dv-v num">' + pctOr(c.bonus) + "</div></div>" +
+      '<div><div class="dv-k">Cash</div><div class="dv-v num">' + pctOr(c.cash) + "</div></div>" +
       "</div>" +
-      '<div class="dv-prop-dates">' +
-      "<span>Announced <b>" + dash(top.announced) + "</b></span>" +
-      "<span>Book closure <b>" + bookclose + "</b></span>" +
-      "<span>Distribution <b>" + dash(top.distribution) + "</b></span>" +
-      "<span>Bonus listing <b>" + dash(top.bonus_listing) + "</b></span>" +
-      "</div>" +
-      (earlier ? '<ul class="dv-prop-earlier">' + earlier + "</ul>" : "") +
-      '<div class="dv-note">Board-proposed — not necessarily approved at the AGM or distributed yet.</div>' +
+      (hasDates ? '<div class="dv-prop-dates">' +
+        "<span>Announced <b>" + dash(c.announced) + "</b></span>" +
+        "<span>Book closure <b>" + bookclose + "</b></span>" +
+        "<span>Distribution <b>" + dash(c.distribution) + "</b></span>" +
+        "<span>Bonus listing <b>" + dash(c.bonus_listing) + "</b></span>" +
+        "</div>" : "") +
+      (proposed ? '<div class="dv-note">Board-proposed — not yet approved at the AGM or distributed.</div>' : "") +
       "</div>";
+  }
+
+  function renderHistory(hist) {
+    if (!hist || !hist.length) return "";
+    var row = function (label, key) {
+      return "<tr><th>" + label + "</th>" + hist.map(function (h) {
+        var v = h[key];
+        var cls = "num" + (h.pending || h.missing ? " pend" : "") + (key === "dps" && v > 0 ? " paid" : "");
+        var txt = h.missing ? (key === "dps" ? "n/a" : "") : (h.pending && key === "dps" ? "—" : pctOr(v));
+        return '<td class="' + cls + '">' + txt + "</td>";
+      }).join("") + "</tr>";
+    };
+    return '<div class="dv-hist-wrap"><table class="dv-hist">' +
+      "<thead><tr><th>FY</th>" + hist.map(function (h) {
+        var tip = h.pending ? "In progress — not yet declared" : (h.missing ? "No statement for this year in the source" : "");
+        return "<th" + (tip ? ' class="pend" title="' + tip + '"' : "") + ">" +
+          esc(h.fy) + (h.pending ? "*" : "") + "</th>";
+      }).join("") + "</tr></thead><tbody>" +
+      row("Total", "dps") + row("Bonus", "bonus") + row("Cash", "cash") +
+      "</tbody></table></div>";
   }
 
   (function dividendCard() {
@@ -522,34 +543,23 @@
     if (!box) return;
     getJSON("/stock/api/dividends/?symbol=" + encodeURIComponent(SYM))
       .then(function (d) {
-        var proposedHtml = renderProposed((d && d.proposed) || []);
+        var currentHtml = renderCurrent(d && d.current);
         if (!d || !d.ok || !d.available) {
           // A company can have a board-proposed dividend and no fundamentals at
           // all — show the proposal and keep the missing-history note under it.
-          box.innerHTML = proposedHtml +
+          box.innerHTML = currentHtml +
             '<div class="kv-loading">' + esc((d && d.note) || "No dividend history.") + "</div>";
           return;
         }
         var p = $("divPeriod"); if (p) p.textContent = d.paid_years + " of " + d.years + " years paid";
-        var latest = d.latest || {};
-        var hist = (d.history || []).slice(-6);
-        var max = Math.max.apply(null, hist.map(function (h) { return h.dps; }).concat([1]));
-
-        var bars = hist.map(function (h) {
-          return '<span class="dv-bar" title="FY ' + esc(h.fy) + ": " + num(h.dps, 2) + '">' +
-            '<i style="height:' + Math.max(3, (h.dps / max) * 100) + '%"></i>' +
-            "<em>" + esc(String(h.fy).slice(-2)) + "</em></span>";
-        }).join("");
-
-        box.innerHTML = proposedHtml +
-          '<div class="dv-top"><div><div class="dv-k">Declared (FY ' + esc(latest.fy || "—") + ")</div>" +
-          '<div class="dv-v num">' + num(latest.dps, 2) + "%</div></div>" +
-          '<div><div class="dv-k">5-year average</div><div class="dv-v num">' + num(d.avg_5y, 2) + "%</div></div>" +
-          '<div><div class="dv-k">Consistency</div><div class="dv-v num">' + num(d.consistency, 0) + "%</div></div></div>" +
-          '<div class="dv-bars">' + bars + "</div>" +
+        var hist = d.table || (d.history || []).slice(-6);
+        box.innerHTML = currentHtml + renderHistory(hist) +
+          '<div class="dv-stats"><span>5-yr avg <b class="num">' + pctOr(d.avg_5y) + "</b></span>" +
+          '<span>Consistency <b class="num">' + num(d.consistency, 0) + "%</b></span></div>" +
           '<div class="dv-note">' +
-          (d.pending_fy ? "FY " + esc(d.pending_fy) + " is still in progress — not yet declared, and excluded from the average. " : "") +
-          "Percent of Rs 100 face value. Cash and bonus are not split by the source.</div>";
+          (d.pending_fy ? "* FY " + esc(d.pending_fy) + " is still in progress — not yet declared, and excluded from the average. " : "") +
+          (hist.some(function (h) { return h.missing; }) ? "n/a = no statement for that year in the source. " : "") +
+          "Percent of Rs 100 face value. Bonus/cash split comes from the board proposal where one is on record.</div>";
       })
       .catch(function () {
         box.innerHTML = '<div class="kv-loading">Dividend history unavailable.</div>';

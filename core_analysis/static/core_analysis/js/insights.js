@@ -124,7 +124,8 @@
       saved = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
     }
     applyTheme(saved);
-    el("mi-theme-btn").addEventListener("click", function () {
+    var themeBtn = el("mi-theme-btn");
+    if (themeBtn) themeBtn.addEventListener("click", function () {
       var next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
       applyTheme(next);
       // Rebuild charts so their baked-in colours match the new palette.
@@ -234,44 +235,6 @@
         "</td><td class='num'><span class='mi-chg-badge " + cls + "'>" + fmtPct(r.pct) + "</span></td></tr>";
     }).join("");
     tbody.innerHTML = html;
-  }
-
-  function renderSectors(sectors) {
-    var box = el("sector-list");
-    if (!box) return;
-    var template = el("mi-sector-row-template");
-    if (!template) {
-      if (window.console) console.error("Sector performance template not found.");
-      box.innerHTML = '<div class="mi-empty">UI template missing.</div>';
-      return;
-    }
-
-    if (!sectors || !sectors.length) {
-      box.innerHTML = '<div class="mi-empty">No sector data available</div>';
-      return;
-    }
-
-    var maxAbs = sectors.reduce(function (m, s) {
-      return Math.max(m, Math.abs(isNum(s.pct) ? s.pct : 0));
-    }, 0.01);
-
-    var fragment = document.createDocumentFragment();
-    sectors.forEach(function (s) {
-      var pct = isNum(s.pct) ? s.pct : 0;
-      var cls = dirClass(pct);
-      var width = Math.min(100, Math.abs(pct) / maxAbs * 100);
-
-      var clone = template.content.cloneNode(true);
-      var nameEl = clone.querySelector(".mi-sector-name");
-      nameEl.textContent = s.sector;
-      nameEl.title = s.sector;
-      clone.querySelector(".mi-sector-fill").style.setProperty("--fill-percent", width / 100);
-      clone.querySelector(".mi-sector-pct").textContent = fmtPct(s.pct);
-      clone.querySelector(".mi-sector-row").classList.add(cls);
-      fragment.appendChild(clone);
-    });
-    box.innerHTML = ""; // Clear previous content
-    box.appendChild(fragment);
   }
 
   // ── Charts (ApexCharts) ────────────────────────────────────────────────
@@ -1057,15 +1020,16 @@
     var sel = el("mi-refresh-select");
     var saved;
     try { saved = localStorage.getItem(LS_INTERVAL); } catch (e) {}
-    if (saved !== null && saved !== undefined) state.intervalSec = parseInt(saved, 10);
-    sel.value = String(state.intervalSec);
-    sel.addEventListener("change", function () {
+    if (saved !== null && saved !== undefined) state.intervalSec = parseInt(saved, 10) || 0;
+    if (sel) sel.value = String(state.intervalSec);
+    if (sel) sel.addEventListener("change", function () {
       state.intervalSec = parseInt(sel.value, 10) || 0;
       try { localStorage.setItem(LS_INTERVAL, String(state.intervalSec)); } catch (e) {}
       scheduleNext();
     });
 
-    el("mi-refresh-btn").addEventListener("click", function () { refresh(true); });
+    var refreshBtn = el("mi-refresh-btn");
+    if (refreshBtn) refreshBtn.addEventListener("click", function () { refresh(true); });
 
     // Heatmap sector filter (restore last choice, re-render on change).
     var hsel = el("heatmap-sector");

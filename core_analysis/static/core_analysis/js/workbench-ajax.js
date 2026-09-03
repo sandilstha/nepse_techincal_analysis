@@ -85,8 +85,18 @@
           window.WorkbenchReinit(tabKey);
         }
         // Keep the URL shareable/bookmarkable without reloading.
+        // Merge into the current URL rather than replace it: a pane can hold
+        // two desks (RRG companies + RRG indices), and dropping the other
+        // desk's params would reset it on reload/share.
         try {
-          window.history.replaceState(null, '', window.location.pathname + '?' + query);
+          var merged = new URLSearchParams(window.location.search);
+          var fresh = new URLSearchParams(query);
+          var seen = {};
+          fresh.forEach(function (value, key) {
+            if (!seen[key]) { merged.delete(key); seen[key] = true; }
+            merged.append(key, value);
+          });
+          window.history.replaceState(null, '', window.location.pathname + '?' + merged.toString());
         } catch (e) { /* history is non-critical */ }
       })
       .catch(function () {

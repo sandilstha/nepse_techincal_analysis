@@ -655,9 +655,12 @@ def run_imm_scoring_system(
     df["supertrend_bullish"] = st[dir_col] > 0
 
     # ── VWAP & ATR ───────────────────────────────────────────────────────
-    df["VWAP"] = ta.vwap(
-        df["high_price_adj"], df["low_price_adj"], df["close_price_adj"], df["volume"]
-    )
+    # Rolling 20-bar VWAP. ta.vwap anchors daily, so on daily bars it collapses
+    # to the same bar's (H+L+C)/3 (see msv_strategy for the full note) — and it
+    # needs a DatetimeIndex, which this frame does not have.
+    _tp = (df["high_price_adj"] + df["low_price_adj"] + df["close_price_adj"]) / 3.0
+    _vol = pd.to_numeric(df["volume"], errors="coerce")
+    df["VWAP"] = (_tp * _vol).rolling(window=20).sum() / _vol.rolling(window=20).sum().replace(0, np.nan)
     df["ATR"] = ta.atr(
         df["high_price_adj"], df["low_price_adj"], df["close_price_adj"], length=atr_length
     )

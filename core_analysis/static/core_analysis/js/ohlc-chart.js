@@ -96,7 +96,7 @@
 
   // ── build / render ─────────────────────────────────────────────────────
   function buildSeries() {
-    if (!state.bars || !state.candle) return;
+    if (state.destroyed || !state.bars || !state.candle || !state.chart) return;
     var b = state.bars, p = palette();
     var candles = [], vols = [];
     for (var i = 0; i < b.t.length; i++) {
@@ -139,6 +139,7 @@
   }
 
   function fetchBars(symbol) {
+    if (state.destroyed) return;   // TradingView took over while the deferred fetch was pending
     var now = Math.floor(Date.now() / 1000);
     // This is a dashboard overview, not the full charting terminal. Loading the
     // entire index history (1997+) inflated the response and compressed every

@@ -270,75 +270,6 @@ def _enrich(rows, sector_map):
     return enriched
 
 
-# ── live index helpers ─────────────────────────────────────────────────────
-
-def _live_index_metrics(row):
-    """Correct value / change for a live index row, working around the feed's
-    intraday quirks.
-
-    `closing_index` is 0 until the 3 PM close, so the feed's own abs_change /
-    percentage_change are computed off zero and useless intraday. We instead:
-      * take the current value from closing_index once set, else the snapshot
-        the feed mirrors into open/high/low_index;
-      * recover the true previous close from the feed identity
-        abs_change = closing_index - prev_close  →  prev = closing_index - abs_change.
-    """
-    raw_close = _f(_live_get(row, "closing_index", "closingIndex")) or 0.0
-    abs_change = _f(_live_get(row, "abs_change", "absChange"))
-    high = _f(_live_get(row, "high_index", "highIndex"))
-    open_v = _f(_live_get(row, "open_index", "openIndex"))
-    low = _f(_live_get(row, "low_index", "lowIndex"))
-
-    value = raw_close if raw_close > 0 else (high or open_v or low)
-    prev = (raw_close - abs_change) if abs_change is not None else None
-    change = pct = None
-    if value is not None and prev is not None and prev > 0:
-        change = value - prev
-        pct = (change / prev) * 100.0
-
-    return {
-        "value": value,
-        "prev": prev,
-        "change": change,
-        "pct": pct,
-        "high": high,
-        "low": low,
-        "turnover": _f(_live_get(row, "turnover_value", "turnoverValue")) or 0.0,
-        "volume": int(_live_get(row, "turnover_volume", "turnoverVolume") or 0),
-        "transactions": int(_live_get(row, "total_transaction", "totalTransaction") or 0),
-        "date": _live_get(row, "business_date", "businessDate"),
-    }
-
-
-def _live_index_by_name(rows):
-    """Map UPPERCASED index name -> raw row."""
-    out = {}
-    for row in rows or []:
-        name = (_live_get(row, "index_name", "indexName") or "").strip().upper()
-        if name:
-            out[name] = row
-    return out
-
-
-def _sectors_live(rows):
-    """Sector performance from the live-index feed (same labels as _sectors)."""
-    sectors = []
-    for name, row in _live_index_by_name(rows).items():
-        if name not in SECTOR_INDEX_NAMES:
-            continue
-        m = _live_index_metrics(row)
-        sectors.append({
-            "sector": SECTOR_LABELS.get(name, name.title()),
-            "raw": name,
-            "index": _round(m["value"]),
-            "change": _round(m["change"]),
-            "pct": _round(m["pct"]),
-            "turnover": m["turnover"],
-        })
-    sectors.sort(key=lambda s: (s["pct"] is None, -(s["pct"] or 0.0)))
-    return sectors
-
-
 # ── NepseSubIndices feed (authoritative index source) ──────────────────────
 
 def _subindex_metrics(row):
@@ -364,8 +295,11 @@ def _subindex_metrics(row):
             change = value - prev
             pct = (change / prev) * 100.0
     else:
+        # Intraday (close not yet published): the previous close is the current
+        # value minus today's change — NOT "0 − change", which produced a small
+        # negative "previous close" and a huge bogus % on every sector card.
         value = high or open_v or low
-        prev = (0.0 - abs_change) if abs_change is not None else None
+        prev = (value - abs_change) if (value is not None and abs_change is not None) else None
         change = (value - prev) if (value is not None and prev is not None) else None
         pct = (change / prev) * 100.0 if (change is not None and prev) else None
 
@@ -623,7 +557,7 @@ def _breadth(enriched):
 # calendar days back from the latest trading day; each resolves to the nearest
 # trading session on or before that date.
 GREED_HISTORY_OFFSETS = (
-    ("Previous close", 0),
+    ("Previous close", 1),
     ("1 week ago", 7),
     ("1 month ago", 30),
     ("1 year ago", 365),
@@ -638,15 +572,22 @@ def _greed_history():
     the SAME computeGreed() formula on these as it does for the live gauge, so a
     historical score can never drift from the live one's methodology.
     """
+    # The longest offset is one year (~250 sessions): bound the date scan
+    # instead of loading the whole column back to 1997 on every build.
     nepse_dates = list(
         NepseMarketIndex.objects.filter(sector_name=NEPSE_INDEX_NAME)
         .order_by("-business_date")
-        .values_list("business_date", flat=True)
+        .values_list("business_date", flat=True)[:420]
     )
     if not nepse_dates:
         return []
 
     latest = nepse_dates[0]
+    # End-of-day data: identical for every build until the next session lands.
+    ck = f"mi_greed_history:v2:{latest.isoformat()}"
+    cached = cache.get(ck)
+    if cached is not None:
+        return cached
     out = []
     for label, days in GREED_HISTORY_OFFSETS:
         target = latest - timedelta(days=days)
@@ -678,6 +619,7 @@ def _greed_history():
             },
             "nepse_pct": _round(_f(idx.percentage_change)) if idx else None,
         })
+    cache.set(ck, out, 3600)
     return out
 
 
@@ -1055,6 +997,16 @@ def build_payload(force=False, cache_only=False, fast=False):
         last_good = cache.get(CACHE_LAST_GOOD_KEY)
         if last_good is not None:
             return last_good
+    try:
+        return _build_payload_locked(fast=fast)
+    finally:
+        # Release only OUR lock — a forced build that ran alongside another
+        # builder must not clear that builder's lock from under it.
+        if got_lock:
+            cache.delete(BUILD_LOCK_KEY)
+
+
+def _build_payload_locked(fast=False):
 
     # Fetch every external feed CONCURRENTLY. Done sequentially, a single slow or
     # down service serialises into a multi-second stall (timeouts add up); in
@@ -1204,7 +1156,11 @@ def build_payload(force=False, cache_only=False, fast=False):
     # genuine live session is available (is_live stays True), the live headline /
     # breadth / movers are kept, so the live view auto-restores once the upstream
     # feeds are fresh again.
-    eod_overview = not is_live
+    # Only when there is NO fresh official/contributor headline. A stale
+    # per-scrip feed alone must not throw away the authoritative index,
+    # turnover and date that were just reconciled above (the stock-level
+    # widgets were already switched to EOD by the live_stale branch).
+    eod_overview = not is_live and not headline_from_contributors and index_source != "official"
     if eod_overview:
         _eod()  # ensure eod_date + eod_enriched are loaded
         enriched = eod_enriched if eod_enriched is not None else enriched
@@ -1286,7 +1242,6 @@ def build_payload(force=False, cache_only=False, fast=False):
     }
     cache.set(CACHE_KEY, payload, CACHE_TTL)
     cache.set(CACHE_LAST_GOOD_KEY, payload, CACHE_LAST_GOOD_TTL)
-    cache.delete(BUILD_LOCK_KEY)
     return payload
 
 
