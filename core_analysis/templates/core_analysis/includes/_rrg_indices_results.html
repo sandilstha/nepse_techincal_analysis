@@ -46,17 +46,17 @@
                 <span class="rrg-legend-item rrg-improving">Improving</span>
               </div>
             </div>
-            <div class="rrg-indices-toolbar" aria-label="RRG indices chart controls">
-              <button type="button" id="rrgIndicesAnimateBtn" class="rrg-toolbar-btn primary">&#9658; Animate</button>
-              <button type="button" id="rrgIndicesFitBtn" class="rrg-toolbar-btn">Fit</button>
-              <button type="button" id="rrgIndicesMaxBtn" class="rrg-toolbar-btn">Max</button>
-              <button type="button" id="rrgIndicesCenterBtn" class="rrg-toolbar-btn">Center</button>
-              <button type="button" id="rrgIndicesLockBtn" class="rrg-toolbar-btn rrg-toolbar-icon-btn" aria-label="Lock scale" title="Lock scale">&#128275;</button>
+            <div class="rrg-indices-toolbar" role="toolbar" aria-label="RRG indices chart controls">
+              <button type="button" id="rrgIndicesAnimateBtn" class="rrg-toolbar-btn primary" aria-pressed="false">&#9658; Animate</button>
+              <button type="button" id="rrgIndicesFitBtn" class="rrg-toolbar-btn" aria-pressed="false">Fit</button>
+              <button type="button" id="rrgIndicesMaxBtn" class="rrg-toolbar-btn" aria-pressed="false" title="Full-screen chart (Esc to close)">Max</button>
+              <button type="button" id="rrgIndicesCenterBtn" class="rrg-toolbar-btn" aria-pressed="true">Center</button>
+              <button type="button" id="rrgIndicesLockBtn" class="rrg-toolbar-btn rrg-toolbar-icon-btn" aria-pressed="false" aria-label="Lock scale" title="Lock scale">&#128275;</button>
               <div class="rrg-tail-control">
-                <span class="rrg-tail-label">Tail Length</span>
-                {# Opens at 1 (latest dot only); max stays the fetched trail depth. #}
-                <input type="range" id="rrgIndicesTailSlider" class="rrg-tail-slider" min="1" max="{{ rrg_indices_tail_length }}" value="1">
-                <input type="number" id="rrgIndicesTailNumber" class="rrg-tail-number" min="1" step="1" value="1">
+                <label class="rrg-tail-label" for="rrgIndicesTailNumber">Tail Length</label>
+                {# Opens at 1 (latest dot only); max is corrected to the fetched trail depth by JS. #}
+                <input type="range" id="rrgIndicesTailSlider" class="rrg-tail-slider" min="1" max="{{ rrg_indices_tail_length }}" value="1" aria-label="Tail length">
+                <input type="number" id="rrgIndicesTailNumber" class="rrg-tail-number" min="1" max="{{ rrg_indices_tail_length }}" step="1" value="1">
               </div>
               <label class="rrg-arrow-mode">
                 <input type="checkbox" id="rrgIndicesArrowMode">
@@ -78,7 +78,7 @@
             </div>
             <div class="imm-scroll-wrap">
               <table class="minimal-table">
-                <thead class="">
+                <thead>
                   <tr>
                     <th>Order</th>
                     <th>Index</th>

@@ -69,7 +69,9 @@
   }
 
   function setMessage(msg) {
-    contentEl.innerHTML = '<div class="funda-empty">' + msg + '</div>';
+    // textContent: the message can echo the typed symbol, never trust it as HTML.
+    contentEl.innerHTML = '<div class="funda-empty"></div>';
+    contentEl.firstChild.textContent = msg;
   }
 
   function marginHtml(margin) {

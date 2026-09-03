@@ -154,7 +154,9 @@ def _is_missing(value):
     try:
         return math.isnan(float(value))
     except (TypeError, ValueError):
-        return False
+        # Unparseable is missing: returning False here let odd values flow into
+        # the formatters, whose comparison blew up the whole seasonal tab.
+        return True
 
 
 def _seasonal_avg(values):
@@ -165,6 +167,8 @@ def _seasonal_avg(values):
     the month; smaller samples fall back to the plain arithmetic mean.
     """
     vals = sorted(values)
+    if not vals:
+        return 0.0
     if len(vals) >= _TRIM_MIN:
         vals = vals[1:-1]   # symmetric trim: drop the min and max year
     return sum(vals) / len(vals)
@@ -315,7 +319,10 @@ def _strategy_row(idx, m_series, o_series, timing=None):
         return _empty_row(code, label, len(m), "Insufficient history for a seasonal call.")
     s, L, blend_score = sel
 
-    real = _compound_window(m_use, s, L)          # realistic, year-by-year
+    # Expected Return is computed over the FULL return history, not just the
+    # years where opp data also exists — the blend needs the intersection, the
+    # bookable-return column does not, and truncating it understated "Yrs".
+    real = _compound_window(m, s, L)              # realistic, year-by-year
     if len(real) < _MIN_WINDOW_YEARS:
         return _empty_row(code, label, len(real), "Insufficient history for a seasonal call.")
     expected = round(_seasonal_avg(real), 2)
@@ -550,8 +557,14 @@ def _compute():
             if _is_missing(m_high) or _is_missing(m_low):
                 continue
             first = gm.iloc[0]
-            hh_date = gm.loc[gm["high"].idxmax(), "date"]   # first occurrence
-            ll_date = gm.loc[gm["low"].idxmin(), "date"]
+            # ~63% of NEPSE index bars have high == low, so the month's extreme
+            # is usually a TIE across many sessions and idxmax/idxmin's
+            # first-occurrence rule skews every date toward the start of the
+            # month. Taking the middle of the tied dates removes that bias.
+            hh_dates = gm.loc[gm["high"] == m_high, "date"].tolist()
+            ll_dates = gm.loc[gm["low"] == m_low, "date"].tolist()
+            hh_date = hh_dates[len(hh_dates) // 2]
+            ll_date = ll_dates[len(ll_dates) // 2]
             # Intra-month timing: the low/high's position among the month's
             # sessions (0→first day, 1→last day). Averaged per calendar month it
             # tells the desk WHEN in the month accumulation lows / exit highs
@@ -563,7 +576,15 @@ def _compute():
                     (dlist.index(ll_date) + 1) / n_days)
                 high_pos_buckets.setdefault(period.month, []).append(
                     (dlist.index(hh_date) + 1) / n_days)
-            if hh_date <= ll_date:                          # high peaked first → decline
+            if hh_date == ll_date:
+                # One session is both the month's high and its low (a flat bar,
+                # or one dominant day) — direction is ambiguous, so take it
+                # from the month's actual close-to-close drift instead of
+                # defaulting to "decline".
+                declining = gm.iloc[-1]["close"] < first["close"]
+            else:
+                declining = hh_date < ll_date
+            if declining:                                   # high peaked first → decline
                 ref, target = first["high"], m_low
             else:                                           # low bottomed first → rise
                 ref, target = first["low"], m_high
@@ -731,7 +752,7 @@ def build_seasonal_payload():
     )
     # v5: bump the version whenever the payload SHAPE changes so a deploy never
     # serves a stale-schema payload from a still-warm cache entry.
-    ck = f"seasonal_returns_v5_{latest}"
+    ck = f"seasonal_returns_v6_{latest}"
     cached = cache.get(ck)
     if cached is not None:
         return cached

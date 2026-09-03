@@ -39,6 +39,7 @@
                 <span class="metrics-card-label text-secondary">Benchmark</span>
                 <h4 class="mt-2 mb-0 fw-bold text-light">{{ rrg_benchmark_symbol }}</h4>
                 <div class="small text-muted mt-1">{{ rrg_backtest_metrics.data_points }} plotted points{% if rrg_backtest_metrics.matched_bars %} from {{ rrg_backtest_metrics.matched_bars }} shared bars{% endif %}</div>
+                {% if rrg_backtest_metrics.stale %}<div class="small text-warning mt-1" title="The benchmark has {{ rrg_backtest_metrics.stale_sessions }} newer session{{ rrg_backtest_metrics.stale_sessions|pluralize }}">⚠ Last point {{ rrg_backtest_metrics.latest_date }} — {{ rrg_backtest_metrics.stale_sessions }} session{{ rrg_backtest_metrics.stale_sessions|pluralize }} behind the benchmark</div>{% endif %}
               </div>
             </div>
           </div>
@@ -56,16 +57,16 @@
                 <span class="rrg-legend-item rrg-improving">Improving</span>
               </div>
             </div>
-            <div class="rrg-indices-toolbar" aria-label="RRG chart controls">
-              <button type="button" id="rrgAnimateBtn" class="rrg-toolbar-btn primary">&#9658; Animate</button>
-              <button type="button" id="rrgFitBtn" class="rrg-toolbar-btn">Fit</button>
-              <button type="button" id="rrgMaxBtn" class="rrg-toolbar-btn">Max</button>
-              <button type="button" id="rrgCenterBtn" class="rrg-toolbar-btn">Center</button>
-              <button type="button" id="rrgLockBtn" class="rrg-toolbar-btn rrg-toolbar-icon-btn" aria-label="Lock scale" title="Lock scale">&#128275;</button>
+            <div class="rrg-indices-toolbar" role="toolbar" aria-label="RRG chart controls">
+              <button type="button" id="rrgAnimateBtn" class="rrg-toolbar-btn primary" aria-pressed="false">&#9658; Animate</button>
+              <button type="button" id="rrgFitBtn" class="rrg-toolbar-btn" aria-pressed="false">Fit</button>
+              <button type="button" id="rrgMaxBtn" class="rrg-toolbar-btn" aria-pressed="false" title="Full-screen chart (Esc to close)">Max</button>
+              <button type="button" id="rrgCenterBtn" class="rrg-toolbar-btn" aria-pressed="true">Center</button>
+              <button type="button" id="rrgLockBtn" class="rrg-toolbar-btn rrg-toolbar-icon-btn" aria-pressed="false" aria-label="Lock scale" title="Lock scale">&#128275;</button>
               <div class="rrg-tail-control">
-                <span class="rrg-tail-label">Tail Length</span>
-                <input type="range" id="rrgTailSlider" class="rrg-tail-slider" min="1" value="1">
-                <input type="number" id="rrgTailNumber" class="rrg-tail-number" min="1" step="1" value="1">
+                <label class="rrg-tail-label" for="rrgTailNumber">Tail Length</label>
+                <input type="range" id="rrgTailSlider" class="rrg-tail-slider" min="1" max="50" value="1" aria-label="Tail length">
+                <input type="number" id="rrgTailNumber" class="rrg-tail-number" min="1" max="50" step="1" value="1">
               </div>
               <label class="rrg-arrow-mode">
                 <input type="checkbox" id="rrgArrowMode">
@@ -84,7 +85,7 @@
             </div>
             <div class="imm-scroll-wrap">
               <table class="minimal-table">
-                <thead class="">
+                <thead>
                   <tr>
                     <th>Date</th>
                     <th class="th-num">Stock Close</th>

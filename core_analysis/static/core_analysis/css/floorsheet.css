@@ -970,3 +970,197 @@
   color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line);
   vertical-align: middle;
 }
+
+/* ── CAN SLIM screen ─────────────────────────────────────────────────────── */
+.cs-gate {
+  margin: 14px 0; padding: 14px 18px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface);
+  border-left: 4px solid var(--ink-3);
+}
+.cs-gate-uptrend   { border-left-color: var(--pos, #12d39a); }
+.cs-gate-downtrend { border-left-color: var(--neg, #ff6b6b); }
+.cs-gate-mixed     { border-left-color: var(--warn, #d9a63f); }
+.cs-gate-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.cs-gate-head b { font-size: 0.9rem; letter-spacing: .02em; }
+.cs-gate-asof { font-size: 0.7rem; color: var(--ink-3); }
+.cs-gate-note { margin-top: 5px; font-size: 0.82rem; color: var(--ink-2); }
+.cs-gate-nums { margin-top: 4px; font-size: 0.74rem; color: var(--ink-3);
+                font-variant-numeric: tabular-nums; }
+.cs-gate-why  { margin-top: 8px; padding-top: 7px; border-top: 1px dashed var(--line);
+                font-size: 0.7rem; color: var(--ink-3); line-height: 1.5; }
+
+.cs-rank  { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.cs-score { font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Factor cells: tinted by strength so a row reads at a glance. */
+.cs-f { text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
+.cs-f.cs-hi  { color: var(--pos, #12d39a); }
+.cs-f.cs-mid { color: var(--ink-1); }
+.cs-f.cs-lo  { color: var(--neg, #ff6b6b); }
+.cs-f.cs-na, .cs-na { color: var(--ink-3); font-weight: 400; }
+/* Loss-to-profit is a Recovery, never a percentage — styled so it cannot be
+   mistaken for a growth figure. */
+.cs-recovery { color: var(--warn, #d9a63f); font-weight: 600; }
+.cs-consist  { color: var(--ink-3); font-size: 0.72rem; }
+.cs-flat     { color: var(--ink-3); font-size: 0.68rem; }
+.cs-conf {
+  display: inline-block; margin-left: 5px; padding: 1px 5px; border-radius: 999px;
+  font-size: 0.6rem; font-weight: 600; text-transform: lowercase;
+  color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line);
+}
+/* corp-action marker: the stock's price factors were computed across an
+   ex-date splice and are approximate. */
+.cs-ca { color: var(--warn, #d9a63f); font-weight: 700; cursor: help; }
+/* Sortable headers on the CAN SLIM screen. */
+.cs-th { cursor: pointer; user-select: none; white-space: nowrap; }
+.cs-th:hover { color: var(--ink-1); }
+.cs-th-active { color: var(--accent, #12d39a); }
+
+/* CAN SLIM limits box. The inherited .dsx-ev-plain caps lines at 92ch, which is
+   right for the narrower A/D panel but left a large empty gap on this
+   full-width page. Two cards fill the width while each line stays inside a
+   readable measure — the alternative, one 1600px-wide line, is worse to read
+   than the gap it removes. */
+.cs-lim-head {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.cs-lim-lead { font: 600 0.8125rem/1.5 'Manrope', sans-serif; color: var(--ink-1); }
+.cs-lim-more {
+  margin-left: auto; font: 600 0.72rem/1 'Manrope', sans-serif;
+  color: var(--accent, #12d39a); text-decoration: none; white-space: nowrap;
+}
+.cs-lim-more:hover { text-decoration: underline; }
+.cs-lim-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: 12px;
+}
+.cs-lim-card {
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 8px; padding: 11px 14px;
+}
+.cs-lim-k {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
+  font: 700 0.75rem/1.4 'Manrope', sans-serif; color: var(--ink-1);
+}
+.cs-lim-tag {
+  padding: 1px 7px; border-radius: 999px; font-size: 0.62rem; font-weight: 600;
+  text-transform: lowercase; border: 1px solid var(--line);
+}
+.cs-lim-tag.na   { color: var(--neg, #ff6b6b); }
+.cs-lim-tag.part { color: var(--warn, #d9a63f); }
+.cs-lim-card p {
+  margin: 0; font: 400 0.78rem/1.6 'Manrope', sans-serif; color: var(--ink-2);
+}
+.cs-lim-foot {
+  margin-top: 11px; padding-top: 10px; border-top: 1px dashed var(--line);
+  font: 400 0.75rem/1.6 'Manrope', sans-serif; color: var(--ink-3);
+}
+
+/* ── Fundamental Analysis: Industry matrix ───────────────────────────────── */
+.ia-matrix th.ia-item, .ia-matrix td.ia-item {
+  position: sticky; left: 0; z-index: 3;      /* line-item column stays visible */
+  background: var(--surface); min-width: 250px; max-width: 340px;
+}
+.ia-matrix thead th { z-index: 4; }
+.ia-matrix th.ia-co { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ia-matrix td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ia-unit { color: var(--ink-3); font-size: 0.66rem; }
+/* A line only some companies file is not a sector-wide comparison. */
+.ia-partial {
+  display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px;
+  font-size: 0.62rem; font-weight: 600; color: var(--warn, #d9a63f);
+  border: 1px solid var(--line);
+}
+/* Blank means "not reported", never zero. */
+.ia-blank { color: var(--ink-3); }
+/* Disabled statement pill (Cash Flow — no such data upstream). */
+.dsx-pill.is-disabled {
+  opacity: .45; cursor: not-allowed; text-decoration: line-through;
+}
+.dsx-pill.is-disabled:hover { background: transparent; }
+
+/* ── Morning Star tab (Fundamental Analysis desk) ─────────────────────── */
+.ms-ticker { font-weight: 700; }
+.ms-name { display: block; font-size: 11px; color: var(--ink-3, #8b93a7); max-width: 220px;
+           overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ms-stars { letter-spacing: 1px; white-space: nowrap; }
+.ms-star { color: var(--line, #2a3350); }
+.ms-star.on { color: #f3b53c; }
+.ms-dim { color: var(--ink-3, #8b93a7); }
+.ms-chip { display: inline-block; padding: 1px 8px; margin: 1px 3px 1px 0; border-radius: 999px;
+           font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+.ms-style-growth { background: rgba(20,231,160,0.12); color: var(--up, #14e7a0); }
+.ms-style-value { background: rgba(96,165,250,0.14); color: #60a5fa; }
+.ms-style-blend { background: rgba(139,147,167,0.16); color: var(--ink-2, #aab2c5); }
+.ms-gate { background: rgba(255,110,114,0.14); color: var(--down, #ff6e72); }
+.ms-flag { background: rgba(251,191,36,0.14); color: #e6b04a; }
+.ms-quality { max-width: 320px; }
+.ms-lowconf { color: #e6b04a; }
+.ms-row { cursor: pointer; }
+.ms-detail td { background: var(--bg-raised, rgba(255,255,255,0.02)); }
+.ms-detail-block { margin: 6px 0 10px; }
+.ms-detail-head { font-size: 11px; font-weight: 700; text-transform: uppercase;
+                  letter-spacing: 0.06em; margin-bottom: 4px; color: var(--ink-2, #aab2c5); }
+.ms-detail-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ms-detail-table th, .ms-detail-table td { text-align: left; padding: 3px 10px 3px 0;
+                  border-bottom: 1px solid var(--line, #2a3350); }
+.ms-detail-table th { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em;
+                  color: var(--ink-3, #8b93a7); }
+
+/* Morning Star barometer (style x size grid) */
+.ms-baro-card { padding: 14px 16px; max-width: 460px; }
+.ms-baro-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.ms-baro-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
+                 color: var(--ink-2, #aab2c5); }
+.ms-baro-btn { background: var(--bg-input, rgba(255,255,255,0.04)); color: var(--ink-2, #aab2c5);
+               border: 1px solid var(--line, #2a3350); border-radius: 6px; padding: 2px 10px;
+               font-size: 11px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+.ms-baro-btn.active { background: var(--ink-1, #e8ecf5); color: var(--bg-base, #0a1020);
+                      border-color: var(--ink-1, #e8ecf5); }
+.ms-baro-grid { display: grid; grid-template-columns: repeat(3, 1fr) 56px; gap: 6px; }
+.ms-baro-cell { border-radius: 8px; text-align: center; padding: 16px 0; font-size: 13px;
+                font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink-1, #e8ecf5); }
+.ms-baro-cell.pos { background: rgba(20, 231, 160, calc(0.10 + var(--mag, 0) * 0.45)); }
+.ms-baro-cell.neg { background: rgba(255, 110, 114, calc(0.10 + var(--mag, 0) * 0.45)); }
+.ms-baro-cell.flat, .ms-baro-empty { background: var(--bg-raised, rgba(255,255,255,0.03));
+                color: var(--ink-3, #8b93a7); }
+.ms-baro-label { display: flex; align-items: center; justify-content: center; font-size: 11px;
+                 font-weight: 700; color: var(--ink-3, #8b93a7); }
+
+/* Morning Star growth-vs-value scatter */
+.ms-scatter-card { padding-bottom: 6px; }
+.ms-scatter-svg { width: 100%; height: auto; display: block; }
+.ms-sc-grid { stroke: var(--line, #2a3350); stroke-width: 0.6; opacity: 0.55; }
+.ms-sc-mid { stroke: var(--ink-3, #8b93a7); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.7; }
+.ms-sc-quad.best { fill: rgba(20, 231, 160, 0.05); }
+.ms-sc-tick { fill: var(--ink-3, #8b93a7); font-size: 10px; }
+.ms-sc-axis { fill: var(--ink-2, #aab2c5); font-size: 11px; font-weight: 700;
+              letter-spacing: 0.05em; text-transform: uppercase; }
+.ms-sc-dot { fill: #60a5fa; stroke: var(--bg-base, #0a1020); stroke-width: 1; }
+.ms-sc-dot.star { fill: #f3b53c; }
+.ms-sc-dot.gated { fill: var(--down, #ff6e72); opacity: 0.75; }
+.ms-sc-label { fill: var(--ink-1, #e8ecf5); font-size: 10px; font-weight: 600; }
+
+/* Three cap-tier scatters side by side — each tier in its own visible box */
+.ms-sc-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; padding: 12px 14px 10px; }
+.ms-sc-pane { min-width: 0; border: 1px solid var(--line, #2a3350); border-radius: 10px;
+              background: var(--surface, rgba(255,255,255,0.02)); overflow: hidden; }
+.ms-sc-pane-head { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+                   color: var(--ink-1, #e8ecf5); margin: 0; padding: 8px 12px;
+                   border-bottom: 1px solid var(--line, #2a3350);
+                   background: var(--surface-2, rgba(255,255,255,0.04)); }
+.ms-sc-pane .ms-scatter-svg { padding: 6px 4px 2px; box-sizing: border-box; }
+.ms-sc-empty { display: flex; align-items: center; justify-content: center; min-height: 200px;
+               color: var(--ink-3, #8b93a7); font-size: 12px; border: 1px dashed var(--line, #2a3350);
+               border-radius: 8px; }
+@media (max-width: 1100px) { .ms-sc-row { grid-template-columns: 1fr; } }
+
+/* Morning Star table filters */
+.ms-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px 2px; }
+.ms-filters .ms-f { min-width: 130px; max-width: 200px; font-size: 12px; padding: 5px 8px; }
+.ms-filters #msf-q { min-width: 190px; }
+.ms-f-count { margin-left: auto; font-size: 11.5px; color: var(--ink-3, #8b93a7); white-space: nowrap; }
+
+/* Scatter quadrant labels */
+.ms-sc-quadlbl { fill: var(--ink-2, #aab2c5); font-size: 15px; font-weight: 800; opacity: 0.55; }
+.ms-sc-quadcap { fill: var(--ink-3, #8b93a7); font-size: 9.5px; font-weight: 600;
+                 letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.75; }

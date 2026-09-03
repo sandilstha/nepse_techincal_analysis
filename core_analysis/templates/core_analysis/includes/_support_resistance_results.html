@@ -201,6 +201,7 @@
             </div>
           {% endif %}
 
+          {% if user.is_staff %}
           <div class="panel-outer mb-4 sr-ai-panel"
                id="sr-ai-analysis"
                data-ai-url="{% url 'gemini_sr_analysis' %}">
@@ -218,6 +219,7 @@
               </div>
             </div>
           </div>
+          {% endif %}
 
           {% if support_resistance_metrics.confluence_resistances or support_resistance_metrics.confluence_supports %}
           <div class="panel-outer mb-4">

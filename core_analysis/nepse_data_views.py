@@ -95,8 +95,8 @@ def nepse_data_view(request, slug=None):
         "controls": controls,
         # Serialised as real JSON, not a Python repr — the template inlines these
         # into a <script> block, where `True`/`None` would be a syntax error.
-        "columns_json": json.dumps(spec["columns"]),
-        "controls_json": json.dumps(controls),
+        "columns": spec["columns"],
+        "controls": controls,
         # Stock Trading needs a symbol to return anything; the floor sheet is a
         # complete session that a symbol merely filters, so it must offer "all".
         "symbol_optional": slug != "stock-trading",

@@ -1,0 +1,586 @@
+/* Stock 360 — all-in-one single-stock dashboard.
+   Token-driven, theme-aware (dark default), echoes the platform's
+   --ink-2 / --accent / --bg-raised / panel conventions. */
+
+/* This sheet used to redefine the ENTIRE palette (--bg, --line, --ink-2,
+   --accent, --shadow …) with its own hex values, and it loads after tokens.css,
+   so it won. That is why Stock 360 read as a different product: the platform is
+   navy (--bg #020b1f) while this page painted GitHub-dark (#0e1117), with a
+   blue accent instead of the platform's green.
+
+   The palette now comes from tokens.css like every other page. What remains is
+   only an ALIAS layer: this page's private names (--panel, --pos, --ink …)
+   pointing at the platform tokens. Aliases resolve against :root at use time,
+   so they follow the theme automatically — no per-theme block needed.
+
+   Do NOT redeclare --bg / --line / --ink-2 / --ink-3 / --accent / --shadow
+   here; tokens.css owns them and overriding them re-breaks the theme. */
+:root {
+  --bg-raised: var(--surface);
+  --panel:     var(--surface);
+  --panel-2:   var(--surface-2);
+  --ink:       var(--ink-1);
+  --line-2:    var(--line);
+  --accent-weak: var(--accent-soft);
+  --pos:       var(--up);
+  --pos-weak:  var(--up-soft);
+  --neg:       var(--down);
+  --neg-weak:  var(--down-soft);
+  --neutral:      var(--flat);
+  --neutral-weak: var(--flat-soft);
+  --r:    var(--radius);
+  --r-sm: var(--radius-sm);
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Consolas,monospace;
+  --sans:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  /* tokens.css has no warning colour, so this one stays local — but it is
+     theme-split below rather than a single value that only suits dark. */
+  --warn:#e6b04a; --warn-weak:rgba(230,176,74,.14);
+}
+[data-theme="light"] {
+  --warn:#b7811f; --warn-weak:rgba(183,129,31,.13);
+}
+
+.s360-scope * {box-sizing:border-box}
+.s360-scope {margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:0.875rem;line-height:1.45;-webkit-font-smoothing:antialiased}
+.s360-scope .num {font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.s360-scope .eyebrow {font-size:0.6562rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2)}
+.s360-scope h1, .s360-scope h2, .s360-scope h3 {margin:0;text-wrap:balance}
+.s360-scope a {color:inherit;text-decoration:none}
+.s360-scope code {font-family:var(--mono);font-size:.9em;background:var(--panel-2);padding:1px 5px;border-radius:5px}
+.s360-scope :focus-visible {outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.s360-scope .pos {color:var(--pos)} .s360-scope .neg {color:var(--neg)} .s360-scope .warn {color:var(--warn)} .s360-scope .neu {color:var(--neutral)}
+.s360-scope .loading {color:var(--ink-3);font-size:0.8125rem;padding:6px 0}
+.s360-scope .notice {background:var(--panel-2);border:1px dashed var(--line-2);border-radius:var(--r-sm);padding:13px 14px;font-size:0.7812rem;color:var(--ink-2);line-height:1.55}
+.s360-scope .notice b {color:var(--ink)}
+
+/* HERO */
+.s360-scope .hero {position:sticky;top:0;z-index:40;background:var(--bg-raised);border-bottom:1px solid var(--line)}
+.s360-scope .hero-search-row {max-width:var(--shell-max);margin:0 auto;padding:14px 22px 4px;display:flex;justify-content:center}
+.s360-scope .search-top {max-width:520px;width:100%}
+.s360-scope .search-top input {padding:11px 14px 11px 38px;font-size:0.9062rem;border-radius:12px}
+.s360-scope .hero-inner {max-width:var(--shell-max);margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.s360-scope .brand {display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:-.02em;font-size:0.9375rem}
+.s360-scope .brand .dot {width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--accent),#8f6ef0);display:grid;place-items:center;color:#fff;font-size:0.75rem;font-weight:800}
+.s360-scope .search {position:relative;flex:1;min-width:210px;max-width:340px;margin:0}
+.s360-scope .search input {width:100%;background:var(--panel-2);border:1px solid var(--line-2);color:var(--ink);border-radius:10px;padding:9px 12px 9px 34px;font-size:0.8438rem;font-weight:600}
+.s360-scope .search input::placeholder {color:var(--ink-3);font-weight:500}
+.s360-scope .search svg {position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-3);pointer-events:none}
+.s360-scope .ac {position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--panel);border:1px solid var(--line-2);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;display:none;max-height:280px;overflow-y:auto;z-index:50}
+.s360-scope .ac.open {display:block}
+.s360-scope .ac div {padding:8px 12px;display:flex;justify-content:space-between;gap:10px;cursor:pointer;font-size:0.8125rem}
+.s360-scope .ac div:hover, .s360-scope .ac div.hi {background:var(--accent-weak)}
+.s360-scope .ac .t {font-weight:700}
+.s360-scope .ac .n {color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s360-scope .ticker {display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.s360-scope .ticker .sym {font-size:1.25rem;font-weight:800;letter-spacing:-.02em}
+.s360-scope .ticker .co {color:var(--ink-2);font-size:0.8125rem;font-weight:600}
+.s360-scope .ticker .price {font-size:1.625rem;font-weight:800}
+.s360-scope .chg {font-weight:700;font-size:0.875rem;padding:2px 8px;border-radius:7px}
+.s360-scope .chg.up {color:var(--pos);background:var(--pos-weak)}
+.s360-scope .chg.down {color:var(--neg);background:var(--neg-weak)}
+.s360-scope .quickstats {display:flex;gap:20px;flex-wrap:wrap;margin-left:auto}
+.s360-scope .qs {display:flex;flex-direction:column;gap:1px}
+.s360-scope .qs .k {font-size:0.625rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+.s360-scope .qs .v {font-size:0.875rem;font-weight:700}
+.s360-scope .gauge52 {display:flex;flex-direction:column;gap:4px;min-width:150px}
+.s360-scope .gauge52 .bar {height:6px;border-radius:4px;background:linear-gradient(90deg,var(--neg),var(--warn),var(--pos));position:relative}
+.s360-scope .gauge52 .mk {position:absolute;top:-3px;width:2px;height:12px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--bg-raised)}
+.s360-scope .gauge52 .lbls {display:flex;justify-content:space-between;font-size:0.625rem;color:var(--ink-3)}
+.s360-scope .icon-btn {background:var(--panel-2);border:1px solid var(--line-2);color:var(--ink-2);border-radius:8px;padding:7px 11px;font-size:0.75rem;font-weight:700;cursor:pointer}
+.s360-scope .icon-btn:hover {color:var(--ink);border-color:var(--accent)}
+
+.s360-scope .pills {position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:1px solid var(--line)}
+.s360-scope .pills-inner {max-width:var(--shell-max);margin:0 auto;padding:8px 22px;display:flex;gap:6px;overflow-x:auto}
+.s360-scope .pill {white-space:nowrap;padding:6px 13px;border-radius:20px;font-size:0.7812rem;font-weight:700;color:var(--ink-2);cursor:pointer;border:1px solid transparent;background:transparent;font-family:inherit}
+.s360-scope .pill:hover {color:var(--ink);background:var(--panel-2)}
+.s360-scope .pill.active {color:var(--accent);background:var(--accent-weak);border-color:var(--accent-weak)}
+
+.s360-scope .wrap {max-width:var(--shell-max);margin:0 auto;padding:22px}
+.s360-scope .col {display:flex;flex-direction:column;gap:22px;min-width:0}
+
+.s360-scope .panel {background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.s360-scope .phead {display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);background:var(--panel-2)}
+.s360-scope .phead h2 {font-size:0.8125rem;font-weight:800;letter-spacing:.01em}
+.s360-scope .phead .desk-score {margin-left:auto;font-size:0.6875rem;font-weight:800;padding:3px 9px;border-radius:20px}
+.s360-scope .sc-pos {background:var(--pos-weak);color:var(--pos)} .s360-scope .sc-neg {background:var(--neg-weak);color:var(--neg)}
+.s360-scope .sc-warn {background:var(--warn-weak);color:var(--warn)} .s360-scope .sc-neu {background:var(--neutral-weak);color:var(--neutral)}
+.s360-scope .phead .link {font-size:0.6875rem;font-weight:700;color:var(--accent);cursor:pointer}
+.s360-scope .pbody {padding:16px}
+.s360-scope .fresh {font-size:0.625rem;color:var(--ink-3);font-weight:600;letter-spacing:.02em}
+
+/* ===== Overview (photo layout): title + 4 cards ===== */
+.s360-scope .s360-title {display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;margin-bottom:18px}
+.s360-scope .s360-name {min-width:0;flex:1}
+.s360-scope .s360-name h1 {font-size:1.875rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.s360-scope .s360-name h1 .sym {font-weight:800;color:var(--ink-2)}
+.s360-scope .s360-quote {display:flex;align-items:baseline;gap:10px;margin-top:8px;flex-wrap:wrap}
+.s360-scope .s360-quote .cur {font-size:0.75rem;font-weight:700;color:var(--ink-2)}
+.s360-scope .s360-quote .price {font-size:1.625rem;font-weight:800}
+.s360-scope .s360-52 {min-width:180px}
+.s360-scope .s360-52 .hl-vals {display:flex;justify-content:space-between;font-size:0.75rem;font-weight:700;color:var(--ink-2)}
+.s360-scope .s360-52 .hl-bar {height:6px;border-radius:4px;margin:4px 0;background:linear-gradient(90deg,var(--neg),var(--warn),var(--pos));position:relative}
+.s360-scope .s360-52 .hl-bar .mk {position:absolute;top:-3px;width:2px;height:12px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--bg)}
+.s360-scope .s360-52 .hl-lab {font-size:0.6562rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);text-align:center;margin-top:2px}
+
+.s360-scope .s360-cards {display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.s360-scope .ocard {background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px 18px}
+.s360-scope .ocard h3 {font-size:1.1875rem;font-weight:800;letter-spacing:-.01em;margin-bottom:8px}
+.s360-scope .ocard .oc-head {display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.s360-scope .ocard .oc-head h3 {margin:0}
+.s360-scope .ocard .oc-head .link {margin-left:auto}
+.s360-scope .kv-loading {color:var(--ink-3);font-size:0.75rem;padding:6px 0}
+/* <dl> carries a browser default margin:1em 0, and nothing reset it — that was
+   a ~14px gap above the first row AND below the last one inside every kv card. */
+.s360-scope .kv {margin:0}
+/* Separators run the full card width: the row is pulled out by the card's 18px
+   side padding and given it back as its own padding, so the text stays put
+   while the rule reaches both edges instead of floating inset. */
+.s360-scope .kv .kv-row {display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  margin:0 -18px;padding:9px 18px;border-bottom:1px solid var(--line)}
+/* Last row: no trailing rule and no trailing padding, so the card closes on the
+   value rather than on empty space. */
+.s360-scope .kv .kv-row:last-child {border-bottom:none;padding-bottom:0}
+.s360-scope .kv dt {font-size:0.7812rem;color:var(--ink-2)}
+.s360-scope .kv dd {margin:0;font-size:0.8438rem;font-weight:700}
+
+/* Investment style box */
+
+/* Price card */
+.s360-scope .chart-box {flex:1;min-height:180px}
+.s360-scope #ovChart {width:100%;height:100%;min-height:180px;display:block}
+.s360-scope .tf {font:inherit;font-size:0.7188rem;font-weight:700;cursor:pointer;color:var(--ink-2);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:5px 12px}
+.s360-scope .tf:hover {color:var(--ink);border-color:var(--line-2)}
+.s360-scope .tf.active {background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+@media (max-width:1080px) {.s360-scope .s360-cards {grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px) {.s360-scope .s360-cards {grid-template-columns:1fr}.s360-scope .s360-name h1 {font-size:1.5rem}}
+
+.s360-scope .vstrip {display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.s360-scope .vcell {background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 13px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.s360-scope .vcell .stripe {position:absolute;left:0;top:0;bottom:0;width:3px}
+.s360-scope .vcell .lab {font-size:0.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2)}
+.s360-scope .vcell .sc {font-size:1.4375rem;font-weight:800;margin-top:3px}
+.s360-scope .vcell .verdict {font-size:0.6875rem;font-weight:700;margin-top:1px}
+
+/* auto-FIT, not auto-fill. auto-fill keeps empty tracks alive: with 4 tiles in a
+   984px row it built SEVEN 132px tracks, leaving 426px of dead space on the
+   right and squeezing each tile so narrow that "Broker Accumulation (1 month)"
+   wrapped onto three lines — which then stretched all four tiles to that height
+   and left ~42px empty at the bottom of the other three. auto-fit collapses the
+   empty tracks, so the tiles share the full width and shrink back to one row of
+   content. */
+.s360-scope .mgrid {display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:10px}
+.s360-scope .mcard {background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:11px 12px}
+.s360-scope .mcard .k {font-size:0.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2)}
+.s360-scope .mcard .v {font-size:1.1875rem;font-weight:800;margin-top:4px}
+.s360-scope .mcard .sub {font-size:0.6875rem;color:var(--ink-3);font-weight:600;margin-top:2px}
+
+.s360-scope .rets {display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.s360-scope .ret {background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px;text-align:center}
+.s360-scope .ret .k {font-size:0.625rem;font-weight:700;color:var(--ink-3);text-transform:uppercase}
+.s360-scope .ret .v {font-size:0.9375rem;font-weight:800;margin-top:3px}
+.s360-scope #priceChart {width:100%;height:200px;display:block}
+.s360-scope .momentum-sep {height:1px;background:var(--line);margin:16px 0}
+
+
+.s360-scope .peer {display:flex;flex-direction:column;gap:9px;margin-top:4px}
+.s360-scope .peer .row {display:grid;grid-template-columns:130px 1fr 62px;align-items:center;gap:10px;font-size:0.75rem}
+.s360-scope .peer .track {height:8px;background:var(--panel-2);border-radius:6px;position:relative;overflow:hidden}
+.s360-scope .peer .fill {position:absolute;left:0;top:0;bottom:0;border-radius:6px}
+.s360-scope .peer .med {position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink-2);opacity:.5}
+.s360-scope .peer .pv {text-align:right;font-weight:700}
+
+.s360-scope .btwrap {display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.s360-scope .btcol .cap {font-size:0.6875rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;display:flex;justify-content:space-between}
+.s360-scope .brow {display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--line);font-size:0.75rem}
+.s360-scope .brow:last-child {border-bottom:none}
+.s360-scope .brow .rk {color:var(--ink-3);font-weight:700;font-size:0.6875rem}
+.s360-scope .brow .bn {font-weight:700}
+.s360-scope .brow .mini {height:4px;border-radius:3px;margin-top:3px}
+
+.s360-scope .ro {display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.s360-scope .ro h3 {font-size:0.75rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px}
+.s360-scope .chip {display:flex;gap:9px;align-items:flex-start;padding:9px 11px;border-radius:var(--r-sm);margin-bottom:8px;font-size:0.7812rem;border:1px solid var(--line)}
+.s360-scope .chip .ic {font-size:0.8125rem;margin-top:1px}
+.s360-scope .chip .src {font-size:0.625rem;color:var(--ink-3);font-weight:600;margin-top:2px}
+.s360-scope .chip.good {background:var(--pos-weak)} .s360-scope .chip.bad {background:var(--neg-weak)} .s360-scope .chip.warnc {background:var(--warn-weak)}
+
+.s360-scope .pf-badge {font-size:0.6875rem;font-weight:800;padding:4px 10px;border-radius:20px;background:var(--pos-weak);color:var(--pos)}
+
+.s360-scope .s360-btn {margin-left:auto;font:inherit;font-size:0.7188rem;font-weight:800;cursor:pointer;
+  color:#fff;background:linear-gradient(135deg,var(--accent),#8f6ef0);border:0;
+  border-radius:20px;padding:5px 13px}
+.s360-scope .s360-btn:hover {filter:brightness(1.08)}
+.s360-scope .s360-btn:disabled {opacity:.6;cursor:default;filter:grayscale(.3)}
+.s360-scope .ai-narrative {font-size:0.8125rem;line-height:1.6}
+.s360-scope .ai-narrative h1, .s360-scope .ai-narrative h2, .s360-scope .ai-narrative h3, .s360-scope .ai-narrative h4 {font-size:0.8438rem;font-weight:800;margin:14px 0 6px}
+.s360-scope .ai-narrative p {margin:0 0 10px}
+.s360-scope .ai-narrative ul, .s360-scope .ai-narrative ol {margin:0 0 10px;padding-left:20px}
+.s360-scope .ai-narrative li {margin:3px 0}
+.s360-scope .ai-narrative strong {color:var(--ink)}
+.s360-scope .ai-meta {font-size:0.625rem;color:var(--ink-3);font-weight:600;margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+
+.s360-scope .ai {background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line-2);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.s360-scope .ai-head {padding:14px 16px 4px}
+.s360-scope .ai-head .eyebrow {color:var(--accent)}
+.s360-scope .ai-gauge {padding:6px 0 10px}
+.s360-scope .ai-sec {border-top:1px solid var(--line);padding:12px 16px}
+.s360-scope .ai-sec .eyebrow {margin-bottom:8px;display:block}
+.s360-scope .reason {display:flex;gap:9px;font-size:0.75rem;margin-bottom:9px;align-items:flex-start}
+.s360-scope .reason .w {font-family:var(--mono);font-weight:700;font-size:0.6875rem;min-width:34px;text-align:right}
+.s360-scope .reason .tx {color:var(--ink)}
+.s360-scope .disclaimer {font-size:0.625rem;color:var(--ink-3);padding:0 16px 14px;line-height:1.5}
+
+.s360-scope footer {max-width:var(--shell-max);margin:0 auto;padding:8px 22px 40px;color:var(--ink-3);font-size:0.6875rem}
+
+@media (max-width:980px) {
+  .s360-scope .vstrip {grid-template-columns:repeat(2,1fr)}
+  .s360-scope .rets {grid-template-columns:repeat(3,1fr)}
+  .s360-scope .btwrap, .s360-scope .ro {grid-template-columns:1fr}
+  .s360-scope .quickstats {margin-left:0;width:100%}
+}
+@media (prefers-reduced-motion:no-preference) {
+  .s360-scope .fill, .s360-scope .mk {transition:all .5s cubic-bezier(.2,.7,.2,1)}
+}
+
+/* ===== Freshness chip (hero) — how current this print is, stated up front ===== */
+.s360-scope .fresh-chip {font-size:0.625rem;font-weight:800;padding:3px 9px;border-radius:20px;
+  border:1px solid var(--line);letter-spacing:.02em;cursor:help;white-space:nowrap}
+.s360-scope .fresh-chip.fc-pos {background:var(--pos-weak);color:var(--pos)}
+.s360-scope .fresh-chip.fc-warn {background:var(--warn-weak);color:var(--warn)}
+.s360-scope .fresh-chip.fc-neg {background:var(--neg-weak);color:var(--neg)}
+.s360-scope .fresh-chip.fc-neu {background:var(--panel-2);color:var(--ink-2)}
+
+
+/* ===== Valuation & Peers ===== */
+.s360-scope .val-grid {display:grid;grid-template-columns:1.05fr .95fr;gap:20px}
+@media (max-width:900px) {.s360-scope .val-grid {grid-template-columns:1fr}}
+.s360-scope .mgrid-tight {margin-top:12px;grid-template-columns:repeat(auto-fit,minmax(112px,1fr))}
+.s360-scope .val-verdict {margin-top:8px;padding:12px 14px;border-radius:var(--r-sm);border:1px solid var(--line)}
+.s360-scope .val-verdict.pos {background:var(--pos-weak)} .s360-scope .val-verdict.neg {background:var(--neg-weak)}
+.s360-scope .val-verdict.warn {background:var(--warn-weak)} .s360-scope .val-verdict.neu {background:var(--panel-2)}
+.s360-scope .vv-label {font-size:1.0625rem;font-weight:800}
+.s360-scope .vv-sub {font-size:0.75rem;color:var(--ink-2);font-weight:600;margin-top:3px;line-height:1.5}
+.s360-scope .val-assump {margin-top:11px;font-size:0.6875rem;color:var(--ink-3);line-height:1.6}
+.s360-scope .val-assump b {color:var(--ink-2)}
+.s360-scope .val-inputs {display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-top:14px;
+  padding-top:12px;border-top:1px dashed var(--line-2)}
+.s360-scope .val-inputs label {font-size:0.625rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--ink-2);display:flex;flex-direction:column;gap:4px}
+.s360-scope .val-inputs .ipt {display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--ink-2)}
+.s360-scope .val-inputs input {width:66px;font:inherit;font-size:0.8125rem;font-weight:700;padding:4px 7px;
+  color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:6px}
+.s360-scope .val-inputs .s360-btn {margin-left:0}
+.s360-scope .s360-btn.ghost {background:none;color:var(--ink-2);border:1px solid var(--line)}
+
+.s360-scope .sens {width:100%;border-collapse:collapse;font-size:0.7188rem;margin-top:4px}
+.s360-scope .sens th {background:var(--panel-2);color:var(--ink-2);font-weight:800;padding:4px 6px;
+  border:1px solid var(--line);font-size:0.625rem}
+.s360-scope .sens td {padding:4px 6px;border:1px solid var(--line);text-align:right;
+  font-variant-numeric:tabular-nums;font-weight:700}
+.s360-scope .sens td.ok {background:var(--pos-weak);color:var(--pos)}
+.s360-scope .sens td.no {color:var(--ink-3)}
+.s360-scope .sens td.na {color:var(--ink-3);opacity:.6}
+
+.s360-scope .peer-head {display:flex;gap:13px;align-items:center;padding:12px 14px;border-radius:var(--r-sm);
+  border:1px solid var(--line);margin-top:8px}
+.s360-scope .peer-head.pos {background:var(--pos-weak)} .s360-scope .peer-head.neg {background:var(--neg-weak)}
+.s360-scope .peer-head.warn {background:var(--warn-weak)} .s360-scope .peer-head.neu {background:var(--panel-2)}
+.s360-scope .ph-score {font-size:1.625rem;font-weight:800;line-height:1}
+.s360-scope .ph-label {font-size:0.8125rem;font-weight:800}
+.s360-scope .ph-sub {font-size:0.6875rem;color:var(--ink-2);font-weight:600;margin-top:2px}
+.s360-scope .peer-metrics {margin-top:13px;display:flex;flex-direction:column;gap:11px}
+.s360-scope .pm-top {display:flex;justify-content:space-between;font-size:0.75rem;font-weight:700}
+.s360-scope .pm-med {font-size:0.6562rem;color:var(--ink-3);font-weight:600;margin-left:7px}
+.s360-scope .pm-bar {height:6px;background:var(--panel-2);border-radius:4px;margin:5px 0 3px;overflow:hidden}
+.s360-scope .pm-bar i {display:block;height:100%;background:var(--accent);border-radius:4px}
+.s360-scope .pm-sub {font-size:0.6562rem;color:var(--ink-3);font-weight:600}
+.s360-scope .peer-tbl {width:100%;border-collapse:collapse;font-size:0.75rem}
+.s360-scope .peer-tbl th {text-align:right;font-size:0.625rem;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--ink-2);padding:5px 7px;border-bottom:1px solid var(--line)}
+.s360-scope .peer-tbl th:first-child {text-align:left}
+.s360-scope .peer-tbl td {padding:5px 7px;border-bottom:1px solid var(--line);text-align:right}
+.s360-scope .peer-tbl td:first-child {text-align:left}
+.s360-scope .peer-tbl tr.me {background:var(--panel-2)}
+.s360-scope .peer-tbl tr.me td {font-weight:800}
+.s360-scope .peer-tbl a {color:var(--accent);text-decoration:none}
+.s360-scope .peer-tbl a:hover {text-decoration:underline}
+
+/* ===== Dividend card ===== */
+.s360-scope .oc-note {font-size:0.625rem;color:var(--ink-3);font-weight:700}
+.s360-scope .dv-top {display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
+.s360-scope .dv-k {font-size:0.5938rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2)}
+.s360-scope .dv-v {font-size:1.0625rem;font-weight:800;margin-top:2px}
+.s360-scope .dv-bars {display:flex;gap:6px;align-items:flex-end;height:52px;margin-top:12px}
+.s360-scope .dv-bar {flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;
+  height:100%;cursor:help}
+.s360-scope .dv-bar i {display:block;width:100%;background:var(--accent);border-radius:3px 3px 0 0;min-height:3px}
+.s360-scope .dv-bar em {font-style:normal;font-size:0.5625rem;color:var(--ink-3);font-weight:700;margin-top:3px}
+.s360-scope .dv-note {font-size:0.5938rem;color:var(--ink-3);font-weight:600;margin-top:8px;line-height:1.5}
+
+/* Board-proposed dividends — set apart from the paid history above it. */
+.s360-scope .dv-proposed {border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:8px;
+  background:var(--surface-2)}
+.s360-scope .dv-prop-head {font-size:0.5938rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--accent)}
+.s360-scope .dv-prop-grid {display:flex;gap:18px;flex-wrap:wrap;margin-top:6px}
+.s360-scope .dv-prop-dates {display:flex;gap:6px 14px;flex-wrap:wrap;margin-top:8px;
+  font-size:0.5938rem;font-weight:600;color:var(--ink-3)}
+.s360-scope .dv-prop-dates b {color:var(--ink-1);font-weight:800}
+.s360-scope .dv-prop-earlier {list-style:none;margin:8px 0 0;padding:8px 0 0;border-top:1px solid var(--line)}
+.s360-scope .dv-prop-earlier li {display:flex;gap:6px;flex-wrap:wrap;align-items:baseline;
+  font-size:0.625rem;font-weight:700;padding:2px 0}
+.s360-scope .dv-prop-earlier span {color:var(--ink-3);font-weight:600}
+.s360-scope .dv-prop-earlier em {font-style:normal;color:var(--ink-3);font-weight:600;margin-left:auto}
+.s360-scope .dv-proposed .dv-note {margin-top:8px}
+
+/* ===== Floorsheet extras: window row, net-buy chart, flow map ===== */
+.s360-scope .win-row {display:flex;gap:5px;margin-left:auto;margin-right:10px}
+.s360-scope .win-row .tf {padding:3px 9px;font-size:0.6562rem}
+.s360-scope .flow-extra {border-top:1px solid var(--line);padding-top:14px}
+
+/* Hand-off to the broker desk's flow map (drawn there, not here) */
+.s360-scope .flow-link {display:flex;align-items:center;gap:13px;padding:14px 16px;border-radius:var(--r-sm);
+  border:1px solid var(--line);background:var(--panel-2);text-decoration:none;transition:border-color .15s}
+.s360-scope .flow-link:hover {border-color:var(--accent);background:var(--accent-weak)}
+.s360-scope .flow-link .fl-ic {font-size:1.125rem;color:var(--accent);font-weight:800}
+.s360-scope .flow-link b {display:block;font-size:0.8125rem;font-weight:800;color:var(--ink)}
+.s360-scope .flow-link em {display:block;font-style:normal;font-size:0.6875rem;color:var(--ink-2);
+  font-weight:600;margin-top:3px;line-height:1.5}
+.s360-scope .flow-link .fl-go {margin-left:auto;color:var(--ink-3);font-weight:800}
+
+/* Two valuation reads, side by side, with the disagreement named */
+.s360-scope .val-pair {display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+@media (max-width:640px) {.s360-scope .val-pair {grid-template-columns:1fr}}
+.s360-scope .val-pair .val-verdict {margin-top:0}
+.s360-scope .vv-tag {font-size:0.5938rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--ink-2);margin-bottom:4px}
+.s360-scope .val-pair .vv-label {font-size:0.9375rem}
+.s360-scope .val-recon {margin-top:9px;padding:9px 12px;border-radius:var(--r-sm);background:var(--panel-2);
+  border:1px dashed var(--line-2);font-size:0.7188rem;color:var(--ink-2);line-height:1.55}
+
+/* Statements: sector digest vs full matrix */
+
+/* ===== Three-column desk =====================================================
+   Rails carry the at-a-glance reads (ratios, dividend, peer rank on the left;
+   technical and order flow on the right); the middle column carries the
+   reasoning. Wide tables — statements, the sector model — stay full width below,
+   because a 24-quarter matrix squeezed into a third of the viewport is unusable.
+   Rails are fixed-width and the middle is the only flexible track, so the page
+   keeps the same shape from 1280px up instead of the rails growing with it. */
+.s360-scope .s360-grid {
+  display:grid;
+  grid-template-columns:300px minmax(0,1fr) 340px;
+  /* No margin-bottom: the parent .col is a flex column with gap:22px, so a
+     margin here ADDED to that gap — 44px before Financial Statements where
+     every other block break is 22px. The gap alone spaces this. */
+  gap:18px;align-items:start;
+}
+.s360-scope .s360-grid .rail, .s360-scope .s360-grid .mid {display:flex;flex-direction:column;gap:18px;min-width:0}
+/* In a 300px rail the overview cards stack rather than sitting side by side. */
+.s360-scope .rail .s360-cards {display:flex;flex-direction:column;gap:14px}
+.s360-scope .rail .mgrid {grid-template-columns:1fr 1fr}
+.s360-scope .rail .mcard .v {font-size:1.0625rem}
+.s360-scope .rail .btwrap {grid-template-columns:1fr}
+.s360-scope .rail .peer-tbl {font-size:0.6875rem}
+.s360-scope .rail .peer-tbl th, .s360-scope .rail .peer-tbl td {padding:4px 5px}
+
+/* Peers left the valuation panel for the left rail, so the intrinsic model now
+   has the whole width of the middle column. */
+.s360-scope .val-grid {grid-template-columns:1fr}
+
+@media (max-width:1300px) {
+  /* Right rail drops under the middle column first — order flow reads fine at
+     full width, whereas the middle column's tables do not want to be narrower. */
+  .s360-scope .s360-grid {grid-template-columns:300px minmax(0,1fr)}
+  .s360-scope .s360-grid .rail-r {grid-column:1 / -1}
+  .s360-scope .rail-r .mgrid {grid-template-columns:repeat(auto-fit,minmax(128px,1fr))}
+  .s360-scope .rail-r .btwrap {grid-template-columns:1fr 1fr}
+}
+@media (max-width:900px) {
+  .s360-scope .s360-grid {grid-template-columns:1fr}
+  .s360-scope .s360-grid .rail-l, .s360-scope .s360-grid .rail-r {grid-column:auto}
+  .s360-scope .rail .s360-cards {display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+}
+/* Panel headers must wrap inside a 340px rail — the window selector and the
+   "open desk" link would otherwise push past the panel edge and clip. */
+.s360-scope .rail .phead {flex-wrap:wrap;row-gap:6px}
+.s360-scope .rail .win-row {margin-left:auto;margin-right:0}
+.s360-scope .rail .phead .link {margin-left:auto}
+.s360-scope .rail .phead h2 {flex:1 1 100%}
+.s360-scope .rail .phead .desk-score {margin-left:0}
+
+/* ===== Morningstar panel: tighter =====
+   The model markup was authored for a standalone page with generous margins.
+   Hosted here it sits inside a panel that already supplies padding, so the
+   stacked 18-26px margins read as dead space. The scatter is a 720x380 viewBox
+   with width:100% — stretched across the full page it grows to ~700px tall and
+   most of that is empty plot area, so it gets a max-width and is centred. */
+.s360-scope #model .gv-head {margin:0 0 10px}
+.s360-scope #model .gv-cards {gap:8px;margin-bottom:12px}
+.s360-scope #model .gv-card {padding:9px 11px;border-radius:9px}
+.s360-scope #model .gv-card b {font-size:1.125rem}
+/* Box hugs the chart rather than stretching the border across the panel with
+   the plot floating in the middle of it. */
+/* In the middle column the panel is already narrow, so the chart takes the
+   full width it is given rather than being capped and centred. */
+.s360-scope #model .gv-scatter-wrap {padding:10px;margin:0 auto 12px;max-width:100%}
+.s360-scope #model .gv-scatter {display:block}
+.s360-scope #model .gv-cap-row {margin-bottom:6px}
+.s360-scope #model .gv-filters {margin-bottom:8px}
+.s360-scope #model .gv-pager {margin-top:8px}
+.s360-scope #model .fa-section-title {margin:0}
+
+/* ===== Page width =====
+   stock360.css is loaded by this page only, so overriding the shared token here
+   widens Stock 360 without moving any other desk. Three columns plus the model
+   panel need more room than the platform default (1720px) comfortably gives. */
+.s360-scope .s360-scope {--shell-max: max(1280px, min(1860px, 96vw));}
+
+/* Morningstar, compact: the summary cards and the results table were sized for
+   a full-width standalone page and are oversized inside a column. */
+.s360-scope #model .gv-cards {grid-template-columns:repeat(4,1fr);gap:7px}
+.s360-scope #model .gv-card {padding:7px 10px}
+.s360-scope #model .gv-card b {font-size:1rem}
+.s360-scope #model .gv-card span {font-size:0.5938rem}
+.s360-scope #model .gv-scatter {max-height:330px}
+.s360-scope #model .gv-table th, .s360-scope #model .gv-table td {padding:5px 8px;font-size:0.7188rem}
+.s360-scope #model .gv-filters, .s360-scope #model .gv-pager {font-size:0.7188rem}
+
+/* The peer list under the scatter (filters, table, pager) starts collapsed on
+   Stock 360: this page is about ONE company, and the scatter already places it
+   against its sector. The header button adds .list-open to reveal it — the rows
+   are always built, so opening costs nothing but layout. */
+.s360-scope #model .gv-filters, .s360-scope #model .gv-table-wrap, .s360-scope #model .gv-pager {display:none}
+.s360-scope #model.list-open .gv-filters {display:flex}
+.s360-scope #model.list-open .gv-table-wrap {display:block}
+.s360-scope #model.list-open .gv-pager {display:flex}
+.s360-scope #model .phead .s360-btn {margin-left:auto}
+.s360-scope #model .phead .link {margin-left:12px}
+
+/* ===== Financial statements: readable at full width =====
+   The matrix was sized for a cramped standalone page (12.5px body, 10px period
+   sublabels). This section spans the full 1860px shell, so the constraint is
+   legibility, not fit — the numbers are the point of the block.
+   The `:not([data-den])` guard hands sizing back to the density tiers in
+   fundamentals-desk.css once a period count is active — an id selector would
+   otherwise out-specify them and every tier would render identically. */
+.s360-scope #statements table.fm-table:not([data-den]) {font-size:0.875rem}
+.s360-scope #statements .fm-table:not([data-den]) th, .s360-scope #statements .fm-table:not([data-den]) td {padding:7px 12px}
+.s360-scope #statements .fm-table .fm-q {font-size:0.6875rem}
+.s360-scope #statements .fm-table:not([data-den]) tr.fm-growth td {font-size:0.75rem}
+/* Full-width shell: one step roomier than the standalone page at every tier. */
+.s360-scope #statements .fm-table[data-den="roomy"] th, .s360-scope #statements .fm-table[data-den="roomy"] td {padding:9px 20px;font-size:0.9375rem}
+.s360-scope #statements .fm-table[data-den="normal"] th, .s360-scope #statements .fm-table[data-den="normal"] td {padding:8px 15px;font-size:0.875rem}
+.s360-scope #statements .fm-table[data-den="tight"] th, .s360-scope #statements .fm-table[data-den="tight"] td {padding:7px 11px;font-size:0.8125rem}
+.s360-scope #statements .fm-table[data-den="micro"] th, .s360-scope #statements .fm-table[data-den="micro"] td {padding:6px 8px;font-size:0.75rem}
+.s360-scope #statements .fm-tab, .s360-scope #statements .fm-pill {font-size:0.8125rem}
+
+/* ===== SOP Confluence signal ===== */
+.s360-scope .sop-calls {display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.s360-scope .sop-call {padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--line)}
+.s360-scope .sop-call.pos {background:var(--pos-weak)} .s360-scope .sop-call.neg {background:var(--neg-weak)}
+.s360-scope .sop-call.warn {background:var(--warn-weak)}
+.s360-scope .sop-call .k {font-size:0.5938rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2)}
+.s360-scope .sop-call .v {font-size:1.125rem;font-weight:800;margin-top:2px}
+.s360-scope .sop-call.pos .v {color:var(--pos)} .s360-scope .sop-call.neg .v {color:var(--neg)} .s360-scope .sop-call.warn .v {color:var(--warn)}
+.s360-scope .sop-call .sub {font-size:0.625rem;color:var(--ink-2);font-weight:600;margin-top:3px;line-height:1.45}
+/* The disagreement between the two calls is the finding, so it gets its own line. */
+.s360-scope .sop-conflict {margin-top:9px;padding:8px 11px;border-radius:var(--r-sm);background:var(--warn-weak);
+  border:1px dashed var(--warn);font-size:0.6875rem;color:var(--ink-2);line-height:1.5}
+.s360-scope .sop-why {margin-top:9px;font-size:0.6875rem;color:var(--ink-2);line-height:1.5}
+.s360-scope .sop-inds {display:flex;flex-wrap:wrap;gap:5px}
+.s360-scope .sop-ind {font-size:0.625rem;font-weight:700;padding:3px 8px;border-radius:20px;border:1px solid var(--line)}
+.s360-scope .sop-ind.on {background:var(--pos-weak);color:var(--pos);border-color:var(--pos-weak)}
+.s360-scope .sop-ind.off {background:var(--panel-2);color:var(--ink-3)}
+.s360-scope .sop-bt {display:flex;flex-direction:column;gap:3px;margin-bottom:9px}
+.s360-scope .sop-row {display:flex;justify-content:space-between;font-size:0.7188rem;padding:3px 0;
+  border-bottom:1px solid var(--line)}
+.s360-scope .sop-row span:first-child {color:var(--ink-2)}
+
+/* Search now lives in the title row beside the company it changes. It keeps the
+   .search base styling; this only sizes and places it between the name block
+   and the 52-week gauge. */
+.s360-scope .s360-search {flex:0 1 320px;min-width:220px;margin-left:auto}
+.s360-scope .s360-search input {padding:9px 12px 9px 34px}
+@media (max-width:760px) {.s360-scope .s360-search {flex:1 1 100%;margin-left:0;max-width:none}}
+
+/* Floorsheet moved out of the right rail to full width: at 340px the broker
+   tables wrapped every line, and the rail ran a screen longer than the other
+   two columns. Side by side is what it was always shaped for. */
+.s360-scope #flow .btwrap {grid-template-columns:1fr 1fr}
+
+/* Home link. The brand is also clickable (the usual affordance), but a labelled
+   button is what people actually look for — this page has no primary nav. */
+.s360-scope a.brand {text-decoration:none;color:inherit}
+.s360-scope a.brand:hover {opacity:.85}
+.s360-scope .home-btn {display:inline-flex;align-items:center;text-decoration:none;line-height:1}
+.s360-scope .home-btn:hover {color:var(--ink);border-color:var(--accent)}
+
+/* ===== Valuation & Model page =====
+   Shares this stylesheet with Stock 360, so it needs to undo two decisions made
+   for that page: the peer list is collapsed there (no room) and shown here, and
+   valuation/peers sit side by side rather than stacked. */
+.s360-scope body.val-page #model .gv-filters {display:flex}
+.s360-scope body.val-page #model .gv-table-wrap {display:block}
+.s360-scope body.val-page #model .gv-pager {display:flex}
+.s360-scope body.val-page #model .gv-scatter-wrap {max-width:900px}
+.s360-scope .val-grid-2 {grid-template-columns:1.05fr .95fr}
+@media (max-width:900px) {.s360-scope .val-grid-2 {grid-template-columns:1fr}}
+
+/* ===== Two-column desk (after Valuation + Morningstar moved to their own page)
+   The summary cards now run full width under the title, so the grid carries the
+   reasoning column and a single rail. With only one panel left in the middle,
+   a three-track layout left a column-height hole. */
+.s360-scope .s360-grid-2 {grid-template-columns:minmax(0,1fr) 360px}
+.s360-scope .s360-grid-2 .s360-cards {display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+/* Below the 3-column breakpoint the cards stack, so they size to their own
+   content — nothing to be level with. */
+.s360-scope #overview .s360-cards {display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:16px;align-items:start}
+
+/* ── Three overview cards, one bottom edge ───────────────────────────────────
+   Dividend is the tall one (proposed block + declared row + payout bars +
+   note). Giving it 1.3fr against the other two lets its content reflow and
+   drops it 370 -> 350px; past 1.3fr it floors at 350 and extra width buys
+   nothing, so there is no point starving Market / Key Ratios further.
+
+   Market and Key Ratios are fixed-height lists (6 label/value rows), so width
+   does not change their 296px — the last 54px has to come from stretch. Net
+   effect vs. simply stretching equal columns: every card is level at 350
+   instead of 370, and the dead space inside Market / Key Ratios is 72px rather
+   than 92px. */
+@media (min-width:1081px) {
+  .s360-scope #overview .s360-cards {grid-template-columns:1fr 1fr 1.3fr;align-items:stretch}
+}
+@media (max-width:1100px) {
+  .s360-scope .s360-grid-2 {grid-template-columns:1fr}
+  .s360-scope .s360-grid-2 .rail-r {grid-column:auto}
+  .s360-scope .rail-r .mgrid {grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+}
+
+/* ── Financial Statements ends level with the rail ───────────────────────────
+   Guarded at 1301px, NOT the 1100px stack point: `@media (max-width:1300px)`
+   above already drops .rail-r onto its own full-width row, so between 1101 and
+   1300 the two are stacked, not side by side. Applying the chain there gave the
+   flex items a row height set by their own (now shrinkable) content and
+   collapsed the table to 2px. Only run this where the rail is genuinely
+   alongside the column.
+
+   The grid row is sized by the RAIL: with the table allowed to shrink
+   (min-height:0 all the way down the chain) the left column's min-content is
+   far shorter than the rail, so the rail sets the row height and the table
+   flexes into whatever is left. It scrolls inside .fm-wrap, so nothing is lost
+   — the same rows are there, just reached by scrolling instead of by making
+   the page taller than the rail.
+
+   Every ancestor between #statements and .fm-wrap needs flex + min-height:0;
+   miss one and the default min-height:auto refuses to shrink and the whole
+   thing silently falls back to its natural height. */
+@media (min-width:1301px) {
+  .s360-scope .s360-grid-2 {align-items:stretch}
+  .s360-scope .s360-grid-2 .mid {min-height:0}
+  .s360-scope .s360-grid-2 #statements {flex:1 1 0;min-height:0;display:flex;flex-direction:column}
+  .s360-scope .s360-grid-2 #statements .pbody {flex:1;min-height:0;display:flex;flex-direction:column}
+  .s360-scope .s360-grid-2 #statements #stmt-full {flex:1;min-height:0;display:flex;flex-direction:column}
+  .s360-scope .s360-grid-2 #statements .fm-wrap {flex:1;min-height:0;max-height:none}
+}

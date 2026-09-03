@@ -80,22 +80,23 @@ class FundamentalGrowthValueModelTests(unittest.TestCase):
             ],
         )
 
-    def test_financial_statement_picker_renders_sector_groups(self):
+    def test_industry_sector_picker_renders_sectors(self):
+        # The Fundamentals page is now the Industry Analysis / Smart Stock Score
+        # desk: one sector <select> (banks pre-selected) instead of a per-company list.
         html = render_to_string(
             "core_analysis/fundamental_analysis.html",
             {
-                "symbol": "",
-                "symbols": [
-                    {"symbol": "AAA", "name": "Company A", "sector": "Commercial Banks"},
-                    {"symbol": "BBB", "name": "Company B", "sector": "Hydropower"},
+                "sectors": [
+                    {"sector": "Commercial Banks", "companies": 20},
+                    {"sector": "Hydropower", "companies": 90},
                 ],
                 "asset_version": "test",
             },
         )
 
-        self.assertIn('aria-label="Companies grouped by sector"', html)
-        self.assertIn('data-sector="Commercial Banks"', html)
-        self.assertIn('data-sector="Hydropower"', html)
+        self.assertIn('id="ia-sector"', html)
+        self.assertIn('<option value="Commercial Banks" selected>', html)
+        self.assertIn('<option value="Hydropower">', html)
         self.assertNotIn('id="fa-symlist"', html)
 
     def test_cap_segments_use_cumulative_market_cap_share(self):
@@ -791,7 +792,7 @@ class PortfolioBrokerLedgerTests(TestCase):
         self.assertContains(response, 'class="pf-ledger-toggle-show">Show</b>')
         self.assertContains(response, "Risk Decomposition &amp; Sector Exposure", count=1)
         self.assertContains(response, 'id="pf-factors"', count=1)
-        self.assertContains(response, 'id="pf-sectors"', count=1)
+        self.assertContains(response, 'id="pf-sector-donut"', count=1)
 
         html = response.content.decode()
         manager_start = html.index("<summary>Manage portfolios</summary>")
@@ -801,7 +802,7 @@ class PortfolioBrokerLedgerTests(TestCase):
         self.assertLess(ledger_controls, manager_end)
         risk_sector_card = html.index('id="pf-risk-sector-decomposition"')
         factor_view = html.index('id="pf-factors"')
-        sector_view = html.index('id="pf-sectors"')
+        sector_view = html.index('id="pf-sector-donut"')
         combined_card = html.index('id="pf-concentration-reconciliation"')
         concentration = html.index("Concentration &amp; Attribution", combined_card)
         reconciliation = html.index("Holdings/WACC reconciliation")
@@ -1196,7 +1197,8 @@ class WorkbenchSecurityTests(SimpleTestCase):
         client = Client()
         checks = [
             ("get", "/workbench/"),
-            ("get", "/dashboard/symbols/?q=NABIL"),
+            # /dashboard/symbols/ is intentionally public (search boxes on the
+            # public analysis desks) — see symbol_autocomplete_view.
             ("post", "/dashboard/process/"),
             ("post", "/dashboard/delete/1/"),
             ("post", "/dashboard/sync/"),
@@ -1300,7 +1302,7 @@ class MarketInsightsHeadlineTests(unittest.TestCase):
             patch.object(market_insights, "fetch_live_rows", return_value=None),
             patch.object(market_insights, "fetch_subindices", return_value=stale_subindex),
             patch.object(market_insights, "fetch_market_summary", return_value=summary),
-            patch.object(market_insights, "fetch_contributors", return_value=live_contributors),
+            patch.object(market_insights, "_cached_contributors", return_value=live_contributors),
             patch.object(market_insights, "fetch_top_gainers", return_value=None),
             patch.object(market_insights, "fetch_top_losers", return_value=None),
             patch.object(market_insights, "fetch_top_active", return_value=None),
@@ -1376,7 +1378,7 @@ class MarketInsightsHeadlineTests(unittest.TestCase):
             patch.object(market_insights, "fetch_live_rows", return_value=stale_live_rows),
             patch.object(market_insights, "fetch_subindices", return_value=None),
             patch.object(market_insights, "fetch_market_summary", return_value=summary),
-            patch.object(market_insights, "fetch_contributors", return_value=live_contributors),
+            patch.object(market_insights, "_cached_contributors", return_value=live_contributors),
             patch.object(market_insights, "fetch_top_gainers", return_value=None),
             patch.object(market_insights, "fetch_top_losers", return_value=None),
             patch.object(market_insights, "fetch_top_active", return_value=None),

@@ -143,10 +143,9 @@ def run_cci_long_only_simulation(
             adx_value = df.loc[signal_bar, "ADX"]
             vol_ok = bool(volume_breakout.iloc[signal_bar]) if not pd.isna(volume_breakout.iloc[signal_bar]) else False
 
-            if pd.isna(adx_value):
-                adx_ok = True
-            else:
-                adx_ok = float(adx_value) > adx_threshold
+            # NaN ADX (flat high==low bars are ~63% of NEPSE index history)
+            # means "no measurable trend" — the filter must fail closed, not open.
+            adx_ok = (not pd.isna(adx_value)) and float(adx_value) > adx_threshold
 
             if adx_ok and vol_ok:
                 shares = int(cash // exec_price)

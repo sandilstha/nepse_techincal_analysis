@@ -385,10 +385,22 @@ def accumulation_ask_api(request):
                 f"Daily limit reached ({da.DAILY_QUESTION_CAP} questions). "
                 f"It resets at midnight.")}, status=429)
 
-    range_key = (body.get("range") or "1m").strip() or "1m"
-    sector = (body.get("sector") or "All").strip() or "All"
-    start = (body.get("start") or None)
-    end = (body.get("end") or None)
+    # Same validation as the GET endpoints: these values key a market-wide
+    # scan cache, so unbounded input means unbounded distinct scans.
+    range_key = ((body.get("range") or "1m").strip() or "1m").lower()
+    if range_key not in ba.NAMED_RANGES | {"custom"}:
+        return JsonResponse({"ok": False, "error": "Unknown date range."}, status=400)
+    sector = (body.get("sector") or "All").strip()[:60] or "All"
+    start = end = None
+    if range_key == "custom":
+        try:
+            sd = date.fromisoformat(str(body.get("start") or "").strip())
+            ed = date.fromisoformat(str(body.get("end") or "").strip())
+        except ValueError:
+            return JsonResponse({"ok": False, "error": "Custom dates must use YYYY-MM-DD format."}, status=400)
+        if sd > ed or (ed - sd).days + 1 > ba.CUSTOM_RANGE_MAX_DAYS:
+            return JsonResponse({"ok": False, "error": "Invalid custom date range."}, status=400)
+        start, end = sd.isoformat(), ed.isoformat()
 
     try:
         out = da.ask(question, range_key=range_key, sector=sector, start=start, end=end)

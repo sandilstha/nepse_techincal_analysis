@@ -504,6 +504,67 @@ def proposed_dividends(symbol, limit=6):
     ]
 
 
+def _bs_fy_to_ad(fy_bs):
+    """'2078/2079' (Bikram Sambat, the proposed-dividend feed) -> '2021/22'
+    (the statements feed's spelling). The Nepali fiscal year runs mid-July to
+    mid-July, so BS 2078/79 is AD 2021/22: subtract 57. Returns "" when the
+    input is not a BS year pair."""
+    import re
+    m = re.match(r"^\s*(\d{4})\s*/\s*(\d{2,4})\s*$", str(fy_bs or ""))
+    if not m:
+        return ""
+    start = int(m.group(1)) - 57
+    return f"{start}/{(start + 1) % 100:02d}"
+
+
+def _fy_start(fy_ad):
+    """'2021/22' -> 2021, for ordering; 0 when unparseable."""
+    head = str(fy_ad or "").split("/")[0].strip()
+    return int(head) if head.isdigit() else 0
+
+
+def _current_dividend(latest, proposed):
+    """The ONE dividend the card headlines.
+
+    Two sources can describe it: the statements feed (declared DPS per year)
+    and the proposed-dividend feed (board proposal with the bonus/cash split
+    and the dates). They are usually the SAME dividend seen twice — JBBL's
+    proposed FY 2078/79 at 6.80% is its declared FY 2021/22 at 6.80 — so the
+    card used to show it as two things. Merge by fiscal year:
+
+      * proposal newer than the last declared year -> headline the proposal,
+        flagged as pending AGM approval;
+      * same year -> one block: the declared figure with the split and dates;
+      * only one source present -> that one.
+    """
+    top = proposed[0] if proposed else None
+    top_ad = _bs_fy_to_ad(top["fy"]) if top else ""
+    latest_fy = latest["fy"] if latest and latest.get("dps", 0) > 0 else ""
+
+    if top and (not latest_fy or _fy_start(top_ad) > _fy_start(latest_fy)):
+        return {
+            "status": "proposed", "fy": top_ad or top["fy"], "fy_bs": top["fy"],
+            "total": top["total"], "bonus": top["bonus"], "cash": top["cash"],
+            "announced": top["announced"], "bookclose": top["bookclose"],
+            "bookclose_status": top["bookclose_status"],
+            "distribution": top["distribution"], "bonus_listing": top["bonus_listing"],
+        }
+    if not latest_fy:
+        return None
+    same = top if top and top_ad == latest_fy else None
+    return {
+        "status": "declared", "fy": latest_fy, "fy_bs": same["fy"] if same else None,
+        "total": latest["dps"],
+        "bonus": same["bonus"] if same else None,
+        "cash": same["cash"] if same else None,
+        "announced": same["announced"] if same else None,
+        "bookclose": same["bookclose"] if same else None,
+        "bookclose_status": same["bookclose_status"] if same else "",
+        "distribution": same["distribution"] if same else None,
+        "bonus_listing": same["bonus_listing"] if same else None,
+    }
+
+
 def dividends(symbol):
     """Per-year dividend history from the stored KeyStats rows.
 
@@ -524,6 +585,7 @@ def dividends(symbol):
         return {
             "available": False,
             "proposed": proposed,
+            "current": _current_dividend(None, proposed),
             "note": f"No fundamentals synced for {sym}.",
         }
 
@@ -546,6 +608,7 @@ def dividends(symbol):
         return {
             "available": False,
             "proposed": proposed,
+            "current": _current_dividend(None, proposed),
             "note": "No dividend line on the stored statements for this company.",
         }
 
@@ -566,11 +629,37 @@ def dividends(symbol):
     # value the company declared.
     consistency = round(len(settled_paid) / len(settled) * 100.0, 0) if settled else None
 
+    # Attach the bonus/cash split to the history year it belongs to. The
+    # proposed feed is the only source that splits them, and its year is BS.
+    by_ad = {_bs_fy_to_ad(p["fy"]): p for p in proposed if _bs_fy_to_ad(p["fy"])}
+    for h in history:
+        p = by_ad.get(h["fy"])
+        h["bonus"] = p["bonus"] if p else None
+        h["cash"] = p["cash"] if p else None
+        h["pending"] = h["fy"] == pending
+        h["missing"] = False
+
+    # The table shows a CONTINUOUS five-year run (plus the in-progress year).
+    # The source skips years — 2023/24 is absent for most companies — and a
+    # skipped column read as "the company paid every year shown", so a gap is
+    # rendered as an explicit n/a column instead of disappearing.
+    by_fy = {h["fy"]: h for h in history}
+    newest = _fy_start(settled[-1]["fy"]) if settled else _fy_start(history[-1]["fy"])
+    table = []
+    for start in range(newest - 4, newest + 1):
+        fy = f"{start}/{(start + 1) % 100:02d}"
+        table.append(by_fy.get(fy) or {"fy": fy, "dps": None, "bonus": None, "cash": None,
+                                       "pending": False, "missing": True})
+    if pending:
+        table.append(by_fy[pending])
+
     return {
         "available": True,
         "proposed": proposed,
+        "current": _current_dividend(latest, proposed),
         "period": snap.period,
         "history": history,
+        "table": table,
         "latest": latest,
         "pending_fy": pending,
         "avg_5y": avg5,

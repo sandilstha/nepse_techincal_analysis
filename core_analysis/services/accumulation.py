@@ -552,7 +552,10 @@ def _scan_market(range_key="1m", start=None, end=None,
     So the cross-section is always the market. ``accumulation_scan`` filters the
     resulting rows for display, which leaves every score and band intact.
     """
-    ck = (f"ad_market_v{PAYLOAD_VERSION}_{range_key}_{start}_{end}_{min_turnover:.0f}")
+    # Same freshness tokens as the broker aggregates, so a floorsheet sync
+    # invalidates this scan too instead of serving a stale A/D for 5 minutes.
+    ck = (f"ad_market_v{PAYLOAD_VERSION}_{range_key}_{start}_{end}_{min_turnover:.0f}"
+          f"_{ba.get_latest_trading_date()}_{ba._range_generation()}")
     cached = cache.get(ck)
     if cached is not None:
         return cached

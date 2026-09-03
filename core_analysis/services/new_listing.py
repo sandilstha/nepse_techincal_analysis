@@ -101,8 +101,8 @@ def build_new_listing_snapshot(df, required_bars, sector_df=None, symbol=None, d
         "momentum_10d": ret_n(10),
         "vwap": round(vwap, 2) if vwap is not None else None,
         "price_vs_vwap": _pct(last_close, vwap) if vwap is not None else None,
-        "avg_volume": int(avg_vol) if avg_vol is not None else None,
-        "last_volume": int(last_vol) if last_vol is not None else None,
+        "avg_volume": int(avg_vol) if avg_vol is not None and pd.notna(avg_vol) else None,
+        "last_volume": int(last_vol) if last_vol is not None and pd.notna(last_vol) else None,
         "rvol": rvol,
         "rs_vs_sector": rs_vs_sector,
     }

@@ -83,7 +83,8 @@ HEADLINE_METRICS = (
     ("bvps", "Book Value / Share", "num"),
     ("roe", "ROE (TTM)", "pct"),
     ("roa", "ROA (TTM)", "pct"),
-    ("dps", "Dividend / Share", "num"),
+    # "dps" dropped from the headline strip: the Dividend card below already
+    # carries it with the bonus/cash split and dates.
     ("net_income", "Net Income", "rs000"),
     ("revenue", "Total Revenue", "rs000"),
     ("gross_margin", "Gross Margin (MRQ)", "pct"),
@@ -159,21 +160,65 @@ def _fundamental_tickers():
 
 @require_GET
 def fundamental_analysis_view(request, symbol=None):
-    """Send the old Fundamental Analysis desk to Stock 360.
+    """Fundamental Analysis desk — CROSS-SECTIONAL views only.
 
-    Stock 360 now hosts every block this page used to own — the ratio cards, the
-    multi-year trend, the statement matrix (versions, period depth, CSV) and the
-    Morningstar model — rendered by the same ``fundamentals.js`` module. Keeping
-    a second page alive would mean two answers to "what is this company worth"
-    on two URLs, which is exactly what the merge set out to remove.
+    The per-company blocks (ratio cards, multi-year trend, statement matrix,
+    Morningstar model) live on Stock 360 and stay there: a request WITH a symbol
+    still redirects, so every existing link and bookmark resolves exactly as
+    before. Duplicating the single-stock view here is what the earlier merge
+    removed, and it is not coming back.
 
-    The route and its ``fundamental_analysis`` name are kept so every existing
-    ``{% url %}`` and bookmark still resolves. The JSON endpoints below are
-    untouched — they are what Stock 360 calls.
+    What this page owns is the question Stock 360 structurally cannot answer,
+    because it renders one company at a time:
+
+      * Industry Analysis — every company in a sector, side by side, for the
+        same reporting period.
+      * Smart Stock Score — the CAN SLIM screen ranked across the whole market.
+
+    Both are comparisons, so both need the market as the unit, not a symbol.
     """
     sym = (symbol or request.GET.get("symbol") or "").strip().upper()
-    target = f"/stock/{sym}/#fund" if sym else "/stock/"
-    return redirect(target)
+    if sym:
+        return redirect(f"/stock/{sym}/#fund")
+    from core_analysis.services import industry as ind
+    return render(request, "core_analysis/fundamental_analysis.html", {
+        "asset_version": _asset_version(),
+        "sectors": ind.sectors(),
+    })
+
+
+@require_GET
+def industry_matrix_api(request):
+    """Sector-wide statement matrix: line items x companies for one period."""
+    from core_analysis.services import industry as ind
+
+    sector = (request.GET.get("sector") or "").strip()[:60]
+    fs_type = (request.GET.get("fs_type") or "BS").strip().upper()[:4]
+    fy = (request.GET.get("fiscal_year") or "").strip()[:12]
+    try:
+        q = int(request.GET.get("quarter") or 0)
+    except (TypeError, ValueError):
+        q = 0
+    if not sector:
+        return JsonResponse({"ok": False, "reason": "Pick a sector."}, status=200)
+    try:
+        return JsonResponse(ind.matrix(sector, fs_type, fy, q if q in (1, 2, 3, 4) else 0))
+    except Exception:  # pragma: no cover - never 500 the desk
+        logger.exception("industry matrix failed for %s/%s", sector, fs_type)
+        return JsonResponse({"ok": False, "reason": "Could not build this statement."},
+                            status=200)
+
+
+@require_GET
+def industry_periods_api(request):
+    """Reporting periods available for a sector + statement type."""
+    from core_analysis.services import industry as ind
+
+    sector = (request.GET.get("sector") or "").strip()[:60]
+    fs_type = (request.GET.get("fs_type") or "BS").strip().upper()[:4]
+    if not sector:
+        return JsonResponse({"ok": False, "periods": []}, status=200)
+    return JsonResponse({"ok": True, "periods": ind.periods(sector, fs_type)})
 
 
 @require_GET
@@ -266,6 +311,11 @@ def fundamental_data_api(request):
     rows_by_type = {}
     for code, label in STATEMENT_TYPES:
         rows = _statement_rows(period_qs.filter(fs_type=code))
+        if code == "KS":
+            # Hand-entered life-insurance "Other Indicators" (li_ks_535+) sit
+            # under the feed's own KS rows; empty for every other sector.
+            from core_analysis.services import life_indicators as li
+            rows.extend(li.statement_rows(sym, selected["fy"], selected["quarter"]))
         rows_by_type[code] = {r["code"]: r["amount"] for r in rows}
         statements.append({"type": code, "label": label, "rows": rows})
 
@@ -403,9 +453,11 @@ def fundamental_matrix_api(request):
             status=404,
         )
 
+    # Deterministic: without an ORDER BY MySQL may hand back the sources in
+    # either order, and the same URL would then render different numbers.
     versions = list(
         FinancialStatement.objects.filter(ticker=sym)
-        .order_by()
+        .order_by("data_source")
         .values_list("data_source", flat=True)
         .distinct()
     )
@@ -545,7 +597,8 @@ def _prev_fy(fy):
         a, b = int(parts[0]), int(parts[1])
     except ValueError:
         return None
-    return f"{a - 1}/{(b - 1) % 100:02d}"
+    # Keep the second component's width: '2078/2079' → '2077/2078', '2025/26' → '2024/25'.
+    return f"{a - 1}/{b - 1:0{len(parts[1])}d}"
 
 
 def _gv_value_inputs(d):
@@ -776,15 +829,13 @@ def fundamental_model_api(request):
     if not sector:
         return JsonResponse({"ok": False, "error": "No sectors available."}, status=404)
 
-    periods = sorted(
-        {(fy, q) for fy, q in FinancialStatement.objects
-            .filter(sector=sector, fs_type="KS")
-            .values_list("fiscal_year_ad", "quarter")},
-        reverse=True,
-    )
-    if not periods:
+    # Coverage-aware: the newest period is usually half-filed, and scoring a
+    # sector on its 2 early filers collapses the whole Large/Mid/Small model.
+    from core_analysis.services import industry as ind
+    chosen = ind.best_period(sector, "KS")
+    if not chosen:
         return JsonResponse({"ok": False, "error": f"No data for {sector}."}, status=404)
-    fy, quarter = periods[0]
+    fy, quarter = chosen
 
     try:
         results = _sector_model(sector, fy, quarter)
@@ -977,3 +1028,39 @@ def _morningstar_research(sym, sector, fy, quarter, ks_by_key):
         "fair_value": fair_value,
         "ranks": ranks,
     }
+
+
+# ── Morning Star sector scan API ───────────────────────────────────────────────
+
+@require_GET
+def morningstar_scan_api(request):
+    """Morning Star Growth/Value/Quality scan for one sector (JSON).
+
+    Backed by services/morningstar.py — the final 13-sector parameter framework
+    (docs/morningstar_q4_parameters.md). Percentile-ranked within sector,
+    weights renormalised over present factors, quality as gates/flags.
+    """
+    from core_analysis.services import morningstar as ms
+
+    sectors = ms.available_sectors()
+    sector = (request.GET.get("sector") or "").strip()
+    if sector not in sectors:
+        sector = sectors[0] if sectors else None
+    if not sector:
+        return JsonResponse({"ok": False, "error": "No sectors available."}, status=404)
+
+    try:
+        payload = ms.sector_scan(sector)
+    except Exception:  # pragma: no cover — defensive
+        logger.exception("Morning Star scan failed for %s", sector)
+        payload = {"ok": False, "error": "Scan failed — see server logs."}
+    payload["sectors"] = sectors
+    return JsonResponse(payload, status=200)
+
+
+@require_GET
+def morningstar_sop_view(request):
+    """Methodology SOP for the Morning Star tab. Static content — every
+    parameter, weight, gate and formula is documented in the template itself."""
+    return render(request, "core_analysis/morningstar_sop.html",
+                  {"asset_version": _asset_version()})

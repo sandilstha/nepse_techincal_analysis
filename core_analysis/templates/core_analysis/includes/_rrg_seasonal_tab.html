@@ -78,7 +78,7 @@ market-cycle chart rides along on the `market_cycle` payload.
     .phase-distribution { background: rgba(220,38,38,.14); color: #dc2626; }
     .phase-accumulation { background: rgba(22,163,74,.14); color: #16a34a; }
     .phase-hold { background: rgba(76,141,255,.16); color: #4c8dff; }
-    .phase-wait, .phase-neutral { background: rgba(148,163,184,.16); color: #94a3b8; }
+    .phase-wait, .phase-neutral { background: rgba(148,163,184,.16); color: var(--ink-3, #94a3b8); }
     .strat-outlook { border-left: 3px solid var(--accent, #4c8dff); padding: 9px 13px; margin-bottom: 12px;
       background: var(--bg-raised, rgba(128,128,128,.06)); border-radius: 0 8px 8px 0; }
     .strat-outlook-k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3, #94a3b8);
@@ -104,16 +104,16 @@ market-cycle chart rides along on the `market_cycle` payload.
     .mr-state-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
     .mr-state-grid > div { padding: 9px 12px; border: 1px solid rgba(128,128,128,.22); border-radius: 9px; }
     .mr-k { display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .04em; color: #94a3b8; }
+            letter-spacing: .04em; color: var(--ink-3, #94a3b8); }
     .mr-v { display: block; font-size: 19px; font-weight: 800; line-height: 1.25; }
-    .mr-sub { display: block; font-size: 11.5px; color: #94a3b8; }
-    .mr-note { margin: 9px 0 0; font-size: 12.5px; line-height: 1.5; color: #94a3b8; }
+    .mr-sub { display: block; font-size: 11.5px; color: var(--ink-3, #94a3b8); }
+    .mr-note { margin: 9px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-3, #94a3b8); }
     .mr-tabs { display: flex; gap: 6px; margin: 0 0 10px; }
     .mr-tab { font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; padding: 6px 12px;
               border: 1px solid rgba(128,128,128,.3); border-radius: 999px; background: transparent; color: inherit; }
     .mr-tab.active { border-color: #5b8def; color: #5b8def; }
     .mr-summary { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 9px;
-                  font-size: 12px; color: #94a3b8; }
+                  font-size: 12px; color: var(--ink-3, #94a3b8); }
     /* Long tables scroll inside the card; the page never scrolls sideways. */
     .mr-table-wrap { overflow-x: auto; max-height: 420px; overflow-y: auto;
                      border: 1px solid rgba(128,128,128,.2); border-radius: 10px; }
@@ -121,20 +121,20 @@ market-cycle chart rides along on the `market_cycle` payload.
     .mr-table th, .mr-table td { padding: 8px 11px; text-align: left; white-space: nowrap;
                                  border-bottom: 1px solid rgba(128,128,128,.14); }
     .mr-table thead th { position: sticky; top: 0; z-index: 1; background: var(--bg-raised, #10202f);
-                         font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: #94a3b8; }
+                         font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3, #94a3b8); }
     .mr-table td.num, .mr-table th.num { text-align: right; }
     .mr-table tbody tr:last-child td { border-bottom: none; }
-    .mr-n { color: #94a3b8; }
+    .mr-n { color: var(--ink-3, #94a3b8); }
     .mr-badge { display: inline-block; padding: 1px 8px; border-radius: 999px; color: #fff;
                 font-size: 10.5px; font-weight: 800; letter-spacing: .03em; }
     /* "which phase is running today" — the conclusion, so it leads the card */
     .mr-now { padding: 10px 13px; border-radius: 9px; background: rgba(128,128,128,.07); margin: 12px 0 12px; }
     .mr-now-line { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
     .mr-now-txt { font-size: 13.5px; line-height: 1.55; }
-    .mr-now-sub { margin: 6px 0 0; font-size: 12px; line-height: 1.5; color: #94a3b8; }
+    .mr-now-sub { margin: 6px 0 0; font-size: 12px; line-height: 1.5; color: var(--ink-3, #94a3b8); }
     /* the open phase is a projection to today, not a closed cycle — shown dashed */
     .mr-ongoing td { border-top: 1px dashed rgba(128,128,128,.45); background: rgba(128,128,128,.06); }
-    .mr-caveats { margin-top: 10px; font-size: 12px; line-height: 1.55; color: #94a3b8; }
+    .mr-caveats { margin-top: 10px; font-size: 12px; line-height: 1.55; color: var(--ink-3, #94a3b8); }
     .mr-caveats p { margin: 0 0 5px; }
     .mc-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   </style>
@@ -197,7 +197,8 @@ market-cycle chart rides along on the `market_cycle` payload.
           {# Same convention as Seasonal Strategy below: the long table is #}
           {# collapsed so it never pushes the seasonality matrices off-screen. #}
           <button type="button" class="strat-toggle" id="mrToggle" aria-expanded="false"
-                  aria-controls="mrBody" title="Show every bull and bear phase">?</button>
+                  aria-controls="mrBody" aria-label="Show every bull and bear phase"
+                  title="Show every bull and bear phase">?</button>
         </div>
       </div>
 
@@ -328,7 +329,7 @@ market-cycle chart rides along on the `market_cycle` payload.
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="phase-chip phase-{{ st.phase|lower }}">{{ st.phase }}</span>
           <a href="{% url 'seasonal_sop' %}" class="strat-toggle" target="_blank" rel="noopener" title="Methodology (SOP) — how the Accumulation / Distribution strategy is computed" aria-label="Seasonal strategy methodology (SOP)" style="text-decoration:none;">SOP</a>
-          <button type="button" class="strat-toggle" id="stratToggle" aria-expanded="true" aria-controls="stratBody" title="Hide seasonal strategy details">?</button>
+          <button type="button" class="strat-toggle" id="stratToggle" aria-expanded="true" aria-controls="stratBody" aria-label="Hide seasonal strategy details" title="Hide seasonal strategy details">?</button>
         </div>
       </div>
 
@@ -595,7 +596,9 @@ market-cycle chart rides along on the `market_cycle` payload.
               { name: '150D MA (30w)', data: mk('m150') },
               { name: '200D MA', data: mk('m200') }
             ],
-            colors: ['#e7eefc', '#4c8dff', '#f59e0b', '#a855f7'],
+            /* The NEPSE line must flip with the theme — near-white on a white
+               plot area made the primary series invisible in light mode. */
+            colors: [isDark ? '#e7eefc' : '#0f172a', '#4c8dff', '#f59e0b', '#a855f7'],
             stroke: { width: [2.2, 1.2, 1.4, 1.2], curve: 'straight' },
             fill: { type: 'solid', opacity: 1 },
             dataLabels: { enabled: false },
