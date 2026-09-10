@@ -650,3 +650,28 @@ body.val-page #model .gv-scatter-wrap{max-width:900px}
 .grid-stack.s360-fallback .grid-stack-item-content>.card>:not(.card-header){overflow:visible}
 .grid-stack.s360-fallback .card-header{cursor:default}
 .grid-stack.s360-fallback .ui-resizable-handle{display:none}
+
+/* ---- Debentures & Bonds panel (Stock 360) and the bond desk ---- */
+.bond-wrap{margin-top:14px;overflow-x:auto}
+.bond-table{width:100%;border-collapse:collapse;font-size:0.8125rem}
+.bond-table th,.bond-table td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:top}
+.bond-table th{font-size:0.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);background:var(--panel-2)}
+.bond-table th.num,.bond-table td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.bond-table tr:hover td{background:var(--panel-2)}
+.bond-table .bond-name{font-size:0.6875rem;color:var(--ink-3);font-weight:600;white-space:normal;max-width:260px}
+.bond-table .desk-score{font-size:0.625rem;font-weight:800;padding:2px 8px;border-radius:20px}
+.bond-table a{color:var(--accent);text-decoration:none}
+.bond-group{margin-top:22px}
+.bond-group h3{font-size:0.8125rem;font-weight:800;margin:0 0 6px}
+.bond-group h3 a{color:var(--accent);text-decoration:none}
+.bond-group .sub{font-size:0.6875rem;color:var(--ink-3);font-weight:600;margin-bottom:6px}
+.bond-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.bond-filters select,.bond-filters input{background:var(--panel-2);color:var(--ink-1);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;font-size:0.8125rem}
+.bond-acc{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 12px;margin-top:10px;background:var(--panel-2)}
+.bond-acc summary{cursor:pointer;list-style:none;display:flex;flex-direction:column;gap:2px}
+.bond-acc summary::-webkit-details-marker{display:none}
+.bond-acc summary h3{display:flex;align-items:center;gap:8px;margin:0}
+.bond-acc summary h3::before{content:"▸";color:var(--ink-3);font-size:0.75rem}
+.bond-acc[open] summary h3::before{content:"▾"}
+.bond-acc summary .desk-score{font-size:0.625rem;padding:2px 8px;border-radius:20px}
+.bond-mine{border-color:var(--accent)}

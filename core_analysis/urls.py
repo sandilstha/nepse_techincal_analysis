@@ -46,6 +46,7 @@ from .broker_views import (
     broker_signals_api,
     stock_wise_api,
     net_holding_api,
+    depth_dates_api, depth_overview_api, depth_frames_api, market_depth_sop_view,
     broker_concentration_api,
     hotstocks_api,
     broker_flow_radar_api,
@@ -94,7 +95,7 @@ from .stock360_views import (
     stock360_view, stock360_ai_api, stock360_funda_api, stock360_funda_sync,
     stock360_funda_recent, stock360_funda_sector, stock360_keyfin_api,
     stock360_valuation_api, stock360_dividends_api, stock360_flow_series_api,
-    stock360_sop_api, stock360_sop_view, stock_valuation_view,
+    stock360_sop_api, stock360_sop_view, stock_valuation_view, bond_desk_view,
 )
 
 urlpatterns = [
@@ -120,6 +121,7 @@ urlpatterns = [
     path('stock/api/flow-series/', stock360_flow_series_api, name='stock360_flow_series_api'),
     # More specific than the catch-all below, so both must come first.
     path('stock/sop/', stock360_sop_view, name='stock360_sop'),
+    path('bonds/', bond_desk_view, name='bond_desk'),
     path('stock/<str:symbol>/valuation/', stock_valuation_view, name='stock_valuation'),
     path('stock/<str:symbol>/', stock360_view, name='stock360_symbol'),
 
@@ -175,6 +177,11 @@ urlpatterns = [
     path('floorsheet/api/netholding/', net_holding_api, name='net_holding_api'),
     path('floorsheet/api/concentration/', broker_concentration_api, name='broker_concentration_api'),
     path('floorsheet/api/hotstocks/', hotstocks_api, name='hotstocks_api'),
+    # Market Depth tab — TMS top-5 replay (market_depth_snapshots).
+    path('floorsheet/api/depth/dates/', depth_dates_api, name='depth_dates_api'),
+    path('floorsheet/api/depth/overview/', depth_overview_api, name='depth_overview_api'),
+    path('floorsheet/api/depth/frames/', depth_frames_api, name='depth_frames_api'),
+    path('floorsheet/depth/sop/', market_depth_sop_view, name='market_depth_sop'),
     path('floorsheet/api/flow-radar/', broker_flow_radar_api, name='broker_flow_radar_api'),
     path('floorsheet/api/flow-map/', broker_flow_map_api, name='broker_flow_map_api'),
     path('floorsheet/api/accumulation/', accumulation_api, name='accumulation_api'),

@@ -28,7 +28,7 @@ from django.core.cache import cache
 logger = logging.getLogger(__name__)
 
 CACHE_TTL = 600
-SCAN_VERSION = 6
+SCAN_VERSION = 8
 
 # Combined rating mix. Value-dominant sectors have no real growth engine.
 GV_MIX_DEFAULT = (0.60, 0.40)
@@ -114,12 +114,31 @@ class T:
 
     # canonical KS shortcuts
     def price(self):
-        return _pos(self.c("KS", "market_value_per_share"))
+        """Latest traded close, falling back to the price filed with the report.
+
+        The KS block files the share price as it stood on the reporting date.
+        By the time a sector is scored that is months old — on 2026-09-09 the
+        filed price was 33% above the market for ANLB and 19% for GMLI — and
+        Value is ranked as a cross-section, so one stale price drags every other
+        company's percentile with it. `_attach_live_prices` fills `live_price`
+        for anything that trades; anything that does not keeps the filed figure.
+        """
+        return _pos(self.extra.get("live_price")) or _pos(self.c("KS", "market_value_per_share"))
 
     def eps(self):
         return _num(self.c("KS", "eps_an"))
 
     def pe(self):
+        """P/E on the live price, or the filed one where there is no live price.
+
+        Recomputing is not an invention: the filed PE equals the filed price
+        divided by the filed EPS for every company checked across four sectors,
+        so re-dividing by the same EPS keeps the source's own method. Without
+        this the price row and the P/E row would disagree.
+        """
+        live, eps = _pos(self.extra.get("live_price")), _num(self.c("KS", "eps_an"))
+        if live is not None and eps:
+            return _pos(live / eps)
         return _pos(self.c("KS", "reported_pe"))
 
     def bvps(self):
@@ -138,14 +157,33 @@ class T:
         return _num(self.c("KS", "dividend_per_share"))
 
     def shares(self):
+        """Shares outstanding in '000. Exchange first, KS block as the fallback.
+
+        The KS share count is simply wrong for a handful of companies: NICA
+        files 17,394 ('000) against 149.2 million actually listed, an eightfold
+        understatement that sized one of the largest banks in the country as
+        Small. MBL, SANIMA and KSBBL are 9% to 26% out, usually a bonus the feed
+        has not caught up with. The exchange publishes a capitalisation and a
+        close on the same day, and their quotient is the listed count, so that
+        is the authority. Par value never enters this: SHL at Rs 10 and HATHY at
+        Rs 50 are handled by the same arithmetic as a Rs 100 company, because
+        nothing here divides capital by a face value.
+        """
+        ex = _pos(self.extra.get("eod_shares"))
+        if ex is not None:
+            return ex / 1000.0
         return _pos(self.c("KS", "outstanding_shares"))
 
     def mcap(self):
-        """Rupees. KS price x shares first (shares stored in '000 — see
-        fundamental_views); latest EOD capitalisation as the fallback. Only
-        BFI-style KS blocks carry outstanding shares, so without the fallback
-        every hydro/hotel/manufacturing company had no cap — no size tier, and
-        empty per-cap charts for every sector but banks."""
+        """Rupees: the live price on the exchange's own share count.
+
+        Deliberately not the exchange's capitalisation column, which is stale by
+        design (it reads zero for the newest sessions and is backfilled later).
+        Taking its share count and re-pricing at today's close keeps the count
+        right and the price current. Falls back to the stored capitalisation,
+        then to the KS block, so a company the exchange has never priced still
+        gets a tier rather than dropping off the size chart.
+        """
         p, s = self.price(), self.shares()
         if p is not None and s is not None:
             return p * s * 1000.0
@@ -639,6 +677,23 @@ def _load_tickers(sector, fy, quarter, prev_fy):
     return {tk: t for tk, t in tickers.items() if any(t.cur.values())}
 
 
+def _attach_live_prices(tickers):
+    """Fill each company's `live_price` from the EOD store. Returns (as_of, n).
+
+    Shares the accessor with the Industry Analysis tab so both desks quote the
+    same price for the same company on the same day. A company with no stored
+    close keeps the price it filed, and is counted out of `n`.
+    """
+    from core_analysis.services.industry import latest_prices
+
+    prices, as_of = latest_prices(list(tickers))
+    for tk, px in prices.items():
+        t = tickers.get(tk)
+        if t is not None:
+            t.extra["live_price"] = px
+    return (as_of.isoformat() if as_of else ""), len(prices)
+
+
 def _attach_life_extras(tickers, fy, quarter):
     from core_analysis.models import LifeInsuranceIndicator
     import re as _re
@@ -849,7 +904,7 @@ def _barometer(results):
 
 
 def _latest_nonzero_caps(symbols):
-    """Latest NONZERO market capitalisation per symbol, in rupees.
+    """Latest NONZERO capitalisation per symbol as {symbol: (rupees, shares)}.
 
     The upstream price feed sends market_capitalization = 0 for the newest
     session(s) and fills it in later, so "the latest row" is routinely zero for
@@ -867,15 +922,28 @@ def _latest_nonzero_caps(symbols):
         return {}
     out = {}
     for r in nz.filter(business_date__in=set(latest_by.values())).values(
-            "symbol", "business_date", "market_capitalization"):
-        if r["business_date"] == latest_by.get(r["symbol"]):
-            out[r["symbol"]] = float(r["market_capitalization"]) * MILLION
+            "symbol", "business_date", "market_capitalization", "close_price"):
+        if r["business_date"] != latest_by.get(r["symbol"]):
+            continue
+        cap = float(r["market_capitalization"]) * MILLION
+        # Capitalisation and close come from the same row, so their quotient is
+        # the listed share count on that day — the figure the KS block gets
+        # wrong for NICA and a few others.
+        px = _pos(r["close_price"])
+        out[r["symbol"]] = (cap, cap / px if px else None)
     return out
 
 
 def sector_scan(sector):
     """Full Morning Star scan for one sector. Cached."""
-    key = f"morningstar_v{SCAN_VERSION}:{sector.replace(' ', '_')}"
+    # The scan reads the day's closing price, so the newest EOD date belongs in
+    # the key — otherwise the first fill of a new session serves yesterday's
+    # valuations for the whole cache window.
+    from django.db.models import Max
+
+    from core_analysis.models import NepseDailyStockPrice as P
+    px_day = str(P.objects.aggregate(d=Max("business_date"))["d"] or "")
+    key = f"morningstar_v{SCAN_VERSION}:{sector.replace(' ', '_')}:{px_day}"
     hit = cache.get(key)
     if hit is not None:
         return hit
@@ -910,6 +978,15 @@ def _sector_scan_uncached(sector):
     if not tickers:
         return {"ok": False, "error": f"No companies with {fy} Q{quarter} filings in {sector}."}
 
+    # Live share price BEFORE any scoring: P/B, P/E, dividend yield, the
+    # distributable-per-price metrics and market cap all read T.price(), and
+    # market cap also sets the size tier.
+    try:
+        price_as_of, priced_live = _attach_live_prices(tickers)
+    except Exception:
+        logger.exception("Live price merge failed for %s", sector)
+        price_as_of, priced_live = "", 0
+
     if sector == "Life Insurance":
         try:
             _attach_life_extras(tickers, fy, quarter)
@@ -922,9 +999,11 @@ def _sector_scan_uncached(sector):
     except Exception:
         logger.exception("EOD market-cap fallback failed for %s", sector)
         eod_caps = {}
-    for tk, cap in eod_caps.items():
+    for tk, (cap, sh) in eod_caps.items():
         if tk in tickers:
             tickers[tk].extra["eod_mcap"] = cap
+            if sh:
+                tickers[tk].extra["eod_shares"] = sh
 
     growth_specs, value_specs = spec_fn()
     g_scores, g_detail = _pillar(tickers, growth_specs)
@@ -975,6 +1054,9 @@ def _sector_scan_uncached(sector):
         "sector": sector,
         "period": f"{fy} Q{quarter} vs {prev_fy} Q{quarter}",
         "mix": {"growth": int(gw * 100), "value": int(vw * 100)},
+        "price_as_of": price_as_of,
+        "priced_live": priced_live,
+        "priced_total": len(tickers),
         "results": results,
     }
 

@@ -181,9 +181,32 @@ def fundamental_analysis_view(request, symbol=None):
     if sym:
         return redirect(f"/stock/{sym}/#fund")
     from core_analysis.services import industry as ind
+    from core_analysis.stock360_views import _bond_groups
+    from core_analysis.models import BondValuation
+
+    # Bonds tab: every listed debenture grouped by issuer, from the valuation
+    # sheet loaded by `load_bond_valuations`. Filtering happens client-side.
+    bond_rows = list(BondValuation.objects.select_related("issuer").order_by("maturity_date", "symbol"))
+    bonds = None
+    if bond_rows:
+        valued = [r for r in bond_rows if r.ytm_pct is not None and r.issue_size]
+        wsize = sum(float(r.issue_size) for r in valued)
+        bonds = {
+            "groups": _bond_groups(bond_rows),
+            "count": len(bond_rows),
+            "issuers": len({r.issuer_id for r in bond_rows}),
+            "total_size_bn": sum(float(r.issue_size or 0) for r in bond_rows) / 1e9,
+            "avg_ytm": round(sum(float(r.ytm_pct) * float(r.issue_size) for r in valued) / wsize, 2) if wsize else None,
+            "benchmark": bond_rows[0].benchmark_pct,
+            "as_of": bond_rows[0].valuation_date,
+            "undervalued": sum(1 for r in bond_rows if r.valuation_tone == "pos"),
+            "overvalued": sum(1 for r in bond_rows if r.valuation_tone == "neg"),
+            "calls": ["Undervalued", "Fairly valued", "Overvalued", "Not traded"],
+        }
     return render(request, "core_analysis/fundamental_analysis.html", {
         "asset_version": _asset_version(),
         "sectors": ind.sectors(),
+        "bonds": bonds,
     })
 
 

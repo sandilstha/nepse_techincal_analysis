@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from .models import (
     AccountApproval,
+    BondValuation,
     BrokerLedgerImport,
     BrokerLedgerTransaction,
     BrokerTrade,
@@ -252,3 +253,17 @@ class MarginEligibleCompanyAdmin(admin.ModelAdmin):
     def delete_model(self, request, obj):
         super().delete_model(request, obj)
         _bust_margin_cache()
+
+
+@admin.register(BondValuation)
+class BondValuationAdmin(admin.ModelAdmin):
+    """Bond valuation sheet. Bulk refresh via `manage.py load_bond_valuations`;
+    fix a single issuer link or price here."""
+    list_display = ("symbol", "security_name", "issuer", "sector", "coupon_pct",
+                    "maturity_date", "price", "ytm_pct", "spread_bp", "valuation", "valuation_date")
+    list_filter = ("sector", "valuation", "valuation_date")
+    search_fields = ("symbol", "security_name", "issuer__symbol", "issuer__security_name")
+    autocomplete_fields = ()
+    raw_id_fields = ("issuer",)
+    ordering = ("maturity_date",)
+    readonly_fields = ("created_at", "updated_at")

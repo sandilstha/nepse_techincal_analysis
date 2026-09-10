@@ -500,6 +500,70 @@ def stock360_sop_view(request):
     )
 
 
+def _bond_groups(qs):
+    """Group a BondValuation queryset by issuer, biggest issuers first."""
+    from collections import OrderedDict
+
+    groups = OrderedDict()
+    for b in qs:
+        key = b.issuer_id or "—"
+        g = groups.setdefault(key, {
+            "symbol": b.issuer_id,
+            "name": b.issuer.security_name if b.issuer else "Issuer not resolved",
+            "sector": b.sector,
+            "rows": [],
+            "size": 0.0,
+            "notes": set(),
+        })
+        g["rows"].append(b)
+        g["size"] += float(b.issue_size or 0)
+        if b.issuer_note:
+            g["notes"].add(b.issuer_note)
+    ordered = sorted(groups.values(), key=lambda g: -g["size"])
+    for g in ordered:
+        g["size_bn"] = g["size"] / 1e9
+        g["notes"] = sorted(g["notes"])
+    return ordered
+
+
+@require_GET
+def bond_desk_view(request):
+    """Every listed debenture, grouped by issuing company.
+
+    Filters: ``?issuer=NABIL`` (one company), ``?sector=Finance``,
+    ``?call=Undervalued``. Groups are ordered by outstanding size so the big
+    bank issuers come first; within a group bonds run nearest-maturity first.
+    """
+    from .models import BondValuation
+
+    issuer = _valid_symbol(request.GET.get("issuer"))
+    sector = (request.GET.get("sector") or "").strip()
+    call = (request.GET.get("call") or "").strip()
+
+    qs = BondValuation.objects.select_related("issuer").order_by("maturity_date", "symbol")
+    if issuer:
+        qs = qs.filter(issuer_id=issuer)
+    if sector:
+        qs = qs.filter(sector=sector)
+    if call:
+        qs = qs.filter(valuation=call)
+
+    all_bonds = BondValuation.objects.all()
+    as_of = all_bonds.order_by("-valuation_date").values_list("valuation_date", flat=True).first()
+    return render(request, "core_analysis/bond_desk.html", {
+        "groups": _bond_groups(qs),
+        "count": qs.count(),
+        "total": all_bonds.count(),
+        "as_of": as_of,
+        "issuer": issuer or "",
+        "sector": sector,
+        "call": call,
+        "sectors": sorted(set(all_bonds.values_list("sector", flat=True))),
+        "calls": ["Undervalued", "Fairly valued", "Overvalued", "Not traded"],
+        "asset_version": _asset_version(),
+    })
+
+
 @require_GET
 def stock360_view(request, symbol=None):
     """Render Stock 360 for one symbol (falls back to the latest-traded name)."""
@@ -594,10 +658,22 @@ def stock360_funda_sector(request):
     if not symbols:
         return JsonResponse({"ok": False, "error": f"Source lists no companies for {sector}."}, status=200)
 
-    # Names come along so the panel's company filter is searchable by company as
-    # well as ticker. Falls back to the symbol where no profile row exists.
     from .models import CompanyProfile
 
+    # The source's per-sector list drops companies it has filed under a blank
+    # sector (SAPIL, 2026-09) even though it serves their statements. Add any
+    # active ordinary share our own profile puts in this sector, so it can be
+    # picked; a symbol the source truly lacks just fails its own sync with a
+    # clear message instead of being invisible here.
+    local = set(
+        CompanyProfile.objects.filter(sector_name=sector, status__iexact="Active")
+        .exclude(security_name__iregex=r"promot|mutual fund|debenture|bond")
+        .values_list("symbol", flat=True)
+    )
+    symbols = sorted(set(symbols) | local)
+
+    # Names come along so the panel's company filter is searchable by company as
+    # well as ticker. Falls back to the symbol where no profile row exists.
     names = dict(
         CompanyProfile.objects.filter(symbol__in=symbols)
         .values_list("symbol", "security_name")

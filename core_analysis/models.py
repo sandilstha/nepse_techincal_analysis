@@ -1266,3 +1266,126 @@ class LifeInsuranceIndicator(models.Model):
 
     def __str__(self):
         return f"{self.ticker} {self.fiscal_year_ad} Q{self.quarter} — other indicators"
+
+
+class BondValuation(models.Model):
+    """
+    Table: bond_valuations
+
+    One row per listed debenture / bond, holding the latest valuation sheet
+    (price, YTM, spread over benchmark, fair value, duration). Loaded from
+    ``core_analysis/data/bond_valuations.csv`` by ``load_bond_valuations``;
+    re-running the loader refreshes the same row (keyed on the bond symbol).
+
+    ``issuer`` links the bond to the equity that issued it, so a company's
+    Stock 360 page can list its own debentures. The loader resolves it from the
+    security name; merged banks resolve to the surviving entity (Sunrise ->
+    LSL, BOK -> GBIME, NCC -> KBL, ...) with the reason kept in ``issuer_note``.
+    """
+    symbol = models.CharField(max_length=30, unique=True, db_index=True,
+                              help_text="Bond ticker, e.g. NBLD87")
+    security_name = models.CharField(max_length=255)
+    sector = models.CharField(max_length=100, blank=True, default="", db_index=True)
+    issuer = models.ForeignKey(
+        CompanyProfile, on_delete=models.SET_NULL, null=True, blank=True,
+        db_column="issuer_symbol", related_name="bonds",
+        help_text="Equity symbol of the issuing company.",
+    )
+    issuer_note = models.CharField(max_length=255, blank=True, default="")
+
+    coupon_pct = models.DecimalField(max_digits=7, decimal_places=3, null=True, blank=True)
+    maturity_date = models.DateField(null=True, blank=True, db_index=True)
+    years_to_maturity = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+    issue_size = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True,
+                                     help_text="Total face value of the issue, Rs")
+
+    price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    price_quality = models.CharField(max_length=60, blank=True, default="",
+                                     help_text="Adequate / Stale - N days / Thin / No trade")
+    ytm_pct = models.DecimalField(max_digits=8, decimal_places=3, null=True, blank=True)
+    benchmark_pct = models.DecimalField(max_digits=8, decimal_places=3, null=True, blank=True)
+    spread_bp = models.IntegerField(null=True, blank=True)
+    fair_value = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    variance = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    variance_pct = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    valuation = models.CharField(max_length=30, blank=True, default="", db_index=True,
+                                 help_text="Undervalued / Fairly valued / Overvalued / Not traded")
+    macaulay_duration = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+    modified_duration = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+
+    valuation_date = models.DateField(null=True, blank=True, db_index=True)
+    source = models.CharField(max_length=100, blank=True, default="")
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "bond_valuations"
+        ordering = ["maturity_date", "symbol"]
+        indexes = [models.Index(fields=["issuer", "maturity_date"])]
+
+    def __str__(self):
+        return f"{self.symbol} — {self.security_name}"
+
+    @property
+    def issue_size_bn(self):
+        return float(self.issue_size) / 1e9 if self.issue_size else None
+
+    @property
+    def valuation_tone(self):
+        v = (self.valuation or "").lower()
+        if v.startswith("under"):
+            return "pos"
+        if v.startswith("over"):
+            return "neg"
+        return "neu"
+
+
+class MarketDepthSnapshot(models.Model):
+    """
+    Table: market_depth_snapshots
+
+    One TMS top-5 order-book capture for one script, as served by the feed host
+    (``/api/tms-market-depth/``). Synced by ``sync_market_depth``.
+
+    The feed polls scripts in rotation rather than snapshotting the whole market
+    at once, so there is NO batch id: a "replay frame" is simply the sequence of
+    captures for one symbol ordered by ``captured_at``. Frame-to-frame
+    comparisons are therefore always per symbol (services/market_depth.py).
+
+    ``depth`` keeps the raw book verbatim: {"bids": [{level, price, qty,
+    splits}...], "asks": [...]}. The flattened columns are query helpers only —
+    they are derived from ``depth`` at sync time and never edited by hand.
+    """
+    source_id = models.BigIntegerField(unique=True, help_text="Row id on the feed host")
+    business_date = models.DateField(db_index=True)
+    captured_at = models.DateTimeField(db_index=True, help_text="Capture wall-clock time (feed date + time)")
+    symbol = models.CharField(max_length=20, db_index=True)
+    board = models.CharField(max_length=10, blank=True, default="1")
+
+    total_bids = models.BigIntegerField(default=0)
+    total_asks = models.BigIntegerField(default=0)
+    depth = models.JSONField(default=dict, help_text='{"bids": [...], "asks": [...]} raw top-5 book')
+
+    # Derived from `depth` for fast filtering / charting.
+    best_bid = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    best_ask = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    bid_qty_top5 = models.BigIntegerField(default=0)
+    ask_qty_top5 = models.BigIntegerField(default=0)
+    bid_splits_top5 = models.IntegerField(default=0)
+    ask_splits_top5 = models.IntegerField(default=0)
+
+    aon_side = models.CharField(max_length=10, blank=True, default="")
+    aon_status = models.CharField(max_length=30, blank=True, default="")
+    synced_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "market_depth_snapshots"
+        ordering = ["symbol", "captured_at"]
+        indexes = [
+            models.Index(fields=["symbol", "captured_at"]),
+            models.Index(fields=["business_date", "symbol"]),
+        ]
+
+    def __str__(self):
+        return f"{self.symbol} @ {self.captured_at:%Y-%m-%d %H:%M:%S}"

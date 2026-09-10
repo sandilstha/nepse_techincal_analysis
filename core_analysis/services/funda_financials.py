@@ -390,11 +390,22 @@ def sync_symbol(symbol):
         quarter = 0
     fy = str(latest.get("Year") or "")
 
+    # The source sometimes ships a blank sector (SAPIL, 2026-09) — and the
+    # sector is what selects the statement templates, so a blank one silently
+    # writes NO statements. Fall back to our own company profile.
+    sector = (data.get("sector") or "").strip()
+    if not sector:
+        from core_analysis.models import CompanyProfile
+        sector = (
+            CompanyProfile.objects.filter(symbol=sym)
+            .values_list("sector_name", flat=True).first() or ""
+        )
+
     snap, _created = FundaFundamentalSnapshot.objects.update_or_create(
         symbol=sym,
         defaults={
             "security_name": (data.get("security_name") or "")[:255],
-            "sector": (data.get("sector") or "")[:100],
+            "sector": sector[:100],
             "period": f"{fy} Q{quarter}",
             "fiscal_year_ad": fy[:10],
             "quarter": quarter,

@@ -459,3 +459,72 @@ def accumulation_api(request):
         return data
 
     return _safe(_scan, sector=_sector(request), **window)
+
+
+def market_depth_sop_view(request):
+    """Methodology SOP for the Market Depth tab.
+
+    Its own page like the A/D Radar SOP: the tab is the first stage of a staged
+    design (raw features, no score), so the page has to say what each number is,
+    what the capture gap hides, and what is deliberately not built yet. Static.
+    """
+    return render(
+        request,
+        "core_analysis/market_depth_sop.html",
+        {"asset_version": _asset_version()},
+    )
+
+
+# ── Market Depth (TMS top-5 replay) ─────────────────────────────────────────
+# Phase 2A-1 of the market-depth design: raw per-frame features and a day
+# overview. No score yet. Data comes from market_depth_snapshots, synced by
+# `manage.py sync_market_depth` from the feed host.
+
+def _depth_day(request):
+    from datetime import date as _date
+    raw = (request.GET.get("date") or "").strip()
+    if not raw:
+        return None
+    try:
+        return _date.fromisoformat(raw)
+    except ValueError:
+        raise QueryValidationError("date must be YYYY-MM-DD.")
+
+
+@require_GET
+@_validated_query
+def depth_dates_api(request):
+    from core_analysis.services import market_depth as md
+    return JsonResponse({"ok": True, "dates": md.available_dates()})
+
+
+@require_GET
+@_validated_query
+def depth_overview_api(request):
+    from datetime import date as _date
+    from core_analysis.services import market_depth as md
+    day = _depth_day(request)
+    if day is None:
+        dates = md.available_dates(1)
+        if not dates:
+            return JsonResponse({"ok": True, "date": None, "symbols": 0, "snapshots": 0, "rows": []})
+        day = _date.fromisoformat(dates[0])
+    return _safe(md.overview, day)
+
+
+@require_GET
+@_validated_query
+def depth_frames_api(request):
+    from core_analysis.services import market_depth as md
+    day = _depth_day(request)
+    symbol = (request.GET.get("symbol") or "").strip().upper()
+    if day is None or not symbol:
+        raise QueryValidationError("date and symbol are required.")
+    if not _SYMBOL_RE.fullmatch(symbol):
+        raise QueryValidationError("Symbol must be 1-50 valid ticker characters.")
+    fr = md.frames(symbol, day)
+    return JsonResponse({
+        "ok": True, "symbol": symbol, "date": day.isoformat(),
+        "count": len(fr), "events": sum(1 for f in fr if f["event"]),
+        "frames": fr,
+    })

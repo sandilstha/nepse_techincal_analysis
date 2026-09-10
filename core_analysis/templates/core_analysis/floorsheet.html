@@ -53,6 +53,7 @@
     <button class="dsx-tab" data-tab="hotstocks">Market Heatmap</button>
     <button class="dsx-tab" data-tab="netholding">Net Position Analytics</button>
     <button class="dsx-tab" data-tab="concentration">Broker Exposure Monitor</button>
+    <button class="dsx-tab" data-tab="depth">Market Depth</button>
   </nav>
 
   {% if not meta.ok %}
@@ -465,6 +466,65 @@
     </div>
   </section>
 
+  {% comment %}
+  Market Depth — TMS top-5 order-book replay, one script at a time. This is
+  Phase 2A-1 of the market-depth design: raw observations (book, top-5 qty vs a
+  rolling baseline, qty added/pulled between captures, splits, seconds elapsed)
+  and NO score. The feed polls scripts in rotation, so frames are per script and
+  a pull faster than the capture gap is invisible — the panel says so.
+  {% endcomment %}
+  <section class="dsx-panel" id="panel-depth">
+    <div class="dsx-controls">
+      <label class="dsx-field">Date
+        <select id="md-date" class="dsx-select"></select>
+      </label>
+      <label class="dsx-field">Script
+        <select id="md-symbol" class="dsx-select"></select>
+      </label>
+      <button type="button" id="md-load" class="dsx-analyze">Replay</button>
+      <a class="dsx-ad-sop" href="{% url 'market_depth_sop' %}" target="_blank" rel="noopener"
+         title="Market Depth methodology — every number, the capture-gap limit, and what is not built yet">Methodology</a>
+      <span class="dsx-blurb" id="md-hint">Pick a date and script. Frames are per script; the slider steps through every capture.</span>
+    </div>
+
+    <div class="dsx-kpis" id="md-kpis"></div>
+
+    <div class="md-replay" id="md-replay" hidden>
+      <div class="md-scrub">
+        <button type="button" class="md-btn" id="md-prev" title="Previous frame">&#9664;</button>
+        <button type="button" class="md-btn" id="md-play" title="Play / pause">&#9654;</button>
+        <button type="button" class="md-btn" id="md-next" title="Next frame">&#9654;|</button>
+        <input type="range" id="md-slider" min="0" max="0" value="0">
+        <span class="md-frame" id="md-frame">&mdash;</span>
+      </div>
+      <div class="dsx-grid-2 md-book">
+        <div class="dsx-card">
+          <div class="dsx-card-head buy">BID &middot; <span id="md-bid-head"></span></div>
+          <div class="dsx-table-wrap"><table class="dsx-table" id="md-bids"></table></div>
+        </div>
+        <div class="dsx-card">
+          <div class="dsx-card-head sell">ASK &middot; <span id="md-ask-head"></span></div>
+          <div class="dsx-table-wrap"><table class="dsx-table" id="md-asks"></table></div>
+        </div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral dsx-ad-head"><span>FRAME OBSERVATIONS</span><span class="dsx-ad-sub" id="md-obs-sub"></span></div>
+        <div class="md-obs" id="md-obs"></div>
+      </div>
+      <div class="dsx-card">
+        <div class="dsx-card-head neutral dsx-ad-head"><span>LIQUIDITY EVENTS &middot; this script, this day</span><span class="dsx-ad-sub"><span id="md-ev-sub"></span> <a class="dsx-ad-sop" href="{% url 'market_depth_sop' %}#events" target="_blank" rel="noopener">How events are defined</a></span></div>
+        <div class="dsx-table-wrap"><table class="dsx-table" id="md-events"></table></div>
+        <div class="dsx-ad-note">An event is the single price level whose quantity changed by at least half of the script&rsquo;s rolling top-5 baseline between two captures. ADD = quantity appeared, PULL = quantity left. A pull can be a fill or a cancel; the floorsheet, not the book, settles which. Seconds are the gap between captures, so speed is only as fine as the feed.</div>
+      </div>
+    </div>
+
+    <div class="dsx-card">
+      <div class="dsx-card-head neutral dsx-ad-head"><span>DAY OVERVIEW &middot; every script captured</span><span class="dsx-ad-sub" id="md-ov-sub"></span></div>
+      <div class="dsx-table-wrap"><table class="dsx-table" id="md-overview"></table></div>
+      <div class="dsx-ad-note">Spike = top-5 quantity divided by that script&rsquo;s own rolling median (last 20 captures), so a number means the same for a thin and a liquid name. Click a row to replay it.</div>
+    </div>
+  </section>
+
 </div>
 
 <script>
@@ -496,6 +556,14 @@
   catch (e) { window.DSX_BOOTSTRAP = null; }
 </script>
 <script src="{% static 'core_analysis/js/floorsheet-brokers.js' %}?v={{ asset_version }}"></script>
+<script>
+  window.MD_CONFIG = {
+    datesUrl: "{% url 'depth_dates_api' %}",
+    overviewUrl: "{% url 'depth_overview_api' %}",
+    framesUrl: "{% url 'depth_frames_api' %}"
+  };
+</script>
+<script defer src="{% static 'core_analysis/js/floorsheet-depth.js' %}?v={{ asset_version }}"></script>
 <script defer src="{% static 'core_analysis/js/responsive.js' %}?v={{ asset_version|default:1 }}"></script>
 </body>
 </html>
