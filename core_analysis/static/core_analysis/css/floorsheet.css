@@ -163,6 +163,23 @@
 .dsx-analyze:hover { filter: brightness(1.08); }
 .dsx-analyze:active { filter: brightness(.95); }
 
+/* Secondary action beside the primary Load button, e.g. Download CSV. */
+.dsx-csv {
+  align-self: flex-end;
+  appearance: none;
+  background: transparent;
+  color: var(--ink-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 8px);
+  padding: 9px 18px;
+  font: 700 0.8125rem/1 "Manrope", sans-serif;
+  letter-spacing: .02em;
+  cursor: pointer;
+}
+.dsx-csv:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.dsx-csv:disabled { opacity: .45; cursor: not-allowed; }
+
+
 /* multi-select broker checklist */
 .dsx-multi { position: relative; }
 .dsx-multi-btn {
@@ -1186,3 +1203,48 @@
 /* Morning Star KPIs: number and label on one horizontal line */
 #ms-kpis .dsx-kpi { display: flex; flex-direction: row; align-items: baseline; gap: 10px; }
 #ms-kpis .dsx-kpi span { margin: 0; }
+
+
+/* ── Market Depth tab ─────────────────────────────────────────────────── */
+.md-replay { display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px; }
+.md-scrub { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.md-scrub input[type=range] { flex: 1; accent-color: var(--accent); }
+.md-btn { background: var(--surface-2); color: var(--ink-1); border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; font: 700 0.75rem "Manrope", sans-serif; cursor: pointer; }
+.md-btn:hover { border-color: var(--accent); }
+.md-frame { font: 700 0.75rem "Manrope", sans-serif; color: var(--ink-2); min-width: 220px; text-align: right; font-variant-numeric: tabular-nums; }
+.md-book .dsx-table tbody td:first-child { text-align: left; }
+.md-book .dsx-table tr.md-l0 td { font-weight: 800; }
+.md-book .dsx-table td.md-up { color: var(--up, #22c55e); }
+.md-book .dsx-table td.md-down { color: var(--down, #ef4444); }
+.md-book .dsx-table td.md-new { background: rgba(79, 141, 255, .12); }
+.md-obs { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; padding: 12px; }
+.md-obs .k { font: 700 0.625rem "Manrope", sans-serif; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); }
+.md-obs .v { font: 800 1rem "Manrope", sans-serif; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.md-obs .s { font: 600 0.6875rem "Manrope", sans-serif; color: var(--ink-3); margin-top: 2px; }
+.md-tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font: 800 0.625rem "Manrope", sans-serif; letter-spacing: .04em; }
+.md-tag.pull { background: var(--down-soft, rgba(239,68,68,.15)); color: var(--down, #ef4444); }
+.md-tag.add { background: var(--up-soft, rgba(34,197,94,.15)); color: var(--up, #22c55e); }
+.md-tag.none { background: var(--surface-2); color: var(--ink-3); }
+#md-overview tbody tr { cursor: pointer; }
+#md-overview tbody tr:hover td { background: var(--surface-2); }
+#md-events tbody tr { cursor: pointer; }
+
+
+/* A filed percentage that cannot be real. Shown, not hidden, but marked so the
+   reader knows the source figure is wrong rather than the page. */
+.ia-implausible {
+  color: var(--warn, #d8941f);
+  border-bottom: 1px dotted currentColor;
+  cursor: help;
+}
+
+/* Row restated at the latest close rather than the price filed with the report. */
+.ia-live {
+  display: inline-block; margin-left: 6px; padding: 0 6px;
+  border-radius: 999px; font-size: 9.5px; font-weight: 800; letter-spacing: .03em;
+  background: var(--up-soft, rgba(34,197,94,.15)); color: var(--up, #22c55e);
+  cursor: help; vertical-align: middle;
+}
+
+/* Thread from a displaced scatter label back to the dot it names. */
+.ms-sc-leader { stroke: var(--ink-3, #7c88a8); stroke-width: 0.6; opacity: 0.45; }

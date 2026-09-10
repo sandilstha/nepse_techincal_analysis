@@ -114,7 +114,7 @@
   }
 
   function scatterSvg(pts, compact) {
-    var W = compact ? 460 : 1360, H = compact ? 420 : 560;
+    var W = compact ? 540 : 1360, H = compact ? 450 : 560;
     var m = compact ? { l: 40, r: 14, t: 14, b: 36 } : { l: 56, r: 28, t: 20, b: 44 };
     var iw = W - m.l - m.r, ih = H - m.t - m.b;
     function X(v) { return m.l + (v / 100) * iw; }
@@ -147,24 +147,75 @@
     svg += "<text x='12' y='" + (m.t + ih / 2) + "' class='ms-sc-axis' text-anchor='middle' " +
       "transform='rotate(-90 12 " + (m.t + ih / 2) + ")'>Value score</text>";
 
+    /* LABEL PLACEMENT.
+       A sector like Hydro Power puts 38 companies in one pane, and they cluster.
+       The old rule only ever pushed a label straight up, 12px at a time, and
+       treated every label as 104px wide when a four-letter ticker is nearer 24.
+       Both faults pushed labels far from the dot they belong to, which is the
+       drifting text and the empty gaps in the middle of the chart.
+
+       Now a label is tried on a ring around its dot first — above, below, right,
+       left, then the diagonals — and only stacks vertically if the whole ring is
+       taken. Collision uses the real text width. Anything that still cannot be
+       placed cleanly is left off rather than floated somewhere misleading; its
+       dot keeps the hover tooltip. Rated and gated companies are placed first so
+       the ones worth reading always get a label. */
+    var charW = compact ? 5.9 : 6.6, lineH = 11;
     var placed = [];
-    function labelY(x, y) {
-      var ly = y - 9;
-      var tries = 0;
-      while (tries < 30 && placed.some(function (p) {
-        return Math.abs(p.x - x) < 52 && Math.abs(p.y - ly) < 12;
-      })) { ly -= 12; tries++; if (ly < m.t + 9) { ly = y + 16; } }
-      placed.push({ x: x, y: ly });
-      return ly;
+
+    function fits(b) {
+      if (b.y0 < m.t + 2 || b.y1 > m.t + ih - 1) return false;
+      if (b.x0 < m.l + 1 || b.x1 > m.l + iw - 1) return false;
+      return !placed.some(function (p) {
+        return b.x0 < p.x1 + 2 && b.x1 > p.x0 - 2 && b.y0 < p.y1 + 1 && b.y1 > p.y0 - 1;
+      });
     }
 
+    function placeLabel(x, y, text) {
+      var w = text.length * charW, i;
+      var ring = [
+        { dx: 0, dy: -9, a: "middle" }, { dx: 0, dy: 16, a: "middle" },
+        { dx: 8, dy: 4, a: "start" }, { dx: -8, dy: 4, a: "end" },
+        { dx: 7, dy: -6, a: "start" }, { dx: -7, dy: -6, a: "end" },
+        { dx: 7, dy: 14, a: "start" }, { dx: -7, dy: 14, a: "end" }
+      ];
+      for (i = 1; i <= 3; i++) {
+        ring.push({ dx: 0, dy: -9 - i * lineH, a: "middle" });
+        ring.push({ dx: 0, dy: 16 + i * lineH, a: "middle" });
+      }
+      for (i = 0; i < ring.length; i++) {
+        var c = ring[i], lx = x + c.dx, ly = y + c.dy;
+        var x0 = c.a === "start" ? lx : c.a === "end" ? lx - w : lx - w / 2;
+        var box = { x0: x0, x1: x0 + w, y0: ly - lineH + 3, y1: ly + 3 };
+        if (fits(box)) {
+          placed.push(box);
+          return { x: lx, y: ly, a: c.a, far: Math.abs(c.dy) > 20 };
+        }
+      }
+      return null;
+    }
+
+    // Dots first, so no label can hide one.
     pts.forEach(function (r) {
       var x = X(r.growth), y = Y(r.value);
       var cls = (r.stars >= 4) ? "star" : (r.gates && r.gates.length) ? "gated" : "";
       svg += "<circle cx='" + x + "' cy='" + y + "' r='" + (compact ? 4 : 5) + "' class='ms-sc-dot " + cls + "'>" +
         "<title>" + esc(r.ticker) + " — Growth " + r.growth + ", Value " + r.value +
         (r.stars != null ? ", " + r.stars + "★" : "") + "</title></circle>";
-      svg += "<text x='" + x + "' y='" + labelY(x, y) + "' class='ms-sc-label' text-anchor='middle'>" +
+    });
+
+    pts.slice().sort(function (a, b) {
+      return (b.stars || 0) - (a.stars || 0) || (b.value || 0) - (a.value || 0);
+    }).forEach(function (r) {
+      var x = X(r.growth), y = Y(r.value);
+      var p = placeLabel(x, y, r.ticker);
+      if (!p) return;
+      // A label pushed clear of its dot needs a thread back to it.
+      if (p.far) {
+        svg += "<line x1='" + x + "' y1='" + y + "' x2='" + p.x + "' y2='" +
+          (p.y > y ? p.y - 8 : p.y + 3) + "' class='ms-sc-leader'/>";
+      }
+      svg += "<text x='" + p.x + "' y='" + p.y + "' class='ms-sc-label' text-anchor='" + p.a + "'>" +
         esc(r.ticker) + "</text>";
     });
     return svg + "</svg>";
@@ -283,13 +334,25 @@
     var sub = el("ms-sub");
     if (sub) {
       sub.textContent = data.period + " · Growth " + (data.mix ? data.mix.growth : 60) +
-        "% / Value " + (data.mix ? data.mix.value : 40) + "% · ranked within sector";
+        "% / Value " + (data.mix ? data.mix.value : 40) + "% · ranked within sector" +
+        (data.price_as_of ? " · prices " + data.price_as_of : "");
     }
     var note = el("ms-note");
     if (note) {
-      note.textContent = data.note ||
+      /* Every Value metric here divides by the share price, so which price was
+         used is not a footnote — it decides the ranking. Say the date, and say
+         how many companies got a traded price, since the rest fall back to the
+         price filed with the statement. */
+      var priceNote = data.price_as_of
+        ? " P/B, P/E, dividend yield and market cap use the close of " + data.price_as_of +
+          (data.priced_total && data.priced_live < data.priced_total
+            ? ", for " + data.priced_live + " of " + data.priced_total +
+              " companies; the rest keep the price filed with the statement."
+            : ", not the price filed with the statement.")
+        : "";
+      note.textContent = (data.note ||
         "Percentile rank within sector; YTD vs prior-year YTD; missing factors redistribute their weight " +
-        "(see confidence). Quality gates cap stars at 2; each soft flag costs 5 combined points.";
+        "(see confidence). Quality gates cap stars at 2; each soft flag costs 5 combined points.") + priceNote;
     }
 
     // KPI strip
