@@ -42,6 +42,18 @@
     return "<span class='ms-chip ms-style-" + s.toLowerCase() + "'>" + esc(s) + "</span>";
   }
 
+  /* Growth/Value quadrant, split at the sector median. A gated company is held
+     out of both High halves, so this reads "Low / Low" for anything whose score
+     the quality screen says cannot be trusted. */
+  function quadChip(q) {
+    if (!q || q === "—") return "<span class='ms-dim'>—</span>";
+    var hg = q.indexOf("High Growth") === 0;
+    var hv = q.indexOf("High Value") > 0;
+    var cls = hg && hv ? "ms-quad-hh" : hg ? "ms-quad-hl" : hv ? "ms-quad-lh" : "ms-quad-ll";
+    var short = (hg ? "HG" : "LG") + " / " + (hv ? "HV" : "LV");
+    return "<span class='ms-chip " + cls + "' title='" + esc(q) + "'>" + short + "</span>";
+  }
+
   function fmtRaw(v, asPct) {
     if (v == null) return "—";
     if (typeof v !== "number") return esc(v);
@@ -113,7 +125,14 @@
     });
   }
 
-  function scatterSvg(pts, compact) {
+  function scatterSvg(pts, compact, split) {
+    /* The divider is the SECTOR MEDIAN, not a hard-coded 50. The caption always
+       claimed "above-median on both", but the line was drawn at 50, so a company
+       could sit in the green box and still be Low/Low in the table. Quality-gated
+       companies are filtered out before they reach here (see drawScatter), so the
+       chart and the Quadrant column can never disagree again. */
+    var gMid = (split && split.growth != null) ? split.growth : 50;
+    var vMid = (split && split.value != null) ? split.value : 50;
     var W = compact ? 540 : 1360, H = compact ? 450 : 560;
     var m = compact ? { l: 40, r: 14, t: 14, b: 36 } : { l: 56, r: 28, t: 20, b: 44 };
     var iw = W - m.l - m.r, ih = H - m.t - m.b;
@@ -122,16 +141,16 @@
 
     var svg = "<svg viewBox='0 0 " + W + " " + H + "' class='ms-scatter-svg' role='img' " +
       "aria-label='Growth versus Value scatter'>";
-    svg += "<rect x='" + X(50) + "' y='" + m.t + "' width='" + (iw / 2) + "' height='" + (ih / 2) +
-      "' class='ms-sc-quad best'/>";
+    svg += "<rect x='" + X(gMid) + "' y='" + m.t + "' width='" + (m.l + iw - X(gMid)) +
+      "' height='" + (Y(vMid) - m.t) + "' class='ms-sc-quad best'/>";
     [0, 20, 40, 60, 80, 100].forEach(function (v) {
       svg += "<line x1='" + X(v) + "' y1='" + m.t + "' x2='" + X(v) + "' y2='" + (m.t + ih) + "' class='ms-sc-grid'/>";
       svg += "<line x1='" + m.l + "' y1='" + Y(v) + "' x2='" + (m.l + iw) + "' y2='" + Y(v) + "' class='ms-sc-grid'/>";
       svg += "<text x='" + X(v) + "' y='" + (m.t + ih + 15) + "' class='ms-sc-tick' text-anchor='middle'>" + v + "</text>";
       svg += "<text x='" + (m.l - 6) + "' y='" + (Y(v) + 4) + "' class='ms-sc-tick' text-anchor='end'>" + v + "</text>";
     });
-    svg += "<line x1='" + X(50) + "' y1='" + m.t + "' x2='" + X(50) + "' y2='" + (m.t + ih) + "' class='ms-sc-mid'/>";
-    svg += "<line x1='" + m.l + "' y1='" + Y(50) + "' x2='" + (m.l + iw) + "' y2='" + Y(50) + "' class='ms-sc-mid'/>";
+    svg += "<line x1='" + X(gMid) + "' y1='" + m.t + "' x2='" + X(gMid) + "' y2='" + (m.t + ih) + "' class='ms-sc-mid'/>";
+    svg += "<line x1='" + m.l + "' y1='" + Y(vMid) + "' x2='" + (m.l + iw) + "' y2='" + Y(vMid) + "' class='ms-sc-mid'/>";
     // Quadrant labels: I = growth + cheap (sweet spot), II = cheap but slow,
     // III = slow AND expensive (avoid), IV = growing but priced-in.
     [
@@ -198,35 +217,64 @@
     // Dots first, so no label can hide one.
     pts.forEach(function (r) {
       var x = X(r.growth), y = Y(r.value);
-      var cls = (r.stars >= 4) ? "star" : (r.gates && r.gates.length) ? "gated" : "";
+      var isGated = !!(r.gates && r.gates.length);
+      var cls = isGated ? "gated" : (r.stars >= 4) ? "star" : "";
       svg += "<circle cx='" + x + "' cy='" + y + "' r='" + (compact ? 4 : 5) + "' class='ms-sc-dot " + cls + "'>" +
         "<title>" + esc(r.ticker) + " — Growth " + r.growth + ", Value " + r.value +
-        (r.stars != null ? ", " + r.stars + "★" : "") + "</title></circle>";
+        (r.stars != null ? ", " + r.stars + "★" : "") +
+        (isGated ? "\nQuality-gated: " + r.gates.join("; ") + "\nNot eligible for High Growth / High Value" : "") +
+        "</title></circle>";
     });
 
+    /* Label priority: ungated first, then by stars. With most of a sector
+       gated, letting gated names claim ring slots would push the eligible
+       ones off the chart entirely. */
     pts.slice().sort(function (a, b) {
-      return (b.stars || 0) - (a.stars || 0) || (b.value || 0) - (a.value || 0);
+      var ag = (a.gates && a.gates.length) ? 1 : 0, bg = (b.gates && b.gates.length) ? 1 : 0;
+      return ag - bg || (b.stars || 0) - (a.stars || 0) || (b.value || 0) - (a.value || 0);
     }).forEach(function (r) {
       var x = X(r.growth), y = Y(r.value);
       var p = placeLabel(x, y, r.ticker);
       if (!p) return;
+      // Gated names are background context, not the subject of the chart, so
+      // their labels fade with their dots.
+      var dim = (r.gates && r.gates.length) ? " dim" : "";
       // A label pushed clear of its dot needs a thread back to it.
       if (p.far) {
         svg += "<line x1='" + x + "' y1='" + y + "' x2='" + p.x + "' y2='" +
-          (p.y > y ? p.y - 8 : p.y + 3) + "' class='ms-sc-leader'/>";
+          (p.y > y ? p.y - 8 : p.y + 3) + "' class='ms-sc-leader" + dim + "'/>";
       }
-      svg += "<text x='" + p.x + "' y='" + p.y + "' class='ms-sc-label' text-anchor='" + p.a + "'>" +
-        esc(r.ticker) + "</text>";
+      svg += "<text x='" + p.x + "' y='" + p.y + "' class='ms-sc-label" + dim +
+        "' text-anchor='" + p.a + "'>" + esc(r.ticker) + "</text>";
     });
     return svg + "</svg>";
+  }
+
+  /* A gated company is plotted at its real scores but faded to a thin ring:
+     the position tells you where it scored, the fade tells you the score cannot
+     be trusted. It recedes rather than shouting, because in a sector like Hydro
+     Power most companies are gated and an alarm colour on the majority would
+     bury the handful worth reading. Hiding them is one click. */
+  function gatedToggle(n, on) {
+    if (!n) return "";
+    return " · <label class='ms-gated-toggle'><input type='checkbox' id='ms-show-gated'" +
+      (on ? " checked" : "") + "> show " + n + " quality-gated</label>";
   }
 
   function drawScatter(data) {
     var host = el("ms-scatter");
     if (!host) return;
-    var pts = (data.results || []).filter(function (r) {
+    var scored = (data.results || []).filter(function (r) {
       return r.growth != null && r.value != null;
     });
+    /* A quality-gated company is barred from the High halves in the table, so it
+       must not sit in the green quadrant here either. Drop it from the chart and
+       say so in the caption — the full list is still in the table below. */
+    var gated = scored.filter(function (r) { return r.gates && r.gates.length; });
+    var nGated = gated.length;
+    var showGated = state.showGated !== false;
+    var pts = showGated ? scored : scored.filter(function (r) { return !(r.gates && r.gates.length); });
+    var split = data.quadrant_split || null;
     if (!pts.length) { host.innerHTML = ""; return; }
 
     var TIERS = [
@@ -243,8 +291,12 @@
         "<div class='dsx-card-head neutral dsx-ad-head'>" +
         "<span>GROWTH vs VALUE — ALL COMPANIES</span>" +
         "<span class='dsx-ad-sub'>" + pts.length +
-        " scored · right = stronger growth, up = better value · amber = 4★/5★, red = quality-gated</span>" +
-        "</div>" + scatterSvg(pts, false) + "</div>";
+        " shown · right = stronger growth, up = better value · dividers are the sector median" +
+        " &nbsp; <span class='ms-legend'><i class='ms-leg-dot star'></i>4★/5★" +
+        "<i class='ms-leg-dot gated'></i>quality-gated (faded, not eligible)" +
+        "<i class='ms-leg-dot'></i>others</span>" + gatedToggle(nGated, showGated) + "</span>" +
+        "</div>" + scatterSvg(pts, false, split) + "</div>";
+      wireGatedToggle(data);
       return;
     }
     var panes = "";
@@ -252,7 +304,7 @@
       var group = pts.filter(function (r) { return (r.size || "—") === tier.key; });
       panes += "<div class='ms-sc-pane'><div class='ms-sc-pane-head'>" + tier.label +
         " <span class='ms-dim'>(" + group.length + ")</span></div>" +
-        (group.length ? scatterSvg(group, true)
+        (group.length ? scatterSvg(group, true, split)
                       : "<div class='ms-sc-empty'>No companies in this tier</div>") +
         "</div>";
     });
@@ -261,14 +313,24 @@
     host.innerHTML = "<div class='dsx-card ms-scatter-card'>" +
       "<div class='dsx-card-head neutral dsx-ad-head'>" +
       "<span>GROWTH vs VALUE BY MARKET CAP</span>" +
-      "<span class='dsx-ad-sub'>right = stronger growth, up = better value" + uncNote +
-      " &nbsp; <span class='ms-legend'><i class='ms-leg-dot star'></i>4★/5★ · clean" +
-      "<i class='ms-leg-dot gated'></i>quality-gated (max 2★)" +
-      "<i class='ms-leg-dot'></i>others</span></span></div>" +
+      "<span class='dsx-ad-sub'>right = stronger growth, up = better value · dividers are the sector median" + uncNote +
+      " &nbsp; <span class='ms-legend'><i class='ms-leg-dot star'></i>4★/5★" +
+      "<i class='ms-leg-dot gated'></i>quality-gated (faded, not eligible)" +
+      "<i class='ms-leg-dot'></i>others</span>" + gatedToggle(nGated, showGated) + "</span></div>" +
       "<div class='ms-sc-row'>" + panes + "</div></div>";
+    wireGatedToggle(data);
   }
 
-  var FILTERS = { q: "", stars: "0", style: "all", size: "all", quality: "all", conf: "all" };
+  function wireGatedToggle(data) {
+    var cb = el("ms-show-gated");
+    if (!cb) return;
+    cb.addEventListener("change", function () {
+      state.showGated = cb.checked;
+      drawScatter(data);
+    });
+  }
+
+  var FILTERS = { q: "", stars: "0", style: "all", size: "all", quality: "all", quadrant: "all", conf: "all" };
 
   function rowPasses(r) {
     if (FILTERS.q) {
@@ -279,6 +341,7 @@
     var minStars = parseInt(FILTERS.stars, 10) || 0;
     if (minStars && (r.stars == null || r.stars < minStars)) return false;
     if (FILTERS.style !== "all" && r.style !== FILTERS.style) return false;
+    if (FILTERS.quadrant !== "all" && r.quadrant !== FILTERS.quadrant) return false;
     if (FILTERS.size !== "all" && (r.size || "—") !== FILTERS.size) return false;
     var gated = (r.gates || []).length > 0, flagged = (r.flags || []).length > 0;
     if (FILTERS.quality === "clean" && (gated || flagged)) return false;
@@ -303,6 +366,10 @@
         { v: "0", t: "All" }, { v: "5", t: "5★" }, { v: "4", t: "4★+" }, { v: "3", t: "3★+" }]) +
       group("style", "Style", [
         { v: "all", t: "All" }, { v: "Growth", t: "Growth" }, { v: "Blend", t: "Blend" }, { v: "Value", t: "Value" }]) +
+      group("quadrant", "Quadrant", [
+        { v: "all", t: "All" }, { v: "High Growth / High Value", t: "HG / HV" },
+        { v: "High Growth / Low Value", t: "HG / LV" }, { v: "Low Growth / High Value", t: "LG / HV" },
+        { v: "Low Growth / Low Value", t: "LG / LV" }]) +
       group("size", "Size", [
         { v: "all", t: "All" }, { v: "Large", t: "Large" }, { v: "Mid", t: "Mid" }, { v: "Small", t: "Small" }]) +
       group("quality", "Quality", [
@@ -350,9 +417,19 @@
               " companies; the rest keep the price filed with the statement."
             : ", not the price filed with the statement.")
         : "";
+      /* Suspended and delisted issues keep filing statements, so say plainly
+         that they were left out rather than letting the count look short. */
+      var activeNote = data.inactive_excluded
+        ? " " + data.inactive_excluded + " suspended or delisted " +
+          (data.inactive_excluded === 1 ? "issue is" : "issues are") +
+          " excluded; only actively traded companies are ranked."
+        : "";
       note.textContent = (data.note ||
         "Percentile rank within sector; YTD vs prior-year YTD; missing factors redistribute their weight " +
-        "(see confidence). Quality gates cap stars at 2; each soft flag costs 5 combined points.") + priceNote;
+        "(see confidence). Quality gates cap stars at 2; each soft flag costs 5 combined points.") +
+        " Quadrants split at the sector median, and a quality-gated company cannot be High Growth or " +
+        "High Value whatever it scored; book value below par is itself a gate." +
+        priceNote + activeNote;
     }
 
     // KPI strip
@@ -362,11 +439,13 @@
       var five = rows.filter(function (r) { return r.stars === 5; }).length;
       var four = rows.filter(function (r) { return r.stars === 4; }).length;
       var gated = rows.filter(function (r) { return (r.gates || []).length; }).length;
+      var hh = rows.filter(function (r) { return r.quadrant === "High Growth / High Value"; }).length;
       var growthN = rows.filter(function (r) { return r.style === "Growth"; }).length;
       var valueN = rows.filter(function (r) { return r.style === "Value"; }).length;
       k.innerHTML =
         "<div class='dsx-kpi'><span>" + rows.length + "</span>Companies scored</div>" +
         "<div class='dsx-kpi'><span>" + five + " / " + four + "</span>5★ / 4★</div>" +
+        "<div class='dsx-kpi'><span>" + hh + "</span>High Growth / High Value</div>" +
         "<div class='dsx-kpi'><span>" + growthN + " / " + valueN + "</span>Growth / Value style</div>" +
         "<div class='dsx-kpi'><span>" + gated + "</span>Quality-gated (capped 2★)</div>";
     }
@@ -383,11 +462,11 @@
     var count = el("msf-count");
     if (count) count.textContent = rows.length + " of " + (data.results || []).length + " shown";
     var html = "<thead><tr><th>Company</th><th>Rating</th><th>Combined</th><th>Growth</th>" +
-      "<th>Value</th><th>Style</th><th>Size</th><th>Confidence</th><th>Quality</th></tr></thead><tbody>";
+      "<th>Value</th><th>Quadrant</th><th>Style</th><th>Size</th><th>Confidence</th><th>Quality</th></tr></thead><tbody>";
     rows.forEach(function (r, i) {
       var quality = "";
       (r.gates || []).forEach(function (g) {
-        quality += "<span class='ms-chip ms-gate' title='Hard gate — stars capped at 2'>" + esc(g) + "</span>";
+        quality += "<span class='ms-chip ms-gate' title='Hard gate — stars capped at 2 and barred from High Growth / High Value'>" + esc(g) + "</span>";
       });
       (r.flags || []).forEach(function (f) {
         quality += "<span class='ms-chip ms-flag' title='Soft flag — −5 combined points'>" + esc(f) + "</span>";
@@ -400,14 +479,15 @@
         "<td>" + pct(r.combined) + "</td>" +
         "<td>" + pct(r.growth) + "</td>" +
         "<td>" + pct(r.value) + "</td>" +
+        "<td>" + quadChip(r.quadrant) + "</td>" +
         "<td>" + styleChip(r.style) + "</td>" +
         "<td>" + esc(r.size || "—") + "</td>" +
         "<td class='" + (r.low_confidence ? "ms-lowconf" : "") + "'>" + esc(r.confidence || "") + "</td>" +
         "<td class='ms-quality'>" + quality + "</td></tr>" +
-        "<tr class='ms-detail' data-for='" + i + "' hidden><td colspan='9'>" + factorRows(r.detail || {}) + "</td></tr>";
+        "<tr class='ms-detail' data-for='" + i + "' hidden><td colspan='10'>" + factorRows(r.detail || {}) + "</td></tr>";
     });
     if (!rows.length) {
-      html += "<tr><td colspan='9' class='dsx-empty'>No companies match the current filters.</td></tr>";
+      html += "<tr><td colspan='10' class='dsx-empty'>No companies match the current filters.</td></tr>";
     }
     html += "</tbody>";
     t.innerHTML = html;

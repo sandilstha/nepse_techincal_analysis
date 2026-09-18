@@ -163,6 +163,10 @@
         <h3>Hard gates (rating capped at 2★)</h3>
         <ul>
           <li><b>Negative EPS</b> — the company is losing money.</li>
+          <li><b>Book value per share below par</b> — accumulated losses have eaten into the capital
+            shareholders paid in (Rs 100 par; SHL Rs 10, HATHY Rs 50). A low P/B on a wrecked balance sheet is
+            not "value", and growth off a near-zero base is not growth. Negative book value is the same gate,
+            worse.</li>
           <li><b>NPL above 4%</b> — more than 4 rupees of every 100 lent has gone bad (lenders).</li>
           <li><b>Capital below the regulator's floor</b> — no cushion left to absorb losses (lenders).</li>
           <li><b>Solvency below 1.0</b> — an insurer that might not cover all claims if things go wrong.</li>
@@ -170,6 +174,9 @@
           <li><b>One-time income above 30% of profit</b> — the "profit" mostly came from selling assets or
             paper gains, not the business. Next year it disappears.</li>
         </ul>
+        <p>A hard gate does two things: it caps the rating at 2★, and it <b>bars the company from the High
+          Growth and High Value halves of the quadrant map</b> however high its scores. The scores are still
+          shown — the gate is the reason they cannot be trusted.</p>
         <h3>Soft flags (−5 points each, max −15)</h3>
         <ul>
           <li><b>Inventory growing much faster than sales</b> — unsold goods piling up; discounting comes next.</li>
@@ -316,13 +323,15 @@
           <thead><tr><th>Rule</th><th>Final methodology</th></tr></thead>
           <tbody>
             <tr><td><b>Growth / Value scoring</b></td><td>Each parameter → percentile rank within its own sector, 0–100, direction-aware</td></tr>
+            <tr><td><b>Universe</b></td><td>Actively traded companies only — issues marked suspended, delisted or inactive, and anything with no trade in the last 30 days, are left out even though they still file statements</td></tr>
             <tr><td><b>Comparison period</b></td><td>Newest filed quarter's YTD vs previous fiscal year's same YTD (QoQ never used)</td></tr>
             <tr><td><b>Period coverage</b></td><td>Newest period used only if ≥80% of the previous period's filers have filed it</td></tr>
             <tr><td><b>Missing data</b></td><td>Weight redistributed proportionally; never treated as zero; "n of m factors" tag shown</td></tr>
             <tr><td><b>Combined rating</b></td><td>Growth 60% + Value 40%</td></tr>
             <tr><td><b>Trading / Investment / Mutual Fund</b></td><td>Growth 30% + Value 70% (no real growth engine)</td></tr>
             <tr><td><b>Quality / balance sheet</b></td><td>Modifier only — never a weighted score</td></tr>
-            <tr><td><b>Hard gates</b></td><td>Cap the star rating at 2★</td></tr>
+            <tr><td><b>Hard gates</b></td><td>Cap the star rating at 2★ and bar the company from High Growth / High Value</td></tr>
+            <tr><td><b>Quadrant</b></td><td>High/Low Growth × High/Low Value, split at the sector <i>median</i> of each score; a gated company is Low on both regardless</td></tr>
             <tr><td><b>Soft flags</b></td><td>−5 combined points each, maximum −15</td></tr>
             <tr><td><b>Stars</b></td><td>80+ → 5★ · 60+ → 4★ · 40+ → 3★ · 20+ → 2★ · below 20 → 1★</td></tr>
             <tr><td><b>Style</b></td><td>Growth − Value spread ≥ +15 → Growth; ≤ −15 → Value; else Blend</td></tr>
@@ -335,12 +344,14 @@
       <section class="sop-sec" id="charts">
         <h2>8. Reading the charts</h2>
         <p><b>Growth vs Value maps (one per size tier):</b> each dot is one company — right = growing faster
-          than peers, up = cheaper than peers. The tinted top-right corner is the sweet spot: growth at a fair
-          price. <b>Amber dots</b> = 4★/5★. <b>Red dots</b> = quality-gated (good scores don't matter if the
-          balance sheet failed the police check). <b>Blue</b> = everything else. Hover a dot for exact numbers.</p>
-        <p>A red dot deep in the sweet spot is the most important pattern on the page: the market is pricing it
-          cheap-and-growing <i>because</i> of the balance-sheet problem. Decide whether the problem is temporary
-          before being tempted.</p>
+          than peers, up = cheaper than peers. The dividers sit at the sector <i>median</i> of each score, so the
+          tinted top-right corner is exactly the High Growth / High Value quadrant in the table. <b>Amber dots</b>
+          = 4★/5★. <b>Hollow red rings</b> = quality-gated: plotted where they scored, but not eligible for the
+          sweet spot whatever their position. <b>Blue</b> = everything else. Hover a dot for exact numbers; the
+          "show quality-gated" box hides the rings when you only want the eligible set.</p>
+        <p>A red ring deep in the sweet spot is the most important pattern on the page: the market is pricing it
+          cheap-and-growing <i>because</i> of the balance-sheet problem — for a hydro, usually a book value below
+          par. Decide whether the problem is temporary before being tempted.</p>
       </section>
 
       <section class="sop-sec" id="limits">

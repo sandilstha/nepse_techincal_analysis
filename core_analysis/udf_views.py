@@ -91,11 +91,33 @@ def _f(value):
         return None
 
 
-def _live_index_bar(key):
+# How far the contributors feed's prev_close may sit from the stored previous
+# close before the feed is judged to be on a different session. Both come from
+# the exchange at two decimals, so a genuine match is exact; the tolerance only
+# absorbs float/Decimal rounding. A rolled feed is off by a whole day's move.
+HEADLINE_PREV_CLOSE_TOLERANCE = 0.0002   # 0.02%, about half a point at 2,600
+
+
+def _headline_on_session(feed_prev_close, stored_prev_close):
+    """True unless the headline feed demonstrably references another session."""
+    if feed_prev_close is None or stored_prev_close is None or stored_prev_close <= 0:
+        return True   # nothing to check against: keep the historical behaviour
+    return abs(feed_prev_close - stored_prev_close) <= stored_prev_close * HEADLINE_PREV_CLOSE_TOLERANCE
+
+
+def _live_index_bar(key, prev_close=None):
     """Today's live OHLCV bar for a DB index sector_name, from NepseSubIndices.
 
     Returns (date, open, high, low, close, volume) or None. Intraday (before the
     close is published) it uses the open/high/low snapshot for the close.
+
+    `prev_close` is the last stored session's close. For NEPSE the headline value
+    from fetch_contributors() is only trusted when that feed's own prev_close
+    matches it. After the market shuts, the feed rolls forward a session: on
+    2026-09-14 it reported value=2610.83 with prev_close=2585.04, where 2585.04
+    was the day's true close. It had re-applied the day's +1% on top of the close,
+    and since the code also stretched `high` up to meet it, the candle closed
+    exactly at a high the market never printed.
     """
     sub_key = SUBINDEX_KEYS.get(key)
     if not sub_key:
@@ -115,7 +137,9 @@ def _live_index_bar(key):
     if key == "NEPSE INDEX":
         contributors = fetch_contributors() or {}
         headline = contributors.get("index") or {}
-        close = _f(headline.get("value")) or close
+        value = _f(headline.get("value"))
+        if value and _headline_on_session(_f(headline.get("prev_close")), _f(prev_close)):
+            close = value
     if not close or close <= 0:
         return None
     open_ = _f(row.get("openIndex")) or close
@@ -219,7 +243,9 @@ def _append_live_index_bar(kind, key, rows, to_date):
     if kind != "index":
         return rows
 
-    live = _live_index_bar(key)
+    # The stored previous close lets the live builder reject a headline feed that
+    # has already rolled on to the next session (see _live_index_bar).
+    live = _live_index_bar(key, prev_close=rows[-1][4] if rows else None)
     if not live or (to_date is not None and live[0] > to_date):
         return rows
 

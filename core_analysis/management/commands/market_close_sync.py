@@ -24,7 +24,7 @@ scheduled passes do nothing. ``--force`` overrides that. What gets measured:
 Design notes:
   * Nepal time, not server time. settings.TIME_ZONE is UTC, so "15:15" must be
     resolved against Asia/Kathmandu or the job fires 5h45m off.
-  * NEPSE is shut Friday and Saturday — those days exit immediately.
+  * NEPSE is shut Saturday and Sunday — those days exit immediately.
   * It never raises. A scheduled task that exits non-zero produces a daily
     error balloon; failures are logged and summarised instead.
   * Every underlying sync upserts, so re-running is safe — which is what makes
@@ -45,7 +45,10 @@ NPT = dt_timezone(timedelta(hours=5, minutes=45))
 # Thu 50 / Fri 16 / Sat 0 — Friday sessions are irregular but real, and skipping
 # them would lose ~16 trading days a year. Sundays and Fridays that turn out to
 # be holidays are handled by the no-session check below, not by this set.
-CLOSED_WEEKDAYS = {5}             # Saturday (Mon=0)
+# Schedule change, Sep 2026: NEPSE now trades Mon-Fri (it was Sun-Thu, which is
+# where the Sunday sessions in the tally above come from). Sunday joins Saturday
+# as closed; Friday is a full session, not the irregular one it used to be.
+CLOSED_WEEKDAYS = {5, 6}          # Saturday, Sunday (Mon=0)
 
 # Floorsheet is judged complete at this share of the expected trade count. Not
 # 100%: the sync legitimately drops a handful of malformed rows each day
@@ -68,7 +71,7 @@ class Command(BaseCommand):
                        help="Trading day (YYYY-MM-DD). Defaults to today, Nepal time.")
         p.add_argument("--force", action="store_true",
                        help="Re-sync even if the day is already complete, and run on "
-                            "Friday/Saturday when NEPSE is closed.")
+                            "Saturday/Sunday when NEPSE is closed.")
         # Off by default: a separate, slower upstream feed. Worth enabling —
         # StockPriceAdjustment feeds most desks and goes stale silently.
         p.add_argument("--with-adjustments", action="store_true",

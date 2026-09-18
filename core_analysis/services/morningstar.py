@@ -28,7 +28,23 @@ from django.core.cache import cache
 logger = logging.getLogger(__name__)
 
 CACHE_TTL = 600
-SCAN_VERSION = 8
+SCAN_VERSION = 11
+
+# A company with no close within this many calendar days of the newest stored
+# business date is treated as no longer trading and is left out of the scan.
+# The gap distribution is sharply bimodal — live names trade within days, dead
+# ones are months stale — so the exact figure is not delicate.
+STALE_DAYS = 30
+
+# Ordinary shares are issued at Rs 100 par in Nepal; SHL (Rs 10) and HATHY
+# (Rs 50) are the known exceptions. Book value below par means accumulated
+# losses have eaten into the capital shareholders paid in.
+PAR_VALUE = 100.0
+PAR_EXCEPTIONS = {"SHL": 10.0, "HATHY": 50.0}
+
+
+def _par_value(ticker):
+    return PAR_EXCEPTIONS.get(ticker, PAR_VALUE)
 
 # Combined rating mix. Value-dominant sectors have no real growth engine.
 GV_MIX_DEFAULT = (0.60, 0.40)
@@ -531,6 +547,21 @@ def _quality(sector, t):
     if npl is not None and npl > 0.04:
         gates.append(f"NPL {npl * 100:.1f}% > 4%")
 
+    # Book value below par means accumulated losses have eaten into paid-up
+    # capital, and percentile scoring rewards exactly that twice over: a wrecked
+    # balance sheet flatters P/B on the Value side, and a near-zero base
+    # flatters every growth rate. 41% of hydros sit below par; a handful of
+    # finance, insurance, hotel and development-bank names do too. Gate it in
+    # every sector so neither pillar can carry such a company, and so the
+    # quadrant map cannot call it High Growth or High Value.
+    bv = _num(t.c("KS", "book_value_per_share"))
+    if bv is not None:
+        par = _par_value(t.ticker)
+        if bv <= 0:
+            gates.append(f"Negative book value (Rs {bv:,.1f} per share)")
+        elif bv < par:
+            gates.append(f"Book value Rs {bv:,.1f} below Rs {par:,.0f} par")
+
     if sector in ("Commercial Banks", "Development Banks", "Finance", "Microfinance"):
         car = _num(t.c("KS", "capital_fund_to_rwa"))
         floor = 0.08 if sector == "Microfinance" else 0.11
@@ -677,6 +708,52 @@ def _load_tickers(sector, fy, quarter, prev_fy):
     return {tk: t for tk, t in tickers.items() if any(t.cur.values())}
 
 
+def _drop_inactive(tickers):
+    """Remove companies that are no longer trading. Returns (dropped, detail).
+
+    Two independent tests, because neither is sufficient on its own:
+
+      * `CompanyProfile.status` catches names the feed has marked Delisted,
+        Suspended or Inactive. It misses recent suspensions — SFCL still reads
+        "Active" months after its last trade — and some dead tickers have no
+        profile row at all.
+      * Trading recency catches those. A company with no close within
+        STALE_DAYS of the newest business date in the store is not trading,
+        whatever the profile says.
+
+    Mutates `tickers` in place.
+    """
+    from django.db.models import Max
+    from core_analysis.models import CompanyProfile, NepseDailyStockPrice as P
+
+    if not tickers:
+        return 0, {}
+
+    symbols = list(tickers)
+    status = dict(CompanyProfile.objects.filter(symbol__in=symbols)
+                  .values_list("symbol", "status"))
+    newest = P.objects.aggregate(d=Max("business_date"))["d"]
+    last = dict(P.objects.filter(symbol__in=symbols)
+                .values("symbol").annotate(d=Max("business_date"))
+                .values_list("symbol", "d"))
+
+    detail = {}
+    for tk in symbols:
+        st = (status.get(tk) or "").strip()
+        if st and st.lower() != "active":
+            detail[tk] = st
+            continue
+        d = last.get(tk)
+        if d is None:
+            detail[tk] = "no price history"
+        elif newest and (newest - d).days > STALE_DAYS:
+            detail[tk] = f"no trade in {(newest - d).days} days"
+
+    for tk in detail:
+        tickers.pop(tk, None)
+    return len(detail), detail
+
+
 def _attach_live_prices(tickers):
     """Fill each company's `live_price` from the EOD store. Returns (as_of, n).
 
@@ -773,9 +850,13 @@ def _mutual_fund_rows():
         })
     for r in results:
         r["stars"] = _stars_from_combined(r["combined"], [], [])
+        r.setdefault("gates", [])
+        r.setdefault("flags", [])
+    mf_g, mf_v = _assign_quadrants(results)
     results.sort(key=lambda r: -(r["combined"] or 0))
     return {
         "ok": True, "sector": "Mutual Fund", "period": "NAV history (all recorded months)",
+        "quadrant_split": {"growth": mf_g, "value": mf_v},
         "note": ("Funds file no quarterly statements — scored on NAV total return over the "
                  "recorded history and the current premium/discount to NAV. Expense drag is "
                  "not published, so Value is the discount alone."),
@@ -814,6 +895,43 @@ def _stars_from_combined(combined, gates, flags):
     if gates:
         stars = min(stars, 2)
     return stars
+
+
+def _assign_quadrants(results):
+    """Tag each row High/Low on Growth and Value, split at the sector median.
+
+    A company failing a quality gate is barred from either High half however
+    it scored. The gates exist because the score cannot be trusted for that
+    company — a hydro trading below par posts huge growth rates off a wrecked
+    base and a flattering P/B off the same wreckage — so promoting it on those
+    numbers is exactly the error the gate was added to prevent.
+    """
+    scored = [r for r in results if r["growth"] is not None and r["value"] is not None]
+    if not scored:
+        for r in results:
+            r["quadrant"] = "—"
+        return None, None
+
+    def _median(vals):
+        s = sorted(vals)
+        n = len(s)
+        return s[n // 2] if n % 2 else (s[n // 2 - 1] + s[n // 2]) / 2.0
+
+    g_med = _median([r["growth"] for r in scored])
+    v_med = _median([r["value"] for r in scored])
+
+    for r in results:
+        g, v = r["growth"], r["value"]
+        if g is None or v is None:
+            r["quadrant"] = "—"
+            continue
+        hi_g = g >= g_med and not r["gates"]
+        hi_v = v >= v_med and not r["gates"]
+        r["quadrant"] = ("High Growth / High Value" if hi_g and hi_v else
+                         "High Growth / Low Value" if hi_g else
+                         "Low Growth / High Value" if hi_v else
+                         "Low Growth / Low Value")
+    return round(g_med, 1), round(v_med, 1)
 
 
 def _size_segments(mcaps):
@@ -978,6 +1096,20 @@ def _sector_scan_uncached(sector):
     if not tickers:
         return {"ok": False, "error": f"No companies with {fy} Q{quarter} filings in {sector}."}
 
+    # Delisted and suspended issues still carry filed statements, so they reach
+    # this point and would otherwise be scored and ranked against live peers.
+    try:
+        n_inactive, inactive = _drop_inactive(tickers)
+    except Exception:
+        logger.exception("Active-issue filter failed for %s", sector)
+        n_inactive, inactive = 0, {}
+    if n_inactive:
+        logger.info("Morning Star %s: dropped %d inactive issue(s): %s",
+                    sector, n_inactive,
+                    ", ".join(f"{k} ({v})" for k, v in sorted(inactive.items())))
+    if not tickers:
+        return {"ok": False, "error": f"No actively traded companies in {sector}."}
+
     # Live share price BEFORE any scoring: P/B, P/E, dividend yield, the
     # distributable-per-price metrics and market cap all read T.price(), and
     # market cap also sets the size tier.
@@ -1034,6 +1166,7 @@ def _sector_scan_uncached(sector):
             "combined": round(combined, 1) if combined is not None else None,
             "stars": _stars_from_combined(combined, gates, flags),
             "style": _style(g, v),
+            "bvps": round(_bv, 1) if (_bv := _num(t.c("KS", "book_value_per_share"))) is not None else None,
             "size": sizes.get(tk, "—"),
             "confidence": f"{gp + vp} of {gt + vt} factors",
             "low_confidence": (gp + vp) < (gt + vt) * 0.6,
@@ -1042,6 +1175,7 @@ def _sector_scan_uncached(sector):
             "detail": {"growth": g_detail[tk], "value": v_detail[tk]},
         })
 
+    g_median, v_median = _assign_quadrants(results)
     results.sort(key=lambda r: (-(r["stars"] or 0), -(r["combined"] or 0)))
     try:
         barometer = _barometer(results)
@@ -1057,6 +1191,8 @@ def _sector_scan_uncached(sector):
         "price_as_of": price_as_of,
         "priced_live": priced_live,
         "priced_total": len(tickers),
+        "inactive_excluded": n_inactive,
+        "quadrant_split": {"growth": g_median, "value": v_median},
         "results": results,
     }
 

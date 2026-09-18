@@ -1060,6 +1060,44 @@ class UdfChartBarsTests(SimpleTestCase):
 
         self.assertEqual(result, stored)
 
+    def _nepse_live(self, sub_row, headline):
+        return (
+            patch.object(udf_views, "fetch_subindices", return_value={"NepseIndex": sub_row}),
+            patch.object(udf_views, "fetch_contributors", return_value={"index": headline}),
+        )
+
+    def test_live_bar_rejects_headline_rolled_past_the_close(self):
+        # 2026-09-14, after the close but before the EOD sync. The contributors
+        # feed had rolled a session: prev_close 2585.04 was the day's true close,
+        # and value 2610.83 re-applied the day's +1% on top of it. The candle must
+        # close at the sub-index close, not at a high the market never printed.
+        stored = [(date(2026, 9, 11), 2531.55, 2559.49, 2524.55, 2559.49, 10765179)]
+        sub = {"businessDate": "2026-09-14", "openIndex": 2559.49, "highIndex": 2587.47,
+               "lowIndex": 2556.90, "closingIndex": 2585.04, "turnoverVolume": 10666631}
+        subs, contrib = self._nepse_live(sub, {"value": 2610.83, "prev_close": 2585.04})
+
+        with patch.object(udf_views, "_bars", return_value=stored), subs, contrib:
+            result = udf_views._chart_bars("index", "NEPSE INDEX", None, date(2026, 9, 14), 5000)
+
+        bar = result[-1]
+        self.assertEqual(bar[0], date(2026, 9, 14))
+        self.assertAlmostEqual(bar[4], 2585.04)
+        self.assertAlmostEqual(bar[2], 2587.47)      # high not stretched to the bogus value
+        self.assertLessEqual(bar[4], bar[2])
+
+    def test_live_bar_uses_headline_intraday_when_session_matches(self):
+        # Intraday the sub-index close is not published yet; the headline value is
+        # the live index and references the stored previous close, so it is used.
+        stored = [(date(2026, 9, 11), 2531.55, 2559.49, 2524.55, 2559.49, 10765179)]
+        sub = {"businessDate": "2026-09-14", "openIndex": 2559.49, "highIndex": 2570.10,
+               "lowIndex": 2556.90, "closingIndex": 0, "turnoverVolume": 5000000}
+        subs, contrib = self._nepse_live(sub, {"value": 2566.20, "prev_close": 2559.49})
+
+        with patch.object(udf_views, "_bars", return_value=stored), subs, contrib:
+            result = udf_views._chart_bars("index", "NEPSE INDEX", None, date(2026, 9, 14), 5000)
+
+        self.assertAlmostEqual(result[-1][4], 2566.20)
+
 
 class WaccImportTests(SimpleTestCase):
     def test_holdings_normalizer_rejects_non_positive_and_non_finite_balances(self):

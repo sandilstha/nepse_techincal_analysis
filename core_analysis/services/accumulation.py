@@ -31,7 +31,10 @@ Those t-statistics are IN-SAMPLE and are kept only to document what the score
 is made of. Held out on 2025-01-01 onward the edge collapses: `absorb` falls
 from t=5.73 to t=0.70, and `top1_share` never had univariate power in either
 period and flips sign on 2023-24 alone. The composite is retained because it is
-a coherent description of flow structure, NOT because it was shown to work.
+a 
+
+
+ description of flow structure, NOT because it was shown to work.
 
 The three z-scores are combined with EQUAL WEIGHTS (+1, -1, -1). That is a
 deliberate robustness choice, not a fitted result: regression weights on this

@@ -11,7 +11,7 @@ Date locked: 2026-09-02
 4. Combined rating = Growth 60% : Value 40% — except Trading, Investment, Mutual Fund = 30% : 70%.
 5. Style box: Growth − Value score spread → Growth / Blend / Value. Size tier: cumulative sector market-cap share (Large = top 70%, Mid = next 20%, Small = last 10%).
 6. Balance Sheet / Quality pillar is a modifier, not a scored pillar:
-   - Hard gates (cap the star rating): NPL > 4% · CAR/capital fund below regulatory minimum · solvency below floor · interest coverage < 1.5x · negative core operating profit · one-time income (FVTPL, asset sales, reversals) > 30% of PBT · negative EPS caps at 2 stars.
+   - Hard gates (cap the star rating): NPL > 4% · CAR/capital fund below regulatory minimum · solvency below floor · interest coverage < 1.5x · negative core operating profit · one-time income (FVTPL, asset sales, reversals) > 30% of PBT · negative EPS caps at 2 stars · book value per share below par (Rs 100; SHL Rs 10, HATHY Rs 50), or negative. Any gate also bars the company from the High Growth / High Value quadrant.
    - Soft flags (−5 each, max −15): inventory growth >> revenue growth · receivables growth >> revenue growth · falling provision coverage · rising D/E · current ratio < 1 · outstanding claims ballooning vs premium · portfolio concentration (Investment).
    - Remaining BS items = context data, displayed not scored.
 

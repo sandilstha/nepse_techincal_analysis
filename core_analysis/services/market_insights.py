@@ -873,8 +873,8 @@ def _maybe_trigger_eod_sync(force=False):
     payload cache is invalidated when the sync finishes.
     """
     now = _nepse_now()
-    # NEPSE is closed Friday (4) and Saturday (5) — nothing new to pull.
-    if not force and now.weekday() in (4, 5):
+    # NEPSE is closed Saturday (5) and Sunday (6) — nothing new to pull.
+    if not force and now.weekday() in (5, 6):
         return
     done_key = "%s:%s" % (EOD_SYNC_DONE_KEY, now.date().isoformat())
     if not force and cache.get(done_key):

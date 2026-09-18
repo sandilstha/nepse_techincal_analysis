@@ -562,7 +562,7 @@
       const day = String(d.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     };
-    const isTradingDay = (d) => d.getDay() !== 5 && d.getDay() !== 6; // NEPSE trades Sun-Thu; closed Fri (5) & Sat (6)
+    const isTradingDay = (d) => d.getDay() !== 6 && d.getDay() !== 0; // NEPSE trades Mon-Fri; closed Sat (6) & Sun (0)
     const normalizeToTradingDay = (d, reverse = false) => {
       const cursor = new Date(d);
       while (!isTradingDay(cursor)) {
@@ -996,7 +996,7 @@
         const day = String(d.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
       };
-      const isTradingDay = (d) => d.getDay() !== 5 && d.getDay() !== 6; // NEPSE trades Sun-Thu; closed Fri (5) & Sat (6)
+      const isTradingDay = (d) => d.getDay() !== 6 && d.getDay() !== 0; // NEPSE trades Mon-Fri; closed Sat (6) & Sun (0)
       const normalizeToTradingDay = (d, reverse = false) => {
         const cursor = new Date(d);
         while (!isTradingDay(cursor)) {
@@ -1154,7 +1154,7 @@
         const day = String(d.getDate()).padStart(2, '0');
         return `${y}-${m}-${day}`;
       };
-      const isTradingDay = (d) => d.getDay() !== 5 && d.getDay() !== 6; // NEPSE trades Sun-Thu; closed Fri (5) & Sat (6)
+      const isTradingDay = (d) => d.getDay() !== 6 && d.getDay() !== 0; // NEPSE trades Mon-Fri; closed Sat (6) & Sun (0)
       const toTradingDay = (d, rev = false) => {
         const c = new Date(d);
         while (!isTradingDay(c)) c.setDate(c.getDate() + (rev ? -1 : 1));

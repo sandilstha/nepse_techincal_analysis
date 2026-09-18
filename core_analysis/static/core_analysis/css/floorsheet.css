@@ -1107,6 +1107,14 @@
            font-size: 10.5px; font-weight: 600; white-space: nowrap; }
 .ms-style-growth { background: rgba(20,231,160,0.12); color: var(--up, #14e7a0); }
 .ms-style-value { background: rgba(96,165,250,0.14); color: #60a5fa; }
+
+/* Growth/Value quadrant chips. Only HG/HV is coloured as a positive; the
+   other three are deliberately muted so the eye goes to the 15 names that
+   cleared both medians AND the quality screen. */
+.ms-quad-hh { background: rgba(20,231,160,0.16); color: var(--up, #14e7a0); font-weight: 600; }
+.ms-quad-hl { background: rgba(96,165,250,0.12); color: #60a5fa; }
+.ms-quad-lh { background: rgba(251,191,36,0.12); color: #fbbf24; }
+.ms-quad-ll { background: rgba(148,163,184,0.10); color: var(--muted, #94a3b8); }
 .ms-style-blend { background: rgba(139,147,167,0.16); color: var(--ink-2, #aab2c5); }
 .ms-gate { background: rgba(255,110,114,0.14); color: var(--down, #ff6e72); }
 .ms-flag { background: rgba(251,191,36,0.14); color: #e6b04a; }
@@ -1154,7 +1162,14 @@
               letter-spacing: 0.05em; text-transform: uppercase; }
 .ms-sc-dot { fill: #60a5fa; stroke: var(--bg-base, #0a1020); stroke-width: 1; }
 .ms-sc-dot.star { fill: #f3b53c; }
-.ms-sc-dot.gated { fill: var(--down, #ff6e72); opacity: 0.75; }
+/* Gated names are the majority in some sectors — they must recede, not
+   shout. Thin, desaturated ring at low opacity: visible when looked for,
+   invisible when scanning for the good ones. */
+.ms-sc-dot.gated { fill: none; stroke: var(--down, #ff6e72); stroke-width: 1.6; opacity: 0.85; }
+.ms-sc-label.dim { fill: #f4a3a6; opacity: 0.85; font-weight: 500; }
+.ms-sc-leader.dim { opacity: 0.4; }
+.ms-gated-toggle { cursor: pointer; white-space: nowrap; }
+.ms-gated-toggle input { vertical-align: -1px; margin-right: 3px; }
 .ms-sc-label { fill: var(--ink-1, #e8ecf5); font-size: 10px; font-weight: 600; }
 
 /* Three cap-tier scatters side by side — each tier in its own visible box */
@@ -1187,7 +1202,7 @@
 .ms-leg-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%;
               background: #60a5fa; margin: 0 4px 0 10px; vertical-align: middle; }
 .ms-leg-dot.star { background: #f3b53c; }
-.ms-leg-dot.gated { background: var(--down, #ff6e72); }
+.ms-leg-dot.gated { background: transparent; border: 1.6px solid var(--down, #ff6e72); opacity: 0.9; box-sizing: border-box; }
 
 /* One-click filter pills */
 .ms-fgroup { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }

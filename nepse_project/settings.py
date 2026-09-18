@@ -109,7 +109,13 @@ X_FRAME_OPTIONS = 'DENY'
 # Note: unlike ALLOWED_HOSTS, each origin must include the scheme (https://).
 _csrf_origins_raw = os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS')
 if not _csrf_origins_raw:
-    _csrf_origins_raw = 'https://nepstockswatch.sandilstha.com.np'
+    # Both public subdomains front this app through Cloudflare. Keep them BOTH
+    # in the fallback so a deployment that forgets to set the env var still
+    # trusts every live hostname (a missing one 403s every POST, e.g. sign-up).
+    _csrf_origins_raw = (
+        'https://nepstockswatch.sandilstha.com.np,'
+        'https://nepwatch.sandilstha.com.np'
+    )
 
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
