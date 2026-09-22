@@ -295,11 +295,17 @@ def _subindex_metrics(row):
             change = value - prev
             pct = (change / prev) * 100.0
     else:
-        # Intraday (close not yet published): the previous close is the current
-        # value minus today's change — NOT "0 − change", which produced a small
-        # negative "previous close" and a huge bogus % on every sector card.
+        # Intraday (closingIndex not yet published, comes through as 0). The feed
+        # still computes its own absChange/percentageChange AGAINST that 0 close,
+        # so absChange == (0 − prevClose) == −prevClose and percentageChange
+        # == −100%. That is NOT the move of the intraday value, so `value − absChange`
+        # would give `value + prevClose` (roughly double the index) and a bogus
+        # −50% headline. Recover the previous close as −absChange instead, then
+        # derive the real intraday change from the live value.
         value = high or open_v or low
-        prev = (value - abs_change) if (value is not None and abs_change is not None) else None
+        prev = (-abs_change) if abs_change is not None else None
+        if prev is not None and prev <= 0:
+            prev = None  # absChange missing/zero before the first trade — no baseline
         change = (value - prev) if (value is not None and prev is not None) else None
         pct = (change / prev) * 100.0 if (change is not None and prev) else None
 

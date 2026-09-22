@@ -922,7 +922,10 @@
 
   TABS.favorites = {
     init: function () {
-      favState.brokers = [];
+      // Open on broker 42 (Sani Securities) so the desk shows data immediately
+      // instead of an empty "Select a broker" prompt. Falls back to no selection
+      // if 42 isn't in the reference list (e.g. delisted), so it degrades cleanly.
+      favState.brokers = (META.brokers || []).map(String).indexOf("42") !== -1 ? ["42"] : [];
       buildBrokerMulti("fav", favState, function () { TABS.favorites.load(); });
       favState.dr = dateRange("fav", function () { TABS.favorites.load(); });
       // Sector filter for the persistence card (reloads just that card).
@@ -1141,7 +1144,10 @@
   function sigSetAll(html) { SIG_IDS.forEach(function (id) { if (el(id)) el(id).innerHTML = html; }); }
   TABS.signals = {
     init: function () {
-      sigState.brokers = [];
+      // Open on broker 42 (Sani Securities) so the desk shows signals immediately
+      // instead of an empty "Select a broker" prompt. Falls back to no selection
+      // if 42 isn't in the reference list, so it degrades cleanly.
+      sigState.brokers = (META.brokers || []).map(String).indexOf("42") !== -1 ? ["42"] : [];
       buildBrokerMulti("sig", sigState, function () { TABS.signals.load(); });
       // Signals are inherently multi-day; default to Last 1 Month so Price–Flow
       // Divergence (needs ≥2 sessions) isn't empty on open.
@@ -2096,7 +2102,9 @@
   var nhState = { brokers: [], excludeMf: false, sector: "All", dr: null };
   TABS.netholding = {
     init: function () {
-      nhState.brokers = [];
+      // Open on broker 42 (Sani Securities); falls back to no selection if 42
+      // isn't in the reference list, so it degrades cleanly.
+      nhState.brokers = (META.brokers || []).map(String).indexOf("42") !== -1 ? ["42"] : [];
       buildBrokerMulti("nh", nhState, function () { TABS.netholding.load(); });
       fillSectors(el("nh-sector"));
       el("nh-sector").addEventListener("change", function () { nhState.sector = this.value; TABS.netholding.load(); });

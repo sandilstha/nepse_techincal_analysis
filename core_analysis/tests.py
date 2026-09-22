@@ -1364,6 +1364,45 @@ class MarketInsightsHeadlineTests(unittest.TestCase):
         self.assertEqual(payload["overview"]["turnover"], 1164469269.88)
         self.assertEqual(payload["overview"]["volume"], 2524762)
 
+    def test_subindex_intraday_zero_close_recovers_prev_from_abschange(self):
+        # Mid-session the NepseSubIndices feed leaves closingIndex at 0 and
+        # computes its own absChange/percentageChange against that 0 — so it
+        # reports absChange = -prevClose and percentageChange = -100%. Reading
+        # that as the intraday value's move produced a ~5,251 "previous close"
+        # (today + yesterday) and a bogus -49.98% headline. The metrics must
+        # recover the previous close as -absChange and derive a small real move.
+        row = {
+            "closingIndex": 0.0,
+            "openIndex": 2626.83,
+            "highIndex": 2626.83,
+            "lowIndex": 2626.83,
+            "absChange": -2624.36,       # == -(yesterday's real close)
+            "percentageChange": -100.0,
+            "turnoverValue": 5927148186.8,
+            "businessDate": "2026-09-18",
+        }
+        m = market_insights._subindex_metrics(row)
+        self.assertEqual(round(m["value"], 2), 2626.83)
+        self.assertEqual(round(m["value"] - m["change"], 2), 2624.36)  # prev close
+        self.assertEqual(round(m["change"], 2), 2.47)
+        self.assertAlmostEqual(m["pct"], 0.09, places=2)
+
+    def test_subindex_published_close_is_unchanged(self):
+        # A normal settled row (closingIndex > 0) must keep the feed's own values.
+        row = {
+            "closingIndex": 2624.36,
+            "openIndex": 2612.0,
+            "highIndex": 2637.58,
+            "lowIndex": 2615.69,
+            "absChange": 11.93,
+            "percentageChange": 0.45,
+            "businessDate": "2026-09-17",
+        }
+        m = market_insights._subindex_metrics(row)
+        self.assertEqual(m["value"], 2624.36)
+        self.assertEqual(m["change"], 11.93)
+        self.assertEqual(m["pct"], 0.45)
+
     def test_stale_live_feed_falls_back_to_eod_for_stock_widgets(self):
         # The per-scrip live feed serves prior-session quotes (Jun 8) while the
         # official index headline reports the real trading day (Jun 16). The
